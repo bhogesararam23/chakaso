@@ -52,7 +52,6 @@ not label it, assume it is Planned and verify against
 | [`internal/engineering/artifact-policy.md`](internal/engineering/artifact-policy.md) | Where weights, datasets and generated outputs live, and what is never committed |
 | [`internal/engineering/tooling.md`](internal/engineering/tooling.md) | The chosen formatter, linter, type checker and test runner, and why |
 | [`internal/experiments/README.md`](internal/experiments/README.md) | The experiment record format, and the fact that no experiment has been run |
-| [`internal/model-development/`](internal/model-development/) | Model development notes |
 
 ## Agent context
 
