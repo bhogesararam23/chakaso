@@ -1,0 +1,164 @@
+# Chakaso
+
+Chakaso is an open research project exploring how to build language models and AI
+systems that are more transparent about what they know, what they retrieved, what
+they inferred, and when they should change their answer.
+
+Two things are being built in this repository, because neither is useful alone:
+
+1. **A local-first conversational system** that answers from retrieved public
+   evidence, keeps source metadata separate from generated text, resolves
+   follow-up questions against conversation state, and can revise an earlier
+   answer when new evidence contradicts it.
+2. **A training pipeline** that will eventually produce Chakaso's own model
+   weights, so the system's model layer can be replaced by a model this project
+   trained rather than one it borrowed.
+
+The second is the point of the first. A conversational system is only worth
+building if its behaviour can be measured, and its behaviour can only be measured
+against a model whose parameters, data and training procedure are known.
+
+## Status
+
+**This repository is at the very beginning.** There is no runnable system and no
+trained model. The current phase is foundation work: repository conventions, a
+Python package boundary, typed configuration, the language-model interface, and
+the source/evidence records that everything else will be built on.
+
+The status vocabulary used across this documentation is:
+
+| Label | Meaning |
+| --- | --- |
+| **Implemented** | Code exists in this repository and is covered by tests that pass. |
+| **Experimental** | Code exists and runs, but the approach is not settled and may change incompletely. |
+| **Planned** | Designed in enough detail to build; not built. |
+| **Research** | An open question. There is no committed design. |
+| **Unknown** | Not yet determined. |
+
+| Area | Status |
+| --- | --- |
+| Repository conventions, licensing, decision records | Implemented |
+| Public and internal documentation | Implemented |
+| Python package, configuration, CLI | Implemented (minimal) |
+| Language-model interface and model registry | Implemented (interface only; no trained model) |
+| Source, evidence and citation records | Implemented (data model only; no retrieval) |
+| Conversation state | Implemented (data model only; no engine) |
+| Retrieval (local index, ranking, web fetch) | Planned |
+| Grounding validation and correction loop | Planned |
+| Tokenizer training | Planned |
+| Tiny from-scratch Transformer | Planned |
+| Any trained Chakaso weights | Does not exist |
+| Evaluation harness and benchmarks | Planned |
+
+Nothing in this list is aspirational language. If a row says Planned, there is no
+code for it. See [`docs/agent/CURRENT_STATE.md`](docs/agent/CURRENT_STATE.md) for
+the precise current state, including what is deliberately missing.
+
+## Why this exists
+
+A general language model can produce a fluent answer while telling you nothing
+about whether that answer is grounded, how current it is, what it inferred versus
+what it read, or what would change its mind. Retrieval helps, but retrieval does
+not by itself produce provenance, calibrated uncertainty, or a disciplined way to
+be corrected.
+
+Chakaso treats those as architectural properties rather than prompt instructions:
+
+- **Source identity belongs to the retrieval layer.** The model may reference
+  evidence identifiers; it may not invent one. A reference the model was not
+  given is an error to be recorded, not a URL to be rendered.
+  ([ADR-0003](docs/decisions/ADR-0003-evidence-identifier-ownership.md))
+- **The application does not depend on one model.** It depends on a narrow
+  interface, with a single place where configuration selects an implementation.
+  ([ADR-0002](docs/decisions/ADR-0002-language-model-boundary.md))
+- **The runtime is local-first.** No commercial inference or search API is
+  required for core functionality, so the pipeline stays reproducible and the
+  measurements stay measurements of this project.
+  ([ADR-0001](docs/decisions/ADR-0001-local-first-runtime.md))
+- **Correction beats consistency.** An answer contradicted by better evidence is
+  revised, and the revision is recorded. Defending an earlier answer because it
+  was earlier is a failure mode with a metric.
+
+## What Chakaso deliberately does not do
+
+- It does not fabricate citations, source titles or URLs.
+- It does not present a numeric confidence score unless that score has been
+  calibrated and measured. Until then, uncertainty is expressed qualitatively
+  ("the sources conflict", "the available evidence does not answer this").
+- It does not expose hidden chain-of-thought as a transparency feature. It
+  exposes evidence, assumptions, provenance, uncertainty and corrections.
+- It does not claim a model exists. None has been trained yet.
+- It does not depend on a commercial model or search provider for core
+  functionality.
+
+## Getting started
+
+There is no application to run yet. The current repository is a Python package
+with configuration, core primitives and its test suite.
+
+```bash
+git clone https://github.com/bhogesararam23/chakaso.git
+cd chakaso
+python -m venv .venv
+# Windows PowerShell
+.venv\Scripts\Activate.ps1
+# Linux / macOS
+source .venv/bin/activate
+
+python -m pip install -e ".[dev]"
+python -m pytest
+python -m chakaso --version
+```
+
+Full instructions, including how to work without installing anything, are in
+[`docs/getting-started.md`](docs/getting-started.md).
+
+## Repository layout
+
+```text
+chakaso/
+├── src/chakaso/        # the Python package
+├── tests/              # unit, contract and repository-hygiene tests
+├── docs/               # documentation
+│   ├── decisions/      # architecture decision records
+│   ├── research/       # research log, hypotheses, open questions
+│   ├── agent/          # durable context for coding agents
+│   └── internal/       # engineering notes, experiment records, artifact policy
+├── configs/            # versioned configuration
+├── experiments/        # experiment records (no results yet)
+├── CONTRIBUTING.md
+└── pyproject.toml
+```
+
+The package uses a `src/` layout so that tests exercise the installed package
+rather than whatever happens to be in the working directory
+([ADR-0005](docs/decisions/ADR-0005-src-layout.md)).
+
+## Documentation
+
+| Document | What it covers |
+| --- | --- |
+| [`docs/getting-started.md`](docs/getting-started.md) | Local setup, running tests, checking the install |
+| [`docs/architecture.md`](docs/architecture.md) | Components, boundaries and data flow |
+| [`docs/transparency.md`](docs/transparency.md) | What Chakaso exposes and what it withholds |
+| [`docs/retrieval.md`](docs/retrieval.md) | Retrieval, evidence and source records |
+| [`docs/correction.md`](docs/correction.md) | Reassessment when evidence contradicts an answer |
+| [`docs/training.md`](docs/training.md) | Tokenizer, data pipeline and model development plan |
+| [`docs/evaluation.md`](docs/evaluation.md) | Metrics, benchmarks and regression gates |
+| [`docs/roadmap.md`](docs/roadmap.md) | Milestones from foundation to a scratch-trained model |
+| [`docs/research/`](docs/research/) | Research log, hypotheses and open questions |
+| [`docs/decisions/`](docs/decisions/) | Why the architecture is shaped the way it is |
+| [`docs/agent/CURRENT_STATE.md`](docs/agent/CURRENT_STATE.md) | The current state, precisely |
+
+## Contributing
+
+Corrections to claims, measurements that contradict a statement in this
+documentation, and negative results are all welcome — the project's value depends
+on them. See [`CONTRIBUTING.md`](CONTRIBUTING.md). Coding agents should start at
+[`AGENTS.md`](AGENTS.md).
+
+## License
+
+Apache License 2.0 ([`LICENSE`](LICENSE)). Model weights, tokenizers and datasets
+are not published yet and are not covered by this license; they will carry their
+own terms when they exist ([ADR-0004](docs/decisions/ADR-0004-apache-2.0-license.md)).
