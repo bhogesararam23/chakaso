@@ -1,0 +1,22 @@
+# Normalize line endings for every text file so diffs and content hashes are
+# stable regardless of the platform a contributor works on.
+* text=auto eol=lf
+
+# Binary assets must never be line-ending converted.
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.webp binary
+*.pdf binary
+*.docx binary
+*.xlsx binary
+*.pptx binary
+*.safetensors binary
+*.bin binary
+*.pt binary
+*.pth binary
+*.gguf binary
+
+# Keep language detection out of generated content.
+docs/ linguist-documentation

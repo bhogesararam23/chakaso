@@ -1,0 +1,108 @@
+# ==============================================================================
+# PRIVATE WORKING MATERIAL — MUST NEVER BE COMMITTED
+# ==============================================================================
+# `docs/` holds the author's private Chakaso planning/specification pack as
+# .docx files. It is source material for the public repository documentation,
+# not repository content. It is deliberately not moved or deleted, so the
+# exclusion lives here. `tests/test_repository_hygiene.py` asserts that no such
+# file is ever tracked.
+/docs/*.docx
+/docs/**/*.docx
+
+# ==============================================================================
+# Python
+# ==============================================================================
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+dist/
+sdist/
+wheels/
+*.egg-info/
+.eggs/
+src/*.egg-info/
+
+# Virtual environments
+.venv/
+venv/
+env/
+ENV/
+.python-version
+
+# ==============================================================================
+# Tooling caches and reports
+# ==============================================================================
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.pyright/
+.coverage
+.coverage.*
+coverage.xml
+htmlcov/
+.tox/
+.nox/
+hypothesis/
+junit*.xml
+*.log
+
+# ==============================================================================
+# Local configuration, secrets and environment
+# ==============================================================================
+.env
+.env.*
+!.env.example
+*.local.toml
+configs/local.toml
+
+# ==============================================================================
+# Model, dataset and experiment artifacts
+# ==============================================================================
+# Weights, checkpoints, tokenizers and dataset shards are large and reproducible
+# from recorded configuration. They are never committed by default; the artifact
+# policy is recorded in docs/internal/engineering/artifact-policy.md.
+checkpoints/
+models/
+*.safetensors
+*.bin
+*.pt
+*.pth
+*.ckpt
+*.onnx
+*.gguf
+*.h5
+*.msgpack
+*.model
+
+# Local experiment outputs and caches
+experiments/**/outputs/
+experiments/**/runs/
+data/raw/
+data/processed/
+data/cache/
+.cache/
+wandb/
+mlruns/
+lightning_logs/
+
+# ==============================================================================
+# Editors and operating systems
+# ==============================================================================
+.idea/
+.vscode/
+!.vscode/extensions.json
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ==============================================================================
+# Agent scratch space
+# ==============================================================================
+# Local, transient working notes. Durable agent context belongs in docs/agent/.
+.scratch/
