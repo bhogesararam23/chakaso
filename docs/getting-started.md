@@ -82,8 +82,8 @@ $env:PYTHONPATH = "src"; python -m pytest
 ## Configuration
 
 Configuration is TOML, loaded explicitly rather than discovered by magic. Versioned
-configuration lives in [`../configs/`](../configs/); machine-local overrides use
-`configs/local.toml`, which is git-ignored.
+configuration lives in `configs/`; machine-local overrides use `configs/local.toml`,
+which is git-ignored.
 
 ```bash
 python -m chakaso config show

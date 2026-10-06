@@ -12,7 +12,7 @@ covers what to contribute; this covers how.
 | Linter | ruff check | Replaces flake8/isort/pyupgrade with one dependency |
 | Type checker | mypy | Static boundary checking matters when interfaces are the product |
 | Build backend | setuptools | Boring and universally understood; no build plugin needed |
-| Configuration format | TOML, parsed with `tomllib` | Standard library since 3.11 ([ADR-0006](../../decisions/ADR-0006-toml-configuration.md)) |
+| Configuration format | TOML, parsed with `tomllib` | Standard library since 3.11 ([ADR-0006](../decisions/ADR-0006-toml-configuration.md)) |
 
 Do not add a second tool for a job one of these already does.
 
