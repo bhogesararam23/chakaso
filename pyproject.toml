@@ -1,0 +1,141 @@
+[build-system]
+requires = ["setuptools>=77"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "chakaso"
+dynamic = ["version"]
+description = "Local-first, retrieval-grounded conversational AI with explicit evidence, provenance and correction."
+readme = "README.md"
+requires-python = ">=3.11"
+license = "Apache-2.0"
+license-files = ["LICENSE"]
+authors = [{ name = "Ram Bhogesara" }]
+keywords = [
+    "language-models",
+    "retrieval-augmented-generation",
+    "provenance",
+    "citations",
+    "uncertainty",
+    "research",
+]
+classifiers = [
+    "Development Status :: 2 - Pre-Alpha",
+    "Intended Audience :: Science/Research",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
+
+# The foundation is deliberately dependency-free: configuration, identifiers,
+# records and the model boundary are expressible with the standard library.
+# Heavy components (inference runtimes, tokenizers, embedding stacks, vector
+# indexes) are added by the module that needs them and stay optional, so the test
+# environment remains installable on a machine with no GPU.
+dependencies = []
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0,<10",
+    "ruff>=0.9,<1",
+    "mypy>=1.11,<2",
+]
+
+[project.scripts]
+chakaso = "chakaso.cli:main"
+
+[project.urls]
+Homepage = "https://github.com/bhogesararam23/chakaso"
+Repository = "https://github.com/bhogesararam23/chakaso"
+Issues = "https://github.com/bhogesararam23/chakaso/issues"
+Changelog = "https://github.com/bhogesararam23/chakaso/blob/main/CHANGELOG.md"
+
+[tool.setuptools]
+package-dir = { "" = "src" }
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+chakaso = ["py.typed"]
+
+[tool.setuptools.dynamic]
+version = { attr = "chakaso.__version__" }
+
+# ---------------------------------------------------------------------------
+# pytest
+# ---------------------------------------------------------------------------
+[tool.pytest.ini_options]
+minversion = "8.0"
+testpaths = ["tests"]
+# The default run never reaches the network. A test that needs it must say so.
+addopts = "-ra --strict-markers --strict-config -m 'not network'"
+markers = [
+    "network: requires network access (deselected by default)",
+    "slow: takes more than a couple of seconds",
+]
+filterwarnings = ["error"]
+
+# ---------------------------------------------------------------------------
+# ruff
+# ---------------------------------------------------------------------------
+[tool.ruff]
+target-version = "py311"
+line-length = 100
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+# Rules are listed explicitly rather than inherited from the defaults, so that
+# enabling one is a visible change with a reason.
+select = [
+    "A",    # builtin shadowing
+    "ARG",  # unused arguments
+    "B",    # bugbear
+    "C4",   # comprehensions
+    "E",    # pycodestyle errors
+    "EM",   # exception message construction
+    "F",    # pyflakes
+    "I",    # import sorting
+    "N",    # naming
+    "PTH",  # pathlib over os.path
+    "RET",  # return statement simplification
+    "RUF",  # ruff-specific
+    "SIM",  # simplification
+    "T20",  # print statements
+    "UP",   # pyupgrade
+    "W",    # pycodestyle warnings
+]
+ignore = [
+    # The formatter owns line length; E501 duplicates that decision and disagrees
+    # with it about long URLs and strings.
+    "E501",
+]
+
+[tool.ruff.lint.per-file-ignores]
+# A command line interface exists to write to stdout.
+"src/chakaso/cli.py" = ["T20"]
+"tests/*" = ["T20"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["chakaso"]
+
+[tool.ruff.format]
+docstring-code-format = true
+
+# ---------------------------------------------------------------------------
+# mypy
+# ---------------------------------------------------------------------------
+[tool.mypy]
+python_version = "3.11"
+files = ["src"]
+# Strict mode is deliberate: this project's product is its interfaces, and a type
+# error at a boundary is a defect that tests written against the same wrong
+# assumption will not catch.
+strict = true
+warn_unused_ignores = true
+warn_redundant_casts = true
+show_error_codes = true
+pretty = true
