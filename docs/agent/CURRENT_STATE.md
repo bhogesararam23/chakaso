@@ -1,6 +1,6 @@
 # Current state
 
-Last updated: 2026-10-07, at commit `feat: add the local conversation shell`.
+Last updated: 2026-10-07, at commit `feat: add document chunking`.
 
 This file is the authority on what exists. If it disagrees with any other
 document, this file is right and the other document is a defect.
@@ -24,12 +24,13 @@ A private planning note is never evidence that something is implemented.
 | Model boundary | `src/chakaso/models/` | `LanguageModel` protocol, capabilities, registry, contract tests |
 | Model implementations | `src/chakaso/models/deterministic.py` | A development double only. **No language model exists.** |
 | Evidence records | `src/chakaso/evidence/` | `SourceRecord`, `EvidenceChunk`, `EvidencePack`, URL canonicalization, citation resolution |
+| Chunking | `src/chakaso/retrieval/chunking.py` | Document text to evidence chunks: section-bounded, non-overlapping, deterministic (ADR-0010) |
 | Conversation state | `src/chakaso/conversation/state.py` | Immutable, append-only turns with provenance; topic, entities and open questions |
 | Conversation manager | `src/chakaso/conversation/manager.py` | Conducts one turn: context projection, model call, validation, evidence and citation recording. Transactional (ADR-0008) |
 | Conversation shell | `chakaso chat` | Interactive and one-shot. States in its own output that the engine is a development double |
-| Tests | `tests/` | 316 tests at the commit recorded above: package, CLI, configuration, primitives, model boundary, evidence, conversation state, conversation manager, repository hygiene. The count ages; the command does not. |
+| Tests | `tests/` | 346 tests at the commit recorded above: package, CLI, configuration, primitives, model boundary, evidence, conversation state, conversation manager, chunking, repository hygiene. The count ages; the command does not. |
 | CI | `.github/workflows/ci.yml` | Green on Python 3.11, 3.12, 3.13 |
-| Retrieval, evidence store, correction | **do not exist** | Planned |
+| Retrieval, evidence store, correction | **do not exist** | Planned. Chunking is the only retrieval code |
 
 ## What works
 
@@ -73,6 +74,9 @@ A private planning note is never evidence that something is implemented.
   saying that it is a development double, that nothing is retrieved, and that the
   conversation is not saved. The reply goes to stdout so the command stays
   scriptable.
+- Document text can be split into evidence chunks with section paths, document
+  positions and content-derived identifiers, and those chunks can be assembled into
+  an `EvidencePack`. Nothing yet reads a document or ranks chunks.
 - CI runs all of the above on three Python versions, with no secrets and no network
   access to a model provider.
 
@@ -104,7 +108,10 @@ one small thing each.
 ## What is not implemented
 
 - Query planner: nothing decides whether retrieval would help
-- Retrieval: fetch, parse, chunk, rank, index, embeddings
+- Reading a document from a local path, which is blocked on what identifies a source
+  with no URL
+- Ranking, indexing and embeddings: chunks cannot be scored or searched yet
+- Fetching and parsing web content
 - Claim-level support checking. Citation *reference* validation exists; whether cited
   evidence actually supports a claim does not.
 - Reassessment and the correction loop

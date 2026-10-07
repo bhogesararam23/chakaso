@@ -8,6 +8,39 @@ and cannot currently be made well.
 
 ## Blocking: retrieval
 
+### What is the identity of a document that has no URL?
+
+**Found while scoping local ingestion, and not yet answered.**
+
+Source identity is derived from the canonical URL and a content hash
+([ADR-0007](../decisions/ADR-0007-content-derived-identifiers.md)), and
+`canonicalize_url` accepts only `http` and `https` because those are the schemes the
+fetcher may retrieve. A local file has neither. Its honest identity is its absolute
+path plus a content hash.
+
+The candidates, none of them free:
+
+- **A `file://` reference.** Standard, and what the scheme exists for. The cost is
+  that `canonicalize_url`'s scheme check currently means "may be fetched", and
+  widening it would quietly widen what the future fetcher is allowed to retrieve.
+  Keeping identity and fetchability in one list is how a security check becomes a
+  normalizer.
+- **A separate reference type for local documents.** Honest about the distinction,
+  but it means `SourceRecord` holds either a URL or a filesystem path, and every
+  consumer learns to handle both.
+- **Refuse local documents and require a URL.** No new decision, but it makes
+  ingestion depend on fetching, so the retrieval layer cannot be built or tested
+  before the fetch policy exists.
+
+**What would resolve it.** Deciding whether a source reference and a fetchable URL are
+the same concept. They probably are not: one is an identity, the other is a
+permission. That is a decision record, and it should be written before ingestion
+rather than during it.
+
+**Why it is recorded instead of guessed.** ADR-0007 makes the canonicalization rule
+part of the identifier contract, so changing it changes every future identifier. A
+decision that broad should not be made as a side effect of a file-reading module.
+
 ### How should the first web fetch mechanism work?
 
 The constraint is that the fetch path must not require a commercial search API

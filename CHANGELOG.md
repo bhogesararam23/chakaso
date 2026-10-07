@@ -10,6 +10,36 @@ capability is implemented or still planned.
 
 ## Unreleased
 
+### 2026-10-07 — Document chunking
+
+**Added**
+
+- `chakaso.retrieval.chunk_document`: splits document text belonging to an
+  already-identified source into `EvidenceChunk` records. Chunks carry a section
+  path, a position in document order, and a content-derived identifier.
+- `split_sections`: Markdown-heading splitting with nested heading paths, so a
+  citation into a subsection says where the subsection sits.
+- `ChunkingConfig`, with a target size and a hard ceiling, in characters.
+- ADR-0010 records the chunking decision. Chunks never cross a section boundary and
+  do not overlap. Overlap was declined deliberately: with content-derived
+  identifiers, overlapping chunks would report one sentence under several
+  identifiers, which inflates every retrieval metric that counts chunks and makes
+  "how many chunks mention this" meaningless. The boundary failure that overlap hides
+  is now something an evaluation can measure.
+
+**Notes**
+
+- Sizes are characters, not tokens. `token_count` on a chunk stays unset, because
+  there is no tokenizer and a character count in a field named `token_count` would be
+  a lie a later reader would trust.
+- Chunking does not read files, does not fetch and does not rank. Nothing here has
+  touched the network.
+- Reading a document from a local path turned out to be blocked: a document with no
+  URL has no identity under ADR-0007, and `canonicalize_url`'s scheme check currently
+  doubles as the fetch permission list. Widening it in a file-reading module would
+  quietly widen what the future fetcher may retrieve, so the question is recorded in
+  `docs/research/open-questions.md` and no ingestion code was written.
+
 ### 2026-10-07 — Local conversation shell
 
 **Added**

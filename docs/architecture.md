@@ -103,7 +103,7 @@ Each component owns one thing and must not grow into its neighbour.
 | Retriever | Find candidate documents and chunks | Generate the final answer | Planned |
 | Fetcher | Retrieve permitted public content under an explicit policy | Interpret facts | Planned |
 | Document Processor | Extract readable text, metadata and section structure | Invent missing text | Planned |
-| Chunker | Produce stable evidence units with positions | Rank claims | Planned |
+| Chunker | Produce stable evidence units with positions | Rank claims | Implemented (Markdown structure, no overlap: ADR-0010) |
 | Ranker | Order candidate evidence | Generate the answer | Planned |
 | Evidence Store | Persist source and chunk records, metadata and hashes | Produce user-facing prose | Planned |
 | Model Adapter | Uniform interface to any local or future model | Search | Implemented (boundary and registry; no trained model) |

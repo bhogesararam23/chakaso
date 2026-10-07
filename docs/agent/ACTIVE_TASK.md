@@ -1,10 +1,11 @@
 # Active task
 
-## Current unit: P3 — local retrieval (not started)
+## Current unit: P3 — local retrieval (chunking done; ingestion blocked)
 
 **Goal.** Take documents that are already on disk, split them into evidence chunks
 with stable identifiers, and rank them for a query — without embeddings, without a
 network and without a model. Then assemble an `EvidencePack` from the result.
+Chunking is done; ingestion and ranking are not.
 
 **Why this is next.** `ConversationManager.send` already accepts an `EvidencePack`,
 and nothing can produce one. Until something can, citation resolution is exercised
@@ -43,37 +44,63 @@ about answer quality.
       concrete model adapter
 - [x] A local conversation shell: `chakaso chat`, interactive and one-shot, which
       states in its own output that the engine is a development double
+- [x] Chunking: document text to evidence chunks, section-bounded and
+      non-overlapping, with a decision record (ADR-0010)
 
-## Definition of done for the current unit
+## Current state of this unit
 
-- Ingest a document from a local path into a `SourceRecord` with a derived
-  identifier, a content hash and no network access.
-- Split it into `EvidenceChunk` records that preserve section boundaries and
-  positions, with identifiers that change when the text does.
-- Rank chunks for a query with a lexical scorer, and record the result as a retrieval
-  score rather than as anything resembling confidence.
-- Assemble an `EvidencePack` from the result, so that `ConversationManager.send` can
-  be given real evidence end to end.
-- Retrieval is reachable through an interface, so that a later dense or hybrid
-  retriever can replace the lexical one without changing callers.
-- `pytest`, `ruff check`, `ruff format --check` and `mypy src` pass on Python 3.11,
-  3.12 and 3.13.
-- Documentation states what retrieval does, and does not imply that anything has been
-  fetched from the web.
+Chunking is done. What remains is blocked, deliberately.
+
+Reading a local file requires deciding what identifies a document that has no URL.
+Source identity is derived from the canonical URL
+([ADR-0007](../decisions/ADR-0007-content-derived-identifiers.md)), and
+`canonicalize_url`'s scheme check currently doubles as the fetch permission list, so
+widening it to accept a local reference would quietly widen what the future fetcher may
+retrieve. That is a decision record, not a side effect of a file-reading module, and it
+is written up in
+[`../research/open-questions.md`](../research/open-questions.md#what-is-the-identity-of-a-document-that-has-no-url).
+No ingestion code will be written until it is answered.
+
+Done in this unit:
+
+- [x] Split document text into `EvidenceChunk` records that preserve section
+      boundaries and document positions.
+- [x] Chunk identifiers change when the text or a position changes, and different
+      settings produce a disjoint set rather than redefining existing chunks.
+- [x] A document with no content produces no chunks rather than an empty one.
+- [x] Deterministic: the same input produces identical output.
+- [x] `pytest`, `ruff check`, `ruff format --check` and `mypy src` pass on Python
+      3.11, 3.12 and 3.13.
+- [x] Documentation states what chunking does, and that it is not retrieval on its
+      own.
+
+Still to do in this unit, in order:
+
+1. Decide what identifies a source with no URL, and record it.
+2. Read a document from a local path into a `SourceRecord`, then chunk it.
+3. Rank chunks for a query with a lexical scorer, and record the result as a
+   retrieval score rather than as anything resembling confidence.
+4. Assemble an `EvidencePack` from the result, so `ConversationManager.send` can be
+   given real evidence end to end, and expose retrieval through an interface so a
+   later dense or hybrid retriever can replace the lexical one.
 
 ## Not started, and the order they will be taken
 
-1. A fetch policy, then a web fetch mechanism under it (P4). The policy comes first:
+1. Local document identity, then ingestion from a local path (P3). Identity first: it
+   is a blocking open question above.
+2. Lexical ranking of chunks for a query, then `EvidencePack` assembly (P3), so that
+   `ConversationManager.send` can be given real evidence end to end.
+3. A fetch policy, then a web fetch mechanism under it (P4). The policy comes first:
    it is a blocking open question, and the security posture is currently a list of
    threats with no limits.
-2. Dense embeddings and a vector index (P3/P4), once the lexical baseline shows what
+4. Dense embeddings and a vector index (P3/P4), once the lexical baseline shows what
    it cannot do.
-3. Query planning: deciding when retrieval is needed at all (P4).
-4. Claim-level support checking, then reassessment and the correction loop (P5).
-5. The evaluation harness and the first hand-built benchmark (P6).
-6. A local model adapter runnable on CPU (P2/P7), which is what makes the shell more
+5. Query planning: deciding when retrieval is needed at all (P4).
+6. Claim-level support checking, then reassessment and the correction loop (P5).
+7. The evaluation harness and the first hand-built benchmark (P6).
+8. A local model adapter runnable on CPU (P2/P7), which is what makes the shell more
    than a plumbing demonstration.
-7. Tokenizer, dataset pipeline and the tiny Transformer (P7–P8).
+9. Tokenizer, dataset pipeline and the tiny Transformer (P7–P8).
 
 The ordering is deliberate: retrieval before fetching, because a fetch policy cannot
 be written without knowing what the retrieval layer needs; evaluation before

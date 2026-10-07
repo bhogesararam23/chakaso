@@ -23,6 +23,39 @@ three URLs from occupying half the evidence pack. Section boundaries survive
 chunking because a chunk that straddles two sections has no defensible citation
 position.
 
+## Chunking
+
+**Implemented.** `chakaso.retrieval.chunk_document` turns document text and an
+already-identified source into `EvidenceChunk` records.
+
+The rules, in order:
+
+1. Split at Markdown headings, and keep each heading with its body. A heading's path
+   is reported in full (`4. Deadlines > 4.1 Extensions`), so a citation into a
+   subsection says where the subsection sits.
+2. Split each section into paragraphs at blank lines.
+3. Pack consecutive paragraphs into a chunk until adding the next would pass the
+   target size. A paragraph that would overflow starts a new chunk.
+4. A paragraph too large for one chunk is split at sentence ends; a single sentence
+   too large even for that is cut.
+5. Positions are assigned sequentially across the whole document, so position order
+   is document order and a gap would mean text was dropped.
+
+Chunks never cross a section boundary and do not overlap, for the reasons in
+[ADR-0010](decisions/ADR-0010-section-bounded-chunks.md): a chunk spanning two
+headings has no pointable citation position, and overlapping chunks would report one
+sentence under several identifiers, which inflates every retrieval metric that counts
+chunks.
+
+Sizes are counted in **characters**, not tokens. There is no tokenizer, so
+`token_count` on a chunk is left unset rather than filled with a character count that
+a later reader would trust.
+
+Chunking does not read files and does not fetch anything. Reading a document from a
+local path is not implemented, because a document with no URL has no identity yet —
+see
+[`research/open-questions.md`](research/open-questions.md#what-is-the-identity-of-a-document-that-has-no-url).
+
 ## Source identity
 
 Retrieval assigns identity; the model does not
@@ -123,7 +156,8 @@ evidence textually and structurally.
 | Citation resolution, including rejection of unknown identifiers | Implemented |
 | Fetch policy and fetcher | Planned |
 | Document processing and main-content extraction | Planned |
-| Chunking | Planned |
+| Reading a document from a local path | Planned (blocked on local document identity) |
+| Chunking | Implemented |
 | Local lexical ranking baseline | Planned |
 | Dense embeddings and vector index | Planned |
 | Reranking | Planned |
