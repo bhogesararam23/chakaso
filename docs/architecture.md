@@ -106,13 +106,15 @@ Each component owns one thing and must not grow into its neighbour.
 | Chunker | Produce stable evidence units with positions | Rank claims | Planned |
 | Ranker | Order candidate evidence | Generate the answer | Planned |
 | Evidence Store | Persist source and chunk records, metadata and hashes | Produce user-facing prose | Planned |
-| Model Adapter | Uniform interface to any local or future model | Search | Planned |
+| Model Adapter | Uniform interface to any local or future model | Search | Implemented (boundary and registry; no trained model) |
 | Grounding / Citation Validator | Check that every cited identifier exists and that cited evidence supports the claim | Rewrite the user's request | Planned |
 | Reassessment Engine | Compare previous claims with new evidence and decide retain/qualify/correct | Silently rewrite history | Planned |
 | Evaluation | Measure behaviour and detect regressions | Change production behaviour | Planned |
 
-A component marked "Planned" has no code. Configuration is the only one implemented
-so far; [`agent/CURRENT_STATE.md`](agent/CURRENT_STATE.md) is the authority.
+A component marked "Planned" has no code. Configuration and the model boundary are
+implemented; [`agent/CURRENT_STATE.md`](agent/CURRENT_STATE.md) is the authority,
+including on the fact that the only implementation of the boundary is a
+development double rather than a language model.
 
 ## Interfaces
 
@@ -121,8 +123,8 @@ The boundaries that exist, or that the project is committed to building:
 | Boundary | Shape | Status |
 | --- | --- | --- |
 | Configuration schema | Typed fields with declared ranges and patterns, loaded explicitly from TOML with per-value provenance | Implemented |
-| `LanguageModel` | generate, structured generation, tokenize, metadata, declared capabilities | Planned |
-| Model registry | name -> implementation, one selection point | Planned |
+| `LanguageModel` | `metadata` plus `generate` over a message list and explicit generation parameters | Implemented |
+| Model registry | adapter name -> factory, with one creation entry point | Implemented |
 | `SourceRecord` | immutable retrieved-source identity and metadata | Planned |
 | `EvidenceChunk` | immutable evidence unit referencing a source | Planned |
 | `EvidencePack` | the set of chunks supplied to one generation call | Planned |
@@ -134,7 +136,30 @@ The boundaries that exist, or that the project is committed to building:
 
 "Planned" here means there is no code, and the shape described is the specification
 to build against rather than a description of something that exists. Configuration
-is the only boundary implemented so far.
+and the model boundary are the only boundaries implemented so far.
+
+### The model boundary
+
+`chakaso.models` implements ADR-0002. It is narrow by construction:
+
+- `LanguageModel` requires exactly two things: `metadata` and `generate` over a
+  message list with explicit `GenerationParams`.
+- Optional behaviour is declared as a `Capability` (`tokenize`,
+  `structured_generation`) and implemented on a separate protocol — `Tokenizer`,
+  `StructuredGenerator`. An implementation that cannot do something is not forced
+  to define a method that raises.
+- The declaration and the method are reconciled by module-level helpers,
+  `tokenize()` and `generate_structured()`, which check the declared capability and
+  then delegate. A model that declares a capability it does not implement is
+  reported as a defect in the implementation rather than as caller error, because
+  a caller has no way to plan around a false declaration.
+- `metadata.development_double` marks an implementation that is not a language
+  model. It exists so that documentation and reports can say plainly that no model
+  was involved in a result.
+
+`create_model(config)` is the single place where configuration becomes a model.
+`chakaso.models.deterministic` provides the development double selected by
+`configs/default.toml`; it declares no capabilities and produces fixed text.
 
 ## Data flow for one turn
 

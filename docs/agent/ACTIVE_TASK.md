@@ -25,10 +25,10 @@ research repository becomes unreproducible.
 - [x] CI running format, lint, types and tests on Python 3.11, 3.12 and 3.13
 - [x] Typed configuration with explicit loading and per-value provenance (ADR-0006)
 - [x] Core primitives: content-derived identifiers, hashing, error base (ADR-0007)
+- [x] Language-model boundary, capabilities, registry and contract tests (ADR-0002)
 
 ### In progress
 
-- [ ] Language-model boundary with contract tests
 - [ ] Source, evidence and conversation records
 
 ### Not started, and in the order they will be taken

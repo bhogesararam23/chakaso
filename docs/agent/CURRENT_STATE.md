@@ -1,6 +1,6 @@
 # Current state
 
-Last updated: 2026-10-07, at commit `feat: add core identifier and hashing primitives`.
+Last updated: 2026-10-07, at commit `feat: add the language-model boundary`.
 
 This file is the authority on what exists. If it disagrees with any other
 document, this file is right and the other document is a defect.
@@ -21,9 +21,11 @@ A private planning note is never evidence that something is implemented.
 | CLI | `src/chakaso/cli.py` | `--version`, `info`, `config show` |
 | Configuration | `src/chakaso/config/`, `configs/default.toml` | Typed schema, explicit loading, per-value provenance |
 | Core primitives | `src/chakaso/core/` | Content-derived identifiers, SHA-256 hashing, error base |
-| Tests | `tests/` | 100 tests across package, CLI, configuration, primitives and repository hygiene |
+| Model boundary | `src/chakaso/models/` | `LanguageModel` protocol, capabilities, registry, contract tests |
+| Model implementations | `src/chakaso/models/deterministic.py` | A development double only. **No language model exists.** |
+| Tests | `tests/` | 161 tests across package, CLI, configuration, primitives, the model boundary and repository hygiene |
 | CI | `.github/workflows/ci.yml` | Green on Python 3.11, 3.12, 3.13 |
-| Model interface | **does not exist** | Next unit |
+| Conversation state | **does not exist** | Next unit |
 | Retrieval, evidence store, correction | **do not exist** | Planned |
 
 ## What works
@@ -39,13 +41,19 @@ A private planning note is never evidence that something is implemented.
   file is missing, malformed, or contains an unknown key or an out-of-range value.
 - Source and chunk identifiers can be derived from content and validated from a
   string, which is the path a citation from generated text will take.
+- `create_model(config)` builds the adapter named in configuration, and raises
+  `UnknownModelError` listing the registered adapters when the name is wrong. The
+  only adapter that exists is the deterministic development double.
+- Asking the double to tokenize or produce structured output fails at the boundary
+  with a message naming the model and the capability, rather than returning
+  something that looks like an answer.
 - CI runs all of the above on three Python versions, with no secrets and no network
   access to a model provider.
 
-No conversation can be held, nothing is retrieved, no answer is generated and no
-citation is resolved. The `model.adapter` setting names an adapter that does not
-exist yet, so any code attempting to resolve it would fail — and no such code
-exists.
+**No language model is present in this repository.** The only implementation of the
+model boundary is a development double declared as such in its own metadata. No
+conversation can be held, nothing is retrieved, no answer is generated and no
+citation is resolved.
 
 ## What is tested
 
@@ -55,6 +63,7 @@ exists.
 | CLI | Version, help, unknown command, `info`, `config show` including failure paths |
 | Configuration | Defaults, file layering and precedence, provenance, unknown keys, wrong types, boolean-vs-integer, ranges, name pattern, missing file, directory, invalid TOML, array values, immutability, schema/dataclass agreement, shipped file vs built-in defaults |
 | Identifiers and hashing | Digest agreement with `hashlib`, UTF-8 handling, truncation bounds, part-separator ambiguity, derivation determinism, deduplication, content-change distinction, position and text sensitivity, malformed identifier rejection, ordering and hashing |
+| Model boundary | The inherited contract suite (metadata, provenance of results, repeatability at zero temperature, empty-request rejection, length ceiling, unsupported-capability failures, declared capabilities being implemented), plus capability reconciliation, parameter validation, registry failure paths and the double's documented behaviour |
 | Repository invariants | Private pack never tracked, `.gitignore` rule present, no secret-shaped files, no tracked file over 1 MiB, no commercial provider dependency, ADR numbering and indexing, documentation links resolve |
 
 ## What is experimental
@@ -64,16 +73,15 @@ one small thing each.
 
 ## What is not implemented
 
-- Language-model interface, registry and every adapter
 - Conversation state and the conversation manager
 - Query planner
 - Retrieval: fetch, parse, chunk, rank, index, embeddings
-- Evidence records and citation resolution
+- Source records, evidence chunks, evidence packs and citation resolution
 - Grounding and citation validation
 - Reassessment and the correction loop
 - Evaluation harness, benchmarks and metrics
 - Tokenizer, dataset pipeline, model code, training loop
-- Any model weights, of any size
+- A local inference adapter, and any model weights of any size
 
 ## Decisions made
 
@@ -104,7 +112,8 @@ architectural decision made so far rests on reasoning rather than measurement.
 
 ## Next step
 
-The language-model boundary (ADR-0002): a narrow interface, a declared-capability
-model, a registry with a single selection point, contract tests that any
-implementation must satisfy, and one development double so that higher-level
-behaviour can be tested without weights. See [`ACTIVE_TASK.md`](ACTIVE_TASK.md).
+Source, evidence and conversation records: an immutable `SourceRecord` and
+`EvidenceChunk` carrying derived identifiers and provenance, URL normalization and
+deduplication, an `EvidencePack` that validation can check citations against, and
+the conversation state that follow-up questions will resolve against. See
+[`ACTIVE_TASK.md`](ACTIVE_TASK.md).

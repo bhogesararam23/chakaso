@@ -25,6 +25,7 @@ from typing import cast
 from chakaso.config.errors import ConfigValidationError
 
 __all__ = [
+    "ADAPTER_NAME_PATTERN",
     "SPECS",
     "Config",
     "FieldSpec",
@@ -64,8 +65,10 @@ class FieldSpec:
 
 
 # Names are used to look adapters up in the model registry, so they are restricted
-# to a form that is stable in configuration files, log lines and file names.
-_ADAPTER_NAME = r"[a-z][a-z0-9_]*"
+# to a form that is stable in configuration files, log lines and file names. The
+# model registry validates against this same pattern, so a name that cannot be
+# configured cannot be registered either.
+ADAPTER_NAME_PATTERN = r"[a-z][a-z0-9_]*"
 
 SPECS: tuple[FieldSpec, ...] = (
     FieldSpec(
@@ -77,7 +80,7 @@ SPECS: tuple[FieldSpec, ...] = (
         # configs/default.toml change together, and a test enforces that.
         default="deterministic",
         description="Registered language-model adapter to use (ADR-0002)",
-        pattern=_ADAPTER_NAME,
+        pattern=ADAPTER_NAME_PATTERN,
     ),
     FieldSpec(
         key="model.max_new_tokens",

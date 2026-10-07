@@ -10,6 +10,31 @@ capability is implemented or still planned.
 
 ## Unreleased
 
+### 2026-10-07 — Language-model boundary
+
+**Added**
+
+- `chakaso.models`: the boundary application code depends on, implementing
+  ADR-0002. `LanguageModel` requires only `metadata` and `generate`; optional
+  behaviour is declared as a `Capability` and implemented on a separate protocol,
+  with `tokenize()` and `generate_structured()` reconciling the declaration and the
+  implementation. A model that declares a capability it does not implement is
+  reported as a defective implementation rather than as caller error.
+- `ModelRegistry` and `create_model(config)`: the single place where configuration
+  becomes a model. Re-registering a name is rejected rather than allowed to shadow.
+- `chakaso.models.deterministic`: a development double that produces fixed text,
+  declares no capabilities, and marks itself with
+  `metadata.development_double = True`. It is not a language model and says so in
+  its own metadata, so a report can state plainly that no model was involved.
+- Contract tests that every implementation of the boundary inherits, so a new
+  adapter cannot pass its own tests while violating the interface.
+
+**Note on scope**
+
+The only implementation of the boundary is the development double. There is no
+trained Chakaso model and no local inference adapter, so nothing in this repository
+generates language. Retrieval, correction and evaluation still do not exist.
+
 ### 2026-10-07 — Core primitives
 
 **Added**

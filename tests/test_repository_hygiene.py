@@ -92,6 +92,57 @@ def test_private_documentation_pack_is_never_tracked(tracked_files: list[Path]) 
     )
 
 
+def test_no_source_file_is_ignored() -> None:
+    # A .gitignore pattern without a leading separator matches at any depth. The
+    # first version of this repository's .gitignore contained a bare `models/` to
+    # exclude model weights, which also excluded `src/chakaso/models/`: an entire
+    # package, invisible to `git status`, one commit away from being silently
+    # absent from the repository.
+    roots = [REPO_ROOT / "src", REPO_ROOT / "tests", REPO_ROOT / "configs"]
+    candidates = [
+        path
+        for root in roots
+        if root.exists()
+        for path in root.rglob("*")
+        if path.is_file() and not _is_generated(path)
+    ]
+
+    ignored = _ignored_paths(candidates)
+
+    assert not ignored, (
+        "Source files are excluded by .gitignore. Anchor the offending pattern with a "
+        f"leading slash: {sorted(ignored)}"
+    )
+
+
+def _is_generated(path: Path) -> bool:
+    """Whether ``path`` is a build or tool artifact rather than source.
+
+    Generated directories are supposed to be ignored, so their presence is not
+    evidence that a source pattern went wrong. The list is explicit rather than
+    "anything hidden", so that a hidden source file which became ignored is still
+    reported.
+    """
+    generated = {"__pycache__", ".pytest_cache", ".ruff_cache", ".mypy_cache"}
+    return any(part in generated or part.endswith(".egg-info") for part in path.parts)
+
+
+def _ignored_paths(paths: list[Path]) -> set[str]:
+    """Return the subset of ``paths`` that git reports as ignored."""
+    if not paths:
+        return set()
+    # check-ignore exits 1 when nothing matches, so check=True would be wrong here.
+    result = subprocess.run(
+        ["git", "check-ignore", "--stdin"],
+        cwd=REPO_ROOT,
+        input="\n".join(str(path) for path in paths),
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    return {line.strip() for line in result.stdout.splitlines() if line.strip()}
+
+
 def test_gitignore_declares_the_private_documentation_pack() -> None:
     # The test above only catches a leak that has already happened. This one
     # catches the rule being removed from .gitignore before it can.

@@ -26,10 +26,10 @@ wheels/
 src/*.egg-info/
 
 # Virtual environments
-.venv/
-venv/
-env/
-ENV/
+/.venv/
+/venv/
+/env/
+/ENV/
 .python-version
 
 # ==============================================================================
@@ -42,10 +42,10 @@ ENV/
 .coverage
 .coverage.*
 coverage.xml
-htmlcov/
-.tox/
-.nox/
-hypothesis/
+/htmlcov/
+/.tox/
+/.nox/
+/hypothesis/
 junit*.xml
 *.log
 
@@ -64,8 +64,13 @@ configs/local.toml
 # Weights, checkpoints, tokenizers and dataset shards are large and reproducible
 # from recorded configuration. They are never committed by default; the artifact
 # policy is recorded in docs/internal/engineering/artifact-policy.md.
-checkpoints/
-models/
+#
+# Every entry here is anchored with a leading slash. A pattern without a separator
+# matches at any depth, so a bare `models/` would also ignore `src/chakaso/models/`
+# — which is exactly what happened when this file was first written, and is why
+# tests/test_repository_hygiene.py fails if anything under src/ is ignored.
+/checkpoints/
+/models/
 *.safetensors
 *.bin
 *.pt
@@ -78,15 +83,15 @@ models/
 *.model
 
 # Local experiment outputs and caches
-experiments/**/outputs/
-experiments/**/runs/
-data/raw/
-data/processed/
-data/cache/
-.cache/
-wandb/
-mlruns/
-lightning_logs/
+/experiments/**/outputs/
+/experiments/**/runs/
+/data/raw/
+/data/processed/
+/data/cache/
+/.cache/
+/wandb/
+/mlruns/
+/lightning_logs/
 
 # ==============================================================================
 # Editors and operating systems
