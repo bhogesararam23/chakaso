@@ -20,10 +20,14 @@ against a model whose parameters, data and training procedure are known.
 
 ## Status
 
-**This repository is at the very beginning.** There is no runnable system and no
-trained model. The current phase is foundation work: repository conventions, a
-Python package boundary, typed configuration, the language-model interface, and
-the source/evidence records that everything else will be built on.
+**There is a conversation shell, and no language model.** `chakaso chat` holds a
+conversation end to end — configuration, context projection, the model boundary,
+evidence and citation recording — but the only model implementation is a
+deterministic development double that returns fixed text. It answers nothing, and it
+says so when you start it.
+
+There is no retrieval, no fetching, no correction loop, no tokenizer and no training
+code. Nothing is measured, because nothing that would produce a number exists yet.
 
 The status vocabulary used across this documentation is:
 
@@ -40,12 +44,13 @@ The status vocabulary used across this documentation is:
 | Repository conventions, licensing, decision records | Implemented |
 | Public and internal documentation | Implemented |
 | Tests and CI | Implemented (Python 3.11–3.13, no secrets, no network dependency) |
-| Python package, configuration, CLI | Implemented (minimal) |
+| Python package, configuration, CLI | Implemented |
 | Language-model interface and model registry | Implemented (interface only; no trained model) |
 | Source, evidence and citation records | Implemented (data model only; no retrieval) |
-| Conversation state | Implemented (data model only; no engine) |
+| Conversation state | Implemented |
+| Conversation manager, and a CLI conversation shell | Implemented (orchestration only; replies come from a development double) |
 | Retrieval (local index, ranking, web fetch) | Planned |
-| Grounding validation and correction loop | Planned |
+| Claim-level support checking and the correction loop | Planned |
 | Tokenizer training | Planned |
 | Tiny from-scratch Transformer | Planned |
 | Any trained Chakaso weights | Does not exist |
@@ -96,8 +101,7 @@ Chakaso treats those as architectural properties rather than prompt instructions
 
 ## Getting started
 
-There is no application to run yet. The current repository is a Python package
-with configuration, core primitives and its test suite.
+There is one thing to run, and it is honest about itself:
 
 ```bash
 git clone https://github.com/bhogesararam23/chakaso.git
@@ -111,10 +115,27 @@ source .venv/bin/activate
 python -m pip install -e ".[dev]"
 python -m pytest
 python -m chakaso --version
+
+# hold a conversation
+python -m chakaso chat
 ```
 
-Full instructions, including how to work without installing anything, are in
-[`docs/getting-started.md`](docs/getting-started.md).
+```
+$ python -m chakaso chat --message "What does the specification say?"
+engine: deterministic (Deterministic double (not a language model))
+This is a development double, not a language model. It returns fixed text that
+exercises the conversation plumbing, and it does not answer anything.
+...
+Deterministic double (not a language model). It received 1 message(s); the last
+was 32 characters of 'user' text.
+```
+
+The notice goes to standard error and the reply to standard output, so the output
+above is what a script would capture. Read it as evidence that the conversation
+boundary works end to end, not as an answer to the question.
+
+Full instructions, including how to work without installing anything and how to test
+the declared Python floor, are in [`docs/getting-started.md`](docs/getting-started.md).
 
 ## Repository layout
 

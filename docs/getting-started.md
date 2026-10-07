@@ -2,12 +2,20 @@
 
 ## What you can actually run
 
-Chakaso has no application yet. There is no chat interface, no retrieval, no
-trained model. What exists is a Python package with typed configuration, core
-primitives, the language-model interface and the source/evidence records, plus
-the test suite that covers them.
+One thing: `chakaso chat`, a conversation shell that runs end to end.
 
-This document describes how to install and verify that package. It will grow as
+**There is no language model in Chakaso.** The only implementation of the model
+boundary is a deterministic development double, which returns fixed text describing
+the request it received. It does not answer questions, and the shell says so before
+it produces anything. The reply is evidence that the conversation boundary works —
+context projection, the model call, validation, evidence and citation recording —
+not an answer.
+
+There is also no retrieval, no fetching, no correction loop, no tokenizer and no
+training code. `chakaso config show` inspects configuration, and `chakaso --version`
+verifies an install.
+
+This document describes how to install, verify and run what exists. It will grow as
 the system does, and it will not describe anything that does not exist.
 
 ## Requirements
@@ -85,6 +93,61 @@ python3.11 -m venv .venv311
 ```
 
 On Linux and macOS the paths are `.venv311/bin/python` instead.
+
+## Holding a conversation
+
+```bash
+python -m chakaso chat
+```
+
+The shell reads messages from standard input and prints replies to standard output.
+Two commands end it: `:quit` and `:exit`, and end of input works too. Blank lines are
+ignored rather than sent. A failed turn is reported and the session continues, because
+a failure leaves the conversation unchanged
+([ADR-0008](decisions/ADR-0008-transactional-turns.md)).
+
+To send one message and exit, which is what a script wants:
+
+```bash
+python -m chakaso chat --message "What does the specification say?"
+```
+
+Configuration is chosen the same way `config show` chooses it:
+
+```bash
+python -m chakaso chat --config configs/default.toml
+```
+
+### Read this before believing a reply
+
+The shell prints a notice on **standard error** before the first reply:
+
+```
+engine: deterministic (Deterministic double (not a language model))
+This is a development double, not a language model. It returns fixed text that
+exercises the conversation plumbing, and it does not answer anything.
+No retrieval, no citations, no correction, and no confidence. The conversation is
+not saved and is lost when this process exits.
+```
+
+That is not a disclaimer bolted on at the end. The `development_double` flag is part
+of the model's own metadata, so the notice is derived from what the model says about
+itself rather than from a hard-coded string that could drift out of date.
+
+The reply goes to standard output and everything else to standard error, so
+`--message` stays usable in a pipeline. Scripting it is fine; reading its output as
+an answer is not.
+
+Two more things the shell will tell you about, on standard error, when they happen:
+
+- **A truncated reply.** Generation stopped at the configured length ceiling, so the
+  reply is incomplete. A caller that cannot tell that from a finished answer would
+  present one as the other.
+- **An unresolved evidence reference.** The reply cited evidence it was not given.
+  Nothing was resolved to a source, and the reference is listed
+  ([ADR-0009](decisions/ADR-0009-unresolved-references-are-recorded.md)). Nothing can
+  produce evidence yet, so this should only be reachable with a model that invents
+  identifiers.
 
 ## Running without installing
 

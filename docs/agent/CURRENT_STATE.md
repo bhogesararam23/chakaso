@@ -1,6 +1,6 @@
 # Current state
 
-Last updated: 2026-10-07, at commit `feat: add the conversation manager`.
+Last updated: 2026-10-07, at commit `feat: add the local conversation shell`.
 
 This file is the authority on what exists. If it disagrees with any other
 document, this file is right and the other document is a defect.
@@ -18,7 +18,7 @@ A private planning note is never evidence that something is implemented.
 | Contribution guide | `CONTRIBUTING.md` | |
 | Agent contract | `AGENTS.md`, `docs/agent/` | |
 | Python package | `src/chakaso/` | Installs; typed; `py.typed` ships |
-| CLI | `src/chakaso/cli.py` | `--version`, `info`, `config show` |
+| CLI | `src/chakaso/cli.py` | `--version`, `info`, `config show`, `chat` |
 | Configuration | `src/chakaso/config/`, `configs/default.toml` | Typed schema, explicit loading, per-value provenance |
 | Core primitives | `src/chakaso/core/` | Content-derived identifiers, SHA-256 hashing, error base |
 | Model boundary | `src/chakaso/models/` | `LanguageModel` protocol, capabilities, registry, contract tests |
@@ -26,7 +26,8 @@ A private planning note is never evidence that something is implemented.
 | Evidence records | `src/chakaso/evidence/` | `SourceRecord`, `EvidenceChunk`, `EvidencePack`, URL canonicalization, citation resolution |
 | Conversation state | `src/chakaso/conversation/state.py` | Immutable, append-only turns with provenance; topic, entities and open questions |
 | Conversation manager | `src/chakaso/conversation/manager.py` | Conducts one turn: context projection, model call, validation, evidence and citation recording. Transactional (ADR-0008) |
-| Tests | `tests/` | 301 tests at the commit recorded above: package, CLI, configuration, primitives, model boundary, evidence, conversation state, conversation manager, repository hygiene. The count ages; the command does not. |
+| Conversation shell | `chakaso chat` | Interactive and one-shot. States in its own output that the engine is a development double |
+| Tests | `tests/` | 316 tests at the commit recorded above: package, CLI, configuration, primitives, model boundary, evidence, conversation state, conversation manager, repository hygiene. The count ages; the command does not. |
 | CI | `.github/workflows/ci.yml` | Green on Python 3.11, 3.12, 3.13 |
 | Retrieval, evidence store, correction | **do not exist** | Planned |
 
@@ -67,13 +68,20 @@ A private planning note is never evidence that something is implemented.
 - Evidence supplied to `send` is what citations resolve against. A reference the
   model was not given is reported as unresolved and is never resolved to a source
   (ADR-0009).
+- `python -m chakaso chat` holds a conversation: interactive on stdin, or one
+  message with `--message`. It prints a notice on stderr naming the engine and
+  saying that it is a development double, that nothing is retrieved, and that the
+  conversation is not saved. The reply goes to stdout so the command stays
+  scriptable.
 - CI runs all of the above on three Python versions, with no secrets and no network
   access to a model provider.
 
 **No language model is present in this repository.** The only implementation of the
 model boundary is a development double declared as such in its own metadata, so a
 conversation can be held but nothing intelligent is produced by it. Nothing is
-retrieved, and no citation resolves unless a caller supplies evidence.
+retrieved, and no citation resolves unless a caller supplies evidence. A shell that
+replies fluently invites the wrong conclusion, so `chat` says what it is before it
+says anything else.
 
 ## What is tested
 
@@ -137,16 +145,17 @@ architectural decision made so far rests on reasoning rather than measurement.
 
 ## Next step
 
-The conversation manager exists, so the next unit in P2 is the **local conversation
-shell**: a `chakaso chat` command that wires configuration, the model registry and
-the manager together, so that the turn boundary can be exercised by a person rather
-than only by tests. It must state in its own output that the response engine is a
-deterministic development double, because a shell that looks like a chatbot invites
-exactly the wrong conclusion.
+P2 is complete: the conversation manager works and a shell exercises it end to end.
+The next unit is the first of P3, **local document ingestion and a lexical retrieval
+baseline**: taking documents that are already on disk, splitting them into evidence
+chunks with stable identifiers, and ranking them for a query without embeddings. That
+is what will supply the `EvidencePack` that `ConversationManager.send` already
+accepts, and it is deliberately the smallest retrieval step — no network, no model,
+no index server.
 
-After that, P3 begins with local document ingestion and a lexical retrieval baseline,
-which is what will supply the evidence `send` already accepts.
+Before live fetching (P4), the fetch policy has to be written. It is a blocking open
+question in [`../research/open-questions.md`](../research/open-questions.md), and the
+security posture in [`../retrieval.md`](../retrieval.md) is a list of threats with no
+corresponding limits.
 
-See [`ACTIVE_TASK.md`](ACTIVE_TASK.md) for the unit's definition of done and
-[`../architecture.md`](../architecture.md) for where the manager sits in the data
-flow.
+See [`ACTIVE_TASK.md`](ACTIVE_TASK.md) for the definition of done.

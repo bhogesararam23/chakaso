@@ -8,7 +8,8 @@ read it too; it is the same contract.
 Chakaso is a research project building a local-first conversational system that
 grounds answers in retrieved evidence, cites sources by identifier, and corrects
 itself when better evidence arrives. It intends to train its own language model
-from random initialization. At the time of writing, none of the system exists —
+from random initialization. A conversation can be held today, but the only model
+implementation is a deterministic development double, and there is no retrieval —
 see [`docs/agent/CURRENT_STATE.md`](docs/agent/CURRENT_STATE.md), which is the
 authority on what is real.
 
@@ -87,8 +88,11 @@ docs/decisions/     architecture decision records
 docs/research/      research log, hypotheses, literature, open questions
 docs/agent/         this directory's context: current state, conventions, active task
 docs/internal/      engineering notes that are not for external readers
-experiments/        experiment records
 ```
+
+Experiment records will live at `experiments/<experiment-id>/record.md`. That
+directory appears with the first experiment; the format is defined in
+[`docs/internal/experiments/README.md`](docs/internal/experiments/README.md).
 
 The `src` layout is deliberate: it makes an uninstalled import fail rather than
 silently testing the working tree

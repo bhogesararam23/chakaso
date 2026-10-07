@@ -10,6 +10,41 @@ capability is implemented or still planned.
 
 ## Unreleased
 
+### 2026-10-07 — Local conversation shell
+
+**Added**
+
+- `chakaso chat`: a conversation shell that runs the whole stack end to end —
+  configuration, context projection, the model boundary, validation, evidence and
+  citation recording. Interactive on standard input, or one message and exit with
+  `--message`, which is what a script wants. `:quit`, `:exit` and end of input all
+  end a session; blank lines are ignored rather than sent; a failed turn is reported
+  and the session continues, because a failure leaves the conversation unchanged.
+- The shell prints a notice on standard error before the first reply, naming the
+  engine, saying that it is a development double rather than a language model, and
+  saying that nothing is retrieved, nothing is corrected and the conversation is not
+  saved. It is derived from the model's own `development_double` metadata rather than
+  from a hard-coded string, so it cannot drift out of date while the engine stays
+  fake.
+- The reply goes to standard output and everything else to standard error, so
+  `--message` is usable in a pipeline.
+- The shell reports two conditions a reader would otherwise not know about: a reply
+  truncated at the length ceiling, and a reference to evidence the model was not
+  given, which is listed and never resolved.
+
+**Changed**
+
+- The CLI's own description no longer says there is nothing to run, because there is
+  now something to run.
+- `--config` is defined once and shared by `config show` and `chat`, so the two cannot
+  drift apart in behaviour or in help text.
+
+**Note on scope**
+
+`chakaso chat` is not a chatbot. Every reply it produces is the development double's
+fixed text, and the command says so in its own output. There is no language model, no
+retrieval, no fetching, no correction loop and no evaluation.
+
 ### 2026-10-07 — Conversation manager
 
 **Added**

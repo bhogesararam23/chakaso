@@ -7,17 +7,61 @@ rather than silently doing nothing.
 
 from __future__ import annotations
 
+import io
 import platform
 import sys
+from collections.abc import Sequence
+from datetime import UTC, datetime
 from pathlib import Path
 
 import pytest
 
 from chakaso import __version__
-from chakaso.cli import build_parser, main
+from chakaso.cli import _report_caveats, build_parser, main
 from chakaso.config import load_config
+from chakaso.conversation import Conversation, ConversationManager
+from chakaso.models import (
+    FinishReason,
+    GenerationParams,
+    GenerationResult,
+    Message,
+    ModelMetadata,
+)
 
 DEFAULT_CONFIG_FILE = Path(__file__).resolve().parent.parent / "configs" / "default.toml"
+
+SESSION = datetime(2026, 10, 7, 12, 0, tzinfo=UTC)
+
+
+class _ScriptedModel:
+    """A model that returns prepared text, for exercising CLI diagnostics.
+
+    The CLI's only real adapter is the deterministic double, which never emits an
+    evidence reference or a length-terminated reply. Those reporting paths still need
+    covering, and a scripted model is how they are reached.
+    """
+
+    def __init__(self, answer: str, *, finish_reason: FinishReason = FinishReason.STOP) -> None:
+        self._answer = answer
+        self._finish_reason = finish_reason
+
+    @property
+    def metadata(self) -> ModelMetadata:
+        return ModelMetadata(model_id="scripted", display_name="Scripted", context_window=128)
+
+    def generate(self, messages: Sequence[Message], params: GenerationParams) -> GenerationResult:
+        return GenerationResult(
+            text=self._answer, model_id="scripted", finish_reason=self._finish_reason
+        )
+
+
+def _reply(answer: str, *, finish_reason: FinishReason = FinishReason.STOP):
+    manager = ConversationManager(
+        _ScriptedModel(answer, finish_reason=finish_reason),
+        Conversation(conversation_id="conv_cli"),
+        now=lambda: SESSION,
+    )
+    return manager.send("hello")
 
 
 def test_version_flag_prints_version_and_succeeds(capsys: pytest.CaptureFixture[str]) -> None:
@@ -148,3 +192,169 @@ def test_config_show_accepts_the_shipped_default_file(
 
     out = capsys.readouterr().out
     assert load_config(DEFAULT_CONFIG_FILE).config.model.adapter in out
+
+
+# ---------------------------------------------------------------------------
+# chat
+# ---------------------------------------------------------------------------
+
+
+def test_chat_with_a_message_prints_the_reply_to_stdout(
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    # The reply goes to stdout and nothing else does, so the command stays usable in
+    # a pipeline.
+    assert main(["chat", "--message", "What does the specification say?"]) == 0
+
+    captured = capsys.readouterr()
+    assert "Deterministic double" in captured.out
+    assert "1 message(s)" in captured.out
+    # The reply appears once, on stdout. The notice on stderr names the engine as
+    # well, so the assertion is about the reply rather than about the word
+    # "Deterministic".
+    assert "1 message(s)" not in captured.err
+    assert len(captured.out.strip().splitlines()) == 1
+
+
+def test_chat_states_that_the_engine_is_not_a_language_model(
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    # The command's honesty is a feature of it, not decoration: without this, a shell
+    # that replies fluently invites exactly the wrong conclusion.
+    main(["chat", "--message", "hello"])
+
+    err = capsys.readouterr().err
+    assert "not a language model" in err
+    assert "does not answer anything" in err
+
+
+def test_chat_states_what_is_absent_and_that_nothing_is_saved(
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    main(["chat", "--message", "hello"])
+
+    err = capsys.readouterr().err
+    assert "No retrieval" in err
+    assert "not saved" in err
+
+
+def test_chat_rejects_an_empty_message_without_a_traceback(
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    assert main(["chat", "--message", "   "]) == 1
+
+    captured = capsys.readouterr()
+    assert "must contain text" in captured.err
+    assert "Traceback" not in captured.err
+    assert captured.out == ""
+
+
+def test_chat_reports_an_unknown_adapter(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    config_file = tmp_path / "config.toml"
+    config_file.write_text("[model]\nadapter = 'nope'\n", encoding="utf-8")
+
+    assert main(["chat", "--config", str(config_file), "--message", "hello"]) == 1
+
+    err = capsys.readouterr().err
+    assert "nope" in err
+    assert "deterministic" in err
+
+
+def test_chat_reports_a_bad_config_file(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
+    config_file = tmp_path / "config.toml"
+    config_file.write_text("[model\nadapter =", encoding="utf-8")
+
+    assert main(["chat", "--config", str(config_file), "--message", "hello"]) == 1
+    assert "not valid TOML" in capsys.readouterr().err
+
+
+def test_chat_accepts_the_shipped_default_config(
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    assert main(["chat", "--config", str(DEFAULT_CONFIG_FILE), "--message", "hello"]) == 0
+    assert "Deterministic double" in capsys.readouterr().out
+
+
+def test_chat_reads_messages_from_stdin_until_end_of_input(
+    monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    monkeypatch.setattr("sys.stdin", io.StringIO("first question\nsecond question\n"))
+
+    assert main(["chat"]) == 0
+
+    out = capsys.readouterr().out
+    assert out.count("chakaso> ") == 2
+
+
+def test_chat_stops_at_a_quit_command(
+    monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    monkeypatch.setattr("sys.stdin", io.StringIO("hello\n:quit\nunreachable\n"))
+
+    assert main(["chat"]) == 0
+
+    out = capsys.readouterr().out
+    assert out.count("chakaso> ") == 1
+
+
+def test_chat_ignores_blank_lines_rather_than_sending_them(
+    monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    # The double reports how many messages it received, which is how a test can tell
+    # that the blank line never became a turn.
+    monkeypatch.setattr("sys.stdin", io.StringIO("a\n\n\nb\n"))
+
+    assert main(["chat"]) == 0
+
+    captured = capsys.readouterr()
+    assert "3 message(s)" in captured.out
+    assert "must contain text" not in captured.err
+
+
+def test_chat_survives_a_failed_turn_and_keeps_the_conversation(
+    monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    # A failed turn leaves the conversation unchanged, so the session continues rather
+    # than losing everything said so far.
+    monkeypatch.setattr("sys.stdin", io.StringIO("   \nhello\n"))
+
+    assert main(["chat"]) == 0
+    assert "1 message(s)" in capsys.readouterr().out
+
+
+def test_chat_reports_a_truncated_reply_on_stderr(capsys: pytest.CaptureFixture[str]) -> None:
+    _report_caveats(_reply("cut off here", finish_reason=FinishReason.LENGTH))
+
+    captured = capsys.readouterr()
+    assert "length ceiling" in captured.err
+    assert captured.out == ""
+
+
+def test_chat_reports_an_unresolved_reference_on_stderr(
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    # The rule ADR-0003 and ADR-0009 enforce: a reference the model was not given is
+    # never resolved, and the user is told rather than left to assume it was checked.
+    _report_caveats(_reply("The deadline is in March [src_0123456789abcdef]."))
+
+    captured = capsys.readouterr()
+    assert "referenced evidence it was not given" in captured.err
+    assert "src_0123456789abcdef" in captured.err
+
+
+def test_chat_reports_malformed_references_separately(capsys: pytest.CaptureFixture[str]) -> None:
+    _report_caveats(_reply("See [src_0123]."))
+
+    err = capsys.readouterr().err
+    assert "malformed evidence references" in err
+    assert "referenced evidence it was not given" not in err
+
+
+def test_chat_says_nothing_extra_about_a_clean_reply(capsys: pytest.CaptureFixture[str]) -> None:
+    _report_caveats(_reply("An ordinary answer."))
+
+    captured = capsys.readouterr()
+    assert captured.err == ""
+    assert captured.out == ""
