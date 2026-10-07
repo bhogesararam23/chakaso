@@ -74,8 +74,8 @@ Tracked in `docs/research/open-questions.md`.
 
 ### K-002, formerly — No package, no tests and no CI existed
 
-Closed on 2026-10-07. The repository now has an installable typed package, 262
-tests, and CI running formatting, linting, type checking and tests on Python 3.11,
+Closed on 2026-10-07. The repository now has an installable typed package, a test
+suite, and CI running formatting, linting, type checking and tests on Python 3.11,
 3.12 and 3.13. The entry is kept rather than deleted because the risk it recorded
 -- that the absence of verification would stop being obvious -- is the kind that
 returns when CI is disabled for a while, and it is worth being able to point at

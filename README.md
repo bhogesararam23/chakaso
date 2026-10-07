@@ -39,7 +39,7 @@ The status vocabulary used across this documentation is:
 | --- | --- |
 | Repository conventions, licensing, decision records | Implemented |
 | Public and internal documentation | Implemented |
-| Tests and CI | Implemented (262 tests, Python 3.11–3.13, no secrets, no network) |
+| Tests and CI | Implemented (Python 3.11–3.13, no secrets, no network dependency) |
 | Python package, configuration, CLI | Implemented (minimal) |
 | Language-model interface and model registry | Implemented (interface only; no trained model) |
 | Source, evidence and citation records | Implemented (data model only; no retrieval) |

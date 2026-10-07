@@ -25,14 +25,17 @@ A private planning note is never evidence that something is implemented.
 | Model implementations | `src/chakaso/models/deterministic.py` | A development double only. **No language model exists.** |
 | Evidence records | `src/chakaso/evidence/` | `SourceRecord`, `EvidenceChunk`, `EvidencePack`, URL canonicalization, citation resolution |
 | Conversation state | `src/chakaso/conversation/` | Immutable, append-only turns with provenance; topic, entities and open questions |
-| Tests | `tests/` | 262 tests across package, CLI, configuration, primitives, the model boundary, evidence, conversation and repository hygiene |
+| Tests | `tests/` | 263 tests at the commit recorded above: package, CLI, configuration, primitives, model boundary, evidence, conversation, repository hygiene. The count ages; the command does not. |
 | CI | `.github/workflows/ci.yml` | Green on Python 3.11, 3.12, 3.13 |
 | Retrieval, evidence store, correction | **do not exist** | Planned |
 
 ## What works
 
 - `python -m pip install -e ".[dev]"` installs the package and its dev tools.
-- `python -m pytest` runs 100 tests. All pass.
+- `python -m pytest` passes on Python 3.11, 3.12 and 3.13, which is the range CI
+  enforces. Development on the newest interpreter alone is not sufficient: an
+  unhashable dataclass default imported cleanly on 3.13 and failed at import on
+  3.11, and CI found it rather than the local run.
 - `python -m ruff check .`, `python -m ruff format --check .` and `python -m mypy src`
   pass under strict settings.
 - `python -m chakaso --version` and `python -m chakaso info` report the version,
