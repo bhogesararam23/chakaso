@@ -22,25 +22,14 @@ opaque evidence identifiers reliably; that assumption is untested.
 **Not a defect to fix now.** It is recorded so that no document reads as though the
 architecture has been validated.
 
-### K-002 — No package, no tests and no CI exist yet
-
-**Impact:** Medium, and temporary.
-
-The repository has no runnable code and therefore no automated verification of
-anything. `README.md` says this; the risk is that it stops being true quietly.
-`docs/agent/CURRENT_STATE.md` is the file that must be updated first when that
-changes.
-
-**What would close it:** the current unit (see `ACTIVE_TASK.md`).
-
-### K-003 — Documentation describes components that do not exist
+### K-002 — Documentation describes components that do not exist
 
 **Impact:** Medium.
 
-`docs/architecture.md`, `docs/retrieval.md`, `docs/correction.md` and
-`docs/evaluation.md` specify behaviour for components with no code. Every affected
-row carries a status label, but a reader skimming for mechanism rather than status
-could come away with the wrong impression.
+`docs/architecture.md`, `docs/correction.md` and `docs/evaluation.md` specify
+behaviour for components with no code. Every affected row carries a status label,
+but a reader skimming for mechanism rather than status could come away with the
+wrong impression.
 
 **Mitigation in place:** status labels are mandatory and the vocabulary is
 defined in `docs/README.md`; `CURRENT_STATE.md` lists the gaps explicitly.
@@ -49,7 +38,7 @@ defined in `docs/README.md`; `CURRENT_STATE.md` lists the gaps explicitly.
 the point of this phase. It becomes a real problem if a status label is ever left
 at Experimental after the code is deleted.
 
-### K-004 — Private planning material lives inside the working tree
+### K-003 — Private planning material lives inside the working tree
 
 **Impact:** Low but severe if it fails.
 
@@ -62,7 +51,7 @@ which also means a mistake here is invisible to a casual check. A single
 matches the private-pack patterns. This is the one repository rule enforced by a
 test rather than by review.
 
-### K-005 — The `docs/` directory mixes public documents with private ones
+### K-004 — The `docs/` directory mixes public documents with private ones
 
 **Impact:** Low.
 
@@ -71,7 +60,7 @@ The pack cannot be moved (the project owner requires it to stay), so the
 separation is enforced by ignore rules and a test rather than by directory
 structure.
 
-### K-006 — No fetch policy has been written
+### K-005 — No fetch policy has been written
 
 **Impact:** Medium, and blocking for any retrieval work.
 
@@ -83,5 +72,11 @@ Tracked in `docs/research/open-questions.md`.
 
 ## Resolved
 
-Nothing yet. Entries move here with the commit that fixed them, or they are
-deleted with a note in the changelog if the issue turned out not to be real.
+### K-002, formerly — No package, no tests and no CI existed
+
+Closed on 2026-10-07. The repository now has an installable typed package, 262
+tests, and CI running formatting, linting, type checking and tests on Python 3.11,
+3.12 and 3.13. The entry is kept rather than deleted because the risk it recorded
+-- that the absence of verification would stop being obvious -- is the kind that
+returns when CI is disabled for a while, and it is worth being able to point at
+the last time it was true.

@@ -110,15 +110,20 @@ exist.
 ```text
 src/chakaso/           package source
   config/              typed configuration, loading and provenance
+  core/                identifiers, hashing, error base
+  models/              language-model boundary, capabilities, registry
+  evidence/            source records, evidence chunks, packs, citation resolution
+  conversation/        immutable conversation state
 tests/                 unit, contract and repository-hygiene tests
 configs/               versioned configuration files
 docs/                  documentation (see docs/README.md)
-experiments/           experiment records
 ```
 
 Only modules that exist appear here. `docs/architecture.md` describes the modules
 that are planned and their status; a directory is created when it contains
-something real, not in anticipation of it.
+something real, not in anticipation of it. Experiment records will live at
+`experiments/<experiment-id>/record.md`, and that directory appears with the first
+experiment.
 
 ## Contributing
 

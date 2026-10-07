@@ -39,6 +39,7 @@ The status vocabulary used across this documentation is:
 | --- | --- |
 | Repository conventions, licensing, decision records | Implemented |
 | Public and internal documentation | Implemented |
+| Tests and CI | Implemented (262 tests, Python 3.11–3.13, no secrets, no network) |
 | Python package, configuration, CLI | Implemented (minimal) |
 | Language-model interface and model registry | Implemented (interface only; no trained model) |
 | Source, evidence and citation records | Implemented (data model only; no retrieval) |
@@ -51,8 +52,10 @@ The status vocabulary used across this documentation is:
 | Evaluation harness and benchmarks | Planned |
 
 Nothing in this list is aspirational language. If a row says Planned, there is no
-code for it. See [`docs/agent/CURRENT_STATE.md`](docs/agent/CURRENT_STATE.md) for
-the precise current state, including what is deliberately missing.
+code for it. "Implemented" means the code exists and is covered by tests; in several
+rows it means only the data model exists, and the row says so. See
+[`docs/agent/CURRENT_STATE.md`](docs/agent/CURRENT_STATE.md) for the precise current
+state, including what is deliberately missing.
 
 ## Why this exists
 
@@ -123,12 +126,17 @@ chakaso/
 │   ├── decisions/      # architecture decision records
 │   ├── research/       # research log, hypotheses, open questions
 │   ├── agent/          # durable context for coding agents
-│   └── internal/       # engineering notes, experiment records, artifact policy
+│   └── internal/       # engineering notes, artifact policy, experiment record format
 ├── configs/            # versioned configuration
-├── experiments/        # experiment records (no results yet)
 ├── CONTRIBUTING.md
 └── pyproject.toml
 ```
+
+Experiment records will live at `experiments/<experiment-id>/record.md`. The
+directory appears with the first experiment; there is no experiment yet, so the
+format is defined in
+[`docs/internal/experiments/README.md`](docs/internal/experiments/README.md) and
+nothing else exists.
 
 The package uses a `src/` layout so that tests exercise the installed package
 rather than whatever happens to be in the working directory
