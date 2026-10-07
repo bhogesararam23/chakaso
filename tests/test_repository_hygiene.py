@@ -92,6 +92,27 @@ def test_private_documentation_pack_is_never_tracked(tracked_files: list[Path]) 
     )
 
 
+def test_private_documentation_pack_on_disk_is_actually_ignored() -> None:
+    # The tests above check that no .docx is tracked and that the ignore rule is
+    # still written in .gitignore. Neither checks that the rule *works*: a typo in
+    # the pattern, or an earlier negation, would pass both while leaving eight
+    # private documents one `git add -A` away from being published.
+    #
+    # Skipped when the pack is absent, which is the case for anyone who is not the
+    # project author. That is the correct behaviour, and it means this test only
+    # protects the checkout where the material exists.
+    present = sorted((REPO_ROOT / "docs").glob("*.docx"))
+    if not present:
+        pytest.skip("private documentation pack is not present in this checkout")
+
+    ignored = _ignored_paths(present)
+
+    assert ignored == {str(path) for path in present}, (
+        "The private documentation pack is present but not excluded by .gitignore. "
+        f"Not ignored: {sorted(str(path) for path in present)} - {sorted(ignored)}"
+    )
+
+
 def test_no_source_file_is_ignored() -> None:
     # A .gitignore pattern without a leading separator matches at any depth. The
     # first version of this repository's .gitignore contained a bare `models/` to
@@ -128,19 +149,26 @@ def _is_generated(path: Path) -> bool:
 
 
 def _ignored_paths(paths: list[Path]) -> set[str]:
-    """Return the subset of ``paths`` that git reports as ignored."""
-    if not paths:
-        return set()
-    # check-ignore exits 1 when nothing matches, so check=True would be wrong here.
-    result = subprocess.run(
-        ["git", "check-ignore", "--stdin"],
-        cwd=REPO_ROOT,
-        input="\n".join(str(path) for path in paths),
-        capture_output=True,
-        text=True,
-        check=False,
-    )
-    return {line.strip() for line in result.stdout.splitlines() if line.strip()}
+    """Return the subset of ``paths`` that git reports as ignored.
+
+    One `git check-ignore --quiet` per path, checking the exit code, rather than a
+    single `--stdin` call. The batch form looks tidier and is wrong on Windows: git
+    applies C-style quoting to the paths it echoes back, so a comparison against the
+    original paths silently never matches. It failed in the safe direction here
+    (nothing reported as ignored), but a check that cannot fail is not a check.
+    """
+    ignored: set[str] = set()
+    for path in paths:
+        result = subprocess.run(
+            ["git", "check-ignore", "--quiet", str(path)],
+            cwd=REPO_ROOT,
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        if result.returncode == 0:
+            ignored.add(str(path))
+    return ignored
 
 
 def test_gitignore_declares_the_private_documentation_pack() -> None:
