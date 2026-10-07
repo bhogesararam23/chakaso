@@ -42,7 +42,7 @@ class _MinimalModel:
     def generate(
         self,
         messages: Sequence[Message],
-        params: GenerationParams | None = None,  # noqa: ARG002 - protocol shape
+        params: GenerationParams | None = None,
     ) -> GenerationResult:
         require_messages(messages)
         return GenerationResult(text="ok", model_id=self._metadata.model_id)
@@ -70,7 +70,7 @@ class _LyingTokenizer:
     def generate(
         self,
         messages: Sequence[Message],
-        params: GenerationParams | None = None,  # noqa: ARG002 - protocol shape
+        params: GenerationParams | None = None,
     ) -> GenerationResult:
         require_messages(messages)
         return GenerationResult(text="ok", model_id=self._metadata.model_id)
@@ -88,8 +88,8 @@ class _FullModel(_MinimalModel):
     def generate_structured(
         self,
         messages: Sequence[Message],
-        schema: Mapping[str, object],  # noqa: ARG002 - protocol shape
-        params: GenerationParams | None = None,  # noqa: ARG002 - protocol shape
+        schema: Mapping[str, object],
+        params: GenerationParams | None = None,
     ) -> StructuredResult:
         require_messages(messages)
         return StructuredResult(data={"echo": len(messages)}, model_id=self.metadata.model_id)

@@ -10,6 +10,60 @@ capability is implemented or still planned.
 
 ## Unreleased
 
+### 2026-10-07 — Conversation manager
+
+**Added**
+
+- `chakaso.conversation.ConversationManager`: the orchestration boundary over the
+  existing conversation state. One turn rejects an empty message, appends the user
+  turn to a working copy, projects the recent conversation into model messages, calls
+  the model through the `LanguageModel` boundary, rejects a response that is empty or
+  attributed to a different model, resolves evidence references, appends the
+  assistant turn, and adopts the new state.
+- A turn is transactional (ADR-0008). If any step fails, the conversation is
+  unchanged, so a user turn is never left stranded without a reply and a retry is a
+  first attempt rather than a follow-up to a turn that never happened.
+- Distinguishable failures: `InvalidUserInputError` for an empty message,
+  `InvalidGenerationError` for an unusable response, and model errors propagated
+  untranslated rather than folded into a generic conversation error.
+- `Reply`, carrying the new state, the assistant turn, the generation result (model
+  identity and whether it was truncated) and the citation resolution.
+- A reference to evidence the model was not given is recorded, never resolved, and
+  reported to the caller (ADR-0009). Resolved citations, unknown references and
+  malformed references stay three separate results.
+- Context projection bounded by `model.max_context_turns`, a new configuration
+  setting. It bounds growth; it is a turn ceiling, not a token budget, and is
+  documented as the stopgap it is.
+- `new_conversation_id()`, and conversation-layer error types in their own module
+  alongside the other packages' error modules.
+
+**Changed**
+
+- `ConversationManager.send` accepts an `EvidencePack`. Nothing produces one yet —
+  there is no retrieval — but the parameter exists now because adding it later would
+  touch every call site, and every call site is somewhere the citation rule could be
+  forgotten.
+- The configuration test that restated the `ModelConfig` field names now checks them
+  against the schema, so adding a setting is no longer a two-place edit that trains
+  people to update a test without reading it.
+
+**Verification**
+
+- A new repository-hygiene test reads the syntax tree of every module under `src/`
+  and fails if any module outside the model registry imports a concrete adapter,
+  which is ADR-0002's guarantee. It was confirmed to fail against a deliberate
+  violation before being kept.
+- Argument-unused linting is relaxed for `tests/` only, because a test double that
+  ignores the messages it was given is usually the point, and per-line suppressions
+  would outnumber the code they annotate.
+
+**Note on scope**
+
+There is still no language model. The only implementation of the boundary is the
+deterministic development double, so a conversation can be held and nothing
+intelligent is produced by it. No retrieval, no fetching, no correction, no
+evaluation, no tokenizer and no training.
+
 ### 2026-10-07 — Python 3.11 compatibility fix
 
 **Fixed**

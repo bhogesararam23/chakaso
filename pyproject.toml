@@ -117,7 +117,12 @@ ignore = [
 [tool.ruff.lint.per-file-ignores]
 # A command line interface exists to write to stdout.
 "src/chakaso/cli.py" = ["T20"]
-"tests/*" = ["T20"]
+# Test doubles implement interfaces and routinely do not use every parameter — a
+# fake model that ignores the messages it was given is often exactly the point. The
+# rule stays on for `src`, where an unused argument usually means a mistake. ARG002
+# reports on the parameter line, so per-line suppressions would outnumber the code
+# they annotate.
+"tests/*" = ["T20", "ARG002"]
 
 [tool.ruff.lint.isort]
 known-first-party = ["chakaso"]

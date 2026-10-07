@@ -30,3 +30,9 @@ max_new_tokens = 256
 
 # 0.0 means greedy decoding. Sampling is a deliberate choice, not a default.
 temperature = 0.0
+
+# How many of the most recent turns are projected into a model request. A stopgap
+# until token counting exists: it bounds growth, it is not a token budget, and it
+# cannot be described as fitting the model's context window. The value is a
+# deliberately conservative placeholder rather than a measured optimum.
+max_context_turns = 40

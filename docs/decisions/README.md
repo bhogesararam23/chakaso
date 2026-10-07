@@ -100,3 +100,5 @@ creates.
 | [ADR-0005](ADR-0005-src-layout.md) | src-layout Python package | Accepted |
 | [ADR-0006](ADR-0006-toml-configuration.md) | TOML configuration parsed with the standard library | Accepted |
 | [ADR-0007](ADR-0007-content-derived-identifiers.md) | Evidence identifiers are derived from content, not assigned at random | Accepted |
+| [ADR-0008](ADR-0008-transactional-turns.md) | A turn either completes or the conversation is unchanged | Accepted |
+| [ADR-0009](ADR-0009-unresolved-references-are-recorded.md) | A reference the model was not given is recorded, not fatal | Accepted |

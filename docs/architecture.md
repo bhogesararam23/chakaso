@@ -98,7 +98,7 @@ Each component owns one thing and must not grow into its neighbour.
 | Component | Responsibility | Must not own | Status |
 | --- | --- | --- | --- |
 | Configuration | Declare, load and validate versioned settings, and report where each value came from | Component behaviour | Implemented |
-| Conversation Manager | Turns, conversation state, active topic, reference resolution, session metadata | Model-specific logic | Planned (state type implemented; no manager) |
+| Conversation Manager | Conduct one turn: accept the user's message, project context, call the model, validate, record the answer | Model-specific logic; retrieval; correction | Implemented (orchestration only) |
 | Query Planner | Decide whether retrieval is useful; formulate retrieval queries while preserving intent | Source truth | Planned |
 | Retriever | Find candidate documents and chunks | Generate the final answer | Planned |
 | Fetcher | Retrieve permitted public content under an explicit policy | Interpret facts | Planned |
@@ -111,10 +111,39 @@ Each component owns one thing and must not grow into its neighbour.
 | Reassessment Engine | Compare previous claims with new evidence and decide retain/qualify/correct | Silently rewrite history | Planned |
 | Evaluation | Measure behaviour and detect regressions | Change production behaviour | Planned |
 
-A component marked "Planned" has no code. Configuration and the model boundary are
-implemented; [`agent/CURRENT_STATE.md`](agent/CURRENT_STATE.md) is the authority,
-including on the fact that the only implementation of the boundary is a
-development double rather than a language model.
+A component marked "Planned" has no code. Configuration, the model boundary, the
+evidence records and the conversation manager are implemented;
+[`agent/CURRENT_STATE.md`](agent/CURRENT_STATE.md) is the authority, including on
+the fact that the only implementation of the model boundary is a development double
+rather than a language model.
+
+### What the conversation manager does, and what it does not
+
+`chakaso.conversation.ConversationManager` is the first component with behaviour.
+One turn is: reject an empty message, append the user turn to a working copy,
+project the recent conversation into model messages, call the model through the
+boundary, reject a response that is empty or attributed to a different model, resolve
+evidence references, append the assistant turn, and adopt the new state. A failure
+at any step leaves the conversation unchanged ([ADR-0008](decisions/ADR-0008-transactional-turns.md)).
+
+It does not retrieve, fetch, rank, chunk or index; it does not decide whether
+retrieval would help; it does not correct an earlier answer; and it does not know
+what a confidence score is. Its dependencies are the conversation state type, the
+evidence types and the model boundary.
+
+**The seam for retrieval.** `send` accepts an `EvidencePack`. That parameter is the
+insertion point for query planning and retrieval: they will run before `send` and
+pass the pack in. Until they exist, a turn with no evidence resolves no citations, so
+a reference in an answer is reported as unresolved rather than resolved to a source
+([ADR-0009](decisions/ADR-0009-unresolved-references-are-recorded.md)). The manager
+was written to accept evidence before anything can produce it, deliberately: adding
+that parameter later would touch every call site, and every call site is a place the
+citation rule could be forgotten.
+
+**Context projection.** The manager bounds a request by a number of recent turns
+(`model.max_context_turns`). This is a stopgap, not a token budget. Measuring tokens
+requires a tokenizer, which does not exist, so nothing here can honestly claim to fit
+a model's context window.
 
 ## Interfaces
 
@@ -130,14 +159,16 @@ The boundaries that exist, or that the project is committed to building:
 | `EvidencePack` | the set of chunks supplied to one generation call | Implemented |
 | Citation resolution | evidence identifier -> verified source metadata, with rejection of unknown identifiers | Implemented |
 | `Conversation` | turns with provenance, active topic, entities, open questions, prior sources | Implemented |
+| `ConversationManager` | conduct one turn against the model boundary; accept evidence; report the generation and citation outcome | Implemented |
 | `AnswerRecord` | answer text, cited identifiers, model and prompt versions, correction lineage | Planned |
 | Retriever / Fetcher | pluggable retrieval and fetch mechanisms | Planned |
 | Reassessment | previous answer plus new evidence -> retain/qualify/correct | Planned |
 
 "Planned" here means there is no code, and the shape described is the specification
 to build against rather than a description of something that exists. Configuration,
-the model boundary, the evidence records and conversation state are implemented;
-retrieval itself is not, so nothing has been fetched or indexed.
+the model boundary, the evidence records, conversation state and the conversation
+manager are implemented; retrieval itself is not, so nothing has been fetched or
+indexed.
 
 ### The model boundary
 
@@ -164,22 +195,36 @@ retrieval itself is not, so nothing has been fetched or indexed.
 
 ## Data flow for one turn
 
-1. The Conversation Manager appends the user turn and resolves references
-   ("this", "why not", "and the second one") against conversation state.
-2. The Query Planner decides whether the turn can be answered from conversation
-   context or needs fresh evidence, and produces zero or more retrieval queries.
-3. If retrieval is needed, the pipeline fetches candidate documents under the
-   fetch policy, extracts main content, chunks it with source and section
-   boundaries preserved, and ranks candidates.
-4. The selected chunks become an Evidence Pack with immutable identifiers. Only
-   chunks in the pack are visible to generation.
-5. The Model Adapter generates from the conversation plus the evidence, under a
-   versioned prompt template, referencing evidence by identifier.
+Steps 1, 5 and 6 exist. Steps 2, 3 and 4 do not, which is why a turn today resolves
+no citations unless a caller supplies evidence directly. Step 7 does not exist
+either, and the manager does not attempt it.
+
+1. The Conversation Manager appends the user turn and projects the recent
+   conversation into model messages. Reference resolution against state ("this",
+   "why not", "and the second one") is not implemented; the projected messages carry
+   the previous turns, and nothing more specific.
+2. **Not implemented.** The Query Planner decides whether the turn can be answered
+   from conversation context or needs fresh evidence, and produces zero or more
+   retrieval queries.
+3. **Not implemented.** If retrieval is needed, the pipeline fetches candidate
+   documents under the fetch policy, extracts main content, chunks it with source
+   and section boundaries preserved, and ranks candidates.
+4. **Not implemented.** The selected chunks become an Evidence Pack with immutable
+   identifiers. The pack type and its validation exist; nothing produces packs yet.
+   Only chunks in the pack are visible to generation.
+5. The Model Adapter generates from the conversation plus the evidence, referencing
+   evidence by identifier, and the conversation manager records the assistant turn.
+   Prompt templates are not versioned yet, because there is no prompt template.
 6. The validator checks every identifier cited against the pack, records unknown
    identifiers as errors, and attaches source metadata to the surviving
-   references.
-7. The answer and its metadata are recorded as an `AnswerRecord`. Nothing about
-   the retrieval or model provenance is discarded.
+   references. This exists as `resolve_citations`, and the conversation manager runs
+   it on every answer.
+7. **Not implemented.** The answer and its metadata are recorded as an
+   `AnswerRecord`. Nothing about the retrieval or model provenance is discarded.
+   Today the model's identity is reported in the reply and the assistant turn records
+   which evidence was supplied and which sources were cited, but no record persists
+   across turns, so a model identifier is not recoverable from conversation state
+   alone.
 
 ## Storage
 
@@ -210,8 +255,12 @@ more finished than it is:
 - **Reranking model.** Optional in the design. No model is chosen.
 - **Local inference runtime.** Depends on which local model is chosen first,
   which depends on the tokenizer work.
-- **Persistence format for conversation state.** Undecided; the type exists
-  without a store.
+- **Persistence format for conversation state.** Decided for this phase: nothing is
+  persisted. The manager keeps immutable state in memory and returns a new
+  conversation on each completed turn, so a session is lost on exit. A store is
+  deferred until retrieval and correction have attached to the state and its shape is
+  no longer a guess. See
+  [`research/open-questions.md`](research/open-questions.md#where-should-conversation-state-be-persisted).
 - **Whether the model writes citations inline or in a structured side channel.**
   This is a real design question with evaluation consequences, and it is
   unresolved.

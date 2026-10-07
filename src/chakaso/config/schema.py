@@ -98,6 +98,18 @@ SPECS: tuple[FieldSpec, ...] = (
         minimum=0.0,
         maximum=10.0,
     ),
+    FieldSpec(
+        key="model.max_context_turns",
+        kind=int,
+        # A stopgap, and chosen as one. A real bound needs a token count, which
+        # needs a tokenizer, which does not exist; until then a turn ceiling is the
+        # only thing that stops a long conversation growing without limit. The value
+        # is not a measured optimum and is not presented as one.
+        default=40,
+        description="Maximum recent turns projected into one model request",
+        minimum=1,
+        maximum=10_000,
+    ),
 )
 
 SPECS_BY_KEY: dict[str, FieldSpec] = {spec.key: spec for spec in SPECS}
@@ -110,6 +122,7 @@ class ModelConfig:
     adapter: str
     max_new_tokens: int
     temperature: float
+    max_context_turns: int
 
 
 @dataclass(frozen=True, slots=True)
@@ -198,6 +211,7 @@ def build_config(values: dict[str, FieldValue]) -> Config:
             adapter=cast(str, values["model.adapter"]),
             max_new_tokens=cast(int, values["model.max_new_tokens"]),
             temperature=cast(float, values["model.temperature"]),
+            max_context_turns=cast(int, values["model.max_context_turns"]),
         )
     )
 

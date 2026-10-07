@@ -20,18 +20,37 @@ is.
 
 from __future__ import annotations
 
+import secrets
 from dataclasses import dataclass, replace
 from datetime import datetime
 
-from chakaso.core.errors import ChakasoError
+from chakaso.conversation.errors import ConversationError
 from chakaso.core.identifiers import SourceId
 from chakaso.models import Message, Role
 
-__all__ = ["Conversation", "ConversationError", "Turn"]
+__all__ = [
+    "CONVERSATION_ID_PREFIX",
+    "Conversation",
+    "ConversationError",
+    "Turn",
+    "new_conversation_id",
+]
+
+#: Prefix for conversation identifiers, so that one is recognisable in a log line
+#: next to the evidence identifiers it will sit beside.
+CONVERSATION_ID_PREFIX = "conv_"
 
 
-class ConversationError(ChakasoError, ValueError):
-    """Conversation state would be internally inconsistent."""
+def new_conversation_id() -> str:
+    """Return a fresh conversation identifier.
+
+    Deliberately *not* derived from content, unlike evidence identifiers
+    (ADR-0007). A conversation has no content identity: two sessions that open with
+    the same question are different conversations, and nothing needs to
+    deduplicate them. A session is made reproducible by its transcript, not by its
+    name.
+    """
+    return f"{CONVERSATION_ID_PREFIX}{secrets.token_hex(8)}"
 
 
 def _require_aware(moment: datetime, field_name: str) -> datetime:

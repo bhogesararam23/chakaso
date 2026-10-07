@@ -283,8 +283,15 @@ def test_declared_defaults_satisfy_their_own_spec(spec: FieldSpec) -> None:
 def test_model_config_and_config_are_separate_types() -> None:
     # Guards against a refactor that flattens the sections, which would break the
     # dotted-key contract that error messages and provenance depend on.
-    assert Config.__dataclass_fields__.keys() == {"model"}
-    assert set(ModelConfig.__dataclass_fields__) == {"adapter", "max_new_tokens", "temperature"}
+    #
+    # The field names are checked against the schema rather than restated here.
+    # Restating them made every new setting a two-place edit, which trains people to
+    # update the test without reading it. Deriving them keeps the guard and removes
+    # the churn.
+    assert set(Config.__dataclass_fields__) == {"model"}
+    assert set(ModelConfig.__dataclass_fields__) == {
+        spec.key.removeprefix("model.") for spec in SPECS
+    }
 
 
 def test_relative_paths_are_reported_as_given(

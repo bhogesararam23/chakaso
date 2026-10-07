@@ -7,6 +7,7 @@ rule does not depend on somebody remembering it during review.
 
 from __future__ import annotations
 
+import ast
 import re
 import subprocess
 import tomllib
@@ -16,6 +17,23 @@ from urllib.parse import unquote
 import pytest
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
+
+# Concrete language-model adapters. ADR-0002 says application code depends on the
+# boundary, never on one of these, and that configuration selects an adapter in
+# exactly one place.
+CONCRETE_MODEL_MODULES = frozenset({"chakaso.models.deterministic"})
+
+# The modules allowed to name a concrete adapter: the registry, which is the single
+# composition point, and the package facade, which is where the built-in adapters
+# are offered to it. `deterministic` itself is covered because it cannot import
+# itself.
+COMPOSITION_POINT_MODULES = frozenset(
+    {
+        "src/chakaso/models/__init__.py",
+        "src/chakaso/models/deterministic.py",
+        "src/chakaso/models/registry.py",
+    }
+)
 
 # The author's private planning pack. It is deliberately kept in docs/ and is
 # excluded by .gitignore. A single `git add -f` would publish it, which is why
@@ -169,6 +187,53 @@ def _ignored_paths(paths: list[Path]) -> set[str]:
         if result.returncode == 0:
             ignored.add(str(path))
     return ignored
+
+
+def test_no_module_outside_the_composition_point_imports_a_concrete_model() -> None:
+    # ADR-0002 is the reason a future local model is a configuration change rather
+    # than a rewrite. That property is invisible in behaviour until the day someone
+    # swaps the adapter, so it is checked structurally instead: a module that
+    # imports a concrete adapter has taken a dependency the architecture forbids,
+    # and review is not a reliable detector of one added for convenience.
+    #
+    # Imports are read from the syntax tree rather than the text, so a mention in a
+    # docstring or comment is not a violation.
+    offenders: list[str] = []
+    for path in sorted((REPO_ROOT / "src").rglob("*.py")):
+        relative = path.relative_to(REPO_ROOT).as_posix()
+        if relative in COMPOSITION_POINT_MODULES:
+            continue
+        for imported in _imported_modules(path):
+            if imported in CONCRETE_MODEL_MODULES:
+                offenders.append(f"{relative} -> {imported}")
+
+    assert not offenders, (
+        "A module outside the composition point imports a concrete model adapter, "
+        "which ADR-0002 forbids. Import the boundary from `chakaso.models` instead, "
+        f"and select an adapter through `create_model`: {offenders}"
+    )
+
+
+def test_the_composition_point_allowlist_does_not_go_stale() -> None:
+    # An allowlist that names files which no longer exist silently stops protecting
+    # anything, and the test above would keep passing.
+    missing = sorted(
+        relative for relative in COMPOSITION_POINT_MODULES if not (REPO_ROOT / relative).is_file()
+    )
+
+    assert not missing, f"Allowlisted modules do not exist: {missing}"
+
+
+def _imported_modules(path: Path) -> set[str]:
+    """Return every dotted module name ``path`` imports, absolutely."""
+    tree = ast.parse(path.read_text(encoding="utf-8"), filename=str(path))
+    imported: set[str] = set()
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Import):
+            imported.update(alias.name for alias in node.names)
+        elif isinstance(node, ast.ImportFrom) and node.level == 0 and node.module:
+            imported.add(node.module)
+    return imported
 
 
 def test_gitignore_declares_the_private_documentation_pack() -> None:

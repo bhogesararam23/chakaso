@@ -70,6 +70,39 @@ response size, no redirect depth, no rate limit, no robots handling, no
 user-agent identification. Any fetch implementation must define these first.
 Tracked in `docs/research/open-questions.md`.
 
+### K-006 — Nothing persists how often a model invents an evidence reference
+
+**Impact:** Medium. It is a gap in one of the project's own headline measurements.
+
+The conversation manager detects a reference to evidence that was not supplied,
+never resolves it to a source, and reports it in `Reply.citation_resolution`
+([ADR-0009](../decisions/ADR-0009-unresolved-references-are-recorded.md)). Nothing
+writes that down. The reply is the only place the condition exists, so the rate at
+which it happens — which `docs/evaluation.md` makes a headline metric — cannot be
+computed from anything the repository keeps.
+
+**Why a field on conversation state is not the fix.** A durable count of unresolved
+references is evaluation data, not conversational data. Adding a field that nothing
+reads would put the shape of an unbuilt component into a type that other components
+already depend on, which is the retrofit the project has been avoiding.
+
+**What would close it:** the evaluation layer, item 6 of the current plan.
+
+### K-007 — An answer's model identity is not recoverable from the transcript
+
+**Impact:** Low now, higher as soon as two models are compared.
+
+The reply reports which model produced an answer and whether it was a development
+double. The assistant turn records which evidence was supplied and which sources
+were cited, but not the model. A transcript alone therefore cannot answer "which
+model said this", which is the first question a comparison between two models
+raises.
+
+**Why it is deferred:** that is the `AnswerRecord` the correction unit introduces.
+Building it now would mean designing the record around one caller.
+
+**What would close it:** the `AnswerRecord` type and a run that uses two adapters.
+
 ## Resolved
 
 ### Retired — no package, no tests and no CI existed

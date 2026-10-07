@@ -29,7 +29,7 @@ claim about answer quality.
 - [x] Apache-2.0 license with the decision recorded (ADR-0004)
 - [x] Public documentation set: README, getting started, architecture,
       transparency, retrieval, correction, training, evaluation, roadmap
-- [x] Decision records ADR-0001 through ADR-0007
+- [x] Decision records ADR-0001 through ADR-0009
 - [x] Research foundation: log, hypotheses, open questions, literature
 - [x] Contribution guide and agent contract
 - [x] Python project metadata and package skeleton (ADR-0005)
@@ -39,32 +39,35 @@ claim about answer quality.
 - [x] Language-model boundary, capabilities, registry and contract tests (ADR-0002)
 - [x] Source and evidence records, evidence packs and citation resolution (ADR-0003)
 - [x] Conversation state: immutable, append-only turns with provenance
+- [x] The conversation manager: turn orchestration, context projection, error
+      semantics, and the seam where evidence will later be supplied
+- [x] A test enforcing that no module outside the composition point imports a
+      concrete model adapter
 
 ### In progress
 
-- [ ] The conversation manager: turn orchestration, context projection, error
-      semantics, and the seam where evidence will later be supplied
 - [ ] A minimal local conversation shell in the CLI, honest about what produces
       its replies
 
 ## Definition of done for this unit
 
-- The manager depends on the `LanguageModel` boundary and imports no concrete
-  adapter; a test enforces that structurally rather than by review.
-- Sending a user turn appends a user turn and an assistant turn and returns the new
-  immutable state, leaving the previous state untouched.
-- Follow-up turns receive the projected conversation context, and the number of
-  projected turns is bounded by configuration rather than by a constant in code.
-- Failures are distinguishable: invalid user input, invalid generated output, and
-  model failures each have their own type, and a failure leaves the conversation
-  unchanged.
-- Evidence, when supplied, determines what citations may resolve; a reference
-  outside the supplied evidence is never resolved to a source and is reported to
-  the caller.
-- `pytest`, `ruff check`, `ruff format --check` and `mypy src` pass on Python 3.11,
-  3.12 and 3.13.
-- Documentation states what the manager does, and that the response engine is a
-  development double.
+- [x] The manager depends on the `LanguageModel` boundary and imports no concrete
+      adapter; a test enforces that structurally rather than by review.
+- [x] Sending a user turn appends a user turn and an assistant turn and returns the
+      new immutable state, leaving the previous state untouched.
+- [x] Follow-up turns receive the projected conversation context, and the number of
+      projected turns is bounded by configuration rather than by a constant in code.
+- [x] Failures are distinguishable: invalid user input, invalid generated output,
+      and model failures each have their own type, and a failure leaves the
+      conversation unchanged.
+- [x] Evidence, when supplied, determines what citations may resolve; a reference
+      outside the supplied evidence is never resolved to a source and is reported to
+      the caller.
+- [x] `pytest`, `ruff check`, `ruff format --check` and `mypy src` pass on Python
+      3.11, 3.12 and 3.13.
+- [ ] Documentation states what the manager does, and that the response engine is a
+      development double. The architecture and state documents are updated; the
+      getting-started guide and README are updated with the CLI shell.
 
 ## Not started, and the order they will be taken
 
@@ -97,3 +100,14 @@ These are excluded because the unit is about fixing the orchestration boundary
 before the components on either side of it exist. A manager that guessed at
 retrieval would have to be rewritten when retrieval arrives, and one that dressed up
 the development double as an answer engine would be worse than that.
+
+## What this unit knowingly leaves undone
+
+Recorded here rather than discovered later:
+
+- The generated answer's model identity is reported in the reply but is not stored
+  in conversation state, so it is not recoverable from a transcript alone. That
+  belongs to the `AnswerRecord` the correction unit introduces.
+- Nothing records unresolved references persistently. The rate at which a model
+  invents evidence identifiers is one of the project's headline metrics, and until
+  the evaluation layer exists it is observable only in-process. Recorded as K-006.

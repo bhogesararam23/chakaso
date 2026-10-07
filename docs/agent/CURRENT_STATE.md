@@ -1,6 +1,6 @@
 # Current state
 
-Last updated: 2026-10-07, at commit `6c8c84d` (`docs: stop stating test counts that go stale`).
+Last updated: 2026-10-07, at commit `feat: add the conversation manager`.
 
 This file is the authority on what exists. If it disagrees with any other
 document, this file is right and the other document is a defect.
@@ -24,8 +24,9 @@ A private planning note is never evidence that something is implemented.
 | Model boundary | `src/chakaso/models/` | `LanguageModel` protocol, capabilities, registry, contract tests |
 | Model implementations | `src/chakaso/models/deterministic.py` | A development double only. **No language model exists.** |
 | Evidence records | `src/chakaso/evidence/` | `SourceRecord`, `EvidenceChunk`, `EvidencePack`, URL canonicalization, citation resolution |
-| Conversation state | `src/chakaso/conversation/` | Immutable, append-only turns with provenance; topic, entities and open questions |
-| Tests | `tests/` | 263 tests at the commit recorded above: package, CLI, configuration, primitives, model boundary, evidence, conversation, repository hygiene. The count ages; the command does not. |
+| Conversation state | `src/chakaso/conversation/state.py` | Immutable, append-only turns with provenance; topic, entities and open questions |
+| Conversation manager | `src/chakaso/conversation/manager.py` | Conducts one turn: context projection, model call, validation, evidence and citation recording. Transactional (ADR-0008) |
+| Tests | `tests/` | 301 tests at the commit recorded above: package, CLI, configuration, primitives, model boundary, evidence, conversation state, conversation manager, repository hygiene. The count ages; the command does not. |
 | CI | `.github/workflows/ci.yml` | Green on Python 3.11, 3.12, 3.13 |
 | Retrieval, evidence store, correction | **do not exist** | Planned |
 
@@ -56,13 +57,23 @@ A private planning note is never evidence that something is implemented.
 - An evidence pack can be assembled from chunks and sources, and the references in an
   answer resolved against it: resolved citations, unknown identifiers and malformed
   identifiers are reported separately.
+- A conversation can be held against the model boundary: `ConversationManager.send`
+  records the user turn, projects the recent context, calls the model, validates the
+  result, resolves evidence references, records the assistant turn and returns the new
+  immutable state.
+- A turn is transactional. If the model fails, returns nothing, or attributes its
+  output to a different model, the conversation is unchanged and the failure keeps
+  its own type (ADR-0008).
+- Evidence supplied to `send` is what citations resolve against. A reference the
+  model was not given is reported as unresolved and is never resolved to a source
+  (ADR-0009).
 - CI runs all of the above on three Python versions, with no secrets and no network
   access to a model provider.
 
 **No language model is present in this repository.** The only implementation of the
-model boundary is a development double declared as such in its own metadata. No
-conversation can be held, nothing is retrieved, no answer is generated and no
-citation is resolved.
+model boundary is a development double declared as such in its own metadata, so a
+conversation can be held but nothing intelligent is produced by it. Nothing is
+retrieved, and no citation resolves unless a caller supplies evidence.
 
 ## What is tested
 
@@ -74,6 +85,7 @@ citation is resolved.
 | Identifiers and hashing | Digest agreement with `hashlib`, UTF-8 handling, truncation bounds, part-separator ambiguity, derivation determinism, deduplication, content-change distinction, position and text sensitivity, malformed identifier rejection, ordering and hashing |
 | Model boundary | The inherited contract suite (metadata, provenance of results, repeatability at zero temperature, empty-request rejection, length ceiling, unsupported-capability failures, declared capabilities being implemented), plus capability reconciliation, parameter validation, registry failure paths and the double's documented behaviour |
 | Evidence | Canonicalization idempotence and non-merging, tracking-parameter removal, scheme and credential refusal, IPv6 handling, record immutability, naive-timestamp rejection, content-hash validation, change detection, pack validation, and citation resolution including fabricated and malformed references |
+| Conversation manager | Construction and context bounds, dependency injection through the model boundary, first and follow-up turns, context projection limits, previous state preserved, failures leaving state unchanged for the next turn, model errors propagating untranslated, clock regressions, evidence and citation provenance per turn, evidence not leaking between turns, and end-to-end wiring against the deterministic double |
 | Repository invariants | Private pack never tracked, `.gitignore` rule present, no secret-shaped files, no tracked file over 1 MiB, no commercial provider dependency, ADR numbering and indexing, documentation links resolve |
 
 ## What is experimental
@@ -83,15 +95,16 @@ one small thing each.
 
 ## What is not implemented
 
-- The conversation manager: the state type exists, but nothing yet drives it. This
-  is the next unit.
-- Query planner
+- Query planner: nothing decides whether retrieval would help
 - Retrieval: fetch, parse, chunk, rank, index, embeddings
-- Grounding and citation validation
+- Claim-level support checking. Citation *reference* validation exists; whether cited
+  evidence actually supports a claim does not.
 - Reassessment and the correction loop
 - Evaluation harness, benchmarks and metrics
 - Tokenizer, dataset pipeline, model code, training loop
 - A local inference adapter, and any model weights of any size
+- Persistence of any kind. Conversation state lives in memory for the duration of the
+  process.
 
 ## Decisions made
 
@@ -104,6 +117,8 @@ one small thing each.
 | ADR-0005 | `src` layout, with training code as a module inside one distribution |
 | ADR-0006 | TOML configuration parsed with the standard library, read-only |
 | ADR-0007 | Evidence identifiers are derived from content and the canonical URL, not assigned at random |
+| ADR-0008 | A turn either completes or the conversation is unchanged |
+| ADR-0009 | A reference the model was not given is recorded, not fatal |
 
 Two process facts are recorded outside the ADR series because they are repository
 history rather than architecture:
@@ -122,17 +137,16 @@ architectural decision made so far rests on reasoning rather than measurement.
 
 ## Next step
 
-The current phase is P2, the local conversational shell. The first unit in it is
-the **conversation manager**: the orchestration boundary that accepts a user turn,
-projects the relevant conversation context into model-facing messages, invokes the
-model through the boundary, validates the result, records the assistant turn, and
-returns the new immutable state. It must depend on `LanguageModel` rather than on
-any concrete adapter, keep failures distinguishable, and leave an explicit seam
-where query planning and retrieval will later supply evidence.
+The conversation manager exists, so the next unit in P2 is the **local conversation
+shell**: a `chakaso chat` command that wires configuration, the model registry and
+the manager together, so that the turn boundary can be exercised by a person rather
+than only by tests. It must state in its own output that the response engine is a
+deterministic development double, because a shell that looks like a chatbot invites
+exactly the wrong conclusion.
 
-Nothing in the manager may invent retrieval, citations or confidence. See
-[`ACTIVE_TASK.md`](ACTIVE_TASK.md) for the unit's definition of done and
-[`../architecture.md`](../architecture.md) for where it sits in the data flow.
+After that, P3 begins with local document ingestion and a lexical retrieval baseline,
+which is what will supply the evidence `send` already accepts.
 
-The conversation *state* records the manager will drive already exist and are
-tested; this unit adds the behaviour on top of them, not the records themselves.
+See [`ACTIVE_TASK.md`](ACTIVE_TASK.md) for the unit's definition of done and
+[`../architecture.md`](../architecture.md) for where the manager sits in the data
+flow.
