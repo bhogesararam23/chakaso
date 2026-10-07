@@ -1,6 +1,6 @@
 # Current state
 
-Last updated: 2026-10-07, at commit `docs: add the contribution guide`.
+Last updated: 2026-10-07, at commit `feat: add typed configuration with value provenance`.
 
 This file is the authority on what exists. If it disagrees with any other
 document, this file is right and the other document is a defect.
@@ -11,43 +11,60 @@ A private planning note is never evidence that something is implemented.
 
 | Thing | Where | Notes |
 | --- | --- | --- |
-| Repository conventions | `.gitignore`, `.gitattributes`, `.editorconfig` | Private docx pack is excluded by `.gitignore` |
-| License | `LICENSE` | Apache-2.0, rationale in ADR-0004 |
-| Public documentation | `README.md`, `docs/*.md`, `docs/research/` | Design specifications with status labels |
-| Decision records | `docs/decisions/` | ADR-0001 to ADR-0004 |
+| Repository conventions | `.gitignore`, `.gitattributes`, `.editorconfig` | Private docx pack excluded by `.gitignore` and guarded by a test |
+| License | `LICENSE` | Apache-2.0; rationale in ADR-0004 |
+| Public documentation | `README.md`, `docs/*.md`, `docs/research/` | Specifications with mandatory status labels |
+| Decision records | `docs/decisions/` | ADR-0001 to ADR-0006 |
 | Contribution guide | `CONTRIBUTING.md` | |
-| Agent contract | `AGENTS.md`, `docs/agent/` | This directory |
-| Python package | **does not exist** | Not yet created |
-| Tests | **do not exist** | Not yet created |
-| CI | **does not exist** | Not yet created |
-| Configuration | **does not exist** | Specified in `docs/architecture.md` and ADR-0006 |
+| Agent contract | `AGENTS.md`, `docs/agent/` | |
+| Python package | `src/chakaso/` | Installs; typed; `py.typed` ships |
+| CLI | `src/chakaso/cli.py` | `--version`, `info`, `config show` |
+| Configuration | `src/chakaso/config/`, `configs/default.toml` | Typed schema, explicit loading, per-value provenance |
+| Tests | `tests/` | 57 tests across package, CLI, configuration and repository hygiene |
+| CI | `.github/workflows/ci.yml` | Green on Python 3.11, 3.12, 3.13 |
+| Model interface | **does not exist** | Next unit |
+| Retrieval, evidence store, correction | **do not exist** | Planned |
 
 ## What works
 
-Nothing can be run. There is no package to install, no CLI, no test suite and no
-CI. The repository is currently a specification with conventions.
+- `python -m pip install -e ".[dev]"` installs the package and its dev tools.
+- `python -m pytest` runs 57 tests. All pass.
+- `python -m ruff check .`, `python -m ruff format --check .` and `python -m mypy src`
+  pass under strict settings.
+- `python -m chakaso --version` and `python -m chakaso info` report the version,
+  Python version and platform.
+- `python -m chakaso config show` prints every configuration value with the source
+  it came from, and exits non-zero with a specific message when a configuration
+  file is missing, malformed, or contains an unknown key or an out-of-range value.
+- CI runs all of the above on three Python versions, with no secrets and no network
+  access to a model provider.
 
-This is the accurate state, and the README says the same thing.
+No conversation can be held, nothing is retrieved, no answer is generated and no
+citation is resolved. The `model.adapter` setting names an adapter that does not
+exist yet, so any code attempting to resolve it would fail — and no such code
+exists.
 
 ## What is tested
 
-Nothing. There is no test suite yet, so no behaviour in this repository has been
-verified by anything other than reading.
+| Area | Coverage |
+| --- | --- |
+| Package installation | Version shape, distribution metadata agreement, console script entry point, `py.typed` |
+| CLI | Version, help, unknown command, `info`, `config show` including failure paths |
+| Configuration | Defaults, file layering and precedence, provenance, unknown keys, wrong types, boolean-vs-integer, ranges, name pattern, missing file, directory, invalid TOML, array values, immutability, schema/dataclass agreement, shipped file vs built-in defaults |
+| Repository invariants | Private pack never tracked, `.gitignore` rule present, no secret-shaped files, no tracked file over 1 MiB, no commercial provider dependency, ADR numbering and indexing, documentation links resolve |
 
 ## What is experimental
 
-Nothing. There is no code to be experimental.
+Nothing. There is no code whose approach is unsettled; the code that exists does
+one small thing each.
 
 ## What is not implemented
 
-Everything in the system, stated as a list so that its length is visible:
-
-- Python package, CLI, configuration loading
-- Language-model interface, registry, and every model adapter
+- Language-model interface, registry and every adapter
 - Conversation state and the conversation manager
 - Query planner
 - Retrieval: fetch, parse, chunk, rank, index, embeddings
-- Evidence pack assembly and citation resolution
+- Evidence records and citation resolution
 - Grounding and citation validation
 - Reassessment and the correction loop
 - Evaluation harness, benchmarks and metrics
@@ -62,10 +79,8 @@ Everything in the system, stated as a list so that its length is visible:
 | ADR-0002 | Application code depends on a language-model boundary, not a model |
 | ADR-0003 | The retrieval layer owns evidence identifiers; the model only references them |
 | ADR-0004 | Apache-2.0 for code; weights and datasets need their own policy before release |
-
-Decisions referenced but not yet written: ADR-0005 (src layout) and ADR-0006
-(TOML configuration). Both are made and both are cited from documents in this
-repository; the records are written as part of the package-metadata unit.
+| ADR-0005 | `src` layout, with training code as a module inside one distribution |
+| ADR-0006 | TOML configuration parsed with the standard library, read-only |
 
 Two process facts are recorded outside the ADR series because they are repository
 history rather than architecture:
@@ -78,16 +93,13 @@ history rather than architecture:
 
 ## Known gaps and risks
 
-See [`KNOWN_ISSUES.md`](KNOWN_ISSUES.md).
+See [`KNOWN_ISSUES.md`](KNOWN_ISSUES.md). K-001 still stands and is the important
+one: nothing in this repository has been executed against a real workload, so every
+architectural decision made so far rests on reasoning rather than measurement.
 
 ## Next step
 
-The next unit is the Python project foundation: `pyproject.toml` with the
-`[dev]` extra, a `src/chakaso/` package with a version and a minimal CLI, a smoke
-test, and CI running format, lint, types and tests. ADR-0005 and ADR-0006 are
-written in that unit, since the layout and configuration-format decisions are what
-the metadata encodes.
-
-After that: typed configuration, then core primitives, then the language-model
-boundary, then source/evidence/conversation records. See
-[`ACTIVE_TASK.md`](ACTIVE_TASK.md).
+The language-model boundary (ADR-0002): a narrow interface, a declared-capability
+model, a registry with a single selection point, contract tests that any
+implementation must satisfy, and one development double so that higher-level
+behaviour can be tested without weights. See [`ACTIVE_TASK.md`](ACTIVE_TASK.md).

@@ -10,6 +10,54 @@ capability is implemented or still planned.
 
 ## Unreleased
 
+### 2026-10-07 — Engineering foundation
+
+**Added — package**
+
+- `src/chakaso/` package with a `src` layout, installable and typed, shipping a
+  `py.typed` marker (ADR-0005). The layout is deliberate: it makes an uninstalled
+  import fail rather than silently testing the working tree.
+- A thin CLI: `--version`, `info`, and `config show`. Argument parsing only; the
+  CLI holds no behaviour of its own.
+- No runtime dependencies. The foundation uses the standard library only.
+
+**Added — configuration**
+
+- Typed configuration schema with declared types, ranges and name patterns,
+  loaded explicitly from TOML with the standard library (ADR-0006).
+- Per-value provenance: every configuration value reports the file it came from,
+  or that it came from the built-in default. `chakaso config show` prints it.
+- Unknown keys, wrong types, out-of-range values, arrays and unsupported TOML
+  types are errors naming the file, the key and the expectation, rather than
+  warnings. A typo that is silently ignored produces a run that does not use the
+  settings its author believes it uses.
+- `configs/default.toml`, whose values a test asserts match the built-in defaults
+  so the two cannot drift.
+
+**Added — verification**
+
+- CI running formatting, linting, type checking and tests on Python 3.11, 3.12 and
+  3.13, with no secrets and no access to a model provider.
+- Repository-hygiene tests enforcing rules that are otherwise broken by accident:
+  the private planning pack never becomes tracked, the ignore rule stays present,
+  no secret-shaped or oversized files are tracked, no dependency is a commercial
+  inference or search provider, decision records are numbered and indexed
+  contiguously, and documentation links resolve.
+
+**Fixed**
+
+- Two documentation links pointed at paths that do not exist. Both were found by
+  the new link check rather than by reading: `docs/agent/CONVENTIONS.md` pointed
+  at `../../decisions/ADR-0006-toml-configuration.md` instead of `../decisions/`,
+  and `docs/getting-started.md` linked to the `configs/` directory.
+
+**Note on scope**
+
+There is still no conversational system: no model interface, no retrieval, no
+correction loop, no tokenizer and no trained model. No benchmark has been run and
+no result is reported anywhere in this repository. Configuration is the only
+component implemented so far.
+
 ### 2026-10-07 — Project foundation
 
 **Added — repository**

@@ -97,43 +97,44 @@ Each component owns one thing and must not grow into its neighbour.
 
 | Component | Responsibility | Must not own | Status |
 | --- | --- | --- | --- |
-| Conversation Manager | Turns, conversation state, active topic, reference resolution, session metadata | Model-specific logic | Planned (state records implemented) |
+| Configuration | Declare, load and validate versioned settings, and report where each value came from | Component behaviour | Implemented |
+| Conversation Manager | Turns, conversation state, active topic, reference resolution, session metadata | Model-specific logic | Planned |
 | Query Planner | Decide whether retrieval is useful; formulate retrieval queries while preserving intent | Source truth | Planned |
 | Retriever | Find candidate documents and chunks | Generate the final answer | Planned |
 | Fetcher | Retrieve permitted public content under an explicit policy | Interpret facts | Planned |
 | Document Processor | Extract readable text, metadata and section structure | Invent missing text | Planned |
 | Chunker | Produce stable evidence units with positions | Rank claims | Planned |
 | Ranker | Order candidate evidence | Generate the answer | Planned |
-| Evidence Store | Persist source and chunk records, metadata and hashes | Produce user-facing prose | Planned (records implemented) |
-| Model Adapter | Uniform interface to any local or future model | Search | Implemented (interface only) |
+| Evidence Store | Persist source and chunk records, metadata and hashes | Produce user-facing prose | Planned |
+| Model Adapter | Uniform interface to any local or future model | Search | Planned |
 | Grounding / Citation Validator | Check that every cited identifier exists and that cited evidence supports the claim | Rewrite the user's request | Planned |
 | Reassessment Engine | Compare previous claims with new evidence and decide retain/qualify/correct | Silently rewrite history | Planned |
 | Evaluation | Measure behaviour and detect regressions | Change production behaviour | Planned |
 
-A component whose row says "Planned" has no code. The two rows marked
-"implemented" for records refer to data types only — the surrounding pipeline
-does not exist.
+A component marked "Planned" has no code. Configuration is the only one implemented
+so far; [`agent/CURRENT_STATE.md`](agent/CURRENT_STATE.md) is the authority.
 
 ## Interfaces
 
-The boundaries that exist or are committed to:
+The boundaries that exist, or that the project is committed to building:
 
 | Boundary | Shape | Status |
 | --- | --- | --- |
-| `LanguageModel` | generate, structured generation, tokenize, metadata, declared capabilities | Implemented |
-| Model registry | name -> implementation, one selection point | Implemented |
-| `SourceRecord` | immutable retrieved-source identity and metadata | Implemented |
-| `EvidenceChunk` | immutable evidence unit referencing a source | Implemented |
-| `EvidencePack` | the set of chunks supplied to one generation call | Partly implemented |
-| Citation resolution | evidence identifier -> verified source metadata, with rejection of unknown identifiers | Partly implemented |
-| `Conversation` | messages, active topic, entities, open questions, prior sources | Partly implemented |
+| Configuration schema | Typed fields with declared ranges and patterns, loaded explicitly from TOML with per-value provenance | Implemented |
+| `LanguageModel` | generate, structured generation, tokenize, metadata, declared capabilities | Planned |
+| Model registry | name -> implementation, one selection point | Planned |
+| `SourceRecord` | immutable retrieved-source identity and metadata | Planned |
+| `EvidenceChunk` | immutable evidence unit referencing a source | Planned |
+| `EvidencePack` | the set of chunks supplied to one generation call | Planned |
+| Citation resolution | evidence identifier -> verified source metadata, with rejection of unknown identifiers | Planned |
+| `Conversation` | messages, active topic, entities, open questions, prior sources | Planned |
 | `AnswerRecord` | answer text, cited identifiers, model and prompt versions, correction lineage | Planned |
 | Retriever / Fetcher | pluggable retrieval and fetch mechanisms | Planned |
 | Reassessment | previous answer plus new evidence -> retain/qualify/correct | Planned |
 
-"Partly implemented" means the type exists and is tested, but the behaviour that
-uses it does not. [`agent/CURRENT_STATE.md`](agent/CURRENT_STATE.md) is the
-authority on this.
+"Planned" here means there is no code, and the shape described is the specification
+to build against rather than a description of something that exists. Configuration
+is the only boundary implemented so far.
 
 ## Data flow for one turn
 

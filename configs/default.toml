@@ -1,0 +1,32 @@
+# Default Chakaso configuration.
+#
+# Every value here matches the built-in default declared in
+# src/chakaso/config/schema.py. tests/test_config.py asserts that the two agree, so
+# this file cannot silently stop describing what the code actually does.
+#
+# This file is versioned for a reason: a run should be reproducible from the
+# repository rather than from somebody's memory of what they changed. Machine-local
+# overrides belong in configs/local.toml, which is git-ignored, and are applied by
+# passing them explicitly:
+#
+#     chakaso config show --config configs/default.toml --config configs/local.toml
+#
+# Nothing reads this file implicitly. Loading is always an explicit request.
+
+[model]
+# Which registered language-model adapter the application uses. This file is the
+# single composition point where a concrete implementation is chosen (ADR-0002).
+#
+# "deterministic" is a development double, not a language model: it produces fixed
+# text so that conversation, evidence and citation logic can be tested without
+# weights, a GPU or a download. There is no trained Chakaso model and no local
+# inference adapter yet. When one exists, this value changes, and so does the
+# default in schema.py.
+adapter = "deterministic"
+
+# Ceiling on generated tokens for one response, before the model's own context
+# limit is considered.
+max_new_tokens = 256
+
+# 0.0 means greedy decoding. Sampling is a deliberate choice, not a default.
+temperature = 0.0

@@ -18,15 +18,15 @@ research repository becomes unreproducible.
 - [x] Apache-2.0 license with the decision recorded (ADR-0004)
 - [x] Public documentation set: README, getting started, architecture,
       transparency, retrieval, correction, training, evaluation, roadmap
-- [x] Decision records ADR-0001 through ADR-0004
+- [x] Decision records ADR-0001 through ADR-0006
 - [x] Research foundation: log, hypotheses, open questions, literature
 - [x] Contribution guide and agent contract
+- [x] Python project metadata and package skeleton (ADR-0005)
+- [x] CI running format, lint, types and tests on Python 3.11, 3.12 and 3.13
+- [x] Typed configuration with explicit loading and per-value provenance (ADR-0006)
 
 ### In progress
 
-- [ ] Python project metadata and package skeleton
-- [ ] CI running format, lint, types and tests
-- [ ] Typed configuration
 - [ ] Core primitives: identifiers, content hashing, errors
 - [ ] Language-model boundary with contract tests
 - [ ] Source, evidence and conversation records

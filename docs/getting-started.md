@@ -81,35 +81,44 @@ $env:PYTHONPATH = "src"; python -m pytest
 
 ## Configuration
 
-Configuration is TOML, loaded explicitly rather than discovered by magic. Versioned
-configuration lives in `configs/`; machine-local overrides use `configs/local.toml`,
-which is git-ignored.
+Configuration is TOML, parsed with the standard library and loaded explicitly. No
+file is discovered by scanning, and no environment variable is substituted for a
+file value: a caller passes the files it wants, in order.
 
 ```bash
+# The built-in defaults, with no file read at all
 python -m chakaso config show
+
+# The repository's versioned defaults
+python -m chakaso config show --config configs/default.toml
+
+# Versioned defaults plus a machine-local override, later files winning
+python -m chakaso config show --config configs/default.toml --config configs/local.toml
 ```
 
-This prints the resolved configuration and where each value came from. Environment
-values are not silently substituted for file values; an override has to be asked
-for.
+Every value is printed with the source it came from, so "temperature was 0.0" can
+be distinguished from "temperature was 0.0 because a file that has since been
+edited said so".
+
+An unknown key is an error, not a warning. A typo in a configuration file produces
+a run that does not use the settings its author believes it uses, and that is worse
+than a startup failure. The error names the file, the key, and the keys that do
+exist.
 
 ## Repository layout
 
 ```text
 src/chakaso/           package source
-  config/              typed configuration and loading
-  core/                identifiers, hashing, errors, shared primitives
-  models/              language-model interface, registry, implementations
-  conversation/        conversation and message state
-  evidence/            source records, evidence chunks, citation resolution
+  config/              typed configuration, loading and provenance
 tests/                 unit, contract and repository-hygiene tests
 configs/               versioned configuration files
 docs/                  documentation (see docs/README.md)
 experiments/           experiment records
 ```
 
-Directories appear when they contain something real. If a component in
-[`architecture.md`](architecture.md) has no directory here, it is not implemented.
+Only modules that exist appear here. `docs/architecture.md` describes the modules
+that are planned and their status; a directory is created when it contains
+something real, not in anticipation of it.
 
 ## Contributing
 
