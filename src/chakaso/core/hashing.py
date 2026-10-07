@@ -20,7 +20,14 @@ import hashlib
 
 from chakaso.core.errors import ChakasoError
 
-__all__ = ["SHA256_HEX_LENGTH", "sha256_hex", "short_sha256_hex"]
+__all__ = [
+    "SHA256_HEX_LENGTH",
+    "HashingError",
+    "is_sha256_hex",
+    "join_parts",
+    "sha256_hex",
+    "short_sha256_hex",
+]
 
 #: Length of a full SHA-256 digest in hexadecimal characters.
 SHA256_HEX_LENGTH = 64
@@ -70,3 +77,15 @@ def join_parts(*parts: str) -> str:
     asserts that the separator actually prevents concatenation ambiguity.
     """
     return PART_SEPARATOR.join(parts)
+
+
+def is_sha256_hex(value: object) -> bool:
+    """Whether ``value`` is a full lowercase SHA-256 hexadecimal digest.
+
+    Used to validate a stored ``content_hash`` field, where a truncated or
+    upper-case digest would compare unequal to a freshly computed one and make a
+    record look corrupt for no real reason.
+    """
+    if not isinstance(value, str) or len(value) != SHA256_HEX_LENGTH:
+        return False
+    return all(character in "0123456789abcdef" for character in value)

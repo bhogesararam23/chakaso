@@ -125,18 +125,19 @@ The boundaries that exist, or that the project is committed to building:
 | Configuration schema | Typed fields with declared ranges and patterns, loaded explicitly from TOML with per-value provenance | Implemented |
 | `LanguageModel` | `metadata` plus `generate` over a message list and explicit generation parameters | Implemented |
 | Model registry | adapter name -> factory, with one creation entry point | Implemented |
-| `SourceRecord` | immutable retrieved-source identity and metadata | Planned |
-| `EvidenceChunk` | immutable evidence unit referencing a source | Planned |
-| `EvidencePack` | the set of chunks supplied to one generation call | Planned |
-| Citation resolution | evidence identifier -> verified source metadata, with rejection of unknown identifiers | Planned |
+| `SourceRecord` | immutable retrieved-source identity and metadata | Implemented |
+| `EvidenceChunk` | immutable evidence unit referencing a source | Implemented |
+| `EvidencePack` | the set of chunks supplied to one generation call | Implemented |
+| Citation resolution | evidence identifier -> verified source metadata, with rejection of unknown identifiers | Implemented |
 | `Conversation` | messages, active topic, entities, open questions, prior sources | Planned |
 | `AnswerRecord` | answer text, cited identifiers, model and prompt versions, correction lineage | Planned |
 | Retriever / Fetcher | pluggable retrieval and fetch mechanisms | Planned |
 | Reassessment | previous answer plus new evidence -> retain/qualify/correct | Planned |
 
 "Planned" here means there is no code, and the shape described is the specification
-to build against rather than a description of something that exists. Configuration
-and the model boundary are the only boundaries implemented so far.
+to build against rather than a description of something that exists. Configuration,
+the model boundary and the evidence records are implemented; retrieval itself is
+not, so nothing has been fetched or indexed.
 
 ### The model boundary
 

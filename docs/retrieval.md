@@ -118,8 +118,9 @@ evidence textually and structurally.
 | Component | Status |
 | --- | --- |
 | `SourceRecord`, `EvidenceChunk` types | Implemented |
-| URL normalization and deduplication helpers | Implemented |
-| Evidence Pack type and identifier validation | Partly implemented |
+| URL canonicalization and host extraction | Implemented |
+| Evidence Pack with identifier validation | Implemented |
+| Citation resolution, including rejection of unknown identifiers | Implemented |
 | Fetch policy and fetcher | Planned |
 | Document processing and main-content extraction | Planned |
 | Chunking | Planned |
@@ -129,6 +130,9 @@ evidence textually and structurally.
 | Claim-level support checking | Planned |
 | Retrieval metrics (Recall@k, precision@k, MRR/NDCG) | Planned |
 
-No retrieval has been run against the live web, and no retrieval metric has been
-measured. Any number appearing in this repository's documentation would be
-invented; there are none.
+The records, the pack and resolution are implemented and tested without any
+network access: a record is built from content a caller already has. No retriever
+and no fetcher exist, so nothing has been retrieved from the web.
+
+No retrieval metric has been measured. Any number appearing in this repository's
+documentation would be invented; there are none.

@@ -26,10 +26,11 @@ research repository becomes unreproducible.
 - [x] Typed configuration with explicit loading and per-value provenance (ADR-0006)
 - [x] Core primitives: content-derived identifiers, hashing, error base (ADR-0007)
 - [x] Language-model boundary, capabilities, registry and contract tests (ADR-0002)
+- [x] Source and evidence records, evidence packs and citation resolution (ADR-0003)
 
 ### In progress
 
-- [ ] Source, evidence and conversation records
+- [ ] Conversation state and the conversation manager
 
 ### Not started, and in the order they will be taken
 

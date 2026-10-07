@@ -1,6 +1,6 @@
 # Current state
 
-Last updated: 2026-10-07, at commit `feat: add the language-model boundary`.
+Last updated: 2026-10-07, at commit `feat: add evidence records and citation resolution`.
 
 This file is the authority on what exists. If it disagrees with any other
 document, this file is right and the other document is a defect.
@@ -23,7 +23,8 @@ A private planning note is never evidence that something is implemented.
 | Core primitives | `src/chakaso/core/` | Content-derived identifiers, SHA-256 hashing, error base |
 | Model boundary | `src/chakaso/models/` | `LanguageModel` protocol, capabilities, registry, contract tests |
 | Model implementations | `src/chakaso/models/deterministic.py` | A development double only. **No language model exists.** |
-| Tests | `tests/` | 161 tests across package, CLI, configuration, primitives, the model boundary and repository hygiene |
+| Evidence records | `src/chakaso/evidence/` | `SourceRecord`, `EvidenceChunk`, `EvidencePack`, URL canonicalization, citation resolution |
+| Tests | `tests/` | 238 tests across package, CLI, configuration, primitives, the model boundary, evidence and repository hygiene |
 | CI | `.github/workflows/ci.yml` | Green on Python 3.11, 3.12, 3.13 |
 | Conversation state | **does not exist** | Next unit |
 | Retrieval, evidence store, correction | **do not exist** | Planned |
@@ -47,6 +48,11 @@ A private planning note is never evidence that something is implemented.
 - Asking the double to tokenize or produce structured output fails at the boundary
   with a message naming the model and the capability, rather than returning
   something that looks like an answer.
+- A source record can be built from a URL and content, deriving its own identity and
+  content hash, and can confirm later whether a given content still matches it.
+- An evidence pack can be assembled from chunks and sources, and the references in an
+  answer resolved against it: resolved citations, unknown identifiers and malformed
+  identifiers are reported separately.
 - CI runs all of the above on three Python versions, with no secrets and no network
   access to a model provider.
 
@@ -64,6 +70,7 @@ citation is resolved.
 | Configuration | Defaults, file layering and precedence, provenance, unknown keys, wrong types, boolean-vs-integer, ranges, name pattern, missing file, directory, invalid TOML, array values, immutability, schema/dataclass agreement, shipped file vs built-in defaults |
 | Identifiers and hashing | Digest agreement with `hashlib`, UTF-8 handling, truncation bounds, part-separator ambiguity, derivation determinism, deduplication, content-change distinction, position and text sensitivity, malformed identifier rejection, ordering and hashing |
 | Model boundary | The inherited contract suite (metadata, provenance of results, repeatability at zero temperature, empty-request rejection, length ceiling, unsupported-capability failures, declared capabilities being implemented), plus capability reconciliation, parameter validation, registry failure paths and the double's documented behaviour |
+| Evidence | Canonicalization idempotence and non-merging, tracking-parameter removal, scheme and credential refusal, IPv6 handling, record immutability, naive-timestamp rejection, content-hash validation, change detection, pack validation, and citation resolution including fabricated and malformed references |
 | Repository invariants | Private pack never tracked, `.gitignore` rule present, no secret-shaped files, no tracked file over 1 MiB, no commercial provider dependency, ADR numbering and indexing, documentation links resolve |
 
 ## What is experimental
@@ -76,7 +83,6 @@ one small thing each.
 - Conversation state and the conversation manager
 - Query planner
 - Retrieval: fetch, parse, chunk, rank, index, embeddings
-- Source records, evidence chunks, evidence packs and citation resolution
 - Grounding and citation validation
 - Reassessment and the correction loop
 - Evaluation harness, benchmarks and metrics

@@ -10,6 +10,47 @@ capability is implemented or still planned.
 
 ## Unreleased
 
+### 2026-10-07 — Evidence records and citation resolution
+
+**Added**
+
+- `chakaso.evidence.SourceRecord`: an immutable record of one canonical URL with
+  one content body, carrying a content-derived identifier, host, retrieval time,
+  optional publication time, content hash and extraction metadata. Built through
+  `create()`, so an identifier cannot disagree with the content it names.
+- `EvidenceChunk`: an immutable evidence unit with a derived identifier, position,
+  optional section, and retrieval and rerank scores recorded but never presented as
+  confidence.
+- URL canonicalization, documented as part of the identifier contract because
+  identifiers are derived from it (ADR-0007). It removes fragments, default ports,
+  trailing root dots, trailing slashes and campaign parameters, and refuses
+  non-HTTP schemes and URLs with embedded credentials.
+- `EvidencePack`: the bounded set of evidence supplied to one generation call,
+  which validates that every chunk's source is present and that identifiers are
+  unique, and drops sources no chunk refers to.
+- `resolve_citations()`: a validation gate rather than a lookup. A well-formed
+  identifier that was supplied resolves to its chunk and source; one that was not
+  supplied is recorded as an unknown reference; an identifier-shaped string that is
+  not valid is recorded as a malformed reference. Nothing outside the pack is ever
+  resolved, which is the rule ADR-0003 exists to enforce.
+
+**Fixed**
+
+- `canonicalize_url` dropped the brackets from IPv6 literals, producing a string
+  that parses as a different URL.
+- `EvidenceChunk.create` raised an identifier error rather than a record error for
+  a negative position, so the same defect had two different exception types
+  depending on which entry point was used.
+- Citation resolution classified references as unknown before checking whether they
+  were valid, which made the malformed bucket unreachable. Inventing a source and
+  fumbling the identifier format are different defects with different fixes, and
+  they are now counted separately.
+
+**Note on scope**
+
+Nothing has been fetched or indexed. These records are built from content a caller
+already has, so the evidence layer is implemented without any retrieval.
+
 ### 2026-10-07 — Language-model boundary
 
 **Added**
