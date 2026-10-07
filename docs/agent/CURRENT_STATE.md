@@ -1,6 +1,6 @@
 # Current state
 
-Last updated: 2026-10-07, at commit `feat: add evidence records and citation resolution`.
+Last updated: 2026-10-07, at commit `feat: add immutable conversation state`.
 
 This file is the authority on what exists. If it disagrees with any other
 document, this file is right and the other document is a defect.
@@ -24,9 +24,9 @@ A private planning note is never evidence that something is implemented.
 | Model boundary | `src/chakaso/models/` | `LanguageModel` protocol, capabilities, registry, contract tests |
 | Model implementations | `src/chakaso/models/deterministic.py` | A development double only. **No language model exists.** |
 | Evidence records | `src/chakaso/evidence/` | `SourceRecord`, `EvidenceChunk`, `EvidencePack`, URL canonicalization, citation resolution |
-| Tests | `tests/` | 238 tests across package, CLI, configuration, primitives, the model boundary, evidence and repository hygiene |
+| Conversation state | `src/chakaso/conversation/` | Immutable, append-only turns with provenance; topic, entities and open questions |
+| Tests | `tests/` | 262 tests across package, CLI, configuration, primitives, the model boundary, evidence, conversation and repository hygiene |
 | CI | `.github/workflows/ci.yml` | Green on Python 3.11, 3.12, 3.13 |
-| Conversation state | **does not exist** | Next unit |
 | Retrieval, evidence store, correction | **do not exist** | Planned |
 
 ## What works
@@ -80,7 +80,7 @@ one small thing each.
 
 ## What is not implemented
 
-- Conversation state and the conversation manager
+- The conversation manager: nothing yet drives the state type
 - Query planner
 - Retrieval: fetch, parse, chunk, rank, index, embeddings
 - Grounding and citation validation

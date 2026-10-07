@@ -98,7 +98,7 @@ Each component owns one thing and must not grow into its neighbour.
 | Component | Responsibility | Must not own | Status |
 | --- | --- | --- | --- |
 | Configuration | Declare, load and validate versioned settings, and report where each value came from | Component behaviour | Implemented |
-| Conversation Manager | Turns, conversation state, active topic, reference resolution, session metadata | Model-specific logic | Planned |
+| Conversation Manager | Turns, conversation state, active topic, reference resolution, session metadata | Model-specific logic | Planned (state type implemented; no manager) |
 | Query Planner | Decide whether retrieval is useful; formulate retrieval queries while preserving intent | Source truth | Planned |
 | Retriever | Find candidate documents and chunks | Generate the final answer | Planned |
 | Fetcher | Retrieve permitted public content under an explicit policy | Interpret facts | Planned |
@@ -129,15 +129,15 @@ The boundaries that exist, or that the project is committed to building:
 | `EvidenceChunk` | immutable evidence unit referencing a source | Implemented |
 | `EvidencePack` | the set of chunks supplied to one generation call | Implemented |
 | Citation resolution | evidence identifier -> verified source metadata, with rejection of unknown identifiers | Implemented |
-| `Conversation` | messages, active topic, entities, open questions, prior sources | Planned |
+| `Conversation` | turns with provenance, active topic, entities, open questions, prior sources | Implemented |
 | `AnswerRecord` | answer text, cited identifiers, model and prompt versions, correction lineage | Planned |
 | Retriever / Fetcher | pluggable retrieval and fetch mechanisms | Planned |
 | Reassessment | previous answer plus new evidence -> retain/qualify/correct | Planned |
 
 "Planned" here means there is no code, and the shape described is the specification
 to build against rather than a description of something that exists. Configuration,
-the model boundary and the evidence records are implemented; retrieval itself is
-not, so nothing has been fetched or indexed.
+the model boundary, the evidence records and conversation state are implemented;
+retrieval itself is not, so nothing has been fetched or indexed.
 
 ### The model boundary
 

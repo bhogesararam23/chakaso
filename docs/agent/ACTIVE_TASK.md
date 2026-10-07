@@ -27,10 +27,11 @@ research repository becomes unreproducible.
 - [x] Core primitives: content-derived identifiers, hashing, error base (ADR-0007)
 - [x] Language-model boundary, capabilities, registry and contract tests (ADR-0002)
 - [x] Source and evidence records, evidence packs and citation resolution (ADR-0003)
+- [x] Conversation state: immutable, append-only turns with provenance
 
 ### In progress
 
-- [ ] Conversation state and the conversation manager
+- [ ] Conversation manager behaviour on top of the state records
 
 ### Not started, and in the order they will be taken
 

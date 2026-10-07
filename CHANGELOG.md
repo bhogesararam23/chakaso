@@ -10,6 +10,31 @@ capability is implemented or still planned.
 
 ## Unreleased
 
+### 2026-10-07 — Conversation state
+
+**Added**
+
+- `chakaso.conversation`: immutable, append-only conversation state. Turns record
+  when they happened, which evidence was supplied for them and which sources the
+  answer actually referenced — kept separate, because "which of those did you use?"
+  is unanswerable if only the union is stored.
+- `Conversation.to_model_messages()` is the single mapping from conversation state
+  to what a model sees, with an optional turn limit. A model is given roles and text
+  and nothing else.
+- State carries the active topic, entities and open questions, and exposes the
+  sources the conversation has touched, most recent first, which is what a follow-up
+  question has to resolve against.
+- Enforced invariants: timestamps must be timezone-aware, history is append-only for
+  a given conversation, and an answer cannot cite a source it was not given. That
+  last rule is the ADR-0003 rule applied to the recorded state rather than to the
+  text.
+
+**Not added, deliberately**
+
+Claims and an answer record. Both belong to the reassessment path, which does not
+exist yet; adding them here would bake the shape of correction into conversation
+before anything has decided what a claim is.
+
 ### 2026-10-07 — Evidence records and citation resolution
 
 **Added**
