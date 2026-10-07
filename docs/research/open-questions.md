@@ -84,9 +84,19 @@ one to serve both would serve neither.
 
 ### Where should conversation state be persisted?
 
-In memory for the first shell, then what? The type exists without a store. This is
-deferred because the shape of the state will change once retrieval and correction
-attach to it, and a store designed now would be designed against a guess.
+**Answered for now, and deliberately so.** The conversation manager keeps state in
+memory and returns a new immutable `Conversation` on each successful turn. Nothing
+is written to disk.
+
+**Why that is enough for now.** A store designed before retrieval and correction
+attach to the state would be designed against a guess about its shape. The state
+type is immutable and append-only, so adding persistence later means writing a
+store, not changing what is stored.
+
+**What would reopen it.** A conversation that has to survive a process restart, or
+an experiment that needs transcripts as data. Both are real, neither is current.
+The consequence to keep in view is that a session is lost on exit, and the CLI
+should say so rather than implying otherwise.
 
 ### What is the artifact policy for weights and datasets?
 

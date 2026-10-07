@@ -12,7 +12,7 @@ Last reviewed: 2026-10-07.
 **Impact:** High, and it is the honest summary of the project's position.
 
 The architecture is a specification. It has never handled a live web page, a real
-question, or a model. Decisions recorded in ADRs 0001–0004 rest on reasoning, not
+question, or a model. Decisions recorded in ADRs 0001–0007 rest on reasoning, not
 on measurement, and some of them may turn out to be wrong when they meet data.
 The contract in ADR-0003 in particular assumes that models can be made to reference
 opaque evidence identifiers reliably; that assumption is untested.
@@ -72,11 +72,16 @@ Tracked in `docs/research/open-questions.md`.
 
 ## Resolved
 
-### K-002, formerly — No package, no tests and no CI existed
+### Retired — no package, no tests and no CI existed
 
 Closed on 2026-10-07. The repository now has an installable typed package, a test
 suite, and CI running formatting, linting, type checking and tests on Python 3.11,
 3.12 and 3.13. The entry is kept rather than deleted because the risk it recorded
--- that the absence of verification would stop being obvious -- is the kind that
-returns when CI is disabled for a while, and it is worth being able to point at
+— that the absence of verification would stop being obvious — is the kind that
+returns whenever CI is disabled for a while, and it is worth being able to point at
 the last time it was true.
+
+It originally carried the number K-002, which was reused by a live issue when this
+list was renumbered. Resolved entries are now unnumbered: a closed issue does not
+need to be referenced, and reusing its number for something else is a way to make
+two different problems look like one.

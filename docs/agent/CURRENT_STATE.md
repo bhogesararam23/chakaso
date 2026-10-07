@@ -1,6 +1,6 @@
 # Current state
 
-Last updated: 2026-10-07, at commit `feat: add immutable conversation state`.
+Last updated: 2026-10-07, at commit `6c8c84d` (`docs: stop stating test counts that go stale`).
 
 This file is the authority on what exists. If it disagrees with any other
 document, this file is right and the other document is a defect.
@@ -83,7 +83,8 @@ one small thing each.
 
 ## What is not implemented
 
-- The conversation manager: nothing yet drives the state type
+- The conversation manager: the state type exists, but nothing yet drives it. This
+  is the next unit.
 - Query planner
 - Retrieval: fetch, parse, chunk, rank, index, embeddings
 - Grounding and citation validation
@@ -121,8 +122,17 @@ architectural decision made so far rests on reasoning rather than measurement.
 
 ## Next step
 
-Source, evidence and conversation records: an immutable `SourceRecord` and
-`EvidenceChunk` carrying derived identifiers and provenance, URL normalization and
-deduplication, an `EvidencePack` that validation can check citations against, and
-the conversation state that follow-up questions will resolve against. See
-[`ACTIVE_TASK.md`](ACTIVE_TASK.md).
+The current phase is P2, the local conversational shell. The first unit in it is
+the **conversation manager**: the orchestration boundary that accepts a user turn,
+projects the relevant conversation context into model-facing messages, invokes the
+model through the boundary, validates the result, records the assistant turn, and
+returns the new immutable state. It must depend on `LanguageModel` rather than on
+any concrete adapter, keep failures distinguishable, and leave an explicit seam
+where query planning and retrieval will later supply evidence.
+
+Nothing in the manager may invent retrieval, citations or confidence. See
+[`ACTIVE_TASK.md`](ACTIVE_TASK.md) for the unit's definition of done and
+[`../architecture.md`](../architecture.md) for where it sits in the data flow.
+
+The conversation *state* records the manager will drive already exist and are
+tested; this unit adds the behaviour on top of them, not the records themselves.
