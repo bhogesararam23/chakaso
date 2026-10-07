@@ -10,6 +10,28 @@ capability is implemented or still planned.
 
 ## Unreleased
 
+### 2026-10-07 — Python 3.11 compatibility fix
+
+**Fixed**
+
+- `SourceRecord.metadata` used a shared `mappingproxy` as a dataclass field
+  default. Python 3.11 rejects *any* unhashable default outright, and a
+  mappingproxy is unhashable, so `chakaso.evidence` failed at import on 3.11 while
+  working on 3.12 and 3.13. It now uses `default_factory`.
+
+**Why this is recorded**
+
+It was caught by CI rather than locally, because development was happening on
+Python 3.13 and the failure was an import-time error rather than a wrong result.
+Three consecutive pushes went out with red CI before it was noticed, which is a
+process failure as much as a code one: a push is not finished until the run is
+checked.
+
+Two things changed as a result. Version-suffixed virtual environments (`.venv311`,
+`.venv312`) are now documented for checking the floor locally, and `.gitignore`
+covers them, so the suite runs on all three supported versions before a push rather
+than only in CI.
+
 ### 2026-10-07 — Conversation state
 
 **Added**

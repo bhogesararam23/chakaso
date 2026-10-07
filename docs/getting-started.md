@@ -64,6 +64,28 @@ caches under `.mypy_cache/`.
 The test suite is designed to run offline. If a test needs the network, it is
 marked and skipped by default.
 
+### Testing the declared Python floor
+
+CI runs the suite on Python 3.11, 3.12 and 3.13. Running only the interpreter you
+happen to have is not enough: the floor is a real constraint, and a construct that
+works on 3.13 can fail at import on 3.11.
+
+A version-suffixed virtual environment checks the floor without disturbing your
+main one. The `.gitignore` covers `.venv*` for this reason.
+
+```bash
+# with uv, which can also fetch the interpreter
+uv python install 3.11
+uv venv .venv311 --python 3.11
+uv pip install --python .venv311/Scripts/python.exe -e ".[dev]"
+.venv311/Scripts/python.exe -m pytest
+
+# or with the standard library and an interpreter you already have
+python3.11 -m venv .venv311
+```
+
+On Linux and macOS the paths are `.venv311/bin/python` instead.
+
 ## Running without installing
 
 The package uses a `src/` layout, so `python -c "import chakaso"` from the

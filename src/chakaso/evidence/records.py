@@ -67,7 +67,12 @@ class SourceRecord:
     published_at: datetime | None
     content_hash: str
     raw_text_path: str | None = None
-    metadata: Mapping[str, str] = field(default=_EMPTY_METADATA)
+    # default_factory rather than a bare default: Python 3.11's dataclasses reject
+    # any default whose type is unhashable, and mappingproxy is unhashable, so
+    # `field(default=_EMPTY_METADATA)` raises at import time on 3.11 while working
+    # on 3.12 and later. The shared object is immutable, so one instance for every
+    # record is safe.
+    metadata: Mapping[str, str] = field(default_factory=lambda: _EMPTY_METADATA)
 
     def __post_init__(self) -> None:
         if not self.canonical_url:
