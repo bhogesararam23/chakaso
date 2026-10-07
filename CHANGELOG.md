@@ -10,6 +10,26 @@ capability is implemented or still planned.
 
 ## Unreleased
 
+### 2026-10-07 — Core primitives
+
+**Added**
+
+- `chakaso.core.identifiers`: `SourceId` and `ChunkId`, validated on construction
+  and derived from content rather than assigned at random (ADR-0007). The same URL
+  with the same content yields the same identifier, so repeated retrieval
+  deduplicates; the same URL with different content yields a different identifier,
+  so an earlier answer keeps pointing at the bytes it actually used.
+- `chakaso.core.hashing`: SHA-256 over text or bytes, with a truncated form for
+  identifiers and an explicit part separator so that concatenating parts before
+  hashing cannot be ambiguous.
+- `chakaso.core.errors`: a base error type for deliberately raised failures, with
+  validation errors also deriving from `ValueError` so untrusted input can be
+  caught with the built-in type.
+
+**Note on scope**
+
+Still no model interface, retrieval, correction loop, tokenizer or trained model.
+
 ### 2026-10-07 — Engineering foundation
 
 **Added — package**

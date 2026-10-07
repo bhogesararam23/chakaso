@@ -1,6 +1,6 @@
 # Current state
 
-Last updated: 2026-10-07, at commit `feat: add typed configuration with value provenance`.
+Last updated: 2026-10-07, at commit `feat: add core identifier and hashing primitives`.
 
 This file is the authority on what exists. If it disagrees with any other
 document, this file is right and the other document is a defect.
@@ -14,13 +14,14 @@ A private planning note is never evidence that something is implemented.
 | Repository conventions | `.gitignore`, `.gitattributes`, `.editorconfig` | Private docx pack excluded by `.gitignore` and guarded by a test |
 | License | `LICENSE` | Apache-2.0; rationale in ADR-0004 |
 | Public documentation | `README.md`, `docs/*.md`, `docs/research/` | Specifications with mandatory status labels |
-| Decision records | `docs/decisions/` | ADR-0001 to ADR-0006 |
+| Decision records | `docs/decisions/` | ADR-0001 to ADR-0007 |
 | Contribution guide | `CONTRIBUTING.md` | |
 | Agent contract | `AGENTS.md`, `docs/agent/` | |
 | Python package | `src/chakaso/` | Installs; typed; `py.typed` ships |
 | CLI | `src/chakaso/cli.py` | `--version`, `info`, `config show` |
 | Configuration | `src/chakaso/config/`, `configs/default.toml` | Typed schema, explicit loading, per-value provenance |
-| Tests | `tests/` | 57 tests across package, CLI, configuration and repository hygiene |
+| Core primitives | `src/chakaso/core/` | Content-derived identifiers, SHA-256 hashing, error base |
+| Tests | `tests/` | 100 tests across package, CLI, configuration, primitives and repository hygiene |
 | CI | `.github/workflows/ci.yml` | Green on Python 3.11, 3.12, 3.13 |
 | Model interface | **does not exist** | Next unit |
 | Retrieval, evidence store, correction | **do not exist** | Planned |
@@ -28,7 +29,7 @@ A private planning note is never evidence that something is implemented.
 ## What works
 
 - `python -m pip install -e ".[dev]"` installs the package and its dev tools.
-- `python -m pytest` runs 57 tests. All pass.
+- `python -m pytest` runs 100 tests. All pass.
 - `python -m ruff check .`, `python -m ruff format --check .` and `python -m mypy src`
   pass under strict settings.
 - `python -m chakaso --version` and `python -m chakaso info` report the version,
@@ -36,6 +37,8 @@ A private planning note is never evidence that something is implemented.
 - `python -m chakaso config show` prints every configuration value with the source
   it came from, and exits non-zero with a specific message when a configuration
   file is missing, malformed, or contains an unknown key or an out-of-range value.
+- Source and chunk identifiers can be derived from content and validated from a
+  string, which is the path a citation from generated text will take.
 - CI runs all of the above on three Python versions, with no secrets and no network
   access to a model provider.
 
@@ -51,6 +54,7 @@ exists.
 | Package installation | Version shape, distribution metadata agreement, console script entry point, `py.typed` |
 | CLI | Version, help, unknown command, `info`, `config show` including failure paths |
 | Configuration | Defaults, file layering and precedence, provenance, unknown keys, wrong types, boolean-vs-integer, ranges, name pattern, missing file, directory, invalid TOML, array values, immutability, schema/dataclass agreement, shipped file vs built-in defaults |
+| Identifiers and hashing | Digest agreement with `hashlib`, UTF-8 handling, truncation bounds, part-separator ambiguity, derivation determinism, deduplication, content-change distinction, position and text sensitivity, malformed identifier rejection, ordering and hashing |
 | Repository invariants | Private pack never tracked, `.gitignore` rule present, no secret-shaped files, no tracked file over 1 MiB, no commercial provider dependency, ADR numbering and indexing, documentation links resolve |
 
 ## What is experimental
@@ -81,6 +85,7 @@ one small thing each.
 | ADR-0004 | Apache-2.0 for code; weights and datasets need their own policy before release |
 | ADR-0005 | `src` layout, with training code as a module inside one distribution |
 | ADR-0006 | TOML configuration parsed with the standard library, read-only |
+| ADR-0007 | Evidence identifiers are derived from content and the canonical URL, not assigned at random |
 
 Two process facts are recorded outside the ADR series because they are repository
 history rather than architecture:

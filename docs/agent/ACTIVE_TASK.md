@@ -24,10 +24,10 @@ research repository becomes unreproducible.
 - [x] Python project metadata and package skeleton (ADR-0005)
 - [x] CI running format, lint, types and tests on Python 3.11, 3.12 and 3.13
 - [x] Typed configuration with explicit loading and per-value provenance (ADR-0006)
+- [x] Core primitives: content-derived identifiers, hashing, error base (ADR-0007)
 
 ### In progress
 
-- [ ] Core primitives: identifiers, content hashing, errors
 - [ ] Language-model boundary with contract tests
 - [ ] Source, evidence and conversation records
 

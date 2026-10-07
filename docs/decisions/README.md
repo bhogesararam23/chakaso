@@ -99,3 +99,4 @@ creates.
 | [ADR-0004](ADR-0004-apache-2.0-license.md) | Apache-2.0 as the project license | Accepted |
 | [ADR-0005](ADR-0005-src-layout.md) | src-layout Python package | Accepted |
 | [ADR-0006](ADR-0006-toml-configuration.md) | TOML configuration parsed with the standard library | Accepted |
+| [ADR-0007](ADR-0007-content-derived-identifiers.md) | Evidence identifiers are derived from content, not assigned at random | Accepted |
