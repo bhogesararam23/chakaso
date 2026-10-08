@@ -109,3 +109,4 @@ creates.
 | [ADR-0014](ADR-0014-claim-representation.md) | A claim is a first-class, content-identified unit; status is evaluation, not truth | Accepted |
 | [ADR-0015](ADR-0015-grounding-boundary.md) | Grounding is a boundary; structural evaluation never claims semantic support | Accepted |
 | [ADR-0016](ADR-0016-correction-decision-rule.md) | The correction decision is an explicit, evidence-driven rule | Accepted |
+| [ADR-0017](ADR-0017-answer-identity.md) | Answer identity is a per-event identifier, not a content hash | Accepted |
