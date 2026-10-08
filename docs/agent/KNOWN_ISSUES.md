@@ -17,7 +17,10 @@ on measurement, and some of them may turn out to be wrong when they meet data.
 The contract in ADR-0003 in particular assumes that models can be made to reference
 opaque evidence identifiers reliably; that assumption is untested.
 
-**What would close it:** a retrieval implementation and one end-to-end turn.
+**What would close it:** a run against a real corpus or a real model. A local retrieval
+implementation, a synthetic development benchmark and the evaluation / correction foundations now
+exist and are exercised in tests; none of them is a real workload, and no model produces an
+answer, so the underlying gap stands.
 
 **Not a defect to fix now.** It is recorded so that no document reads as though the
 architecture has been validated.
@@ -26,10 +29,10 @@ architecture has been validated.
 
 **Impact:** Medium.
 
-`docs/architecture.md`, `docs/correction.md` and `docs/evaluation.md` specify
-behaviour for components with no code. Every affected row carries a status label,
-but a reader skimming for mechanism rather than status could come away with the
-wrong impression.
+Some components specified in `docs/architecture.md` still have no code — the query planner, a
+dense ranker, persistence, semantic grounding and the revised answer a model would write. The
+evaluation and correction *foundations* now have code, so this risk is narrower than it was, but a
+reader skimming for mechanism rather than status can still take a Planned component for a real one.
 
 **Mitigation in place:** status labels are mandatory and the vocabulary is
 defined in `docs/README.md`; `CURRENT_STATE.md` lists the gaps explicitly.
@@ -106,8 +109,10 @@ were cited, but not the model. A transcript alone therefore cannot answer "which
 model said this", which is the first question a comparison between two models
 raises.
 
-**Why it is deferred:** that is the `AnswerRecord` the correction unit introduces.
-Building it now would mean designing the record around one caller.
+**Why it is deferred:** the correction *foundation* (decision, reassessment, an in-memory record)
+exists, but the durable `AnswerRecord` it points to does not — that is the next unit, and
+designing the persisted record before a second model compares against it is the retrofit the
+project avoids.
 
 **What would close it:** the `AnswerRecord` type and a run that uses two adapters.
 

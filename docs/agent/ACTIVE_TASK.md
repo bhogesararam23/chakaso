@@ -1,92 +1,89 @@
 # Active task
 
-## Current unit: P6 — a first retrieval benchmark and evaluation harness
+## Current unit: P7 — measurement and wiring the foundations enable
 
-**Goal.** Turn the retrieval substrate from "built and tested" into "measured." Build the
-smallest honest evaluation the project can stand behind: a hand-built query set with
-relevance judgements over a fixed local corpus, run through the lexical retriever, scored
-with the metric functions that already exist in `chakaso.evaluation`. Then report what the
-lexical baseline actually does — recall@k, precision@k, MRR, duplicate rate — as *measured*
-numbers with a named, versioned dataset behind them.
+**Goal.** Put the evaluation and correction machinery to work in the two ways that are honest
+without a language model: (1) a first *correction development benchmark* — a small, labelled set
+of prior-answer-plus-new-evidence cases run through `chakaso.correction.reassess` and scored by
+`correction_metrics`, reporting correction success, unjustified persistence and unnecessary
+revision as a development instrument; and (2) wiring reassessment into an explicit follow-up path
+so a caller can hand a prior answer's claims and the standing evidence to `reassess_followup` and
+obtain a recorded `CorrectionRecord`. Neither generates revised prose: there is no model.
 
-**Why this is next.** The retrieval pipeline exists end to end, and the metric functions
-exist, but there is no dataset to run them on, so no number about retrieval is currently
-true or even computable. The open question the substrate leaves is exactly the one an
-evaluation answers: where does lexical retrieval succeed and where does it fail. That
-question must be measured before it is answered with a dense retriever, or the dense
-retriever is judged against nothing. This follows the project's standing rule — evaluation
-before scaling — and it is what would begin to close K-001 (nothing measured against a real
-workload).
+**Why this is next.** The substrate, the retrieval development benchmark and the claim / citation
+/ grounding / answer-evaluation / correction primitives all exist and are tested. What is missing
+is using them as a loop and measuring the loop — the same move that turned the metric functions
+into a benchmark. It stays offline, deterministic and CPU-only, and it advances K-001 for the
+correction path the way the retrieval benchmark advanced it for retrieval: a labelled set, not a
+claim about a real workload.
 
-**Why the smallest thing.** A hand-built set of queries with declared relevant chunks needs
-no corpus download, no model and no network. It is reproducible, reviewable, and versioned
-in the repository, which is the only kind of benchmark this project will report a number
-from.
+**Why not the model first.** A correction whose "revised answer" is produced by a model cannot be
+measured until a model exists. Deciding and recording the correction can, and that decision rule
+(ADR-0016) is what a benchmark should pin down before any generation is involved.
 
-## What the previous unit completed (P3/P4 — the retrieval substrate)
+## What the previous unit completed (P5/P6 — evaluation and correction foundations)
 
-All of the following is implemented, tested, documented and green on Python 3.11–3.13.
-None of it is a claim about retrieval *quality* — there is no measured result yet.
+All of the following is implemented, tested, documented and green on Python 3.11–3.13. None of
+it is a claim about answer quality or a measured model-quality result.
 
-- [x] Reconciliation: stale ADR references and the `domain`/host description corrected
-- [x] Generalized source identity — `SourceReference`/`SourceKind`, web/file/text, with web
-      identifiers unchanged (ADR-0011)
-- [x] Deterministic content normalization (representation only)
-- [x] Local document ingestion from explicit paths, with filesystem-safety rules and typed
-      errors; never crawls
-- [x] In-memory corpus with idempotent add and a provenance guard
-- [x] Deterministic lexical (BM25) retriever behind a `Retriever` protocol, with inspectable
-      explanations and no fabricated results
-- [x] Retrieval orchestration into a validated `EvidencePack` with scores and provenance
-      preserved
-- [x] End-to-end offline pipeline tests, including a turn through `ConversationManager.send`
-- [x] `chakaso retrieve` — explicit-source retrieval from the command line
-- [x] Bounded, opt-in web fetcher under a `FetchPolicy`, with a literal-address destination
-      screen and typed acquisition errors (ADR-0012)
-- [x] Web ingestion: a narrow HTML reader, `ingest_acquired`, and an in-memory
-      `AcquisitionCache`/`CachingFetcher`; fetched text is data, not instruction, and never
-      assigns identity
-- [x] Evaluation metric functions (`chakaso.evaluation`), tested on hand-built fixtures
+- [x] Retrieval development benchmark (`chakaso.benchmark`): case schema with gold/forbidden
+      evidence, strict JSONL/manifest loader, synthetic fixtures, a runner, text/JSON reports that
+      label themselves a development instrument, and a pinned-fingerprint regression (ADR-0013)
+- [x] Claims (`chakaso.claims`): immutable `Claim` with a content-derived id and an evaluation
+      status that is never truth; a replaceable `ClaimExtractor` boundary; claim/evidence links
+      (ADR-0014)
+- [x] Structural citation validation and metrics (`chakaso.citation`): valid / unknown /
+      irrelevant / uncited, and citation precision/recall — presence and set membership only,
+      never semantic support
+- [x] Grounding (`chakaso.grounding`): a `GroundingEvaluator` boundary with a structural evaluator
+      (supported / unsupported / not_evaluated) and a manual evaluator as the only route to
+      contradicted / uncertain; a `Contradiction` names no winner and precedence is caller-supplied
+      (ADR-0015)
+- [x] Answer evaluation (`chakaso.evaluation.evaluate_answer`): citation and grounding combined
+      into separate dimensions (`evidence_coverage`, `is_grounded`) with no merged quality score
+- [x] Correction foundation (`chakaso.correction`): the decision rule (`decide_claim` /
+      `decide_answer`, ADR-0016), `reassess` over the grounding boundary, an append-only
+      `CorrectionRecord` with content-derived lineage, structural `correction_metrics`, and the
+      `reassess_followup` / `merge_evidence` composition
+- [x] `chakaso benchmark` — run the development benchmark from the command line (text or JSON)
+- [x] Security and determinism regressions: analysis layers import nothing networked; untrusted and
+      prompt-injection text is inert data identified by the caller's reference, never by its body;
+      the benchmark is path- and clock-independent; reports and record ids are byte-deterministic
 
 ## What this unit is not
 
-- Not a model, a tokenizer or training. The model boundary and its development double are
-  unchanged.
-- Not a dense retriever or a vector index. The benchmark's job is to say what the lexical
-  baseline is worth before anything replaces it.
-- Not a query planner. Retrieval is still invoked explicitly; deciding *whether* and
-  *which* to retrieve is a separate unit (P4).
-- Not a live-web crawl. No default path touches the network, and the benchmark is built on a
-  fixed, committed corpus.
-- Not a place for a number without a dataset. Until the query set and judgements exist in
-  the repository, nothing in `chakaso.evaluation` is run and no metric is reported.
+- Not a model, a tokenizer or training. The only model is the deterministic development double.
+- Not semantic grounding. `contradicted` and `uncertain` come only from a supplied judgement; a
+  `SemanticGroundingEvaluator` is a named future implementation of the existing boundary, not a
+  present capability.
+- Not an automatic correction loop. Nothing decides on its own that a turn needs reassessment, and
+  no correction produces new prose without a model.
+- Not persistence. `CorrectionRecord` lives in memory; the `AnswerRecord` that would store a
+  `correction_of` lineage durably does not exist (K-007).
+- Not a dense retriever, a query planner or a live crawl. Retrieval is lexical and explicitly
+  invoked; fetching stays opt-in and off every default path (ADR-0012).
 
 ## Ordering after this unit
 
-1. A first retrieval benchmark and harness (P6) — this unit.
-2. Query planning: when to retrieve, and which sources (P4).
-3. Dense embeddings and a vector index, measured against the lexical baseline (P3/P4).
-4. Claim-level support checking, then reassessment and the correction loop (P5).
-5. A local CPU model adapter (P2/P7), then the tokenizer, dataset pipeline and a tiny
-   Transformer (P7–P8).
+1. Persistence: an `AnswerRecord` with `correction_of` lineage and a durable correction history.
+2. A semantic grounding evaluator behind the `GroundingEvaluator` boundary, validated against the
+   manual judgement the interface already accepts.
+3. Query planning: when to retrieve, and which sources (P4).
+4. A local CPU model adapter, then the tokenizer, dataset pipeline and a tiny Transformer (P7–P8).
 
 ## Known gaps that bound this unit
 
-- K-008: the fetcher's destination screen blocks address literals but not a hostname that
-  resolves to a private address; there is no robots or per-host rate limiting. Fetching
-  stays opt-in and off every default path. This does not block a local benchmark.
-- K-001: nothing has been measured against a real workload. This unit is the first step to
-  closing it; it closes it only when a benchmark exists and a number is reported from it.
+- K-001: nothing has been measured against a real workload. The retrieval development benchmark
+  and the correction development benchmark this unit adds are labelled, synthetic instruments;
+  they do not close K-001.
+- K-008: the fetcher blocks private address literals but not a hostname resolving to a private
+  address; fetching stays opt-in and offline by default. It does not block local measurement.
 
 ## What previous units knowingly left undone
 
-Recorded here rather than discovered later:
-
-- An answer's model identity is reported in the reply but is not stored in conversation
-  state, so it is not recoverable from a transcript alone. That belongs to the
-  `AnswerRecord` the correction unit introduces (K-007).
-- Nothing persists how often a model invents an evidence reference across turns; the metric
-  function to count it (`unresolved_reference_count`) now exists, but no run records it
-  (K-006).
-- Nothing resolves references to earlier turns ("that", "the second one"); follow-ups carry
-  the previous turns and nothing more specific.
+- An answer's model identity is reported in a reply but not stored in conversation state, so it is
+  not recoverable from a transcript alone — the `AnswerRecord` above addresses it (K-007).
+- Nothing records across turns how often a model invents an evidence reference;
+  `unresolved_reference_count` exists but no run feeds it (K-006).
+- Nothing resolves references to earlier turns ("that", "the second one"); follow-ups carry the
+  previous turns and nothing more specific.
