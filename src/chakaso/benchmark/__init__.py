@@ -20,6 +20,18 @@ of them described as present before it is.
 from __future__ import annotations
 
 from chakaso.benchmark.cases import BenchmarkCase, BenchmarkCategory, ExpectedBehavior
+from chakaso.benchmark.correction import (
+    CorrectionCase,
+    CorrectionClaim,
+    CorrectionDataset,
+    development_correction_benchmark,
+)
+from chakaso.benchmark.correction_runner import (
+    CorrectionBenchmarkMetrics,
+    CorrectionBenchmarkRun,
+    CorrectionBenchmarkRunner,
+    CorrectionCaseOutcome,
+)
 from chakaso.benchmark.dataset import BenchmarkDataset
 from chakaso.benchmark.errors import (
     BenchmarkError,
@@ -76,6 +88,13 @@ __all__ = [
     "BenchmarkRun",
     "CaseId",
     "CaseOutcome",
+    "CorrectionBenchmarkMetrics",
+    "CorrectionBenchmarkRun",
+    "CorrectionBenchmarkRunner",
+    "CorrectionCase",
+    "CorrectionCaseOutcome",
+    "CorrectionClaim",
+    "CorrectionDataset",
     "DatasetId",
     "DuplicateCaseError",
     "ExpectedBehavior",
@@ -92,6 +111,7 @@ __all__ = [
     "content_version",
     "dataset_from_rows",
     "development_benchmark",
+    "development_correction_benchmark",
     "format_report",
     "load_cases",
     "load_dataset_from_directory",
