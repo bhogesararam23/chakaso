@@ -18,11 +18,13 @@ from __future__ import annotations
 
 from chakaso.answers.errors import AnswerError, AnswerStoreError, InvalidAnswerError
 from chakaso.answers.identity import ANSWER_ID_PREFIX, AnswerId, new_answer_id
+from chakaso.answers.record import AnswerRecord
 
 __all__ = [
     "ANSWER_ID_PREFIX",
     "AnswerError",
     "AnswerId",
+    "AnswerRecord",
     "AnswerStoreError",
     "InvalidAnswerError",
     "new_answer_id",
