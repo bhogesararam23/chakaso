@@ -26,6 +26,7 @@ from chakaso.correction.decision import (
     CorrectionDecision,
     decide_claim,
 )
+from chakaso.correction.followup import merge_evidence, reassess_followup
 from chakaso.correction.metrics import (
     CorrectionMetrics,
     LabeledCorrection,
@@ -45,6 +46,8 @@ __all__ = [
     "correction_metrics",
     "decide_answer",
     "decide_claim",
+    "merge_evidence",
     "reassess",
+    "reassess_followup",
     "record_reassessment",
 ]

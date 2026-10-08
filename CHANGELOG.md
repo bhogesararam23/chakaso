@@ -32,6 +32,10 @@ capability is implemented or still planned.
   - `correction_metrics` reports correction success, unjustified-persistence and unnecessary-revision
     rates over a caller-labelled set, exposing the raw counts so a rate cannot hide a thin
     denominator; a rate with no cases is `None`, never a fabricated `0.0` or `1.0`.
+  - `reassess_followup` composes the standing evidence a prior answer rested on with the new
+    evidence now in hand (`merge_evidence` unions packs de-duplicated and order-independent) and
+    hands the claims to `reassess`. It is a convenience over the existing boundaries, not a new
+    loop, and nothing in the runtime calls it automatically.
 
 **Notes**
 
