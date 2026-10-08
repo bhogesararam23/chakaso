@@ -10,6 +10,24 @@ capability is implemented or still planned.
 
 ## Unreleased
 
+### 2026-10-08 — Retrieval evaluation metric functions
+
+**Added**
+
+- `chakaso.evaluation`: pure, deterministic metric functions — `recall_at_k`,
+  `precision_at_k`, `reciprocal_rank`, `mean_reciprocal_rank`, `duplicate_count`,
+  `unresolved_reference_count`, and a `measure_latency` observation helper.
+
+**Notes**
+
+- These are measurement *hooks*, not a benchmark. There is still no evaluation dataset, no
+  task version and no measured number anywhere in the repository; inventing a figure would
+  be the fabrication the project forbids. The functions compute well-defined quantities from
+  a ranked result and a relevance judgement, ready for when a benchmark supplies the
+  judgements.
+- Metrics that need a ground-truth definition first — evidence coverage, NDCG — are not
+  invented into a formula; they wait for the benchmark.
+
 ### 2026-10-08 — Fetched web content becomes evidence
 
 **Added**

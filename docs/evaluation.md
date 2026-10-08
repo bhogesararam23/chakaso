@@ -159,7 +159,8 @@ was not measured, it is not written down.
 | Repository hygiene tests | Implemented |
 | Grounded-answer benchmark | Planned |
 | Correction benchmark | Planned |
-| Retrieval metrics | Planned |
+| Metric functions (recall@k, precision@k, MRR, duplicate + unresolved-reference counts, latency observation) | Implemented (`chakaso.evaluation`) |
+| Retrieval metrics *on a benchmark* | Planned (functions exist; no dataset to run them on) |
 | Citation metrics | Planned |
 | Red-team suite | Planned |
 | Standard model benchmarks | Planned |

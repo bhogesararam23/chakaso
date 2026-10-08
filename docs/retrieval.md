@@ -334,7 +334,8 @@ evidence textually and structurally.
 | Dense embeddings and vector index | Planned |
 | Reranking | Planned |
 | Claim-level support checking | Planned |
-| Retrieval metrics (Recall@k, precision@k, MRR/NDCG) | Planned |
+| Retrieval metric functions (recall@k, precision@k, MRR, duplicate + citation counts) | Implemented (`chakaso.evaluation`) |
+| Retrieval metrics on a benchmark, and NDCG | Planned (no dataset yet) |
 
 The records, the pack and resolution are implemented and tested without any
 network access: a record is built from content a caller already has. A lexical retriever

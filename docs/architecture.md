@@ -109,7 +109,7 @@ Each component owns one thing and must not grow into its neighbour.
 | Model Adapter | Uniform interface to any local or future model | Search | Implemented (boundary and registry; no trained model) |
 | Grounding / Citation Validator | Check that every cited identifier exists and that cited evidence supports the claim | Rewrite the user's request | Planned |
 | Reassessment Engine | Compare previous claims with new evidence and decide retain/qualify/correct | Silently rewrite history | Planned |
-| Evaluation | Measure behaviour and detect regressions | Change production behaviour | Planned |
+| Evaluation | Measure behaviour and detect regressions | Change production behaviour | Implemented (metric functions only; harness and benchmarks planned) |
 
 A component marked "Planned" has no code. Configuration, the model boundary, the
 evidence records and the conversation manager are implemented;

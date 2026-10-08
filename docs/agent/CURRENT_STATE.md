@@ -1,6 +1,6 @@
 # Current state
 
-Last updated: 2026-10-08, at commit `feat: turn fetched web content into evidence`.
+Last updated: 2026-10-08, at commit `feat: add retrieval evaluation metric functions`.
 
 This file is the authority on what exists. If it disagrees with any other
 document, this file is right and the other document is a defect.
@@ -36,6 +36,7 @@ A private planning note is never evidence that something is implemented.
 | Retrieval CLI | `chakaso retrieve` | Ingests named local files, runs lexical retrieval, prints ranked evidence with provenance. Local and offline |
 | Web fetcher | `src/chakaso/retrieval/acquire.py`, `policy.py`, `netguard.py` | Opt-in, bounded HTTP fetch under a `FetchPolicy`; scheme/size/redirect/timeout/destination rules. Off every default path (ADR-0012) |
 | Web ingestion & cache | `src/chakaso/retrieval/html.py`, `web.py`, `cache.py` | Narrow HTML reader turns fetched bytes into the same evidence records as a local file; an opt-in in-memory cache avoids refetching |
+| Evaluation metrics | `src/chakaso/evaluation/` | Pure metric functions (recall@k, precision@k, MRR, duplicate + unresolved-reference counts, latency observation). No benchmark, dataset or measured number |
 | Tests | `tests/` | 346 tests at the commit recorded above: package, CLI, configuration, primitives, model boundary, evidence, conversation state, conversation manager, chunking, repository hygiene. The count ages; the command does not. |
 | CI | `.github/workflows/ci.yml` | Green on Python 3.11, 3.12, 3.13 |
 | Dense retrieval, persistence, correction | **do not exist** | An opt-in, bounded fetcher and a narrow HTML reader now exist (off the default path); there are no embeddings, no persistent store and no correction |
@@ -162,7 +163,9 @@ one small thing each.
 - Claim-level support checking. Citation *reference* validation exists; whether cited
   evidence actually supports a claim does not.
 - Reassessment and the correction loop
-- Evaluation harness, benchmarks and metrics
+- Evaluation harness and benchmarks. Metric functions exist (`chakaso.evaluation`:
+  recall@k, precision@k, MRR, duplicate and unresolved-reference counts); there is no
+  dataset, no benchmark and no measured result.
 - Tokenizer, dataset pipeline, model code, training loop
 - A local inference adapter, and any model weights of any size
 - Persistence of any kind. Conversation state lives in memory for the duration of the
