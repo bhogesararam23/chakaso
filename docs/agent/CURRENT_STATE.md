@@ -1,6 +1,6 @@
 # Current state
 
-Last updated: 2026-10-08, at commit `feat: add an in-memory corpus for retrieval`.
+Last updated: 2026-10-08, at commit `feat: add a deterministic lexical retriever`.
 
 This file is the authority on what exists. If it disagrees with any other
 document, this file is right and the other document is a defect.
@@ -28,12 +28,13 @@ A private planning note is never evidence that something is implemented.
 | Chunking | `src/chakaso/retrieval/chunking.py` | Document text to evidence chunks: section-bounded, non-overlapping, deterministic (ADR-0010) |
 | Ingestion | `src/chakaso/retrieval/ingest.py` | Reads one explicitly named local text/Markdown file, or supplied text, into a source record and its chunks; never crawls |
 | Corpus | `src/chakaso/retrieval/corpus.py` | In-memory set of sources and chunks for retrieval: idempotent add, deterministic enumeration, provenance guard |
+| Lexical retrieval | `src/chakaso/retrieval/lexical.py` | Deterministic BM25 index and retriever behind a `Retriever` protocol: ranking, top-k, source filter, inspectable explanations |
 | Conversation state | `src/chakaso/conversation/state.py` | Immutable, append-only turns with provenance; topic, entities and open questions |
 | Conversation manager | `src/chakaso/conversation/manager.py` | Conducts one turn: context projection, model call, validation, evidence and citation recording. Transactional (ADR-0008) |
 | Conversation shell | `chakaso chat` | Interactive and one-shot. States in its own output that the engine is a development double |
 | Tests | `tests/` | 346 tests at the commit recorded above: package, CLI, configuration, primitives, model boundary, evidence, conversation state, conversation manager, chunking, repository hygiene. The count ages; the command does not. |
 | CI | `.github/workflows/ci.yml` | Green on Python 3.11, 3.12, 3.13 |
-| Retrieval, evidence store, correction | **do not exist** | Planned. Chunking is the only retrieval code |
+| Dense retrieval, persistence, correction | **do not exist** | Lexical ranking and an in-memory corpus now exist; there are no embeddings, no persistent store, no fetcher and no correction |
 
 ## What works
 
@@ -96,8 +97,13 @@ A private planning note is never evidence that something is implemented.
   does not parse Markdown fences.
 - Ingested documents can be collected into an in-memory `Corpus`: adding is idempotent
   (duplicate documents do not grow it), a chunk cannot be filed under a source that does
-  not own it, and enumeration is deterministic regardless of insertion order. Nothing
-  searches or ranks the corpus yet.
+  not own it, and enumeration is deterministic regardless of insertion order.
+- Chunks in a corpus can be ranked for a query by a deterministic lexical retriever
+  (BM25): `build_lexical_index` then `LexicalRetriever.retrieve` returns ranked
+  `RetrievalResult` records carrying a score, a rank and the matched terms. It matches
+  shared words only — no embeddings, no model, no network — ties break by chunk
+  identifier, and a query that matches nothing returns nothing rather than inventing a
+  result.
 - CI runs all of the above on three Python versions, with no secrets and no network
   access to a model provider.
 
@@ -129,7 +135,8 @@ one small thing each.
 ## What is not implemented
 
 - Query planner: nothing decides whether retrieval would help
-- Ranking, indexing and embeddings: chunks cannot be scored or searched yet
+- Dense embeddings, a vector index and reranking: retrieval is lexical only, matching
+  shared words and no meaning
 - Fetching and parsing web content; ingestion of HTML, PDF or any format other than
   plain text and Markdown
 - Claim-level support checking. Citation *reference* validation exists; whether cited

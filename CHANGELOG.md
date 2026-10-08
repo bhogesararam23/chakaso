@@ -10,6 +10,29 @@ capability is implemented or still planned.
 
 ## Unreleased
 
+### 2026-10-08 — Deterministic lexical retrieval
+
+**Added**
+
+- `chakaso.retrieval.build_lexical_index` and `LexicalRetriever`: an inverted index over
+  a corpus's chunks, scored with Okapi BM25, returning the best `top_k` as
+  `RetrievalResult` records — the chunk, a score, a rank, and the matched terms. This is
+  the smallest thing that turns a corpus into ranked evidence, and the baseline a later
+  dense retriever must beat.
+- `Retriever`: a protocol, so the lexical implementation can be replaced without touching
+  a caller. `source_ids` filters candidates.
+
+**Notes**
+
+- Retrieval is lexical and says so: it matches shared words and no meaning — no
+  embeddings, no vector index, no model, no network. Its limitations (synonyms,
+  morphology, paraphrase) are exactly what the project wants measured rather than assumed.
+- Determinism is enforced, not hoped for: scores are summed in sorted term order so
+  floating-point accumulation cannot drift, ties break by chunk identifier so the order is
+  total, and a query that matches nothing returns nothing rather than filling `top_k` with
+  invented evidence. A result's score is a ranking artefact, never a confidence.
+- `k1` and `b` are documented per-call defaults, not yet configuration fields.
+
 ### 2026-10-08 — In-memory corpus
 
 **Added**

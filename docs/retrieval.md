@@ -115,6 +115,36 @@ present is a no-op — identifiers are content-derived, so duplicate documents s
 not grow the corpus. Enumeration is deterministic and independent of insertion order:
 sources by identifier, chunks by (source identifier, position).
 
+## Lexical retrieval
+
+**Implemented (lexical only).** `chakaso.retrieval.build_lexical_index` builds an
+inverted index over a corpus's chunks, and `LexicalRetriever` scores a query against it
+with Okapi BM25 and returns the best `top_k`. This is the smallest thing that turns a
+corpus into ranked evidence, and it is the baseline a later dense or hybrid retriever
+must beat in evaluation.
+
+It is lexical on purpose: it matches shared words and nothing else — no embeddings, no
+vector index, no model, no network. Its limitations are the ones the project expects and
+wants measured rather than assumed: no synonyms, no morphology, no paraphrase, nothing
+that needs meaning.
+
+Guarantees that the rest of the system relies on:
+
+- **Determinism.** The same corpus and query always give the same ranking. Scores are
+  summed in sorted term order so floating-point accumulation cannot drift, and ties are
+  broken by chunk identifier, so the order is total rather than dictionary-dependent.
+- **No fabrication.** A query that matches nothing returns nothing. Retrieval never
+  invents a result, a source, or a score to fill `top_k`.
+- **An inspectable boundary.** `Retriever` is a protocol; replacing the lexical
+  implementation with a dense one changes no caller. `source_ids` restricts candidates
+  — a filter, not a re-ranking.
+- **Honest explanation.** A `RetrievalResult` carries only what was computed: the chunk,
+  a `score`, a `rank`, and the `matched_terms`. No confidence, no semantic justification,
+  and the score is a ranking artefact, never a probability that a claim is true.
+
+`k1` and `b` are documented defaults a caller may override, not yet configuration fields,
+matching how chunking sizes are handled.
+
 ## Source identity
 
 Retrieval assigns identity; the model does not
@@ -228,7 +258,7 @@ evidence textually and structurally.
 | Fetch policy and fetcher | Planned |
 | Document processing and main-content extraction (HTML, PDF) | Planned |
 | Chunking | Implemented |
-| Local lexical ranking baseline | Planned |
+| Lexical retrieval (BM25 index, deterministic ranking, explanations) | Implemented |
 | Dense embeddings and vector index | Planned |
 | Reranking | Planned |
 | Claim-level support checking | Planned |
