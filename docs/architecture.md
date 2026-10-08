@@ -107,15 +107,17 @@ Each component owns one thing and must not grow into its neighbour.
 | Ranker | Order candidate evidence | Generate the answer | Planned |
 | Evidence Store | Persist source and chunk records, metadata and hashes | Produce user-facing prose | Planned |
 | Model Adapter | Uniform interface to any local or future model | Search | Implemented (boundary and registry; no trained model) |
-| Grounding / Citation Validator | Check that every cited identifier exists and that cited evidence supports the claim | Rewrite the user's request | Planned |
+| Grounding / Citation Validator | Check that every cited identifier exists and, structurally, whether cited evidence bears on the claim | Rewrite the user's request | Implemented (structural: `chakaso.citation` presence + `chakaso.grounding` supported/unsupported, ADR-0015); semantic support checking planned |
 | Reassessment Engine | Compare previous claims with new evidence and decide retain/qualify/correct | Silently rewrite history | Planned |
-| Evaluation | Measure behaviour and detect regressions | Change production behaviour | Implemented (metric functions + a retrieval development benchmark; grounded/correction benchmarks planned) |
+| Evaluation | Measure behaviour and detect regressions | Change production behaviour | Implemented (metric functions, a retrieval development benchmark, and structural claim/citation/grounding/answer evaluation via `evaluate_answer`; grounded/correction benchmarks planned) |
 
 A component marked "Planned" has no code. Configuration, the model boundary, the
-evidence records and the conversation manager are implemented;
+evidence records, conversation state and manager, local ingestion, lexical retrieval, the
+bounded opt-in fetcher, the retrieval development benchmark and the claim / citation /
+grounding / answer-evaluation primitives are implemented;
 [`agent/CURRENT_STATE.md`](agent/CURRENT_STATE.md) is the authority, including on
 the fact that the only implementation of the model boundary is a development double
-rather than a language model.
+rather than a language model, and that the grounding and citation checks are structural.
 
 ### What the conversation manager does, and what it does not
 
@@ -158,6 +160,9 @@ The boundaries that exist, or that the project is committed to building:
 | `EvidenceChunk` | immutable evidence unit referencing a source | Implemented |
 | `EvidencePack` | the set of chunks supplied to one generation call | Implemented |
 | Citation resolution | evidence identifier -> verified source metadata, with rejection of unknown identifiers | Implemented |
+| `Claim` / `ClaimStatus` | an answer decomposed into content-identified units; status records supplied-evidence support, not truth | Implemented (`chakaso.claims`, ADR-0014) |
+| Citation validation | claim citations -> valid / unknown / irrelevant, plus uncited required claims | Implemented (`chakaso.citation`; structural) |
+| `GroundingEvaluator` | claims + pack -> a per-claim grounding status (structural today; a supplied judgement for contradicted/uncertain) | Implemented (`chakaso.grounding`, ADR-0015) |
 | `Conversation` | turns with provenance, active topic, entities, open questions, prior sources | Implemented |
 | `ConversationManager` | conduct one turn against the model boundary; accept evidence; report the generation and citation outcome | Implemented |
 | `AnswerRecord` | answer text, cited identifiers, model and prompt versions, correction lineage | Planned |
@@ -166,9 +171,10 @@ The boundaries that exist, or that the project is committed to building:
 
 "Planned" here means there is no code, and the shape described is the specification
 to build against rather than a description of something that exists. Configuration,
-the model boundary, the evidence records, conversation state and the conversation
-manager are implemented; retrieval itself is not, so nothing has been fetched or
-indexed.
+the model boundary, the evidence records, conversation state, the conversation manager,
+local ingestion, lexical retrieval and the retrieval development benchmark are
+implemented; fetching exists only behind the opt-in bounded fetcher, so a default run
+neither fetches nor reaches the network, and there is still no trained model.
 
 ### The model boundary
 

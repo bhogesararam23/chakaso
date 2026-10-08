@@ -1,6 +1,6 @@
 # Current state
 
-Last updated: 2026-10-08, at commit `docs: record the retrieval development benchmark` (code last changed at `feat: render benchmark runs as development reports (text and JSON)`).
+Last updated: 2026-10-08, at commit `docs: record the claim, citation, grounding and answer-evaluation foundation` (code last changed at `feat: combine citations and grounding into answer evaluation`).
 
 This file is the authority on what exists. If it disagrees with any other
 document, this file is right and the other document is a defect.
@@ -14,7 +14,7 @@ A private planning note is never evidence that something is implemented.
 | Repository conventions | `.gitignore`, `.gitattributes`, `.editorconfig` | Private docx pack excluded by `.gitignore` and guarded by a test |
 | License | `LICENSE` | Apache-2.0; rationale in ADR-0004 |
 | Public documentation | `README.md`, `docs/*.md`, `docs/research/` | Specifications with mandatory status labels |
-| Decision records | `docs/decisions/` | ADR-0001 to ADR-0010 |
+| Decision records | `docs/decisions/` | ADR-0001 to ADR-0015 |
 | Contribution guide | `CONTRIBUTING.md` | |
 | Agent contract | `AGENTS.md`, `docs/agent/` | |
 | Python package | `src/chakaso/` | Installs; typed; `py.typed` ships |
@@ -36,9 +36,12 @@ A private planning note is never evidence that something is implemented.
 | Retrieval CLI | `chakaso retrieve` | Ingests named local files, runs lexical retrieval, prints ranked evidence with provenance. Local and offline |
 | Web fetcher | `src/chakaso/retrieval/acquire.py`, `policy.py`, `netguard.py` | Opt-in, bounded HTTP fetch under a `FetchPolicy`; scheme/size/redirect/timeout/destination rules. Off every default path (ADR-0012) |
 | Web ingestion & cache | `src/chakaso/retrieval/html.py`, `web.py`, `cache.py` | Narrow HTML reader turns fetched bytes into the same evidence records as a local file; an opt-in in-memory cache avoids refetching |
-| Evaluation metrics | `src/chakaso/evaluation/` | Pure metric functions (recall@k, precision@k, MRR, duplicate + unresolved-reference counts, latency observation). No benchmark, dataset or measured number |
+| Evaluation | `src/chakaso/evaluation/` | Pure metric functions (recall@k, precision@k, MRR, duplicate + unresolved-reference counts, latency observation), and `evaluate_answer`, which combines citation and grounding results into separate answer-evaluation dimensions (`evidence_coverage`, `is_grounded`). No merged quality score and no model-quality number |
 | Benchmark | `src/chakaso/benchmark/` | Versioned case schema, strict JSONL/manifest loader, synthetic development fixtures, a retrieval runner and text/JSON reports. A development instrument, not a scientific benchmark |
-| Tests | `tests/` | ~625 tests at the commit recorded above: package, CLI (incl. `retrieve`), configuration, identifiers and hashing, source identity, model boundary, evidence, normalization, chunking, ingestion, corpus, lexical retrieval, retrieval orchestration, end-to-end pipeline, fetch policy and netguard, HTML/web ingestion, cache, evaluation metrics, benchmark identity/cases/loader/fixtures/runner/report, conversation state and manager, repository hygiene. The count ages; `python -m pytest` does not. |
+| Claims | `src/chakaso/claims/` | Immutable `Claim` with a content-derived `ClaimId` and a `ClaimStatus` that records what the supplied evidence supports — never truth. A replaceable `ClaimExtractor` boundary (structured + a documented sentence heuristic) and claim/evidence links (ADR-0014). No trained extractor |
+| Citation validation | `src/chakaso/citation/` | Structural citation checks against a supplied pack (valid / unknown / irrelevant / uncited) plus citation precision/recall. Decides presence and expected-match, never that a source proves a claim |
+| Grounding | `src/chakaso/grounding/` | `GroundingEvaluator` boundary: a structural evaluator (supported / unsupported / not_evaluated) and a manual evaluator that is the only path to contradicted / uncertain; a `Contradiction` names no winner (ADR-0015) |
+| Tests | `tests/` | ~665 tests at the commit recorded above: package, CLI (incl. `retrieve`), configuration, identifiers and hashing, source identity, model boundary, evidence, normalization, chunking, ingestion, corpus, lexical retrieval, retrieval orchestration, end-to-end pipeline, fetch policy and netguard, HTML/web ingestion, cache, evaluation metrics and answer evaluation, benchmark identity/cases/loader/fixtures/runner/report, claims/extract/links, citation validation, grounding, conversation state and manager, repository hygiene. The count ages; `python -m pytest` does not. |
 | CI | `.github/workflows/ci.yml` | Green on Python 3.11, 3.12, 3.13 |
 | Dense retrieval, persistence, correction | **do not exist** | An opt-in, bounded fetcher and a narrow HTML reader now exist (off the default path); there are no embeddings, no persistent store and no correction |
 
@@ -129,6 +132,23 @@ A private planning note is never evidence that something is implemented.
   precision@k / MRR / forbidden-hit / false-retrieval metrics, reported as text or
   deterministic JSON that labels itself a development instrument. It measures retrieval
   only; a pinned content fingerprint regresses any unintended change to the fixtures.
+- An answer can be decomposed into claims (`chakaso.claims`): a `ClaimExtractor` builds
+  immutable claims from a supplied decomposition or a documented sentence heuristic, each with
+  a stable content-derived identifier and an evaluation status that means "the supplied
+  evidence supports this", never "this is true" (ADR-0014). No language model is involved.
+- A claim's citations can be validated structurally (`chakaso.citation`): a reference to a
+  chunk that was supplied is *valid*, one outside the pack is *unknown*, one present but
+  outside a case's expected evidence is *irrelevant*, and a required claim that cites nothing
+  valid is *uncited*; precision/recall count these without claiming a source proves a claim.
+- Grounding turns those citations into a per-claim status (`chakaso.grounding`): the structural
+  evaluator marks supported / unsupported / not_evaluated and cannot invent a contradiction,
+  while a manual evaluator is the only way *contradicted* or *uncertain* appear; a
+  `Contradiction` records the disagreement without naming a winner, and precedence is a
+  caller-supplied hook, never an automatic ranking (ADR-0015).
+- `evaluate_answer` combines the citation and grounding results into one view that keeps the
+  dimensions separate — citation precision, evidence coverage (the grounded-claim support
+  rate), grounding status and contradictions — and deliberately reports no single merged
+  quality score. Claims and evidence are supplied by a caller or fixture, not generated.
 - CI runs all of the above on three Python versions, with no secrets and no network
   access to a model provider.
 
@@ -166,12 +186,20 @@ one small thing each.
   URLs to fetch; the fetcher is only ever handed an explicit URL.
 - Dense embeddings, a vector index and reranking: retrieval is lexical only, matching
   shared words and no meaning
-- Claim-level support checking. Citation *reference* validation exists; whether cited
-  evidence actually supports a claim does not.
-- Reassessment and the correction loop
-- A general evaluation harness and model benchmarks. A retrieval development benchmark
-  and metric functions exist; the grounded-answer and correction benchmarks, claim/grounding
-  evaluation and any model-quality measurement do not.
+- Semantic claim-support checking. Claims, structural citation validation and structural
+  grounding exist (`chakaso.claims`, `chakaso.citation`, `chakaso.grounding`): a claim's
+  citation can be checked for presence and expected-match and marked supported or unsupported.
+  Whether the cited source actually *proves* the claim — and automatic contradiction or
+  uncertainty detection — does not exist; those statuses appear only when a caller supplies a
+  judgement.
+- Reassessment and the correction loop. The claim, status and grounding vocabulary correction
+  will consume now exists; nothing compares a previous answer against new evidence, decides
+  retain / qualify / correct, or records a correction.
+- A general evaluation harness and model benchmarks. A retrieval development benchmark and
+  metric functions exist, as do structural claim, citation and grounding evaluation and an
+  `evaluate_answer` combiner; the grounded-answer and correction *benchmarks* and any
+  model-quality measurement do not. Structural evaluation checks references and set
+  membership, not meaning.
 - Tokenizer, dataset pipeline, model code, training loop
 - A local inference adapter, and any model weights of any size
 - Persistence of any kind. Conversation state lives in memory for the duration of the
@@ -193,6 +221,9 @@ one small thing each.
 | ADR-0010 | Chunks are section-bounded and do not overlap |
 | ADR-0011 | Source identity is a typed reference, not a URL |
 | ADR-0012 | The fetcher is an optional, explicitly-bounded adapter |
+| ADR-0013 | Benchmark cases have a stable identity and a content-derived version |
+| ADR-0014 | A claim is a first-class, content-identified unit; status is evaluation, not truth |
+| ADR-0015 | Grounding is a boundary; structural evaluation never claims semantic support |
 
 Two process facts are recorded outside the ADR series because they are repository
 history rather than architecture:
@@ -211,19 +242,15 @@ architectural decision made so far rests on reasoning rather than measurement.
 
 ## Next step
 
-P2 is complete: the conversation manager works and a shell exercises it end to end.
-The blocking question for retrieval — what identifies a source with no URL — is now
-answered (ADR-0011), so a local document and supplied text have an identity and a
-record. The next unit is the first of P3, **local document ingestion and a lexical
-retrieval baseline**: normalizing content deterministically, reading documents that are
-already on disk into the records now defined, splitting them into evidence chunks with
-stable identifiers, and ranking them for a query without embeddings. That is what will
-supply the `EvidencePack` that `ConversationManager.send` already accepts, and it is
-deliberately the smallest retrieval step — no network, no model, no index server.
+Retrieval (local ingestion, lexical BM25 retrieval, an opt-in bounded fetcher and a narrow
+HTML reader), the retrieval development benchmark, and the claim / citation / grounding /
+answer-evaluation primitives are all built and tested. What the project does not yet have is
+the **reassessment and correction foundation**: taking a previous answer's claims plus new
+evidence, classifying the claims against that evidence (the supported / unsupported /
+contradicted vocabulary now exists), deciding retain / qualify / correct, and recording the
+change. That is the next unit, and it builds on the claim and grounding boundaries already in
+place rather than inventing new ones.
 
-Before live fetching (P4), the fetch policy has to be written. It is a blocking open
-question in [`../research/open-questions.md`](../research/open-questions.md), and the
-security posture in [`../retrieval.md`](../retrieval.md) is a list of threats with no
-corresponding limits.
-
-See [`ACTIVE_TASK.md`](ACTIVE_TASK.md) for the definition of done.
+There is still no language model, so nothing generates an answer to be corrected; the
+correction path is built and tested against claims and evidence a caller supplies. See
+[`ACTIVE_TASK.md`](ACTIVE_TASK.md) for the definition of done.

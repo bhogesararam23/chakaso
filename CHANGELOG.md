@@ -10,6 +10,48 @@ capability is implemented or still planned.
 
 ## Unreleased
 
+### 2026-10-08 — Claim, citation, grounding and answer-evaluation foundation
+
+**Added**
+
+- `chakaso.claims`: an immutable `Claim` with a content-derived `ClaimId` and a `ClaimStatus`
+  — supported / unsupported / contradicted / uncertain / not_evaluated — that records how the
+  *supplied evidence* bears on a claim, never whether it is true (ADR-0014). A replaceable
+  `ClaimExtractor` boundary decomposes an answer: `StructuredClaimExtractor` builds claims a
+  caller supplies and `SentenceClaimExtractor` is a documented deterministic heuristic, so a
+  trained model can implement the same boundary later without touching callers.
+  `ClaimEvidenceLink`/`links_from_claims` project claims into inspectable (claim, chunk)
+  citations.
+- `chakaso.citation`: structural citation validation. Each citation is classified **valid**
+  (points at supplied evidence), **unknown** (names a chunk that was not supplied — a
+  fabrication counted, never resolved, per ADR-0003), or **irrelevant** (present but outside a
+  case's expected evidence); a required claim with no valid citation is **uncited**.
+  `citation_metrics` reports structural citation precision and recall alongside those counts.
+- `chakaso.grounding`: a `GroundingEvaluator` boundary returning a per-claim `GroundingResult`
+  (ADR-0015). `StructuralGroundingEvaluator` emits only supported / unsupported / not_evaluated
+  and cannot invent a contradiction; `ManualGroundingEvaluator` is the only path on which
+  contradicted or uncertain appear and stands in for a human label or a future model. A
+  `Contradiction` names no winner, and `SourceAuthority`/`most_recent_wins` are caller-supplied
+  precedence hooks the engine never applies automatically.
+- `chakaso.evaluation.evaluate_answer`: combines the citation and grounding results into one
+  answer view that keeps the dimensions **separate** — citation metrics, grounding statuses,
+  `evidence_coverage` (the grounded-claim support rate) and any contradictions — and
+  deliberately computes no single merged "quality score." `is_grounded` holds only when every
+  claim is supported, nothing is contradicted and no citation points outside the pack.
+
+**Notes**
+
+- These are structural primitives, not an understanding of meaning: "supported" and "valid"
+  are defined by citation presence and a case's expected evidence, never by a judgement that a
+  source proves a claim. Contradiction and uncertainty require a supplied judgement and are
+  never detected automatically. No language model is in the loop — claims and evidence are
+  supplied by a caller or fixture.
+- No answer-quality result is reported. There is still no grounded-answer or correction
+  benchmark and no measured model-quality number; this is the evaluation machinery correction
+  will later build on, not a scored outcome. The reassessment and correction loop itself does
+  not exist: nothing compares a previous answer against new evidence or records a revision.
+- ADR-0014 records the claim decision and ADR-0015 the grounding boundary.
+
 ### 2026-10-08 — Retrieval development benchmark
 
 **Added**

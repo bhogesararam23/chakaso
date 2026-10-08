@@ -53,6 +53,27 @@ that was told to be generous is not a measurement. The first implementation of
 this metric should be manual on a small set, so that any automated approximation
 has something to be validated against.
 
+## What is computed today (structural)
+
+The primitives answer evaluation needs now exist, and they are explicit about being
+structural (`chakaso.claims`, `chakaso.citation`, `chakaso.grounding`, and `evaluate_answer`
+in `chakaso.evaluation`):
+
+- a claim carries a status that means "the supplied evidence supports this", never "this is
+  true"; the default is *not evaluated*, so an unchecked claim is never read as a checked one;
+- a citation is *valid* because it points at supplied evidence (and, where a case declared
+  expected evidence, matches it) — *not* because a source proves the claim;
+- the **grounded-claim support rate** is computed as `evidence_coverage` (supported claims /
+  all claims), and an answer is *grounded* only when every claim is supported, nothing is
+  contradicted and no citation points outside the pack;
+- `contradicted` and `uncertain` appear only when a caller supplies a judgement, because
+  noticing disagreement needs an understanding this code does not have.
+
+No answer-quality result is reported from these: they evaluate the structure over evidence a
+caller supplies, and the model that would produce real answers does not exist. There is no
+single merged "quality score" — citation precision, evidence coverage and grounding status are
+kept as separate dimensions precisely so one cannot hide another.
+
 ## Benchmark design
 
 ### Retrieval development benchmark
@@ -174,7 +195,10 @@ was not measured, it is not written down.
 | Retrieval development benchmark (schema, loader, fixtures, runner, reports) | Implemented (`chakaso.benchmark`) |
 | Metric functions (recall@k, precision@k, MRR, duplicate + unresolved-reference counts, latency observation) | Implemented (`chakaso.evaluation`) |
 | Retrieval metrics *on a benchmark* | Implemented (development fixtures; a pinned-fingerprint regression guards the corpus) |
-| Citation metrics | Planned |
+| Citation metrics | Implemented (`chakaso.citation`; structural precision/recall and counts, never semantic support) |
+| Claim representation and extraction boundary | Implemented (`chakaso.claims`; deterministic/structured extraction stands in for a model, status is evaluation not truth, ADR-0014) |
+| Grounding evaluation (structural) | Implemented (`chakaso.grounding`; supported / unsupported / not_evaluated, ADR-0015; contradicted / uncertain only via a supplied judgement) |
+| Answer-evaluation combiner (separate dimensions, `evidence_coverage`, `is_grounded`) | Implemented (`chakaso.evaluation.evaluate_answer`) |
 | Red-team suite | Planned |
 | Standard model benchmarks | Planned |
 | Regression gates beyond unit tests | Planned |

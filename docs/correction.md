@@ -105,9 +105,17 @@ revises whenever challenged. Both directions are failures.
 
 ## Status
 
-Nothing in this document is implemented. There is no reassessment engine, no claim
-extraction, no claim classification and no correction record. The
-`AnswerRecord` type that would carry `correction_of` does not exist yet.
+The vocabulary this contract consumes now exists. A claim is a first-class, immutable record
+with a content-derived identifier and an evaluation status (`chakaso.claims`, ADR-0014);
+structural citation validation and a grounding boundary are in place (`chakaso.citation`,
+`chakaso.grounding`, ADR-0015); and a claim can already be classified **supported** or
+**unsupported** by the supplied evidence (with **contradicted** and **uncertain** available
+only when a caller supplies that judgement). `evaluate_answer` keeps these as separate
+dimensions.
 
-The status of this area is **Planned**, and the design above is the specification
-to build against.
+What does **not** exist is the reassessment path itself: nothing takes a previous answer plus
+new evidence, compares the claims, decides retain / qualify / correct, produces a revised
+answer, or records the change. The `AnswerRecord` type that would carry `correction_of` does
+not exist, and no correction loop runs. The status of this area is **Planned**, and the design
+above is the specification to build against. The claim and grounding primitives are its
+inputs, not its implementation.
