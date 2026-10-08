@@ -10,6 +10,24 @@ capability is implemented or still planned.
 
 ## Unreleased
 
+### 2026-10-08 — Command-line retrieval
+
+**Added**
+
+- `chakaso retrieve --query TEXT --file PATH [--file PATH ...] [--top-k N]`: the local
+  pipeline from the command line. It ingests the named files into an in-memory corpus,
+  runs lexical BM25 retrieval, and prints the ranked chunks with their provenance —
+  score, section, matched terms and the source's canonical reference.
+
+**Notes**
+
+- The command calls the same application layer the library exposes (`ingest_file`,
+  `Corpus`, `RetrievalService`) and holds no retrieval logic of its own. Errors (a missing
+  or unsupported file, a bad limit) are reported readably with no traceback.
+- It is local and offline, reads only the files given, and generates no answer: there is
+  still no language model. An empty retrieval is reported plainly, not filled with
+  invented evidence. Only `.txt`, `.md` and `.markdown` are read.
+
 ### 2026-10-08 — Retrieval orchestration
 
 **Added**

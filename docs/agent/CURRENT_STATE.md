@@ -1,6 +1,6 @@
 # Current state
 
-Last updated: 2026-10-08, at commit `feat: orchestrate retrieval into an evidence pack`.
+Last updated: 2026-10-08, at commit `feat: add a command-line retrieval interface`.
 
 This file is the authority on what exists. If it disagrees with any other
 document, this file is right and the other document is a defect.
@@ -18,7 +18,7 @@ A private planning note is never evidence that something is implemented.
 | Contribution guide | `CONTRIBUTING.md` | |
 | Agent contract | `AGENTS.md`, `docs/agent/` | |
 | Python package | `src/chakaso/` | Installs; typed; `py.typed` ships |
-| CLI | `src/chakaso/cli.py` | `--version`, `info`, `config show`, `chat` |
+| CLI | `src/chakaso/cli.py` | `--version`, `info`, `config show`, `chat`, `retrieve` |
 | Configuration | `src/chakaso/config/`, `configs/default.toml` | Typed schema, explicit loading, per-value provenance |
 | Core primitives | `src/chakaso/core/` | Content-derived identifiers, SHA-256 hashing, error base |
 | Model boundary | `src/chakaso/models/` | `LanguageModel` protocol, capabilities, registry, contract tests |
@@ -33,6 +33,7 @@ A private planning note is never evidence that something is implemented.
 | Conversation state | `src/chakaso/conversation/state.py` | Immutable, append-only turns with provenance; topic, entities and open questions |
 | Conversation manager | `src/chakaso/conversation/manager.py` | Conducts one turn: context projection, model call, validation, evidence and citation recording. Transactional (ADR-0008) |
 | Conversation shell | `chakaso chat` | Interactive and one-shot. States in its own output that the engine is a development double |
+| Retrieval CLI | `chakaso retrieve` | Ingests named local files, runs lexical retrieval, prints ranked evidence with provenance. Local and offline |
 | Tests | `tests/` | 346 tests at the commit recorded above: package, CLI, configuration, primitives, model boundary, evidence, conversation state, conversation manager, chunking, repository hygiene. The count ages; the command does not. |
 | CI | `.github/workflows/ci.yml` | Green on Python 3.11, 3.12, 3.13 |
 | Dense retrieval, persistence, correction | **do not exist** | Lexical ranking and an in-memory corpus now exist; there are no embeddings, no persistent store, no fetcher and no correction |
@@ -110,6 +111,10 @@ A private planning note is never evidence that something is implemented.
   `EvidencePack` with its sources; `ConversationManager.send(evidence=...)` can now be
   handed a pack that something actually produced. An unmatched query gives an empty pack,
   never fabricated evidence.
+- `python -m chakaso retrieve --query ... --file ...` runs the whole local pipeline from
+  the command line: it ingests the named files, retrieves, and prints ranked evidence with
+  its provenance. It reads only the files given, touches no network and generates no
+  answer; an empty retrieval says so.
 - CI runs all of the above on three Python versions, with no secrets and no network
   access to a model provider.
 

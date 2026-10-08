@@ -2,7 +2,9 @@
 
 ## What you can actually run
 
-One thing: `chakaso chat`, a conversation shell that runs end to end.
+Two things: `chakaso chat`, a conversation shell that exercises the conversation plumbing
+end to end, and `chakaso retrieve`, which ingests named local documents and runs lexical
+retrieval over them.
 
 **There is no language model in Chakaso.** The only implementation of the model
 boundary is a deterministic development double, which returns fixed text describing
@@ -11,7 +13,9 @@ it produces anything. The reply is evidence that the conversation boundary works
 context projection, the model call, validation, evidence and citation recording —
 not an answer.
 
-There is also no retrieval, no fetching, no correction loop, no tokenizer and no
+Retrieval exists but is **local and lexical**: it reads the files you name, normalizes
+and chunks them, and ranks them for a query with BM25 — shared words only, no embeddings
+and no meaning. There is no web fetching, no correction loop, no tokenizer and no
 training code. `chakaso config show` inspects configuration, and `chakaso --version`
 verifies an install.
 
@@ -145,9 +149,25 @@ Two more things the shell will tell you about, on standard error, when they happ
   present one as the other.
 - **An unresolved evidence reference.** The reply cited evidence it was not given.
   Nothing was resolved to a source, and the reference is listed
-  ([ADR-0009](decisions/ADR-0009-unresolved-references-are-recorded.md)). Nothing can
-  produce evidence yet, so this should only be reachable with a model that invents
-  identifiers.
+  ([ADR-0009](decisions/ADR-0009-unresolved-references-are-recorded.md)). The shell
+  supplies no evidence, so this is only reachable with a model that invents identifiers.
+
+## Retrieving from local documents
+
+```bash
+python -m chakaso retrieve --query "what are the deadlines" --file docs/roadmap.md
+```
+
+`retrieve` ingests each `--file` (repeat the flag for multiple sources) into an
+in-memory corpus, runs lexical BM25 retrieval for `--query`, and prints the ranked
+chunks with their provenance — score, section, matched terms and the source's canonical
+reference. `--top-k` bounds how many are returned.
+
+It is local and offline: it reads only the files you name, never crawls a directory, and
+touches no network and no model. It prints evidence, not an answer — there is no language
+model to turn retrieved chunks into prose — and an empty result says so plainly rather
+than inventing evidence. Only plain text and Markdown (`.txt`, `.md`, `.markdown`) are
+read; any other format is refused rather than mangled into text.
 
 ## Running without installing
 
@@ -198,6 +218,7 @@ src/chakaso/           package source
   core/                identifiers, hashing, error base
   models/              language-model boundary, capabilities, registry
   evidence/            source records, evidence chunks, packs, citation resolution
+  retrieval/           normalization, chunking, ingestion, corpus, lexical index and retrieval
   conversation/        immutable conversation state
 tests/                 unit, contract and repository-hygiene tests
 configs/               versioned configuration files

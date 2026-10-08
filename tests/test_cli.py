@@ -358,3 +358,82 @@ def test_chat_says_nothing_extra_about_a_clean_reply(capsys: pytest.CaptureFixtu
     captured = capsys.readouterr()
     assert captured.err == ""
     assert captured.out == ""
+
+
+# ---------------------------------------------------------------------------
+# retrieve
+# ---------------------------------------------------------------------------
+
+
+THREE_SECTIONS = "# A\n\nalpha.\n\n# B\n\nbeta.\n\n# C\n\ngamma.\n"
+
+
+def test_retrieve_prints_ranked_evidence_with_provenance(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    document = tmp_path / "notes.md"
+    document.write_text("# Deadlines\n\nThe window closes in April.\n", encoding="utf-8")
+
+    assert main(["retrieve", "--query", "closes April", "--file", str(document)]) == 0
+
+    out = capsys.readouterr().out
+    assert "retriever: lexical" in out
+    assert "1. score=" in out
+    assert "The window closes in April." in out
+    # The source reference is a file URI, not a fabricated URL.
+    assert "file:///" in out
+
+
+def test_retrieve_says_so_when_nothing_matches(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    # An empty retrieval is a clean outcome, not an error, and is reported as such.
+    document = tmp_path / "notes.md"
+    document.write_text("# Deadlines\n\nThe window closes in April.\n", encoding="utf-8")
+
+    assert main(["retrieve", "--query", "quantum tunnelling", "--file", str(document)]) == 0
+    assert "no evidence matched the query" in capsys.readouterr().out
+
+
+def test_retrieve_honours_top_k(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
+    document = tmp_path / "many.md"
+    document.write_text(THREE_SECTIONS, encoding="utf-8")
+
+    assert (
+        main(["retrieve", "--query", "alpha beta gamma", "--file", str(document), "--top-k", "1"])
+        == 0
+    )
+    assert capsys.readouterr().out.count("   source:") == 1
+
+    assert (
+        main(["retrieve", "--query", "alpha beta gamma", "--file", str(document), "--top-k", "5"])
+        == 0
+    )
+    assert capsys.readouterr().out.count("   source:") == 3
+
+
+def test_retrieve_needs_at_least_one_file(capsys: pytest.CaptureFixture[str]) -> None:
+    assert main(["retrieve", "--query", "anything"]) == 1
+    assert "at least one --file" in capsys.readouterr().err
+
+
+def test_retrieve_reports_a_missing_file_without_a_traceback(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    missing = tmp_path / "absent.md"
+
+    assert main(["retrieve", "--query", "x", "--file", str(missing)]) == 1
+
+    err = capsys.readouterr().err
+    assert "does not exist" in err
+    assert "Traceback" not in err
+
+
+def test_retrieve_refuses_an_unsupported_format(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    document = tmp_path / "plan.docx"
+    document.write_bytes(b"binary content")
+
+    assert main(["retrieve", "--query", "x", "--file", str(document)]) == 1
+    assert "unsupported" in capsys.readouterr().err

@@ -2,13 +2,16 @@
 
 The CLI is deliberately thin. It exists so that the package can be verified after
 installation (``chakaso --version``), so that configuration can be inspected
-(``chakaso config show``), and so that the conversation boundary can be exercised by
-a person (``chakaso chat``). It does not implement behaviour of its own: composing a
-model, a conversation and a manager is wiring, and wiring belongs at the entry point.
+(``chakaso config show``), so that the conversation boundary can be exercised by a
+person (``chakaso chat``), and so that retrieval can be run over named local files
+(``chakaso retrieve``). It does not implement behaviour of its own: composing a model,
+a corpus, a retrieval service or a manager is wiring, and wiring belongs at the entry
+point. Every command calls the same application layer the library exposes.
 
 ``chat`` is honest about what answers it. The only adapter that exists is a
 deterministic development double, and the command says so in its own output rather
-than letting a user infer that the replies mean something.
+than letting a user infer that the replies mean something. ``retrieve`` never generates
+an answer; it ingests, ranks and prints evidence with its provenance.
 """
 
 from __future__ import annotations
@@ -29,6 +32,15 @@ from chakaso.conversation import (
     new_conversation_id,
 )
 from chakaso.models import GenerationParams, ModelError, UnknownModelError, create_model
+from chakaso.retrieval import (
+    DEFAULT_TOP_K,
+    Corpus,
+    IngestionError,
+    RetrievalError,
+    RetrievalOutcome,
+    RetrievalService,
+    ingest_file,
+)
 
 __all__ = ["build_parser", "main"]
 
@@ -119,6 +131,36 @@ def _build_parsers() -> tuple[argparse.ArgumentParser, argparse.ArgumentParser]:
         ),
     )
 
+    retrieve_parser = subparsers.add_parser(
+        "retrieve",
+        help="search supplied local documents for a query and print ranked evidence",
+        description=(
+            "Ingest the files given by --file into an in-memory corpus, run lexical BM25 "
+            "retrieval for --query, and print the ranked evidence with its provenance. "
+            "Local and offline: no network, no model, and no answer is generated."
+        ),
+    )
+    retrieve_parser.add_argument(
+        "--query",
+        required=True,
+        metavar="TEXT",
+        help="the query to retrieve for",
+    )
+    retrieve_parser.add_argument(
+        "--file",
+        action="append",
+        default=None,
+        metavar="PATH",
+        help="a local document to ingest; repeat for multiple sources",
+    )
+    retrieve_parser.add_argument(
+        "--top-k",
+        type=int,
+        default=DEFAULT_TOP_K,
+        metavar="N",
+        help="how many chunks to return (default: %(default)s)",
+    )
+
     return parser, config_parser
 
 
@@ -155,6 +197,9 @@ def main(argv: Sequence[str] | None = None) -> int:
 
     if args.command == "chat":
         return _run_chat(args)
+
+    if args.command == "retrieve":
+        return _run_retrieve(args)
 
     # Unreachable while every subcommand is handled above. argparse rejects
     # unknown commands before this point, so reaching here means a subcommand was
@@ -321,6 +366,59 @@ def _report_caveats(reply: Reply) -> None:
             f"{PROGRAM}: the reply contained malformed evidence references: {malformed}",
             file=sys.stderr,
         )
+
+
+def _run_retrieve(args: argparse.Namespace) -> int:
+    """Ingest the given files, retrieve for the query, and print ranked evidence.
+
+    This calls the same application layer the library exposes — ``ingest_file``,
+    ``Corpus`` and ``RetrievalService`` — and adds no retrieval logic of its own.
+    """
+    paths = args.file or []
+    if not paths:
+        print(f"{PROGRAM}: retrieve needs at least one --file", file=sys.stderr)
+        return 1
+
+    try:
+        corpus = Corpus()
+        for path in paths:
+            corpus.add_document(ingest_file(path))
+        outcome = RetrievalService(corpus).search(args.query, top_k=args.top_k)
+    except (IngestionError, RetrievalError) as exc:
+        print(f"{PROGRAM}: {exc}", file=sys.stderr)
+        return 1
+
+    print(_format_retrieval(outcome))
+    return 0
+
+
+def _format_retrieval(outcome: RetrievalOutcome) -> str:
+    """Render a retrieval outcome for a developer, including provenance.
+
+    The score is a ranking artefact, not a confidence, and it is labelled as such; the
+    matched terms are exactly what the retriever computed, nothing more.
+    """
+    config = outcome.retrieval_config
+    lines = [
+        f"retriever: {config['retriever']}  top_k: {config['top_k']}  query: {outcome.query!r}"
+    ]
+    if not outcome.results:
+        lines.append("no evidence matched the query")
+        return "\n".join(lines)
+
+    for result in outcome.results:
+        chunk = result.chunk
+        source = outcome.pack.source_for(chunk.source_id)
+        title = source.title if source is not None else "?"
+        reference = source.canonical_reference if source is not None else "?"
+        lines.append(
+            f"{result.rank}. score={result.score:.4f}  section={chunk.section or '-'}  "
+            f"chunk_id={chunk.chunk_id}"
+        )
+        lines.append(f"   source: {title} <{reference}>")
+        lines.append(f"   matched: {', '.join(result.matched_terms)}")
+        lines.append(f"   {chunk.text}")
+    return "\n".join(lines)
 
 
 def _format_config(loaded: LoadedConfig) -> str:
