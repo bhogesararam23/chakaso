@@ -14,7 +14,7 @@ A private planning note is never evidence that something is implemented.
 | Repository conventions | `.gitignore`, `.gitattributes`, `.editorconfig` | Private docx pack excluded by `.gitignore` and guarded by a test |
 | License | `LICENSE` | Apache-2.0; rationale in ADR-0004 |
 | Public documentation | `README.md`, `docs/*.md`, `docs/research/` | Specifications with mandatory status labels |
-| Decision records | `docs/decisions/` | ADR-0001 to ADR-0007 |
+| Decision records | `docs/decisions/` | ADR-0001 to ADR-0010 |
 | Contribution guide | `CONTRIBUTING.md` | |
 | Agent contract | `AGENTS.md`, `docs/agent/` | |
 | Python package | `src/chakaso/` | Installs; typed; `py.typed` ships |
@@ -134,6 +134,7 @@ one small thing each.
 | ADR-0007 | Evidence identifiers are derived from content and the canonical URL, not assigned at random |
 | ADR-0008 | A turn either completes or the conversation is unchanged |
 | ADR-0009 | A reference the model was not given is recorded, not fatal |
+| ADR-0010 | Chunks are section-bounded and do not overlap |
 
 Two process facts are recorded outside the ADR series because they are repository
 history rather than architecture:

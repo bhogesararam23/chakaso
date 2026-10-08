@@ -28,7 +28,7 @@ about answer quality.
 - [x] Apache-2.0 license with the decision recorded (ADR-0004)
 - [x] Public documentation set: README, getting started, architecture, transparency,
       retrieval, correction, training, evaluation, roadmap
-- [x] Decision records ADR-0001 through ADR-0009
+- [x] Decision records ADR-0001 through ADR-0010
 - [x] Research foundation: log, hypotheses, open questions, literature
 - [x] Contribution guide and agent contract
 - [x] Python project metadata and package skeleton (ADR-0005)

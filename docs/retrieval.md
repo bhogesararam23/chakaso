@@ -66,7 +66,7 @@ SourceRecord
     source_id        stable identifier assigned at retrieval
     canonical_url    normalized, after redirects
     title            as extracted, not as generated
-    domain           registrable domain of canonical_url
+    domain           host of canonical_url; not a registrable domain
     retrieved_at     when this record's content was obtained
     published_at     when known; null otherwise, never guessed
     content_hash     hash of the retrieved content
