@@ -52,26 +52,34 @@ Sizes are counted in **characters**, not tokens. There is no tokenizer, so
 a later reader would trust.
 
 Chunking does not read files and does not fetch anything. Reading a document from a
-local path is not implemented, because a document with no URL has no identity yet —
-see
-[`research/open-questions.md`](research/open-questions.md#what-is-the-identity-of-a-document-that-has-no-url).
+local path is still not implemented, but a source with no URL now has an identity — a
+`file` or `text` reference ([ADR-0011](decisions/ADR-0011-typed-source-references.md))
+— so the remaining step is ingestion, not identity.
 
 ## Source identity
 
 Retrieval assigns identity; the model does not
 ([ADR-0003](decisions/ADR-0003-evidence-identifier-ownership.md)).
 
+Identity is a canonical *reference*, not only a URL
+([ADR-0011](decisions/ADR-0011-typed-source-references.md)). A web source is named by
+its canonical URL exactly as before, a local document by a `file` URI, and content
+supplied directly by a `text` reference. `derive_source_id` is indifferent to which, so
+the ADR-0007 formula is unchanged and every identifier already derived from a URL does
+not move.
+
 ```text
 SourceRecord
-    source_id        stable identifier assigned at retrieval
-    canonical_url    normalized, after redirects
-    title            as extracted, not as generated
-    domain           host of canonical_url; not a registrable domain
-    retrieved_at     when this record's content was obtained
-    published_at     when known; null otherwise, never guessed
-    content_hash     hash of the retrieved content
-    raw_text_path    where the stored text lives, if it is stored
-    metadata         extraction-specific extras
+    source_id            stable identifier assigned at retrieval
+    kind                 web, file or text (ADR-0011)
+    canonical_reference  the canonical reference: a URL, a file URI, or a text reference
+    title                as extracted, not as generated
+    domain               host of a web reference; empty for file and text
+    retrieved_at         when this record's content was obtained
+    published_at         when known; null otherwise, never guessed
+    content_hash         hash of the retrieved content
+    raw_text_path        where the stored text lives, if it is stored
+    metadata             extraction-specific extras
 
 EvidenceChunk
     chunk_id         stable identifier
@@ -152,11 +160,12 @@ evidence textually and structurally.
 | --- | --- |
 | `SourceRecord`, `EvidenceChunk` types | Implemented |
 | URL canonicalization and host extraction | Implemented |
+| Source reference identity for local and supplied content (ADR-0011) | Implemented |
 | Evidence Pack with identifier validation | Implemented |
 | Citation resolution, including rejection of unknown identifiers | Implemented |
 | Fetch policy and fetcher | Planned |
 | Document processing and main-content extraction | Planned |
-| Reading a document from a local path | Planned (blocked on local document identity) |
+| Reading a document from a local path | Planned |
 | Chunking | Implemented |
 | Local lexical ranking baseline | Planned |
 | Dense embeddings and vector index | Planned |

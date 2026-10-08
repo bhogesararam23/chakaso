@@ -1,6 +1,6 @@
 # Current state
 
-Last updated: 2026-10-07, at commit `feat: add document chunking`.
+Last updated: 2026-10-08, at commit `feat: generalize source identity beyond URLs`.
 
 This file is the authority on what exists. If it disagrees with any other
 document, this file is right and the other document is a defect.
@@ -23,7 +23,7 @@ A private planning note is never evidence that something is implemented.
 | Core primitives | `src/chakaso/core/` | Content-derived identifiers, SHA-256 hashing, error base |
 | Model boundary | `src/chakaso/models/` | `LanguageModel` protocol, capabilities, registry, contract tests |
 | Model implementations | `src/chakaso/models/deterministic.py` | A development double only. **No language model exists.** |
-| Evidence records | `src/chakaso/evidence/` | `SourceRecord`, `EvidenceChunk`, `EvidencePack`, URL canonicalization, citation resolution |
+| Evidence records | `src/chakaso/evidence/` | `SourceRecord`, `EvidenceChunk`, `EvidencePack`, typed source references (web/file/text, ADR-0011), URL canonicalization, citation resolution |
 | Chunking | `src/chakaso/retrieval/chunking.py` | Document text to evidence chunks: section-bounded, non-overlapping, deterministic (ADR-0010) |
 | Conversation state | `src/chakaso/conversation/state.py` | Immutable, append-only turns with provenance; topic, entities and open questions |
 | Conversation manager | `src/chakaso/conversation/manager.py` | Conducts one turn: context projection, model call, validation, evidence and citation recording. Transactional (ADR-0008) |
@@ -56,6 +56,10 @@ A private planning note is never evidence that something is implemented.
   something that looks like an answer.
 - A source record can be built from a URL and content, deriving its own identity and
   content hash, and can confirm later whether a given content still matches it.
+- The same record type now covers sources that are not web pages: a local document is
+  identified by a `file` reference and supplied text by a `text` reference (ADR-0011),
+  while a web source's identifier is exactly what it was before. No document is read
+  and nothing is fetched yet; a caller hands in the content.
 - An evidence pack can be assembled from chunks and sources, and the references in an
   answer resolved against it: resolved citations, unknown identifiers and malformed
   identifiers are reported separately.
@@ -108,8 +112,8 @@ one small thing each.
 ## What is not implemented
 
 - Query planner: nothing decides whether retrieval would help
-- Reading a document from a local path, which is blocked on what identifies a source
-  with no URL
+- Reading a document from a local path. The identity that blocked it is now settled
+  (ADR-0011); what remains is the reader and its filesystem-safety rules.
 - Ranking, indexing and embeddings: chunks cannot be scored or searched yet
 - Fetching and parsing web content
 - Claim-level support checking. Citation *reference* validation exists; whether cited
@@ -135,6 +139,7 @@ one small thing each.
 | ADR-0008 | A turn either completes or the conversation is unchanged |
 | ADR-0009 | A reference the model was not given is recorded, not fatal |
 | ADR-0010 | Chunks are section-bounded and do not overlap |
+| ADR-0011 | Source identity is a typed reference, not a URL |
 
 Two process facts are recorded outside the ADR series because they are repository
 history rather than architecture:
@@ -154,12 +159,14 @@ architectural decision made so far rests on reasoning rather than measurement.
 ## Next step
 
 P2 is complete: the conversation manager works and a shell exercises it end to end.
-The next unit is the first of P3, **local document ingestion and a lexical retrieval
-baseline**: taking documents that are already on disk, splitting them into evidence
-chunks with stable identifiers, and ranking them for a query without embeddings. That
-is what will supply the `EvidencePack` that `ConversationManager.send` already
-accepts, and it is deliberately the smallest retrieval step — no network, no model,
-no index server.
+The blocking question for retrieval — what identifies a source with no URL — is now
+answered (ADR-0011), so a local document and supplied text have an identity and a
+record. The next unit is the first of P3, **local document ingestion and a lexical
+retrieval baseline**: normalizing content deterministically, reading documents that are
+already on disk into the records now defined, splitting them into evidence chunks with
+stable identifiers, and ranking them for a query without embeddings. That is what will
+supply the `EvidencePack` that `ConversationManager.send` already accepts, and it is
+deliberately the smallest retrieval step — no network, no model, no index server.
 
 Before live fetching (P4), the fetch policy has to be written. It is a blocking open
 question in [`../research/open-questions.md`](../research/open-questions.md), and the

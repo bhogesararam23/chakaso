@@ -19,11 +19,15 @@ from chakaso.evidence import (
     CitationResolution,
     EvidenceChunk,
     EvidencePack,
+    SourceKind,
     SourceRecord,
     SourceRecordError,
+    SourceReferenceError,
     UrlError,
     canonicalize_url,
+    file_reference,
     resolve_citations,
+    text_reference,
 )
 
 RETRIEVED = datetime(2026, 10, 7, 12, 0, tzinfo=UTC)
@@ -60,7 +64,8 @@ def test_create_derives_identity_host_and_hash() -> None:
     record = make_source()
 
     assert record.source_id == derive_source_id(canonicalize_url(URL), TEXT)
-    assert record.canonical_url == URL
+    assert record.canonical_reference == URL
+    assert record.kind is SourceKind.WEB
     assert record.domain == "example.org"
     assert record.content_hash == sha256_hex(TEXT)
     assert record.published_at == PUBLISHED
@@ -71,7 +76,7 @@ def test_create_canonicalizes_the_url_before_deriving_identity() -> None:
     # produce a second source for one page.
     noisy = make_source(url=f"{URL}?utm_source=newsletter#top")
 
-    assert noisy.canonical_url == URL
+    assert noisy.canonical_reference == URL
     assert noisy.source_id == make_source().source_id
 
 
@@ -148,13 +153,30 @@ def test_non_utc_offsets_are_accepted() -> None:
     assert make_source(retrieved_at=offset).retrieved_at.utcoffset() == timedelta(hours=2)
 
 
-def test_empty_canonical_url_is_rejected() -> None:
-    with pytest.raises(SourceRecordError, match="canonical_url"):
+def test_empty_canonical_reference_is_rejected() -> None:
+    with pytest.raises(SourceReferenceError, match="non-empty"):
         SourceRecord(
             source_id=derive_source_id(URL, TEXT),
-            canonical_url="",
+            canonical_reference="",
+            kind=SourceKind.WEB,
             title="t",
             domain="example.org",
+            retrieved_at=RETRIEVED,
+            published_at=None,
+            content_hash=sha256_hex(TEXT),
+        )
+
+
+def test_record_kind_must_match_its_reference() -> None:
+    # A FILE kind beside an http value would name a source as something it is not,
+    # and no derived identifier could reveal the mismatch later.
+    with pytest.raises(SourceReferenceError, match="file reference"):
+        SourceRecord(
+            source_id=derive_source_id(URL, TEXT),
+            canonical_reference=URL,
+            kind=SourceKind.FILE,
+            title="t",
+            domain="",
             retrieved_at=RETRIEVED,
             published_at=None,
             content_hash=sha256_hex(TEXT),
@@ -168,7 +190,8 @@ def test_malformed_content_hash_is_rejected(digest: str) -> None:
     with pytest.raises(SourceRecordError, match="content_hash"):
         SourceRecord(
             source_id=derive_source_id(URL, TEXT),
-            canonical_url=URL,
+            canonical_reference=URL,
+            kind=SourceKind.WEB,
             title="t",
             domain="example.org",
             retrieved_at=RETRIEVED,
@@ -180,6 +203,78 @@ def test_malformed_content_hash_is_rejected(digest: str) -> None:
 def test_create_rejects_an_unusable_url() -> None:
     with pytest.raises(UrlError):
         make_source(url="ftp://example.org/a")
+
+
+# ---------------------------------------------------------------------------
+# Non-web source records (ADR-0011)
+# ---------------------------------------------------------------------------
+
+
+def test_create_file_records_a_local_source(tmp_path) -> None:
+    path = tmp_path / "spec.md"
+    path.write_text(TEXT, encoding="utf-8")
+    record = SourceRecord.create_file(
+        path=path, title="Specification", content=TEXT, retrieved_at=RETRIEVED
+    )
+
+    assert record.kind is SourceKind.FILE
+    assert record.canonical_reference.startswith("file:///")
+    # A local file has no host, so the domain is empty rather than invented.
+    assert record.domain == ""
+    assert record.source_id == derive_source_id(record.canonical_reference, TEXT)
+    assert record.matches_content(TEXT) is True
+    assert record.matches_content(REVISED) is False
+
+
+def test_create_text_uses_content_as_its_identity() -> None:
+    record = SourceRecord.create_text(content=TEXT, retrieved_at=RETRIEVED, label="clause-4")
+
+    assert record.kind is SourceKind.TEXT
+    assert record.canonical_reference == text_reference("clause-4").canonical
+    assert record.domain == ""
+    assert record.source_id == derive_source_id("text:clause-4", TEXT)
+
+
+def test_two_identical_passages_are_one_source() -> None:
+    # Identity is the content, so the same supplied text deduplicates rather than
+    # filling an evidence pack with copies.
+    first = SourceRecord.create_text(content=TEXT, retrieved_at=RETRIEVED)
+    second = SourceRecord.create_text(content=TEXT, retrieved_at=RETRIEVED)
+
+    assert first.source_id == second.source_id
+
+
+def test_a_label_distinguishes_two_identical_passages() -> None:
+    first = SourceRecord.create_text(content=TEXT, retrieved_at=RETRIEVED, label="appeals")
+    second = SourceRecord.create_text(content=TEXT, retrieved_at=RETRIEVED, label="deadlines")
+
+    assert first.source_id != second.source_id
+
+
+def test_web_local_and_text_sources_of_one_content_are_distinct(tmp_path) -> None:
+    # Folding the three kinds into one identifier formula cannot collide, because a
+    # canonical URL, a file URI and a text reference are distinct strings.
+    web = make_source()
+    local = SourceRecord.create_file(
+        path=tmp_path / "a.md", title="t", content=TEXT, retrieved_at=RETRIEVED
+    )
+    pasted = SourceRecord.create_text(content=TEXT, retrieved_at=RETRIEVED)
+
+    assert web.canonical_reference == URL
+    assert local.canonical_reference.startswith("file:///")
+    assert pasted.canonical_reference == "text:"
+    assert len({web.source_id, local.source_id, pasted.source_id}) == 3
+
+
+def test_a_file_source_identity_is_deterministic(tmp_path) -> None:
+    # Same path, same content, same identifier, regardless of the reference built
+    # through the record or the abstraction directly.
+    path = tmp_path / "spec.md"
+    record = SourceRecord.create_file(path=path, title="t", content=TEXT, retrieved_at=RETRIEVED)
+    reference = file_reference(path)
+
+    assert record.canonical_reference == reference.canonical
+    assert record.source_id == derive_source_id(reference.canonical, TEXT)
 
 
 # ---------------------------------------------------------------------------

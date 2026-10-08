@@ -5,9 +5,10 @@ model (ADR-0003). A record is immutable and its identifier is derived from its
 content (ADR-0007), so a page that changed produces a new record rather than
 overwriting the one an earlier answer depends on.
 
-Both types are created through :meth:`SourceRecord.create` and
-:meth:`EvidenceChunk.create` rather than by filling in fields directly. Those class
-methods derive the identifier, the host and the content hash from the content
+Both types are created through class methods — :meth:`SourceRecord.create`,
+:meth:`SourceRecord.create_file`, :meth:`SourceRecord.create_text` and
+:meth:`EvidenceChunk.create` — rather than by filling in fields directly. Those
+methods derive the identifier, the reference and the content hash from the content
 itself, so there is no way to build a record whose identifier does not match what it
 names.
 """
@@ -17,13 +18,22 @@ from __future__ import annotations
 from collections.abc import Mapping
 from dataclasses import dataclass, field
 from datetime import datetime
+from pathlib import Path
 from types import MappingProxyType
 from typing import Self
 
 from chakaso.core.hashing import is_sha256_hex, sha256_hex
 from chakaso.core.identifiers import ChunkId, SourceId, derive_chunk_id, derive_source_id
 from chakaso.evidence.errors import SourceRecordError
-from chakaso.evidence.urls import canonicalize_url, host_of
+from chakaso.evidence.identity import (
+    SourceKind,
+    SourceReference,
+    file_reference,
+    require_consistent,
+    text_reference,
+    web_reference,
+)
+from chakaso.evidence.urls import host_of
 
 __all__ = ["EvidenceChunk", "SourceRecord"]
 
@@ -48,19 +58,27 @@ def _require_aware(moment: datetime, field_name: str) -> datetime:
 
 @dataclass(frozen=True, slots=True)
 class SourceRecord:
-    """One canonical URL with one retrieved content body.
+    """One canonical source reference with one content body.
 
     Immutable, including its metadata mapping. The content itself is not stored
     here: a record is provenance, and the bytes live wherever the store puts them.
 
-    ``raw_text_path`` is where those bytes live, if anywhere. The storage layout is
-    deliberately undecided (see ``docs/architecture.md``), so this is usually
-    ``None``; it is present because ``docs/retrieval.md`` specifies it, and a
-    record without it would have nowhere to point once a store exists.
+    A source may be a web page, a local document or supplied text (ADR-0011).
+    ``kind`` records which, and ``canonical_reference`` is its canonical form — a URL
+    for a web source, a ``file`` URI for a document, a ``text`` reference otherwise.
+    Build records through :meth:`create`, :meth:`create_file` or :meth:`create_text`,
+    which derive the identifier, the reference and the content hash from the content
+    itself, so a record whose identifier does not match what it names cannot be built.
+
+    ``raw_text_path`` is where the stored bytes live, if anywhere. The storage layout
+    is deliberately undecided (see ``docs/architecture.md``), so this is usually
+    ``None``; it is present because ``docs/retrieval.md`` specifies it, and a record
+    without it would have nowhere to point once a store exists.
     """
 
     source_id: SourceId
-    canonical_url: str
+    canonical_reference: str
+    kind: SourceKind
     title: str
     domain: str
     retrieved_at: datetime
@@ -75,9 +93,10 @@ class SourceRecord:
     metadata: Mapping[str, str] = field(default_factory=lambda: _EMPTY_METADATA)
 
     def __post_init__(self) -> None:
-        if not self.canonical_url:
-            message = "canonical_url must not be empty"
-            raise SourceRecordError(message)
+        # The reference and its kind are checked by the shared rule, so a hand-built
+        # record cannot carry a ``FILE`` kind beside an ``http`` value: an inconsistent
+        # provenance row is worse than one that fails at construction.
+        require_consistent(self.kind, self.canonical_reference)
         if not is_sha256_hex(self.content_hash):
             message = (
                 f"content_hash must be a full lowercase SHA-256 digest, got {self.content_hash!r}"
@@ -99,18 +118,103 @@ class SourceRecord:
         raw_text_path: str | None = None,
         metadata: Mapping[str, str] | None = None,
     ) -> Self:
-        """Build a record, deriving identity, host and content hash from ``content``.
+        """Build a record for a web source from a URL and its retrieved content.
 
-        ``published_at`` is left as ``None`` when unknown. A guessed publication
-        date is worse than a missing one: it lets a stale source look current, and
-        afterwards there is no way to tell which dates were guesses.
+        Identity is derived from the canonical URL, so this produces exactly the
+        identifier ADR-0007 defines for a web source; generalizing identity to other
+        kinds does not move it.
         """
-        canonical_url = canonicalize_url(url)
-        return cls(
-            source_id=derive_source_id(canonical_url, content),
-            canonical_url=canonical_url,
+        return cls._from_reference(
+            web_reference(url),
             title=title,
-            domain=host_of(canonical_url),
+            content=content,
+            retrieved_at=retrieved_at,
+            published_at=published_at,
+            raw_text_path=raw_text_path,
+            metadata=metadata,
+        )
+
+    @classmethod
+    def create_file(
+        cls,
+        *,
+        path: str | Path,
+        title: str,
+        content: str | bytes,
+        retrieved_at: datetime,
+        published_at: datetime | None = None,
+        raw_text_path: str | None = None,
+        metadata: Mapping[str, str] | None = None,
+    ) -> Self:
+        """Build a record for a local document from its path and content.
+
+        The path identifies the source and ``content`` is the text read from it. A
+        local file is named by a ``file`` URI and never routed through URL
+        canonicalization (ADR-0011), so identifying it cannot widen what a future
+        fetcher is permitted to retrieve.
+        """
+        return cls._from_reference(
+            file_reference(path),
+            title=title,
+            content=content,
+            retrieved_at=retrieved_at,
+            published_at=published_at,
+            raw_text_path=raw_text_path,
+            metadata=metadata,
+        )
+
+    @classmethod
+    def create_text(
+        cls,
+        *,
+        content: str | bytes,
+        retrieved_at: datetime,
+        title: str = "",
+        label: str | None = None,
+        published_at: datetime | None = None,
+        metadata: Mapping[str, str] | None = None,
+    ) -> Self:
+        """Build a record for content supplied directly, with no location to cite.
+
+        Identity is the content. An optional ``label`` distinguishes two passages that
+        would otherwise deduplicate to one opaque source.
+        """
+        return cls._from_reference(
+            text_reference(label),
+            title=title,
+            content=content,
+            retrieved_at=retrieved_at,
+            published_at=published_at,
+            raw_text_path=None,
+            metadata=metadata,
+        )
+
+    @classmethod
+    def _from_reference(
+        cls,
+        reference: SourceReference,
+        *,
+        title: str,
+        content: str | bytes,
+        retrieved_at: datetime,
+        published_at: datetime | None,
+        raw_text_path: str | None,
+        metadata: Mapping[str, str] | None,
+    ) -> Self:
+        """Assemble a record from an already-built reference and its content.
+
+        ``domain`` is the reference's host where one exists; a file or text reference
+        has no host, so it is empty rather than guessed. ``published_at`` is left
+        ``None`` when unknown: a guessed publication date is worse than a missing one,
+        because it lets a stale source look current with no way to tell later.
+        """
+        canonical = reference.canonical
+        return cls(
+            source_id=derive_source_id(canonical, content),
+            canonical_reference=canonical,
+            kind=reference.kind,
+            title=title,
+            domain=host_of(canonical),
             retrieved_at=_require_aware(retrieved_at, "retrieved_at"),
             published_at=published_at,
             content_hash=sha256_hex(content),
@@ -129,7 +233,7 @@ class SourceRecord:
         """
         return (
             sha256_hex(content) == self.content_hash
-            and derive_source_id(self.canonical_url, content) == self.source_id
+            and derive_source_id(self.canonical_reference, content) == self.source_id
         )
 
     @property

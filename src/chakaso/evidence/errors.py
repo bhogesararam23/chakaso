@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from chakaso.core.errors import ChakasoError
 
-__all__ = ["EvidenceError", "SourceRecordError", "UrlError"]
+__all__ = ["EvidenceError", "SourceRecordError", "SourceReferenceError", "UrlError"]
 
 
 class EvidenceError(ChakasoError):
@@ -21,3 +21,11 @@ class UrlError(EvidenceError, ValueError):
 
 class SourceRecordError(EvidenceError, ValueError):
     """A source or chunk record would be internally inconsistent."""
+
+
+class SourceReferenceError(EvidenceError, ValueError):
+    """A source reference is empty, or its canonical form contradicts its kind.
+
+    Deriving from :class:`ValueError` as well lets untrusted input — a reference
+    read back from stored provenance — be validated with the built-in type.
+    """

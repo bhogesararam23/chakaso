@@ -10,6 +10,40 @@ capability is implemented or still planned.
 
 ## Unreleased
 
+### 2026-10-08 — Generalized source identity
+
+**Added**
+
+- `chakaso.evidence.identity`: a `SourceReference` and a `SourceKind` (`web`, `file`,
+  `text`) that decide what a source *is*, kept deliberately separate from whether it
+  can be fetched. `web_reference`, `file_reference` and `text_reference` build one.
+- `SourceRecord.create_file` and `SourceRecord.create_text`, so a local document and
+  supplied text are records now rather than a later step.
+- ADR-0011 records the decision, and answers the open question that had blocked local
+  ingestion. The distinction it turns on: a source reference is an identity, a fetchable
+  URL is a permission, and the two were living in one function.
+
+**Changed**
+
+- `SourceRecord.canonical_url` became `canonical_reference`, and the record carries a
+  `kind`. `derive_source_id` now takes a canonical reference. **The identifier formula
+  and every web-source identifier are unchanged** (ADR-0007 is untouched): a web
+  reference's canonical form is exactly `canonicalize_url`'s output, and a `file` URI or
+  a `text` reference can never equal a canonical URL, so folding the three kinds into one
+  formula cannot collide across them.
+- `canonicalize_url` is now used only for web references. Identifying a local source no
+  longer routes through it, so widening source identity no longer widens what the future
+  fetcher is permitted to retrieve.
+
+**Notes**
+
+- Still no ingestion and no retrieval. A caller hands the content to
+  `create_file`/`create_text`; nothing opens a file, reads a path from disk, or touches
+  the network. The record can name a local source before anything can read one.
+- File identity is machine-local (a `file` URI names a path on one filesystem), and a
+  relative path resolves against the working directory, so absolute paths give the
+  stablest identity.
+
 ### 2026-10-07 — Document chunking
 
 **Added**

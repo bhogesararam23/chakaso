@@ -11,7 +11,19 @@ record is built from content that a caller already has.
 
 from __future__ import annotations
 
-from chakaso.evidence.errors import EvidenceError, SourceRecordError, UrlError
+from chakaso.evidence.errors import (
+    EvidenceError,
+    SourceRecordError,
+    SourceReferenceError,
+    UrlError,
+)
+from chakaso.evidence.identity import (
+    SourceKind,
+    SourceReference,
+    file_reference,
+    text_reference,
+    web_reference,
+)
 from chakaso.evidence.pack import Citation, CitationResolution, EvidencePack, resolve_citations
 from chakaso.evidence.records import EvidenceChunk, SourceRecord
 from chakaso.evidence.urls import canonicalize_url, host_of
@@ -22,10 +34,16 @@ __all__ = [
     "EvidenceChunk",
     "EvidenceError",
     "EvidencePack",
+    "SourceKind",
     "SourceRecord",
     "SourceRecordError",
+    "SourceReference",
+    "SourceReferenceError",
     "UrlError",
     "canonicalize_url",
+    "file_reference",
     "host_of",
     "resolve_citations",
+    "text_reference",
+    "web_reference",
 ]

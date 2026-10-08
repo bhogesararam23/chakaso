@@ -96,7 +96,7 @@ class Identifier:
 
 @dataclass(frozen=True, order=True)
 class SourceId(Identifier):
-    """Identifies a retrieved source: one canonical URL with one content body."""
+    """Identifies a retrieved source: one canonical reference with one content body."""
 
     PREFIX: ClassVar[str] = SOURCE_ID_PREFIX
     TYPE_NAME: ClassVar[str] = "source identifier"
@@ -110,31 +110,38 @@ class ChunkId(Identifier):
     TYPE_NAME: ClassVar[str] = "chunk identifier"
 
 
-def derive_source_id(canonical_url: str, content: str | bytes) -> SourceId:
-    """Derive a source identifier from a canonical URL and the retrieved content.
+def derive_source_id(canonical_reference: str, content: str | bytes) -> SourceId:
+    """Derive a source identifier from a canonical reference and the source content.
 
-    The same URL with the same content produces the same identifier, so repeated
-    retrieval deduplicates. The same URL with different content produces a
+    The same reference with the same content produces the same identifier, so repeated
+    retrieval deduplicates. The same reference with different content produces a
     different identifier, so an earlier record is never overwritten and an earlier
     answer still points at the bytes it actually used (ADR-0007).
 
+    The reference is the canonical string a :class:`~chakaso.evidence.identity.SourceReference`
+    produces: a canonical URL for a web source, a ``file`` URI for a local document, a
+    ``text`` reference for supplied content. This function is indifferent to which, so
+    web identifiers are unchanged by the generalization (ADR-0011).
+
     Args:
-        canonical_url: The normalized URL, after redirects. Normalization is part
-            of the identifier contract: changing it changes every future
-            identifier derived from a URL.
-        content: The retrieved content. Bytes are hashed as given; text is hashed
+        canonical_reference: The normalized reference. Its form is part of the
+            identifier contract: changing the rule that produces it changes every
+            future identifier derived from it.
+        content: The source content. Bytes are hashed as given; text is hashed
             as UTF-8.
 
     Raises:
-        IdentifierError: ``canonical_url`` is empty. An identifier cannot be
-            derived from nothing, and an empty URL means the fetch failed rather
-            than that the page is empty.
+        IdentifierError: ``canonical_reference`` is empty. An identifier cannot be
+            derived from nothing, and an empty reference means the source was never
+            obtained rather than that it is empty.
     """
-    if not canonical_url:
-        message = "cannot derive a source identifier from an empty canonical URL"
+    if not canonical_reference:
+        message = "cannot derive a source identifier from an empty canonical reference"
         raise IdentifierError(message)
 
-    digest = short_sha256_hex(join_parts(canonical_url, sha256_hex(content)), length=_DIGEST_LENGTH)
+    digest = short_sha256_hex(
+        join_parts(canonical_reference, sha256_hex(content)), length=_DIGEST_LENGTH
+    )
     return SourceId(f"{SOURCE_ID_PREFIX}{digest}")
 
 

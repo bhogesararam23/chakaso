@@ -103,3 +103,4 @@ creates.
 | [ADR-0008](ADR-0008-transactional-turns.md) | A turn either completes or the conversation is unchanged | Accepted |
 | [ADR-0009](ADR-0009-unresolved-references-are-recorded.md) | A reference the model was not given is recorded, not fatal | Accepted |
 | [ADR-0010](ADR-0010-section-bounded-chunks.md) | Chunks are section-bounded and do not overlap | Accepted |
+| [ADR-0011](ADR-0011-typed-source-references.md) | Source identity is a typed reference, not a URL | Accepted |

@@ -10,9 +10,19 @@ and cannot currently be made well.
 
 ### What is the identity of a document that has no URL?
 
-**Found while scoping local ingestion, and not yet answered.**
+**Answered. See [ADR-0011](../decisions/ADR-0011-typed-source-references.md).**
 
-Source identity is derived from the canonical URL and a content hash
+A source is identified by a typed `SourceReference`, not only by a canonical URL. A
+web reference keeps `canonicalize_url` as its canonical form, so web identifiers are
+unchanged; a `file` reference is a `file` URI built from the resolved path; a `text`
+reference marks content with no location. The fetch permission stays inside
+`canonicalize_url` and is used only for web references, so widening identity did not
+widen what the future fetcher may retrieve — which is exactly the distinction this
+question was about: a reference is an identity, a fetchable URL is a permission.
+
+The historical framing is kept below because it records what was rejected and why.
+
+Source identity was derived from the canonical URL and a content hash
 ([ADR-0007](../decisions/ADR-0007-content-derived-identifiers.md)), and
 `canonicalize_url` accepts only `http` and `https` because those are the schemes the
 fetcher may retrieve. A local file has neither. Its honest identity is its absolute
@@ -32,10 +42,10 @@ The candidates, none of them free:
   ingestion depend on fetching, so the retrieval layer cannot be built or tested
   before the fetch policy exists.
 
-**What would resolve it.** Deciding whether a source reference and a fetchable URL are
-the same concept. They probably are not: one is an identity, the other is a
-permission. That is a decision record, and it should be written before ingestion
-rather than during it.
+**What would resolve it.** Decided in
+[ADR-0011](../decisions/ADR-0011-typed-source-references.md): a source reference and a
+fetchable URL are separate concepts — one is an identity, the other a permission.
+Local ingestion is no longer blocked on this question.
 
 **Why it is recorded instead of guessed.** ADR-0007 makes the canonicalization rule
 part of the identifier contract, so changing it changes every future identifier. A

@@ -101,10 +101,10 @@ def test_bytes_and_text_content_agree() -> None:
     assert derive_source_id(URL, CONTENT) == derive_source_id(URL, CONTENT.encode("utf-8"))
 
 
-def test_empty_canonical_url_is_rejected() -> None:
-    # An empty URL means the fetch failed, not that the page was empty, and
-    # deriving an identifier from nothing would give unrelated failures one name.
-    with pytest.raises(IdentifierError, match="empty canonical URL"):
+def test_empty_canonical_reference_is_rejected() -> None:
+    # An empty reference means the source was never obtained, not that it is empty,
+    # and deriving an identifier from nothing would give unrelated failures one name.
+    with pytest.raises(IdentifierError, match="empty canonical reference"):
         derive_source_id("", CONTENT)
 
 
