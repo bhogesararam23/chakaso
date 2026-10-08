@@ -1,6 +1,6 @@
 # Current state
 
-Last updated: 2026-10-08, at commit `feat: generalize source identity beyond URLs`.
+Last updated: 2026-10-08, at commit `feat: add deterministic content normalization`.
 
 This file is the authority on what exists. If it disagrees with any other
 document, this file is right and the other document is a defect.
@@ -24,6 +24,7 @@ A private planning note is never evidence that something is implemented.
 | Model boundary | `src/chakaso/models/` | `LanguageModel` protocol, capabilities, registry, contract tests |
 | Model implementations | `src/chakaso/models/deterministic.py` | A development double only. **No language model exists.** |
 | Evidence records | `src/chakaso/evidence/` | `SourceRecord`, `EvidenceChunk`, `EvidencePack`, typed source references (web/file/text, ADR-0011), URL canonicalization, citation resolution |
+| Normalization | `src/chakaso/retrieval/normalize.py` | Deterministic representation normalization (line endings, Unicode NFC, blank lines) before chunking |
 | Chunking | `src/chakaso/retrieval/chunking.py` | Document text to evidence chunks: section-bounded, non-overlapping, deterministic (ADR-0010) |
 | Conversation state | `src/chakaso/conversation/state.py` | Immutable, append-only turns with provenance; topic, entities and open questions |
 | Conversation manager | `src/chakaso/conversation/manager.py` | Conducts one turn: context projection, model call, validation, evidence and citation recording. Transactional (ADR-0008) |
@@ -81,6 +82,10 @@ A private planning note is never evidence that something is implemented.
 - Document text can be split into evidence chunks with section paths, document
   positions and content-derived identifiers, and those chunks can be assembled into
   an `EvidencePack`. Nothing yet reads a document or ranks chunks.
+- Supplied text can be normalized deterministically (line endings, Unicode NFC, trailing
+  whitespace, blank-line runs) so two formatting variants of one document produce one
+  set of chunk identifiers. It preserves leading indentation and changes no words; it
+  does not parse Markdown fences.
 - CI runs all of the above on three Python versions, with no secrets and no network
   access to a model provider.
 

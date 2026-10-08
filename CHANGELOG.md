@@ -10,6 +10,32 @@ capability is implemented or still planned.
 
 ## Unreleased
 
+### 2026-10-08 — Deterministic content normalization
+
+**Added**
+
+- `chakaso.retrieval.normalize_document`: puts supplied text into a deterministic form
+  before it is chunked. CRLF and lone CR become LF, text is composed to Unicode NFC,
+  trailing spaces and tabs are stripped per line, and runs of blank lines collapse to
+  one. It normalizes representation and not substance: no re-wrapping, no case change,
+  no word removed, leading indentation preserved.
+
+**Why**
+
+- Normalization feeds the content hash and the chunk identifiers, so two formatting
+  variants of one document — a Windows file and a paste of the same body — must produce
+  one set of identifiers, or an evaluation compares formatting rather than content. The
+  function is idempotent and total.
+
+**Notes**
+
+- Two limits are stated, not hidden: it does not parse Markdown fences (blank lines
+  inside a code block collapse like any others, matching the chunker), and its Unicode
+  form depends on the interpreter's normalization tables, so reproducible evaluation
+  pins the interpreter version.
+- Normalization is a stage the pipeline calls; nothing is normalized automatically yet,
+  because nothing reads a document. It is exercised through text a caller supplies.
+
 ### 2026-10-08 — Generalized source identity
 
 **Added**

@@ -23,6 +23,25 @@ three URLs from occupying half the evidence pack. Section boundaries survive
 chunking because a chunk that straddles two sections has no defensible citation
 position.
 
+## Normalization
+
+**Implemented.** `chakaso.retrieval.normalize_document` puts supplied text into a
+deterministic form before it is chunked, so equivalent content reached a different way —
+a file with CRLF endings and a paste of the same body, the same accent composed or
+composed and decomposed — produces one set of chunk identifiers rather than two.
+
+It normalizes representation only: CRLF and lone CR become LF, text is composed to
+Unicode NFC, trailing spaces and tabs are stripped from each line, and runs of blank
+lines collapse to one (blank lines at the edges are dropped). It never re-wraps lines,
+never changes case, never removes a word, and preserves leading indentation, because
+lists and code blocks mean something by their indentation. The function is idempotent
+and total.
+
+Two limits are part of the contract, not accidents: it does not understand Markdown
+fences, so blank lines inside a code block collapse like any others (this matches the
+dedicated chunker, ADR-0010), and its Unicode form depends on the interpreter's
+normalization tables, so reproducible evaluation must pin the interpreter version.
+
 ## Chunking
 
 **Implemented.** `chakaso.retrieval.chunk_document` turns document text and an
@@ -160,6 +179,7 @@ evidence textually and structurally.
 | --- | --- |
 | `SourceRecord`, `EvidenceChunk` types | Implemented |
 | URL canonicalization and host extraction | Implemented |
+| Content normalization (representation, deterministic) | Implemented |
 | Source reference identity for local and supplied content (ADR-0011) | Implemented |
 | Evidence Pack with identifier validation | Implemented |
 | Citation resolution, including rejection of unknown identifiers | Implemented |

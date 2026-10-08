@@ -1,8 +1,8 @@
 """Retrieval.
 
-What exists here is chunking: splitting document text into evidence chunks with
-stable identifiers, section paths and positions. It does not read files and it does
-not fetch anything.
+What exists here is normalization and chunking: turning supplied document text into a
+deterministic form and splitting it into evidence chunks with stable identifiers,
+section paths and positions. It does not read files and it does not fetch anything.
 
 There is no ranking, no embedding, no index and no query planning. Nothing in this
 package has touched the network, and a document must be handed to it as text.
@@ -12,6 +12,7 @@ from __future__ import annotations
 
 from chakaso.retrieval.chunking import ChunkingConfig, Section, chunk_document, split_sections
 from chakaso.retrieval.errors import ChunkingError, RetrievalError
+from chakaso.retrieval.normalize import normalize_document
 
 __all__ = [
     "ChunkingConfig",
@@ -19,5 +20,6 @@ __all__ = [
     "RetrievalError",
     "Section",
     "chunk_document",
+    "normalize_document",
     "split_sections",
 ]
