@@ -110,3 +110,4 @@ creates.
 | [ADR-0015](ADR-0015-grounding-boundary.md) | Grounding is a boundary; structural evaluation never claims semantic support | Accepted |
 | [ADR-0016](ADR-0016-correction-decision-rule.md) | The correction decision is an explicit, evidence-driven rule | Accepted |
 | [ADR-0017](ADR-0017-answer-identity.md) | Answer identity is a per-event identifier, not a content hash | Accepted |
+| [ADR-0018](ADR-0018-answer-persistence.md) | Answer persistence is an append-only store boundary, in-memory for now | Accepted |
