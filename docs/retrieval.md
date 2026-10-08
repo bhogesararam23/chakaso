@@ -100,6 +100,21 @@ Chunking does not read files and does not fetch anything; it is handed text. The
 that reads a file is local ingestion, described below — a source with no URL has had an
 identity since [ADR-0011](decisions/ADR-0011-typed-source-references.md).
 
+## Corpus
+
+**Implemented (in-memory).** `chakaso.retrieval.Corpus` is the set of evidence available
+to retrieval: sources and their chunks, with membership, enumeration and lookup by
+identifier. It stores nothing on disk and runs no service — persistent storage is a
+later decision made when there is a reason for it, and an index will be a cache, never
+the source of truth.
+
+Adding is idempotent and provenance-preserving. A chunk added under a source that does
+not own it is refused (`CorpusError`), because retrieval returning such a chunk would
+hand back evidence with nothing behind it. Re-adding a source or chunk that is already
+present is a no-op — identifiers are content-derived, so duplicate documents simply do
+not grow the corpus. Enumeration is deterministic and independent of insertion order:
+sources by identifier, chunks by (source identifier, position).
+
 ## Source identity
 
 Retrieval assigns identity; the model does not
@@ -209,6 +224,7 @@ evidence textually and structurally.
 | Evidence Pack with identifier validation | Implemented |
 | Citation resolution, including rejection of unknown identifiers | Implemented |
 | Local ingestion of explicit text and Markdown documents | Implemented |
+| In-memory corpus (membership, enumeration, provenance guard) | Implemented |
 | Fetch policy and fetcher | Planned |
 | Document processing and main-content extraction (HTML, PDF) | Planned |
 | Chunking | Implemented |

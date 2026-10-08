@@ -1,6 +1,6 @@
 # Current state
 
-Last updated: 2026-10-08, at commit `feat: ingest explicitly supplied local documents`.
+Last updated: 2026-10-08, at commit `feat: add an in-memory corpus for retrieval`.
 
 This file is the authority on what exists. If it disagrees with any other
 document, this file is right and the other document is a defect.
@@ -27,6 +27,7 @@ A private planning note is never evidence that something is implemented.
 | Normalization | `src/chakaso/retrieval/normalize.py` | Deterministic representation normalization (line endings, Unicode NFC, blank lines) before chunking |
 | Chunking | `src/chakaso/retrieval/chunking.py` | Document text to evidence chunks: section-bounded, non-overlapping, deterministic (ADR-0010) |
 | Ingestion | `src/chakaso/retrieval/ingest.py` | Reads one explicitly named local text/Markdown file, or supplied text, into a source record and its chunks; never crawls |
+| Corpus | `src/chakaso/retrieval/corpus.py` | In-memory set of sources and chunks for retrieval: idempotent add, deterministic enumeration, provenance guard |
 | Conversation state | `src/chakaso/conversation/state.py` | Immutable, append-only turns with provenance; topic, entities and open questions |
 | Conversation manager | `src/chakaso/conversation/manager.py` | Conducts one turn: context projection, model call, validation, evidence and citation recording. Transactional (ADR-0008) |
 | Conversation shell | `chakaso chat` | Interactive and one-shot. States in its own output that the engine is a development double |
@@ -93,6 +94,10 @@ A private planning note is never evidence that something is implemented.
   whitespace, blank-line runs) so two formatting variants of one document produce one
   set of chunk identifiers. It preserves leading indentation and changes no words; it
   does not parse Markdown fences.
+- Ingested documents can be collected into an in-memory `Corpus`: adding is idempotent
+  (duplicate documents do not grow it), a chunk cannot be filed under a source that does
+  not own it, and enumeration is deterministic regardless of insertion order. Nothing
+  searches or ranks the corpus yet.
 - CI runs all of the above on three Python versions, with no secrets and no network
   access to a model provider.
 

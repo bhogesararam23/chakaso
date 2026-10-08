@@ -7,6 +7,7 @@ from chakaso.core.errors import ChakasoError
 __all__ = [
     "ChunkingError",
     "ContentDecodingError",
+    "CorpusError",
     "DocumentTooLargeError",
     "DocumentUnavailableError",
     "IngestionError",
@@ -66,4 +67,12 @@ class ContentDecodingError(IngestionError):
 
     Rejected rather than decoded with replacement characters, because a corrupted byte
     would otherwise become evidence that quietly says something the source did not.
+    """
+
+
+class CorpusError(RetrievalError, ValueError):
+    """A chunk is added to a corpus under a source that does not own it.
+
+    Membership is what keeps provenance intact: a chunk that claims a source the corpus
+    has never seen would let retrieval hand back evidence with nothing behind it.
     """

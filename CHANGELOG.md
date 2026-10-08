@@ -10,6 +10,24 @@ capability is implemented or still planned.
 
 ## Unreleased
 
+### 2026-10-08 — In-memory corpus
+
+**Added**
+
+- `chakaso.retrieval.Corpus`: the in-memory set of evidence retrieval reads from. It
+  holds sources and their chunks, adds documents idempotently, enumerates deterministically
+  (sources by identifier, chunks by source and position, independent of insertion order),
+  and looks records up by identifier.
+- `CorpusError`: raised when a chunk is added under a source that does not own it.
+
+**Notes**
+
+- No persistent storage and no index. A corpus is deliberately a plain in-memory
+  container: a database would be maintained against a guess about what needs storing,
+  and an index is a later cache over this, not its source of truth.
+- Duplicate documents do not grow the corpus, because identifiers are content-derived.
+  Nothing searches or ranks it yet.
+
 ### 2026-10-08 — Local document ingestion
 
 **Added**

@@ -1,7 +1,8 @@
 """Retrieval.
 
-What exists here is the local path of the pipeline: normalization, chunking, and
-ingestion of explicitly supplied documents into evidence records.
+What exists here is the local path of the pipeline: normalization, chunking, ingestion
+of explicitly supplied documents into evidence records, and an in-memory corpus that
+holds them for retrieval.
 :func:`ingest_file` reads one named local file; :func:`ingest_text` takes one block of
 supplied text. Both normalize deterministically and split into evidence chunks with
 stable identifiers, section paths and positions.
@@ -15,9 +16,11 @@ touched the network, and web content is not fetched or parsed.
 from __future__ import annotations
 
 from chakaso.retrieval.chunking import ChunkingConfig, Section, chunk_document, split_sections
+from chakaso.retrieval.corpus import Corpus
 from chakaso.retrieval.errors import (
     ChunkingError,
     ContentDecodingError,
+    CorpusError,
     DocumentTooLargeError,
     DocumentUnavailableError,
     IngestionError,
@@ -39,6 +42,8 @@ __all__ = [
     "ChunkingConfig",
     "ChunkingError",
     "ContentDecodingError",
+    "Corpus",
+    "CorpusError",
     "DocumentTooLargeError",
     "DocumentUnavailableError",
     "IngestedDocument",
