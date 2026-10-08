@@ -63,7 +63,10 @@ The constraint is that the fetch path must not require a commercial search API
 
 **Why it is undecided.** Each option trades coverage against operational risk, and
 the choice affects what the first benchmark can measure. Building a crawler before
-there is a question it must answer would be guessing.
+there is a question it must answer would be guessing. **Note:** this question is now
+only about *discovery* — which URLs to fetch. The *transport* for a URL that has been
+chosen exists as a bounded, opt-in fetcher (ADR-0012); deciding *whether* and *what* to
+fetch is query planning, still open.
 
 **What would resolve it.** A concrete first evaluation question. If the first
 evaluation set is hand-built, a curated corpus is sufficient and live fetching can
@@ -71,9 +74,12 @@ wait.
 
 ### What is the fetch policy?
 
-Rate limits, robots handling, caching, user-agent identification, maximum response
-size, redirect depth. These are policy values, not research questions, but they
-must be written down before any fetch happens, and they do not exist yet.
+**Answered. See [ADR-0012](../decisions/ADR-0012-optional-bounded-fetcher.md).**
+`FetchPolicy` declares and validates the scheme allowlist, response-size cap, redirect
+depth, timeout and a header-safe user-agent, and `HttpFetcher` enforces them, tested
+offline. What is still open: caching, robots handling, per-host rate limits, and a
+DNS-rebinding-safe transport (connecting to a pre-validated IP). These are recorded as
+K-008 rather than claimed as solved.
 
 ---
 

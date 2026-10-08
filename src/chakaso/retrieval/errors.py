@@ -5,13 +5,20 @@ from __future__ import annotations
 from chakaso.core.errors import ChakasoError
 
 __all__ = [
+    "AcquisitionError",
+    "BlockedDestinationError",
     "ChunkingError",
     "ContentDecodingError",
     "CorpusError",
     "DocumentTooLargeError",
     "DocumentUnavailableError",
+    "FetchTimeoutError",
     "IngestionError",
+    "InvalidSchemeError",
+    "NetworkFailureError",
+    "ResponseTooLargeError",
     "RetrievalError",
+    "UnsupportedContentTypeError",
     "UnsupportedDocumentError",
 ]
 
@@ -75,4 +82,48 @@ class CorpusError(RetrievalError, ValueError):
 
     Membership is what keeps provenance intact: a chunk that claims a source the corpus
     has never seen would let retrieval hand back evidence with nothing behind it.
+    """
+
+
+class AcquisitionError(RetrievalError, ValueError):
+    """Base class for a web fetch that was refused or failed.
+
+    The subclasses name the reason a fetch did not produce content — scheme, destination,
+    limit, timeout, content type, decoding or transport — so a caller can tell a blocked
+    destination from a network blip without parsing a message, and none of them collapse
+    into a generic "something went wrong".
+    """
+
+
+class InvalidSchemeError(AcquisitionError):
+    """The URL's scheme is not one the fetch policy allows."""
+
+
+class BlockedDestinationError(AcquisitionError):
+    """The URL points at a destination the network policy refuses.
+
+    Loopback, private, link-local and metadata addresses are blocked. This is a
+    best-effort check on the address literal; it is not a complete SSRF defence and does
+    not claim to be (ADR-0012).
+    """
+
+
+class ResponseTooLargeError(AcquisitionError):
+    """The response body exceeded the configured maximum and was not buffered."""
+
+
+class FetchTimeoutError(AcquisitionError):
+    """The request exceeded the configured timeout."""
+
+
+class UnsupportedContentTypeError(AcquisitionError):
+    """The response's content type is not one the pipeline can turn into text."""
+
+
+class NetworkFailureError(AcquisitionError):
+    """The transport failed for a reason that is not a policy decision.
+
+    A DNS failure, a refused connection or a mid-body break is reported here, distinct
+    from a deliberate refusal, so an operator can tell "we chose to block this" from "the
+    network did not deliver."
     """

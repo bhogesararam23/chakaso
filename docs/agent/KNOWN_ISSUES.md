@@ -3,7 +3,7 @@
 Real problems with the current state, including the ones that are only
 inconvenient. An empty file here would mean nobody has looked.
 
-Last reviewed: 2026-10-07.
+Last reviewed: 2026-10-08.
 
 ## Open
 
@@ -60,15 +60,23 @@ The pack cannot be moved (the project owner requires it to stay), so the
 separation is enforced by ignore rules and a test rather than by directory
 structure.
 
-### K-005 — No fetch policy has been written
+### K-008 — The fetcher's SSRF screen is partial and fetching is not polite yet
 
-**Impact:** Medium, and blocking for any retrieval work.
+**Impact:** Medium, and bounded by the fetcher being off every default path.
 
-Retrieved web content is untrusted input, and the security posture in
-`docs/retrieval.md` is a list of threats with no corresponding limits: no maximum
-response size, no redirect depth, no rate limit, no robots handling, no
-user-agent identification. Any fetch implementation must define these first.
-Tracked in `docs/research/open-questions.md`.
+The fetcher (ADR-0012) refuses non-global address *literals*, but a hostname that resolves
+to a private address is not caught by a pre-connect string check; closing that needs
+connecting to a pre-resolved, re-validated IP inside the transport, which is not
+implemented. There is also no robots.txt handling and no per-host rate limiting, so a
+caller that enables fetching must do so in an environment it controls, against hosts it is
+entitled to visit.
+
+**Why it is not more urgent:** no default code path, CLI command or CI test reaches the
+network. The limitation is recorded rather than oversold, and it is the reason fetching is
+opt-in.
+
+**What would close it:** IP-pinned resolution in the transport, plus a politeness layer
+(robots, per-host spacing) before the fetcher is used against the live web.
 
 ### K-006 — Nothing persists how often a model invents an evidence reference
 
@@ -118,3 +126,12 @@ It originally carried the number K-002, which was reused by a live issue when th
 list was renumbered. Resolved entries are now unnumbered: a closed issue does not
 need to be referenced, and reusing its number for something else is a way to make
 two different problems look like one.
+
+### Retired — no fetch policy existed
+
+Closed on 2026-10-08. A `FetchPolicy` now declares and validates the operational limits —
+scheme allowlist, response-size cap, redirect bound, timeout and a header-safe user-agent —
+and the fetcher enforces each, tested offline (ADR-0012). The security posture in
+`docs/retrieval.md` is no longer a list of threats with no corresponding limits. What
+remains — the DNS-rebinding gap in the destination screen, and politeness (robots, rate
+limiting) — is carried forward honestly as K-008 rather than claimed as solved.

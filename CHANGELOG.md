@@ -10,6 +10,44 @@ capability is implemented or still planned.
 
 ## Unreleased
 
+### 2026-10-08 — Bounded, opt-in web fetcher
+
+**Added**
+
+- `chakaso.retrieval.HttpFetcher` behind a `Fetcher` protocol: given an
+  `AcquisitionRequest` and a `FetchPolicy` it returns an `AcquiredSource` (bytes, media
+  type, requested URL, final URL after redirects, retrieval time). The real network call is
+  an injectable `Transport`; `make_urllib_transport` provides the standard-library one.
+- `FetchPolicy`: a validated value object for the limits that were missing — scheme
+  allowlist, response-size cap, redirect depth, timeout, and a user-agent that cannot carry
+  a newline. A policy can restrict to `https` but can never widen past http/https.
+- `is_blocked_destination`: refuses loopback, private, link-local (including the cloud
+  metadata address), unique-local, multicast and reserved address literals, plus known
+  loopback hostnames.
+- A typed acquisition error family: `InvalidSchemeError`, `BlockedDestinationError`,
+  `ResponseTooLargeError`, `FetchTimeoutError`, `UnsupportedContentTypeError`,
+  `NetworkFailureError`, under `AcquisitionError`.
+- ADR-0012 records the decision and its security posture.
+
+**Security posture, stated honestly**
+
+- Redirects are followed by the fetcher, not the transport, so every hop's scheme and
+  destination are re-validated: a public URL that redirects into a private network is
+  blocked, and redirect loops and over-long chains are stopped.
+- The destination screen is bounded: it blocks address literals, but a hostname that
+  resolves to a private address is **not** caught by a pre-connect string check. Closing
+  that needs IP-pinned resolution in the transport, which is not implemented. This is
+  recorded as K-008, not hidden.
+- Fetching is **opt-in and off every default path**: nothing in the library, `chakaso
+  retrieve`, the tests or CI reaches the network, so the ADR-0001 no-network runtime
+  guarantee still holds, and CI stays offline and deterministic.
+
+**Notes**
+
+- This is acquisition only. Decoding fetched bytes and turning them into evidence (HTML →
+  text, then normalize/chunk) is a separate, still-pending stage; the fetcher never assigns
+  an identifier and never treats page text as instructions.
+
 ### 2026-10-08 — Command-line retrieval
 
 **Added**

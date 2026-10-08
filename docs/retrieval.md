@@ -169,6 +169,37 @@ The index is built once from the corpus the service is given; a corpus that grow
 afterwards needs a fresh service, because an index is a cache over the corpus, never its
 source of truth.
 
+## Safe fetching
+
+**Implemented (opt-in, bounded).** `chakaso.retrieval.HttpFetcher` turns an
+`AcquisitionRequest` into an `AcquiredSource` under a `FetchPolicy`
+([ADR-0012](decisions/ADR-0012-optional-bounded-fetcher.md)). It is an optional adapter
+behind the `Fetcher` interface and is off every default path: no code in the library, the
+CLI or CI reaches the network, which keeps the runtime requirement of
+[ADR-0001](decisions/ADR-0001-local-first-runtime.md) true. The actual HTTP call is an
+injectable `Transport`, so the whole policy is exercised offline against a stand-in.
+
+What the fetcher enforces:
+
+- **Scheme.** Only `http`/`https`; a policy may restrict to `https` but can never widen
+  beyond the web schemes. `canonicalize_url` is *not* consulted for fetch permission
+  (ADR-0011) — normalization and security are separate.
+- **Response size.** Bounded, and the body is read up to the limit, not buffered whole.
+- **Redirects.** Followed by the fetcher, not the transport, so every hop's scheme and
+  destination are re-checked and a redirect into a private network is blocked; the count is
+  capped and loops are broken.
+- **Timeout and identity.** A positive timeout and a user-agent that cannot carry a
+  newline (no header injection).
+- **Destination.** Loopback, private, link-local, unique-local, multicast and the cloud
+  metadata address are refused *when written as address literals*, along with known
+  loopback hostnames.
+
+**The destination screen is bounded and says so.** A hostname that resolves to a private
+address is not caught by a pre-connect string check; closing that needs connecting to a
+pre-resolved, re-validated IP inside the transport, which is not implemented. A deployment
+that enables fetching owns the network environment. Fetching acquires bytes only — parsing
+and turning them into evidence is a separate stage, below.
+
 ## Source identity
 
 Retrieval assigns identity; the model does not
@@ -262,6 +293,13 @@ processing layers must handle:
 | Misleading titles | Titles are recorded as extracted and are not treated as evidence of content. |
 | Stale sources | `published_at` and `retrieved_at` are recorded so freshness can be reasoned about explicitly. |
 
+The fetcher enforces the parts of this that a fetch can enforce at request time — the
+scheme allowlist, the response-size cap, a bounded and re-validated redirect chain, a
+timeout and a header-safe user-agent, and refusal of non-global address literals (see
+*Safe fetching* above, and the documented SSRF limitation in
+[ADR-0012](decisions/ADR-0012-optional-bounded-fetcher.md)). The remaining rows are
+constraints on stages that are not yet wired to live servers.
+
 No retrieved content is ever executed, and no instruction found inside retrieved
 content can change application policy. This is a design constraint on the
 generation step as well: the prompt template must separate instructions from
@@ -279,7 +317,7 @@ evidence textually and structurally.
 | Citation resolution, including rejection of unknown identifiers | Implemented |
 | Local ingestion of explicit text and Markdown documents | Implemented |
 | In-memory corpus (membership, enumeration, provenance guard) | Implemented |
-| Fetch policy and fetcher | Planned |
+| Fetch policy and fetcher (opt-in, bounded; literal-address SSRF screen) | Implemented |
 | Document processing and main-content extraction (HTML, PDF) | Planned |
 | Chunking | Implemented |
 | Lexical retrieval (BM25 index, deterministic ranking, explanations) | Implemented |

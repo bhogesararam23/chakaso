@@ -1,6 +1,6 @@
 # Current state
 
-Last updated: 2026-10-08, at commit `feat: add a command-line retrieval interface`.
+Last updated: 2026-10-08, at commit `feat: add a bounded, opt-in web fetcher`.
 
 This file is the authority on what exists. If it disagrees with any other
 document, this file is right and the other document is a defect.
@@ -34,9 +34,10 @@ A private planning note is never evidence that something is implemented.
 | Conversation manager | `src/chakaso/conversation/manager.py` | Conducts one turn: context projection, model call, validation, evidence and citation recording. Transactional (ADR-0008) |
 | Conversation shell | `chakaso chat` | Interactive and one-shot. States in its own output that the engine is a development double |
 | Retrieval CLI | `chakaso retrieve` | Ingests named local files, runs lexical retrieval, prints ranked evidence with provenance. Local and offline |
+| Web fetcher | `src/chakaso/retrieval/acquire.py`, `policy.py`, `netguard.py` | Opt-in, bounded HTTP fetch under a `FetchPolicy`; scheme/size/redirect/timeout/destination rules. Off every default path (ADR-0012) |
 | Tests | `tests/` | 346 tests at the commit recorded above: package, CLI, configuration, primitives, model boundary, evidence, conversation state, conversation manager, chunking, repository hygiene. The count ages; the command does not. |
 | CI | `.github/workflows/ci.yml` | Green on Python 3.11, 3.12, 3.13 |
-| Dense retrieval, persistence, correction | **do not exist** | Lexical ranking and an in-memory corpus now exist; there are no embeddings, no persistent store, no fetcher and no correction |
+| Dense retrieval, persistence, correction | **do not exist** | An opt-in, bounded fetcher now exists (off the default path); there are no embeddings, no persistent store, no correction, and fetched bytes are not yet turned into evidence |
 
 ## What works
 
@@ -145,11 +146,13 @@ one small thing each.
 
 ## What is not implemented
 
-- Query planner: nothing decides whether retrieval would help
+- Turning fetched web content into evidence. A bounded, opt-in fetcher acquires bytes
+  under a policy (ADR-0012), but nothing yet decodes or parses them into a source record;
+  HTML and PDF ingestion do not exist.
+- Query planner: nothing decides whether retrieval would help, and nothing decides *which*
+  URLs to fetch; the fetcher is only ever handed an explicit URL.
 - Dense embeddings, a vector index and reranking: retrieval is lexical only, matching
   shared words and no meaning
-- Fetching and parsing web content; ingestion of HTML, PDF or any format other than
-  plain text and Markdown
 - Claim-level support checking. Citation *reference* validation exists; whether cited
   evidence actually supports a claim does not.
 - Reassessment and the correction loop
@@ -174,6 +177,7 @@ one small thing each.
 | ADR-0009 | A reference the model was not given is recorded, not fatal |
 | ADR-0010 | Chunks are section-bounded and do not overlap |
 | ADR-0011 | Source identity is a typed reference, not a URL |
+| ADR-0012 | The fetcher is an optional, explicitly-bounded adapter |
 
 Two process facts are recorded outside the ADR series because they are repository
 history rather than architecture:

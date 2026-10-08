@@ -100,8 +100,8 @@ Each component owns one thing and must not grow into its neighbour.
 | Configuration | Declare, load and validate versioned settings, and report where each value came from | Component behaviour | Implemented |
 | Conversation Manager | Conduct one turn: accept the user's message, project context, call the model, validate, record the answer | Model-specific logic; retrieval; correction | Implemented (orchestration only) |
 | Query Planner | Decide whether retrieval is useful; formulate retrieval queries while preserving intent | Source truth | Planned |
-| Retriever | Find candidate documents and chunks | Generate the final answer | Planned |
-| Fetcher | Retrieve permitted public content under an explicit policy | Interpret facts | Planned |
+| Retriever | Find candidate documents and chunks | Generate the final answer | Implemented (lexical BM25: ADR-0010 chunking; dense is planned) |
+| Fetcher | Retrieve permitted public content under an explicit policy | Interpret facts | Implemented (bounded, opt-in: ADR-0012) |
 | Document Processor | Extract readable text, metadata and section structure | Invent missing text | Planned |
 | Chunker | Produce stable evidence units with positions | Rank claims | Implemented (Markdown structure, no overlap: ADR-0010) |
 | Ranker | Order candidate evidence | Generate the answer | Planned |
@@ -161,7 +161,7 @@ The boundaries that exist, or that the project is committed to building:
 | `Conversation` | turns with provenance, active topic, entities, open questions, prior sources | Implemented |
 | `ConversationManager` | conduct one turn against the model boundary; accept evidence; report the generation and citation outcome | Implemented |
 | `AnswerRecord` | answer text, cited identifiers, model and prompt versions, correction lineage | Planned |
-| Retriever / Fetcher | pluggable retrieval and fetch mechanisms | Planned |
+| Retriever / Fetcher | pluggable retrieval and fetch mechanisms | Implemented (lexical retriever behind a `Retriever` protocol; bounded opt-in fetcher behind a `Fetcher` protocol) |
 | Reassessment | previous answer plus new evidence -> retain/qualify/correct | Planned |
 
 "Planned" here means there is no code, and the shape described is the specification
@@ -249,9 +249,12 @@ more finished than it is:
 
 - **Vector index and embedding model.** Planned as dense local embeddings plus a
   local similarity index. No choice is committed and nothing is implemented.
-- **Web fetch mechanism.** Must be local and must not require a commercial search
-  API. Whether the first implementation is a search endpoint, a curated seed list
-  or a sitemap-driven crawl is unresolved.
+- **Web fetch mechanism.** The *transport* exists as a bounded, opt-in adapter under a
+  `FetchPolicy` ([ADR-0012](decisions/ADR-0012-optional-bounded-fetcher.md)): given a URL
+  it fetches safely and offline-testably, and is off every default path. What remains
+  undecided is *discovery* — whether the first corpus comes from a search endpoint, a
+  curated seed list, sitemap/feed discovery or a hand-built set — which is a query-planning
+  question, not a fetching one.
 - **Reranking model.** Optional in the design. No model is chosen.
 - **Local inference runtime.** Depends on which local model is chosen first,
   which depends on the tokenizer work.
