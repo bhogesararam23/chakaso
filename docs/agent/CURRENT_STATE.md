@@ -1,6 +1,6 @@
 # Current state
 
-Last updated: 2026-10-08, at commit `feat: add retrieval evaluation metric functions`.
+Last updated: 2026-10-08, at commit `docs: synchronize the retrieval substrate across the documentation` (code last changed at `feat: add retrieval evaluation metric functions`).
 
 This file is the authority on what exists. If it disagrees with any other
 document, this file is right and the other document is a defect.
@@ -37,7 +37,7 @@ A private planning note is never evidence that something is implemented.
 | Web fetcher | `src/chakaso/retrieval/acquire.py`, `policy.py`, `netguard.py` | Opt-in, bounded HTTP fetch under a `FetchPolicy`; scheme/size/redirect/timeout/destination rules. Off every default path (ADR-0012) |
 | Web ingestion & cache | `src/chakaso/retrieval/html.py`, `web.py`, `cache.py` | Narrow HTML reader turns fetched bytes into the same evidence records as a local file; an opt-in in-memory cache avoids refetching |
 | Evaluation metrics | `src/chakaso/evaluation/` | Pure metric functions (recall@k, precision@k, MRR, duplicate + unresolved-reference counts, latency observation). No benchmark, dataset or measured number |
-| Tests | `tests/` | 346 tests at the commit recorded above: package, CLI, configuration, primitives, model boundary, evidence, conversation state, conversation manager, chunking, repository hygiene. The count ages; the command does not. |
+| Tests | `tests/` | ~552 tests at the commit recorded above: package, CLI (incl. `retrieve`), configuration, identifiers and hashing, source identity, model boundary, evidence, normalization, chunking, ingestion, corpus, lexical retrieval, retrieval orchestration, end-to-end pipeline, fetch policy and netguard, HTML/web ingestion, cache, evaluation metrics, conversation state and manager, repository hygiene. The count ages; `python -m pytest` does not. |
 | CI | `.github/workflows/ci.yml` | Green on Python 3.11, 3.12, 3.13 |
 | Dense retrieval, persistence, correction | **do not exist** | An opt-in, bounded fetcher and a narrow HTML reader now exist (off the default path); there are no embeddings, no persistent store and no correction |
 

@@ -195,9 +195,10 @@ indexed.
 
 ## Data flow for one turn
 
-Steps 1, 5 and 6 exist. Steps 2, 3 and 4 do not, which is why a turn today resolves
-no citations unless a caller supplies evidence directly. Step 7 does not exist
-either, and the manager does not attempt it.
+Steps 1, 3, 4, 5 and 6 exist. Steps 2 and 7 do not. The consequence: the retrieval
+pipeline is built and produces an evidence pack, but nothing decides *for* a turn whether
+to retrieve — a caller runs `RetrievalService` and passes the pack to `send`. `chakaso
+chat` does not wire that in, so a chat turn resolves no citations on its own.
 
 1. The Conversation Manager appends the user turn and projects the recent
    conversation into model messages. Reference resolution against state ("this",
@@ -205,13 +206,16 @@ either, and the manager does not attempt it.
    the previous turns, and nothing more specific.
 2. **Not implemented.** The Query Planner decides whether the turn can be answered
    from conversation context or needs fresh evidence, and produces zero or more
-   retrieval queries.
-3. **Not implemented.** If retrieval is needed, the pipeline fetches candidate
-   documents under the fetch policy, extracts main content, chunks it with source
-   and section boundaries preserved, and ranks candidates.
-4. **Not implemented.** The selected chunks become an Evidence Pack with immutable
-   identifiers. The pack type and its validation exist; nothing produces packs yet.
-   Only chunks in the pack are visible to generation.
+   retrieval queries. Until it exists, retrieval is invoked explicitly by a caller.
+3. **Implemented (local; fetch opt-in).** `RetrievalService` retrieves candidate chunks
+   from a corpus and ranks them with the lexical (BM25) retriever, preserving source and
+   section boundaries through chunking. Documents reach the corpus through local
+   ingestion or, behind the bounded fetcher and narrow HTML reader, from a web URL — but
+   nothing chooses a URL on its own (that is step 2).
+4. **Implemented.** The selected chunks become an `EvidencePack` with immutable
+   identifiers, produced by `RetrievalService.search` and validated on construction —
+   every chunk's source present, scores recorded, an empty result an empty pack rather
+   than invented evidence. Only chunks in the pack are visible to generation.
 5. The Model Adapter generates from the conversation plus the evidence, referencing
    evidence by identifier, and the conversation manager records the assistant turn.
    Prompt templates are not versioned yet, because there is no prompt template.

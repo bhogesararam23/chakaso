@@ -26,8 +26,14 @@ evidence and citation recording — but the only model implementation is a
 deterministic development double that returns fixed text. It answers nothing, and it
 says so when you start it.
 
-There is no retrieval, no fetching, no correction loop, no tokenizer and no training
-code. Nothing is measured, because nothing that would produce a number exists yet.
+There is a **local retrieval pipeline**: normalization, section-bounded chunking,
+ingestion of explicitly supplied text and Markdown, an in-memory corpus, and a
+deterministic lexical (BM25) retriever that ranks into an evidence pack, reachable through
+`chakaso retrieve`. An opt-in, bounded web fetcher and a narrow HTML reader turn a fetched
+page into the same evidence records, but fetching is off every default path. Retrieval is
+lexical only — shared words, no embeddings, no semantic search. There is still no
+correction loop, no tokenizer and no training code, and no benchmark number exists, because
+nothing has been measured against a dataset.
 
 The status vocabulary used across this documentation is:
 
@@ -46,15 +52,19 @@ The status vocabulary used across this documentation is:
 | Tests and CI | Implemented (Python 3.11–3.13, no secrets, no network dependency) |
 | Python package, configuration, CLI | Implemented |
 | Language-model interface and model registry | Implemented (interface only; no trained model) |
-| Source, evidence and citation records | Implemented (data model only; no retrieval) |
+| Source, evidence and citation records | Implemented |
 | Conversation state | Implemented |
 | Conversation manager, and a CLI conversation shell | Implemented (orchestration only; replies come from a development double) |
-| Retrieval (local index, ranking, web fetch) | Planned |
+| Normalization, chunking, local ingestion and corpus | Implemented |
+| Lexical retrieval (BM25), orchestration into an evidence pack, and `chakaso retrieve` | Implemented |
+| Web fetch (opt-in, bounded) and narrow HTML ingestion | Implemented (off every default path; not a browser) |
+| Evaluation metric functions | Implemented (recall@k, precision@k, MRR, duplicate + citation counts) |
+| Dense embeddings, vector index and reranking | Planned |
 | Claim-level support checking and the correction loop | Planned |
 | Tokenizer training | Planned |
 | Tiny from-scratch Transformer | Planned |
 | Any trained Chakaso weights | Does not exist |
-| Evaluation harness and benchmarks | Planned |
+| Evaluation harness and benchmarks | Planned (metric functions exist; no dataset or measured result) |
 
 Nothing in this list is aspirational language. If a row says Planned, there is no
 code for it. "Implemented" means the code exists and is covered by tests; in several

@@ -1,7 +1,8 @@
 # Experiments
 
-**No experiment has been run.** There is nothing to run one against: no model, no
-tokenizer, no dataset and no retrieval implementation.
+**No experiment has been run.** There is a local lexical retrieval pipeline and metric
+functions, but no evaluation dataset, no model and no tokenizer — so there is still nothing
+recorded here, and no number to record.
 
 This directory defines the record format so that the first real experiment is
 recorded properly rather than being described in a commit message.

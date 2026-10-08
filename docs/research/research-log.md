@@ -73,3 +73,41 @@ has not happened.
 **Conclusion (strong, and the only one available).** The project has made design
 decisions and has not produced evidence about language models. Every quantitative
 claim in this repository would be fabricated. There are none.
+
+---
+
+## 2026-10-08 — Retrieval substrate built (local)
+
+**Observation.** The blocking question — what identifies a source with no URL — was
+not a naming problem but a conflation: a canonical URL was serving as both identity and
+fetch permission. Separating them (ADR-0011) is what let ingestion proceed, and it kept
+every web identifier byte-identical because the web reference *is* the canonical URL. The
+formula of ADR-0007 never moved; only its input widened.
+
+**Observation.** Building the smallest retrieval step first — lexical BM25 over a local
+corpus, no embeddings, no network — was a deliberate choice of sequence, not a limitation
+of ambition. A lexical baseline is deterministic and cheap enough to evaluate, so it can
+establish what retrieval actually needs from the decisions that would otherwise be guesses:
+which index, whether to rerank, what a dense retriever must improve on.
+
+**Interpretation.** Normalization sits before chunking on purpose, because normalization
+feeds the content hash and the chunk identifiers. Two representations of one document
+(CRLF and LF, composed and decomposed accents) must produce one set of identifiers, or an
+evaluation would compare formatting rather than content. The consequence recorded as a
+limitation: reproducibility now depends on pinning the interpreter, because NFC depends on
+the Unicode tables of the running Python.
+
+**Decision recorded.** The web fetcher is an optional, explicitly-bounded adapter
+(ADR-0012), off every default path. Making the transport injectable is what keeps the
+runtime offline (ADR-0001) while still letting the whole fetch policy — scheme, size,
+redirects, timeout, destination — be tested deterministically.
+
+**Limitation (stated, not hidden).** The destination screen blocks private *address
+literals* but cannot stop a hostname that resolves to a private address; that needs
+IP-pinned resolution in the transport, which is not implemented. It is recorded as K-008
+rather than claimed as a solved SSRF defence.
+
+**Open at this point.** Whether lexical retrieval is good enough to be worth evaluating
+against a real corpus, and where it fails — which is the question the metric functions and
+a first hand-built benchmark would answer. Neither the benchmark nor any measured result
+exists yet, so nothing here is a claim about retrieval quality.

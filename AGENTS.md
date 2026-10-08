@@ -9,8 +9,9 @@ Chakaso is a research project building a local-first conversational system that
 grounds answers in retrieved evidence, cites sources by identifier, and corrects
 itself when better evidence arrives. It intends to train its own language model
 from random initialization. A conversation can be held today, but the only model
-implementation is a deterministic development double, and there is no retrieval —
-see [`docs/agent/CURRENT_STATE.md`](docs/agent/CURRENT_STATE.md), which is the
+implementation is a deterministic development double. Local lexical retrieval exists
+(ingest, corpus, BM25, evidence pack); web fetching is opt-in and off every default
+path — see [`docs/agent/CURRENT_STATE.md`](docs/agent/CURRENT_STATE.md), which is the
 authority on what is real.
 
 ## Read order
