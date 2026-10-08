@@ -65,8 +65,10 @@ enforced with a specific error:
 | Empty file | A valid source with zero chunks — nothing to cite, not an error |
 
 A `..` in a path is normalized away when the reference is built, so a winding path
-cannot fork one document into two sources. Only `.txt`, `.md` and `.markdown` are read;
-HTML, PDF and every other format need a document processor that does not exist yet.
+cannot fork one document into two sources. Only `.txt`, `.md` and `.markdown` are read
+from a local path; PDF and full main-content extraction need a document processor that
+does not exist yet. HTML is handled only on the web-fetch path, by the narrow
+reader in `chakaso.retrieval.html` (reached via `ingest_acquired`) — never by `ingest_file`.
 
 ## Chunking
 

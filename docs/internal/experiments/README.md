@@ -1,8 +1,10 @@
 # Experiments
 
-**No experiment has been run.** There is a local lexical retrieval pipeline and metric
-functions, but no evaluation dataset, no model and no tokenizer — so there is still nothing
-recorded here, and no number to record.
+**No research experiment has been run.** The project has development benchmarks
+(retrieval and correction) that produce deterministic metrics over small synthetic
+fixtures, and a reproducible experiment layer (`chakaso.experiments`) — but those are
+regression instruments, not results: there is still no language model, no real dataset and
+no tokenizer, and no experiment testing a research hypothesis has a record committed here.
 
 This directory defines the record format so that the first real experiment is
 recorded properly rather than being described in a commit message.
