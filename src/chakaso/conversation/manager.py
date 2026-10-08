@@ -27,6 +27,14 @@ retrieval exist, they will run before `send` and pass the pack in. Until then th
 parameter is exercised only by tests and by callers that already have content, and
 a request with no evidence resolves no citations — which is the honest behaviour,
 not a degraded one.
+
+**Answer persistence.** When the manager is constructed with an
+:class:`~chakaso.answers.AnswerStore`, each completed turn is also recorded as an
+:class:`~chakaso.answers.AnswerRecord` — claims extracted through an injected
+``ClaimExtractor``, an evaluation against the supplied evidence, and the model identity — and
+saved *before* the live conversation is adopted. A persistence failure therefore aborts the
+turn and leaves the conversation unchanged, extending ADR-0008's all-or-nothing guarantee to
+the answer history (ADR-0018). Without a store the manager behaves exactly as it did before.
 """
 
 from __future__ import annotations
@@ -35,12 +43,15 @@ from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import UTC, datetime
 
+from chakaso.answers import AnswerRecord, AnswerStore, new_answer_id
+from chakaso.claims.extract import ClaimExtractor
 from chakaso.conversation.errors import (
     ConversationManagerError,
     InvalidGenerationError,
     InvalidUserInputError,
 )
 from chakaso.conversation.state import Conversation, Turn
+from chakaso.evaluation import evaluate_answer
 from chakaso.evidence import CitationResolution, EvidencePack, resolve_citations
 from chakaso.models import (
     FinishReason,
@@ -71,6 +82,7 @@ class Reply:
     turn: Turn
     generation: GenerationResult
     citation_resolution: CitationResolution
+    answer_record: AnswerRecord | None = None
 
     @property
     def text(self) -> str:
@@ -109,6 +121,8 @@ class ConversationManager:
         params: GenerationParams | None = None,
         max_context_turns: int | None = None,
         now: Callable[[], datetime] | None = None,
+        answer_store: AnswerStore | None = None,
+        claim_extractor: ClaimExtractor | None = None,
     ) -> None:
         """Create a manager for ``conversation``, using ``model``.
 
@@ -127,6 +141,15 @@ class ConversationManager:
                 budget, so it cannot be described as fitting a model's context
                 window.
             now: Clock, injectable so that tests do not depend on wall-clock time.
+            answer_store: If given, each completed turn is recorded as an
+                :class:`~chakaso.answers.AnswerRecord` and saved here before the
+                conversation is adopted, so a persistence failure aborts the turn and
+                leaves the conversation unchanged (ADR-0008, ADR-0018). Omitting it
+                leaves behaviour exactly as it was: an in-memory conversation, no
+                answer record.
+            claim_extractor: How an answer is decomposed into claims for its record.
+                Used only when ``answer_store`` is given. ``None`` records an answer
+                with no claims rather than inventing a decomposition.
 
         Raises:
             ConversationManagerError: ``max_context_turns`` is present but below 1.
@@ -140,6 +163,8 @@ class ConversationManager:
         self._params = params if params is not None else GenerationParams()
         self._max_context_turns = max_context_turns
         self._now = now if now is not None else _utcnow
+        self._answer_store = answer_store
+        self._claim_extractor = claim_extractor
 
     @property
     def conversation(self) -> Conversation:
@@ -211,6 +236,14 @@ class ConversationManager:
             cited_source_ids=resolution.cited_source_ids,
         )
 
+        answer_record: AnswerRecord | None = None
+        if self._answer_store is not None:
+            answer_record = self._build_answer_record(updated, result, resolution, supplied)
+            # Persistence is part of the turn's atomicity (ADR-0018): a save that fails
+            # raises here, before the live conversation is swapped, so the conversation is
+            # left exactly as it was and no half-recorded answer is left behind.
+            self._answer_store.save(answer_record)
+
         # The live conversation changes only here, once every step that can fail
         # has succeeded.
         self._conversation = updated
@@ -219,6 +252,45 @@ class ConversationManager:
             turn=updated.turns[-1],
             generation=result,
             citation_resolution=resolution,
+            answer_record=answer_record,
+        )
+
+    def _build_answer_record(
+        self,
+        conversation: Conversation,
+        result: GenerationResult,
+        resolution: CitationResolution,
+        supplied: EvidencePack,
+    ) -> AnswerRecord:
+        """Assemble the persistent record for the assistant turn just completed.
+
+        Built after the new conversation exists, so its timestamp and turn index match the
+        turn actually recorded. It cites only what resolution found in the supplied pack, so it
+        cannot violate the record's citation-ownership rule. Claims and evaluation are honest
+        structure, not understanding: the deterministic double has no trained decomposition, so a
+        caller supplies an extractor or the answer is recorded with no claims.
+        """
+        answer_id = new_answer_id()
+        claims = (
+            self._claim_extractor.extract(str(answer_id), result.text)
+            if self._claim_extractor is not None
+            else ()
+        )
+        metadata = self._model.metadata
+        return AnswerRecord(
+            answer_id=answer_id,
+            conversation_id=conversation.conversation_id,
+            text=result.text,
+            created_at=conversation.turns[-1].created_at,
+            model_id=result.model_id,
+            model_is_development_double=metadata.development_double,
+            claims=claims,
+            evidence_source_ids=tuple(supplied.sources),
+            cited_source_ids=resolution.cited_source_ids,
+            retrieval_metadata=supplied.retrieval_config,
+            evaluation=evaluate_answer(str(answer_id), claims, supplied),
+            turn_index=len(conversation.turns) - 1,
+            provenance={"model_display_name": metadata.display_name},
         )
 
     def _reject_unusable(self, result: GenerationResult) -> None:
