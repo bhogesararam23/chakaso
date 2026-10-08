@@ -10,6 +10,22 @@ capability is implemented or still planned.
 
 ## Unreleased
 
+### 2026-10-08 — Benchmark from the command line
+
+**Added**
+
+- `chakaso benchmark [--json] [--top-k N]`: runs the retrieval development benchmark over its
+  synthetic fixtures from the command line and prints the report — human-readable text, or the
+  deterministic machine-readable JSON with `--json`.
+
+**Notes**
+
+- The command is thin wiring: it calls `load_development_benchmark`, `RetrievalService` and
+  `RetrievalBenchmarkRunner` and prints the result; all report wording and the "development
+  benchmark" labelling live in `chakaso.benchmark.report`. It scores retrieval only, generates no
+  answer (there is no language model), reads no files and touches no network, and its output is
+  deterministic.
+
 ### 2026-10-08 — Correction foundation (reassessment, decision, record, metrics)
 
 **Added**

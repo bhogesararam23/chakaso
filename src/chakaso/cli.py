@@ -11,7 +11,9 @@ point. Every command calls the same application layer the library exposes.
 ``chat`` is honest about what answers it. The only adapter that exists is a
 deterministic development double, and the command says so in its own output rather
 than letting a user infer that the replies mean something. ``retrieve`` never generates
-an answer; it ingests, ranks and prints evidence with its provenance.
+an answer; it ingests, ranks and prints evidence with its provenance. ``benchmark``
+runs the retrieval development benchmark over its synthetic fixtures and prints a
+report that labels itself a development instrument.
 """
 
 from __future__ import annotations
@@ -23,6 +25,13 @@ from collections.abc import Sequence
 from pathlib import Path
 
 from chakaso import __version__
+from chakaso.benchmark import (
+    BenchmarkError,
+    RetrievalBenchmarkRunner,
+    format_report,
+    load_development_benchmark,
+    report_json,
+)
 from chakaso.config import ConfigError, LoadedConfig, load_config
 from chakaso.conversation import (
     Conversation,
@@ -161,6 +170,29 @@ def _build_parsers() -> tuple[argparse.ArgumentParser, argparse.ArgumentParser]:
         help="how many chunks to return (default: %(default)s)",
     )
 
+    benchmark_parser = subparsers.add_parser(
+        "benchmark",
+        help="run the retrieval development benchmark and print its report",
+        description=(
+            "Run the versioned development benchmark (chakaso.benchmark) over its synthetic "
+            "fixture corpus and print a report. It scores retrieval only, evaluates no answer "
+            "(there is no language model), and is far too small to support any claim about "
+            "general performance. Local and offline; the output is deterministic."
+        ),
+    )
+    benchmark_parser.add_argument(
+        "--top-k",
+        type=int,
+        default=DEFAULT_TOP_K,
+        metavar="N",
+        help="how many chunks to retrieve per case (default: %(default)s)",
+    )
+    benchmark_parser.add_argument(
+        "--json",
+        action="store_true",
+        help="emit the deterministic machine-readable report instead of the text one",
+    )
+
     return parser, config_parser
 
 
@@ -200,6 +232,9 @@ def main(argv: Sequence[str] | None = None) -> int:
 
     if args.command == "retrieve":
         return _run_retrieve(args)
+
+    if args.command == "benchmark":
+        return _run_benchmark(args)
 
     # Unreachable while every subcommand is handled above. argparse rejects
     # unknown commands before this point, so reaching here means a subcommand was
@@ -419,6 +454,26 @@ def _format_retrieval(outcome: RetrievalOutcome) -> str:
         lines.append(f"   matched: {', '.join(result.matched_terms)}")
         lines.append(f"   {chunk.text}")
     return "\n".join(lines)
+
+
+def _run_benchmark(args: argparse.Namespace) -> int:
+    """Run the retrieval development benchmark and print its report.
+
+    This wires the pieces the library already exposes — ``load_development_benchmark``,
+    ``RetrievalService`` and ``RetrievalBenchmarkRunner`` — and adds no scoring logic of its
+    own; the report's wording and its "development benchmark" label live in
+    ``chakaso.benchmark.report``. The run is deterministic and offline.
+    """
+    try:
+        corpus, dataset = load_development_benchmark()
+        runner = RetrievalBenchmarkRunner(RetrievalService(corpus), top_k=args.top_k)
+        run = runner.run(dataset)
+    except (BenchmarkError, IngestionError, RetrievalError) as exc:
+        print(f"{PROGRAM}: {exc}", file=sys.stderr)
+        return 1
+
+    print(report_json(run) if args.json else format_report(run))
+    return 0
 
 
 def _format_config(loaded: LoadedConfig) -> str:

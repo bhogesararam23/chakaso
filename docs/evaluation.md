@@ -137,7 +137,8 @@ one. Chakaso-specific behaviour — retrieval, grounding, citations, correction,
 follow-ups — needs its own suite, because no general harness measures those.
 
 No language-model benchmark has been run. A **retrieval development benchmark** exists and
-runs (`chakaso.benchmark`, `docs`/tests only), reporting retrieval metrics over synthetic
+runs (`chakaso.benchmark`), from the command line too (`chakaso benchmark`, with `--json` for a
+deterministic machine-readable report), reporting retrieval metrics over synthetic
 fixtures; it is not evidence of model quality. The standard-model harness is still to be
 wired up ([`research/open-questions.md`](research/open-questions.md)).
 

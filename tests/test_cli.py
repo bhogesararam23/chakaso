@@ -8,6 +8,7 @@ rather than silently doing nothing.
 from __future__ import annotations
 
 import io
+import json
 import platform
 import sys
 from collections.abc import Sequence
@@ -437,3 +438,46 @@ def test_retrieve_refuses_an_unsupported_format(
 
     assert main(["retrieve", "--query", "x", "--file", str(document)]) == 1
     assert "unsupported" in capsys.readouterr().err
+
+
+# ---------------------------------------------------------------------------
+# benchmark
+# ---------------------------------------------------------------------------
+
+
+def test_benchmark_prints_a_development_report(capsys: pytest.CaptureFixture[str]) -> None:
+    assert main(["benchmark"]) == 0
+
+    out = capsys.readouterr().out
+    assert "Retrieval benchmark report" in out
+    # The report labels itself a development instrument so a number cannot be read as a
+    # general-capability claim.
+    assert "Development benchmark" in out
+    assert "Recall@k:" in out
+
+
+def test_benchmark_json_is_machine_readable_and_labels_itself_development(
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    assert main(["benchmark", "--json"]) == 0
+
+    payload = json.loads(capsys.readouterr().out)
+    assert payload["benchmark"]["kind"] == "development"
+    assert payload["benchmark"]["note"]
+    assert "recall_at_k" in payload["metrics"]
+
+
+def test_benchmark_output_is_deterministic(capsys: pytest.CaptureFixture[str]) -> None:
+    main(["benchmark", "--json"])
+    first = capsys.readouterr().out
+    main(["benchmark", "--json"])
+    second = capsys.readouterr().out
+
+    assert first == second
+
+
+def test_benchmark_honours_top_k(capsys: pytest.CaptureFixture[str]) -> None:
+    assert main(["benchmark", "--json", "--top-k", "1"]) == 0
+
+    payload = json.loads(capsys.readouterr().out)
+    assert payload["configuration"]["top_k"] == 1

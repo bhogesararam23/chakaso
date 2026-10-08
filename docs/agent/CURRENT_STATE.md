@@ -1,6 +1,6 @@
 # Current state
 
-Last updated: 2026-10-08, at commit `docs: record the correction foundation` (code last changed at `feat: add structural correction metrics over labelled cases`).
+Last updated: 2026-10-08, at commit `feat: run the retrieval development benchmark from the command line`.
 
 This file is the authority on what exists. If it disagrees with any other
 document, this file is right and the other document is a defect.
@@ -18,7 +18,7 @@ A private planning note is never evidence that something is implemented.
 | Contribution guide | `CONTRIBUTING.md` | |
 | Agent contract | `AGENTS.md`, `docs/agent/` | |
 | Python package | `src/chakaso/` | Installs; typed; `py.typed` ships |
-| CLI | `src/chakaso/cli.py` | `--version`, `info`, `config show`, `chat`, `retrieve` |
+| CLI | `src/chakaso/cli.py` | `--version`, `info`, `config show`, `chat`, `retrieve`, `benchmark` |
 | Configuration | `src/chakaso/config/`, `configs/default.toml` | Typed schema, explicit loading, per-value provenance |
 | Core primitives | `src/chakaso/core/` | Content-derived identifiers, SHA-256 hashing, error base |
 | Model boundary | `src/chakaso/models/` | `LanguageModel` protocol, capabilities, registry, contract tests |
@@ -34,6 +34,7 @@ A private planning note is never evidence that something is implemented.
 | Conversation manager | `src/chakaso/conversation/manager.py` | Conducts one turn: context projection, model call, validation, evidence and citation recording. Transactional (ADR-0008) |
 | Conversation shell | `chakaso chat` | Interactive and one-shot. States in its own output that the engine is a development double |
 | Retrieval CLI | `chakaso retrieve` | Ingests named local files, runs lexical retrieval, prints ranked evidence with provenance. Local and offline |
+| Benchmark CLI | `chakaso benchmark` | Runs the retrieval development benchmark over its synthetic fixtures and prints a text or deterministic JSON report that labels itself a development instrument. Retrieval only; local and offline |
 | Web fetcher | `src/chakaso/retrieval/acquire.py`, `policy.py`, `netguard.py` | Opt-in, bounded HTTP fetch under a `FetchPolicy`; scheme/size/redirect/timeout/destination rules. Off every default path (ADR-0012) |
 | Web ingestion & cache | `src/chakaso/retrieval/html.py`, `web.py`, `cache.py` | Narrow HTML reader turns fetched bytes into the same evidence records as a local file; an opt-in in-memory cache avoids refetching |
 | Evaluation | `src/chakaso/evaluation/` | Pure metric functions (recall@k, precision@k, MRR, duplicate + unresolved-reference counts, latency observation), and `evaluate_answer`, which combines citation and grounding results into separate answer-evaluation dimensions (`evidence_coverage`, `is_grounded`). No merged quality score and no model-quality number |
@@ -42,7 +43,7 @@ A private planning note is never evidence that something is implemented.
 | Citation validation | `src/chakaso/citation/` | Structural citation checks against a supplied pack (valid / unknown / irrelevant / uncited) plus citation precision/recall. Decides presence and expected-match, never that a source proves a claim |
 | Grounding | `src/chakaso/grounding/` | `GroundingEvaluator` boundary: a structural evaluator (supported / unsupported / not_evaluated) and a manual evaluator that is the only path to contradicted / uncertain; a `Contradiction` names no winner (ADR-0015) |
 | Correction foundation | `src/chakaso/correction/` | The reassessment decision rule (retain / qualify / correct / abstain / needs_review, ADR-0016), `reassess` over the grounding boundary, an append-only `CorrectionRecord`, structural correction metrics, and a follow-up helper (`reassess_followup`) that composes standing + new evidence. Decides and records; produces no revised prose (there is no model) and is not wired into an automatic loop |
-| Tests | `tests/` | ~706 tests at the commit recorded above: package, CLI (incl. `retrieve`), configuration, identifiers and hashing, source identity, model boundary, evidence, normalization, chunking, ingestion, corpus, lexical retrieval, retrieval orchestration, end-to-end pipeline, fetch policy and netguard, HTML/web ingestion, cache, evaluation metrics and answer evaluation, benchmark identity/cases/loader/fixtures/runner/report, claims/extract/links, citation validation, grounding, correction decision/reassess/record/metrics/follow-up, conversation state and manager, repository hygiene. The count ages; `python -m pytest` does not. |
+| Tests | `tests/` | ~710 tests at the commit recorded above: package, CLI (incl. `retrieve`), configuration, identifiers and hashing, source identity, model boundary, evidence, normalization, chunking, ingestion, corpus, lexical retrieval, retrieval orchestration, end-to-end pipeline, fetch policy and netguard, HTML/web ingestion, cache, evaluation metrics and answer evaluation, benchmark identity/cases/loader/fixtures/runner/report, claims/extract/links, citation validation, grounding, correction decision/reassess/record/metrics/follow-up, conversation state and manager, repository hygiene. The count ages; `python -m pytest` does not. |
 | CI | `.github/workflows/ci.yml` | Green on Python 3.11, 3.12, 3.13 |
 | Dense retrieval, persistence, an automatic correction loop | **do not exist** | An opt-in bounded fetcher and a narrow HTML reader exist (off the default path); the correction *foundation* exists, but there are no embeddings, no persistent store, and no reassessment that runs itself |
 
@@ -123,6 +124,10 @@ A private planning note is never evidence that something is implemented.
   the command line: it ingests the named files, retrieves, and prints ranked evidence with
   its provenance. It reads only the files given, touches no network and generates no
   answer; an empty retrieval says so.
+- `python -m chakaso benchmark` runs the retrieval development benchmark end to end from the
+  command line and prints its report (text, or `--json` for a deterministic machine-readable
+  report). It scores retrieval over the synthetic fixtures, labels itself a development
+  instrument, and generates no answer.
 - A web source acquired by the opt-in fetcher can be turned into evidence:
   `ingest_acquired` decodes the bytes, parses HTML into text with headings via a narrow
   reader (not a browser), normalizes and chunks it into the same records a local file
