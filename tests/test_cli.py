@@ -511,3 +511,36 @@ def test_benchmark_without_a_subject_asks_for_one(capsys: pytest.CaptureFixture[
     err = capsys.readouterr().err
     assert "retrieval" in err
     assert "correction" in err
+
+
+# ---------------------------------------------------------------------------
+# experiment
+# ---------------------------------------------------------------------------
+
+
+def test_experiment_run_correction_json_is_a_reproducible_result(
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    assert main(["experiment", "run", "correction", "--json"]) == 0
+    first = json.loads(capsys.readouterr().out)
+    main(["experiment", "run", "correction", "--json"])
+    second = json.loads(capsys.readouterr().out)
+
+    # The reproducibility fingerprint is stable across runs; only the (excluded-from-id) wall-clock
+    # timestamp and host differ, so the full records are not byte-identical but the result_id is.
+    assert first["result_id"] == second["result_id"]
+    assert first["experiment"]["experiment_id"] == "dev-correction-baseline"
+    assert first["metrics"]["decision_accuracy"] == 1.0
+
+
+def test_experiment_run_retrieval_prints_a_summary(capsys: pytest.CaptureFixture[str]) -> None:
+    assert main(["experiment", "run", "retrieval"]) == 0
+    out = capsys.readouterr().out
+
+    assert out.startswith("experiment dev-retrieval-baseline: result ")
+    assert "on dev-retrieval" in out
+
+
+def test_experiment_without_an_action_is_reported(capsys: pytest.CaptureFixture[str]) -> None:
+    assert main(["experiment"]) == 1
+    assert "run" in capsys.readouterr().err

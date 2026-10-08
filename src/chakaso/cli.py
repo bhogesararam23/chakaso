@@ -13,12 +13,14 @@ deterministic development double, and the command says so in its own output rath
 than letting a user infer that the replies mean something. ``retrieve`` never generates
 an answer; it ingests, ranks and prints evidence with its provenance. ``benchmark``
 runs a retrieval or correction development benchmark over the shared synthetic fixtures and
-prints a report that labels itself a development instrument.
+prints a report that labels itself a development instrument; ``experiment run`` executes a
+baseline experiment and prints its reproducible, content-fingerprinted result.
 """
 
 from __future__ import annotations
 
 import argparse
+import json
 import platform
 import sys
 from collections.abc import Sequence
@@ -44,6 +46,7 @@ from chakaso.conversation import (
     Reply,
     new_conversation_id,
 )
+from chakaso.experiments import BenchmarkKind, baseline_experiment, run_experiment
 from chakaso.models import GenerationParams, ModelError, UnknownModelError, create_model
 from chakaso.retrieval import (
     DEFAULT_TOP_K,
@@ -224,6 +227,34 @@ def _build_parsers() -> tuple[argparse.ArgumentParser, argparse.ArgumentParser]:
         help="emit the deterministic machine-readable report instead of the text one",
     )
 
+    experiment_parser = subparsers.add_parser(
+        "experiment",
+        help="run a development experiment and print its reproducible result",
+        description=(
+            "Run a canonical development experiment against its benchmark and print the "
+            "reproducible, content-fingerprinted result. Development measurements over synthetic "
+            "fixtures; no model runs, and no real-world performance is claimed."
+        ),
+    )
+    experiment_subparsers = experiment_parser.add_subparsers(
+        dest="experiment_command", metavar="ACTION"
+    )
+    experiment_run = experiment_subparsers.add_parser(
+        "run",
+        help="run a baseline experiment (retrieval or correction)",
+        description="Run a baseline development experiment and print its result.",
+    )
+    experiment_run.add_argument(
+        "subject",
+        choices=[kind.value for kind in BenchmarkKind],
+        help="which baseline experiment to run",
+    )
+    experiment_run.add_argument(
+        "--json",
+        action="store_true",
+        help="emit the machine-readable result record instead of a one-line summary",
+    )
+
     return parser, config_parser
 
 
@@ -266,6 +297,9 @@ def main(argv: Sequence[str] | None = None) -> int:
 
     if args.command == "benchmark":
         return _run_benchmark(args)
+
+    if args.command == "experiment":
+        return _run_experiment_command(args)
 
     # Unreachable while every subcommand is handled above. argparse rejects
     # unknown commands before this point, so reaching here means a subcommand was
@@ -533,6 +567,36 @@ def _run_correction_benchmark(args: argparse.Namespace) -> int:
         return 1
 
     print(correction_report_json(run) if args.json else format_correction_report(run))
+    return 0
+
+
+def _run_experiment_command(args: argparse.Namespace) -> int:
+    """Run a baseline development experiment and print its reproducible result.
+
+    Thin wiring: the experiment data, the runner and the result all live in ``chakaso.experiments``;
+    this only picks the baseline by subject and formats the library's ``to_dict``. Output is
+    deterministic and offline; the result's ``result_id`` is the reproducibility fingerprint.
+    """
+    if args.experiment_command != "run":
+        print(
+            f"{PROGRAM}: choose an experiment action: 'run retrieval' or 'run correction'",
+            file=sys.stderr,
+        )
+        return 1
+
+    try:
+        result = run_experiment(baseline_experiment(BenchmarkKind(args.subject)))
+    except (BenchmarkError, ValueError) as exc:
+        print(f"{PROGRAM}: {exc}", file=sys.stderr)
+        return 1
+
+    if args.json:
+        print(json.dumps(result.to_dict(), sort_keys=True, indent=2, ensure_ascii=False))
+    else:
+        print(
+            f"experiment {result.experiment_id}: result {result.result_id} "
+            f"on {result.dataset_id} v{result.dataset_version}"
+        )
     return 0
 
 

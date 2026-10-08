@@ -10,6 +10,7 @@ fixtures — not a claim about real-world performance, and nothing here fabricat
 
 from __future__ import annotations
 
+from chakaso.experiments.baselines import baseline_experiment
 from chakaso.experiments.compare import (
     ComparisonDirection,
     ExperimentComparison,
@@ -38,6 +39,7 @@ __all__ = [
     "IncompatibleExperimentError",
     "InvalidExperimentError",
     "MetricComparison",
+    "baseline_experiment",
     "compare_results",
     "run_experiment",
 ]
