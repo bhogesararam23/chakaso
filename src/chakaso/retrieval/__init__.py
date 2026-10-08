@@ -46,11 +46,13 @@ from chakaso.retrieval.lexical import (
     tokenize,
 )
 from chakaso.retrieval.normalize import normalize_document
+from chakaso.retrieval.service import DEFAULT_TOP_K, RetrievalOutcome, RetrievalService
 
 __all__ = [
     "DEFAULT_B",
     "DEFAULT_K1",
     "DEFAULT_MAX_BYTES",
+    "DEFAULT_TOP_K",
     "SUPPORTED_FORMATS",
     "ChunkingConfig",
     "ChunkingError",
@@ -64,7 +66,9 @@ __all__ = [
     "LexicalIndex",
     "LexicalRetriever",
     "RetrievalError",
+    "RetrievalOutcome",
     "RetrievalResult",
+    "RetrievalService",
     "Retriever",
     "Section",
     "UnsupportedDocumentError",

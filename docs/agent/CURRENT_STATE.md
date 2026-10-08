@@ -1,6 +1,6 @@
 # Current state
 
-Last updated: 2026-10-08, at commit `feat: add a deterministic lexical retriever`.
+Last updated: 2026-10-08, at commit `feat: orchestrate retrieval into an evidence pack`.
 
 This file is the authority on what exists. If it disagrees with any other
 document, this file is right and the other document is a defect.
@@ -29,6 +29,7 @@ A private planning note is never evidence that something is implemented.
 | Ingestion | `src/chakaso/retrieval/ingest.py` | Reads one explicitly named local text/Markdown file, or supplied text, into a source record and its chunks; never crawls |
 | Corpus | `src/chakaso/retrieval/corpus.py` | In-memory set of sources and chunks for retrieval: idempotent add, deterministic enumeration, provenance guard |
 | Lexical retrieval | `src/chakaso/retrieval/lexical.py` | Deterministic BM25 index and retriever behind a `Retriever` protocol: ranking, top-k, source filter, inspectable explanations |
+| Retrieval orchestration | `src/chakaso/retrieval/service.py` | `RetrievalService.search`: query → ranked `EvidencePack` with recorded scores and preserved provenance; an empty result makes an empty pack, never invented evidence |
 | Conversation state | `src/chakaso/conversation/state.py` | Immutable, append-only turns with provenance; topic, entities and open questions |
 | Conversation manager | `src/chakaso/conversation/manager.py` | Conducts one turn: context projection, model call, validation, evidence and citation recording. Transactional (ADR-0008) |
 | Conversation shell | `chakaso chat` | Interactive and one-shot. States in its own output that the engine is a development double |
@@ -104,6 +105,11 @@ A private planning note is never evidence that something is implemented.
   shared words only — no embeddings, no model, no network — ties break by chunk
   identifier, and a query that matches nothing returns nothing rather than inventing a
   result.
+- A query against a corpus can be run through `RetrievalService`, which ranks chunks,
+  records the retriever's score onto the pack's chunks, and assembles a valid
+  `EvidencePack` with its sources; `ConversationManager.send(evidence=...)` can now be
+  handed a pack that something actually produced. An unmatched query gives an empty pack,
+  never fabricated evidence.
 - CI runs all of the above on three Python versions, with no secrets and no network
   access to a model provider.
 

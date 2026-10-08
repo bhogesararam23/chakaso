@@ -10,6 +10,35 @@ capability is implemented or still planned.
 
 ## Unreleased
 
+### 2026-10-08 — Retrieval orchestration
+
+**Added**
+
+- `chakaso.retrieval.RetrievalService`: the component that runs the pipeline for one
+  query — corpus, index, retriever, ranked chunks, evidence pack — and returns a
+  `RetrievalOutcome` carrying a validated `EvidencePack` and the full ranked result list.
+  It is deliberately not the conversation manager, so retrieval can be called on its own
+  and a turn can decide whether to retrieve at all.
+
+**Provenance guarantees**
+
+- Sources come from the corpus, never invented; a chunk whose source the corpus lacks is
+  refused.
+- The retriever's score is recorded onto a copy of each chunk; the stored chunk and its
+  identifier are unchanged, so a citation still points at the exact evidence used.
+- An unmatched query produces an empty pack, never fabricated evidence — the failure
+  ADR-0003 exists to prevent.
+- The pack records which retriever and `top_k` produced it, so an answer's provenance
+  includes the pipeline, not only the model.
+
+**Notes**
+
+- `ConversationManager.send` can now be handed a pack that something actually produced.
+  No query planner exists, so nothing decides on its own that a turn needs retrieval;
+  retrieval is still called explicitly. No network, no embeddings, no model.
+- The index is built once from the corpus the service is given; a corpus that grows later
+  needs a fresh service, because an index is a cache, never the source of truth.
+
 ### 2026-10-08 — Deterministic lexical retrieval
 
 **Added**

@@ -145,6 +145,30 @@ Guarantees that the rest of the system relies on:
 `k1` and `b` are documented defaults a caller may override, not yet configuration fields,
 matching how chunking sizes are handled.
 
+## Retrieval orchestration
+
+**Implemented.** `chakaso.retrieval.RetrievalService` coordinates the pipeline for one
+query — corpus, index, retriever, ranked chunks, evidence pack — and is deliberately
+separate from the conversation manager, so retrieval can run on its own and a turn can
+decide whether to retrieve at all. `search(query, top_k=...)` returns a
+`RetrievalOutcome` carrying a validated `EvidencePack` and the full ranked
+`RetrievalResult` list.
+
+What it guarantees about provenance:
+
+- **Sources come from the corpus, never from the retriever.** A chunk whose source the
+  corpus does not hold is refused; the pack is built only from real records.
+- **Scores are recorded, not invented.** The retriever's score is written onto a copy of
+  each chunk as `retrieval_score`; the stored chunk and its identifier are unchanged.
+- **An empty retrieval is an empty pack.** Nothing matching yields `pack.is_empty`, never
+  fabricated evidence — the failure ADR-0003 exists to prevent.
+- **The pack records its own provenance.** `retrieval_config` names the retriever and the
+  `top_k`, so an answer's provenance includes the pipeline, not only the model.
+
+The index is built once from the corpus the service is given; a corpus that grows
+afterwards needs a fresh service, because an index is a cache over the corpus, never its
+source of truth.
+
 ## Source identity
 
 Retrieval assigns identity; the model does not
@@ -259,14 +283,17 @@ evidence textually and structurally.
 | Document processing and main-content extraction (HTML, PDF) | Planned |
 | Chunking | Implemented |
 | Lexical retrieval (BM25 index, deterministic ranking, explanations) | Implemented |
+| Retrieval orchestration (query → ranked EvidencePack) | Implemented |
 | Dense embeddings and vector index | Planned |
 | Reranking | Planned |
 | Claim-level support checking | Planned |
 | Retrieval metrics (Recall@k, precision@k, MRR/NDCG) | Planned |
 
 The records, the pack and resolution are implemented and tested without any
-network access: a record is built from content a caller already has. No retriever
-and no fetcher exist, so nothing has been retrieved from the web.
+network access: a record is built from content a caller already has. A lexical retriever
+and an in-memory corpus now exist, but there is no fetcher, so nothing has been
+retrieved from the web — retrieval operates on content a caller ingests from disk or
+supplies.
 
 No retrieval metric has been measured. Any number appearing in this repository's
 documentation would be invented; there are none.
