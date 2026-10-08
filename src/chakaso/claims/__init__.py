@@ -11,13 +11,24 @@ Extraction, citation validation and grounding build on this and are added alongs
 from __future__ import annotations
 
 from chakaso.claims.errors import ClaimError, InvalidClaimError
+from chakaso.claims.extract import (
+    ClaimExtractor,
+    SentenceClaimExtractor,
+    StructuredClaimExtractor,
+)
+from chakaso.claims.links import ClaimEvidenceLink, links_from_claims
 from chakaso.claims.model import Claim, ClaimId, ClaimStatus, derive_claim_id
 
 __all__ = [
     "Claim",
     "ClaimError",
+    "ClaimEvidenceLink",
+    "ClaimExtractor",
     "ClaimId",
     "ClaimStatus",
     "InvalidClaimError",
+    "SentenceClaimExtractor",
+    "StructuredClaimExtractor",
     "derive_claim_id",
+    "links_from_claims",
 ]
