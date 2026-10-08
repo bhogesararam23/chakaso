@@ -27,9 +27,20 @@ from chakaso.retrieval import RetrievalService, ingest_text
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 
-#: Packages that analyse data the caller supplies. Unlike the retrieval fetcher, none of them has
-#: any business opening a socket; a network import here would break the local-first guarantee.
-ANALYSIS_PACKAGES = ("benchmark", "claims", "citation", "grounding", "evaluation", "correction")
+#: Packages that analyse data the caller supplies or orchestrate a turn. Unlike the retrieval
+#: fetcher, none of them has any business opening a socket; a network import here would break the
+#: local-first guarantee (ADR-0001).
+ANALYSIS_PACKAGES = (
+    "benchmark",
+    "claims",
+    "citation",
+    "grounding",
+    "evaluation",
+    "correction",
+    "answers",
+    "conversation",
+    "experiments",
+)
 
 FORBIDDEN_NETWORK_ROOTS = frozenset(
     {"urllib", "urllib3", "http", "httpx", "socket", "requests", "ftplib", "telnetlib", "smtplib"}
@@ -124,3 +135,15 @@ def test_correction_record_identifier_is_deterministic_across_runs() -> None:
         return record_reassessment(result, supersedes="prior").record_id
 
     assert record_id() == record_id()
+
+
+def test_baseline_experiment_results_reproduce_across_fresh_runs() -> None:
+    # An experiment's reproducibility fingerprint must be identical for two independent runs of
+    # the same baseline on the same code — result_id excludes the wall-clock timestamp, so this
+    # holds even without pinning the clock. This is the guard the experiment layer exists to give.
+    from chakaso.experiments import BenchmarkKind, baseline_experiment, run_experiment
+
+    for kind in BenchmarkKind:
+        first = run_experiment(baseline_experiment(kind))
+        second = run_experiment(baseline_experiment(kind))
+        assert first.result_id == second.result_id
