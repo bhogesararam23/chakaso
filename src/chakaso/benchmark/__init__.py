@@ -11,9 +11,10 @@ and designed to pin retrieval behaviour (distractors, duplicates, contradictions
 evidence). Nothing here is a scientific benchmark and no result here should be read as a
 claim about general performance.
 
-What exists now is identity, versioning and the case schema. The dataset loader, the
-curated fixture corpus, the retrieval runner and the reports are added as they are built,
-each with tests, and none of them described as present before it is.
+What exists now is identity, versioning, the case schema, the strict loader, the curated
+fixture corpus and the retrieval runner. Reports and the higher-level claim/grounding
+correction work build on these and are added as they are built, each with tests, and none
+of them described as present before it is.
 """
 
 from __future__ import annotations
@@ -51,6 +52,12 @@ from chakaso.benchmark.loader import (
     parse_case,
     parse_jsonl,
 )
+from chakaso.benchmark.runner import (
+    BenchmarkRun,
+    CaseOutcome,
+    RetrievalBenchmarkRunner,
+    RetrievalMetrics,
+)
 
 __all__ = [
     "FIXTURE_SOURCES",
@@ -59,7 +66,9 @@ __all__ = [
     "BenchmarkDataset",
     "BenchmarkError",
     "BenchmarkFileError",
+    "BenchmarkRun",
     "CaseId",
+    "CaseOutcome",
     "DatasetId",
     "DuplicateCaseError",
     "ExpectedBehavior",
@@ -68,6 +77,8 @@ __all__ = [
     "InvalidCaseError",
     "InvalidIdentifierError",
     "MalformedCaseEntryError",
+    "RetrievalBenchmarkRunner",
+    "RetrievalMetrics",
     "UnknownCaseError",
     "build_corpus",
     "canonical_json",
