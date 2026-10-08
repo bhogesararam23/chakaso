@@ -26,10 +26,14 @@ from chakaso.correction.decision import (
     CorrectionDecision,
     decide_claim,
 )
+from chakaso.correction.reassess import Reassessment, decide_answer, reassess
 
 __all__ = [
     "ClaimDisposition",
     "ClaimReassessment",
     "CorrectionDecision",
+    "Reassessment",
+    "decide_answer",
     "decide_claim",
+    "reassess",
 ]

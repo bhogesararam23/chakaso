@@ -108,3 +108,4 @@ creates.
 | [ADR-0013](ADR-0013-benchmark-identity-and-versioning.md) | Benchmark cases have a stable identity and a content-derived version | Accepted |
 | [ADR-0014](ADR-0014-claim-representation.md) | A claim is a first-class, content-identified unit; status is evaluation, not truth | Accepted |
 | [ADR-0015](ADR-0015-grounding-boundary.md) | Grounding is a boundary; structural evaluation never claims semantic support | Accepted |
+| [ADR-0016](ADR-0016-correction-decision-rule.md) | The correction decision is an explicit, evidence-driven rule | Accepted |
