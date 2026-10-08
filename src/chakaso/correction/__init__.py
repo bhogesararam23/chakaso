@@ -34,6 +34,7 @@ from chakaso.correction.metrics import (
 )
 from chakaso.correction.reassess import Reassessment, decide_answer, reassess
 from chakaso.correction.record import CorrectionRecord, record_reassessment
+from chakaso.correction.service import reassess_and_record, reassess_stored_answer
 
 __all__ = [
     "ClaimDisposition",
@@ -48,6 +49,8 @@ __all__ = [
     "decide_claim",
     "merge_evidence",
     "reassess",
+    "reassess_and_record",
     "reassess_followup",
+    "reassess_stored_answer",
     "record_reassessment",
 ]

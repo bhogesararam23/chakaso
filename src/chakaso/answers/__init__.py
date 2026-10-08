@@ -16,7 +16,12 @@ future backend possible without a database being introduced early.
 
 from __future__ import annotations
 
-from chakaso.answers.errors import AnswerError, AnswerStoreError, InvalidAnswerError
+from chakaso.answers.errors import (
+    AnswerError,
+    AnswerStoreError,
+    InvalidAnswerError,
+    UnknownAnswerError,
+)
 from chakaso.answers.identity import ANSWER_ID_PREFIX, AnswerId, new_answer_id
 from chakaso.answers.record import AnswerRecord
 from chakaso.answers.store import AnswerStore, InMemoryAnswerStore
@@ -30,5 +35,6 @@ __all__ = [
     "AnswerStoreError",
     "InMemoryAnswerStore",
     "InvalidAnswerError",
+    "UnknownAnswerError",
     "new_answer_id",
 ]

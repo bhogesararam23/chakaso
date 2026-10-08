@@ -12,7 +12,7 @@ from __future__ import annotations
 
 from chakaso.core.errors import ChakasoError
 
-__all__ = ["AnswerError", "AnswerStoreError", "InvalidAnswerError"]
+__all__ = ["AnswerError", "AnswerStoreError", "InvalidAnswerError", "UnknownAnswerError"]
 
 
 class AnswerError(ChakasoError, ValueError):
@@ -37,4 +37,13 @@ class AnswerStoreError(AnswerError):
     conversation — each is refused here rather than silently repaired, because rewriting
     research history to make an operation succeed destroys the evidence the history
     exists to preserve.
+    """
+
+
+class UnknownAnswerError(AnswerError):
+    """An operation named an answer that is not recorded.
+
+    Reassessing or linking to a missing answer is refused rather than treated as a
+    no-op: silently succeeding would let a correction target that never existed pass for
+    one that did, which is exactly the corrupted history the layer exists to prevent.
     """
