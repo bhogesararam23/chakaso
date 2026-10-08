@@ -105,3 +105,4 @@ creates.
 | [ADR-0010](ADR-0010-section-bounded-chunks.md) | Chunks are section-bounded and do not overlap | Accepted |
 | [ADR-0011](ADR-0011-typed-source-references.md) | Source identity is a typed reference, not a URL | Accepted |
 | [ADR-0012](ADR-0012-optional-bounded-fetcher.md) | The fetcher is an optional, explicitly-bounded adapter | Accepted |
+| [ADR-0013](ADR-0013-benchmark-identity-and-versioning.md) | Benchmark cases have a stable identity and a content-derived version | Accepted |

@@ -19,7 +19,16 @@ each with tests, and none of them described as present before it is.
 from __future__ import annotations
 
 from chakaso.benchmark.cases import BenchmarkCase, BenchmarkCategory, ExpectedBehavior
-from chakaso.benchmark.errors import BenchmarkError, InvalidCaseError, InvalidIdentifierError
+from chakaso.benchmark.dataset import BenchmarkDataset
+from chakaso.benchmark.errors import (
+    BenchmarkError,
+    DuplicateCaseError,
+    IncompatibleBenchmarkError,
+    InvalidCaseError,
+    InvalidIdentifierError,
+    MalformedCaseEntryError,
+    UnknownCaseError,
+)
 from chakaso.benchmark.identity import (
     CaseId,
     DatasetId,
@@ -30,12 +39,17 @@ from chakaso.benchmark.identity import (
 __all__ = [
     "BenchmarkCase",
     "BenchmarkCategory",
+    "BenchmarkDataset",
     "BenchmarkError",
     "CaseId",
     "DatasetId",
+    "DuplicateCaseError",
     "ExpectedBehavior",
+    "IncompatibleBenchmarkError",
     "InvalidCaseError",
     "InvalidIdentifierError",
+    "MalformedCaseEntryError",
+    "UnknownCaseError",
     "canonical_json",
     "content_version",
 ]
