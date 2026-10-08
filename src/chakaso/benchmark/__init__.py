@@ -26,6 +26,12 @@ from chakaso.benchmark.correction import (
     CorrectionDataset,
     development_correction_benchmark,
 )
+from chakaso.benchmark.correction_report import (
+    DEVELOPMENT_CORRECTION_NOTE,
+    correction_report_json,
+    correction_report_to_dict,
+    format_correction_report,
+)
 from chakaso.benchmark.correction_runner import (
     CorrectionBenchmarkMetrics,
     CorrectionBenchmarkRun,
@@ -79,6 +85,7 @@ from chakaso.benchmark.runner import (
 
 __all__ = [
     "DEVELOPMENT_BENCHMARK_NOTE",
+    "DEVELOPMENT_CORRECTION_NOTE",
     "FIXTURE_SOURCES",
     "BenchmarkCase",
     "BenchmarkCategory",
@@ -109,9 +116,12 @@ __all__ = [
     "build_corpus",
     "canonical_json",
     "content_version",
+    "correction_report_json",
+    "correction_report_to_dict",
     "dataset_from_rows",
     "development_benchmark",
     "development_correction_benchmark",
+    "format_correction_report",
     "format_report",
     "load_cases",
     "load_dataset_from_directory",
