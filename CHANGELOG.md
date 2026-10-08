@@ -10,6 +10,40 @@ capability is implemented or still planned.
 
 ## Unreleased
 
+### 2026-10-08 — Local document ingestion
+
+**Added**
+
+- `chakaso.retrieval.ingest_file` and `ingest_text`: the first stage that turns a source
+  into evidence records. Each identifies the source (ADR-0011), reads it, normalizes it,
+  splits it into sections and chunks, and returns an `IngestedDocument` — a
+  `SourceRecord` plus its `EvidenceChunk` records — which is exactly the shape
+  `ConversationManager.send` already consumes. No parallel representation was invented.
+- A typed ingestion error family: `DocumentUnavailableError`, `UnsupportedDocumentError`,
+  `DocumentTooLargeError`, `ContentDecodingError`, under `IngestionError`.
+
+**Filesystem safety**
+
+- Ingestion reads the single file a caller names and nothing else. It never crawls a
+  directory, never walks a filesystem, and never reads a file because it happens to
+  exist. A directory, an absent path, an empty path, a non-regular file, an unsupported
+  extension, a file over the byte limit and non-UTF-8 bytes are each refused with a
+  specific error, and every one of those rejections is exercised by a test.
+- Only `.txt`, `.md` and `.markdown` are read, so a binary — including the private
+  `.docx` pack — is refused on format rather than decoded into mangled text. A `..` in a
+  path is normalized away, so a winding path cannot fork one document into two sources.
+- The byte limit is checked against the file's size before its bytes are read, so a
+  pathological file cannot exhaust memory; a bad file is a hard failure, never a silent
+  truncation. An empty file is a valid source with zero chunks.
+
+**Notes**
+
+- Still no retrieval, no ranking and no network. This is explicit-source ingestion, not
+  a query planner or a fetcher; the caller chooses what to ingest.
+- The ingestable size limit is a documented parameter of each call, not a hidden
+  constant, and not yet a field in the configuration file — nothing reads it per run
+  yet, matching how chunking sizes are handled.
+
 ### 2026-10-08 — Deterministic content normalization
 
 **Added**

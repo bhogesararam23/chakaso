@@ -42,6 +42,32 @@ fences, so blank lines inside a code block collapse like any others (this matche
 dedicated chunker, ADR-0010), and its Unicode form depends on the interpreter's
 normalization tables, so reproducible evaluation must pin the interpreter version.
 
+## Local ingestion
+
+**Implemented (local text and Markdown only).** `chakaso.retrieval.ingest_file` reads
+one explicitly named local document and `ingest_text` takes one block of supplied text.
+Each identifies the source (ADR-0011), reads it, normalizes it, splits it into sections
+and chunks, and returns an `IngestedDocument` — a `SourceRecord` plus its chunks — which
+is exactly the shape `ConversationManager.send` consumes. No parallel representation is
+invented.
+
+Ingestion reads only the single source it is handed. It never crawls a directory, never
+walks a filesystem, and never reads a file because it happens to exist. The safety rules
+are about what a document can be that is unusable or dangerous to load, and each is
+enforced with a specific error:
+
+| Condition | Handling |
+| --- | --- |
+| Path empty, absent, or not a regular file | `DocumentUnavailableError` |
+| Extension not plain text or Markdown | `UnsupportedDocumentError` (so a binary, including the private `.docx` pack, is refused on format) |
+| Larger than the byte limit | `DocumentTooLargeError`, checked against the file's size before its bytes are read |
+| Not valid UTF-8 | `ContentDecodingError`, rather than decoded with replacement characters |
+| Empty file | A valid source with zero chunks — nothing to cite, not an error |
+
+A `..` in a path is normalized away when the reference is built, so a winding path
+cannot fork one document into two sources. Only `.txt`, `.md` and `.markdown` are read;
+HTML, PDF and every other format need a document processor that does not exist yet.
+
 ## Chunking
 
 **Implemented.** `chakaso.retrieval.chunk_document` turns document text and an
@@ -70,10 +96,9 @@ Sizes are counted in **characters**, not tokens. There is no tokenizer, so
 `token_count` on a chunk is left unset rather than filled with a character count that
 a later reader would trust.
 
-Chunking does not read files and does not fetch anything. Reading a document from a
-local path is still not implemented, but a source with no URL now has an identity — a
-`file` or `text` reference ([ADR-0011](decisions/ADR-0011-typed-source-references.md))
-— so the remaining step is ingestion, not identity.
+Chunking does not read files and does not fetch anything; it is handed text. The stage
+that reads a file is local ingestion, described below — a source with no URL has had an
+identity since [ADR-0011](decisions/ADR-0011-typed-source-references.md).
 
 ## Source identity
 
@@ -183,9 +208,9 @@ evidence textually and structurally.
 | Source reference identity for local and supplied content (ADR-0011) | Implemented |
 | Evidence Pack with identifier validation | Implemented |
 | Citation resolution, including rejection of unknown identifiers | Implemented |
+| Local ingestion of explicit text and Markdown documents | Implemented |
 | Fetch policy and fetcher | Planned |
-| Document processing and main-content extraction | Planned |
-| Reading a document from a local path | Planned |
+| Document processing and main-content extraction (HTML, PDF) | Planned |
 | Chunking | Implemented |
 | Local lexical ranking baseline | Planned |
 | Dense embeddings and vector index | Planned |
