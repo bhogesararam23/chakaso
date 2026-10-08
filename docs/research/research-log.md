@@ -111,3 +111,43 @@ rather than claimed as a solved SSRF defence.
 against a real corpus, and where it fails — which is the question the metric functions and
 a first hand-built benchmark would answer. Neither the benchmark nor any measured result
 exists yet, so nothing here is a claim about retrieval quality.
+
+---
+
+## 2026-10-08 — Evaluation and correction foundations built
+
+**Observation.** The benchmark made the metric functions runnable against something defined:
+cases with gold (acceptable) and forbidden (unacceptable) evidence, a strict loader, a synthetic
+fixture corpus and a runner. Making *forbidden evidence* a first-class field is what lets the
+instrument catch citation laundering — without it, a system that cites a loosely-related source
+scores the same as one that cites the right one.
+
+**Observation.** The load-bearing distinction throughout is structural versus semantic. Citation
+validation and the default grounding evaluator decide only presence and set membership — valid /
+unknown / irrelevant; supported / unsupported — and never that a source proves a claim.
+`contradicted` and `uncertain` enter only through a judgement a caller supplies, and the engine
+names no winner in a conflict and applies no precedence automatically (ADR-0015).
+
+**Decision recorded.** The correction decision is a written rule, not a heuristic (ADR-0016): a
+claim is corrected only when the supplied evidence contradicts it — never because it was produced
+first or has aged — losing prior support *qualifies* rather than deletes, and an unresolvable
+conflict or an unsettled required claim yields `needs_review` / `abstain` instead of a guess.
+Correction here decides and records; it produces no revised prose, because there is no model to
+write one.
+
+**Interpretation.** Keeping an answer's quality dimensions separate — citation precision, evidence
+coverage, grounding status, contradictions — rather than merging them into one score is what makes
+a partially-supported answer legible as exactly that. A single "quality score" would hide an
+uncited claim behind high precision over the claims that *were* cited.
+
+**Limitation.** Every number here is over a small, hand-built, synthetic corpus and scores
+*retrieval* only — no model answers, so nothing downstream of retrieval is measured. The
+development benchmark's output is a development instrument, not evidence about general
+performance, and no experiment testing a hypothesis has been run. K-001 (nothing measured against
+a real workload) is narrowed for retrieval but not closed; for grounding, citation and correction
+the machinery now exists while the semantic capability and any real measurement do not.
+
+**Open at this point.** Whether a semantic evaluator — the named future implementation of the
+`GroundingEvaluator` boundary — can set `contradicted`/`uncertain` reliably enough to replace a
+supplied judgement, and whether the correction rule holds against real conflicts once a model
+produces the answers being corrected.

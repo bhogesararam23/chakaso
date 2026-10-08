@@ -37,7 +37,9 @@ measurement over time.
 
 ## Current state
 
-**No experiment has been run.** There is no model, no tokenizer, no dataset and no
-retrieval implementation, so there is nothing to measure. Everything in this
-directory today is design reasoning and open questions, and it is labelled as
-such.
+**No experiment testing a hypothesis has been run.** There is still no model, no tokenizer and
+no dataset. A local lexical retrieval and a small, synthetic *development* benchmark now exist
+(`chakaso.benchmark`, run with `chakaso benchmark`), and they report retrieval numbers over
+hand-built fixtures — a development instrument, not a measurement of a hypothesis or of model
+quality. Everything else in this directory today is design reasoning and open questions, and it
+is labelled as such.
