@@ -111,3 +111,4 @@ creates.
 | [ADR-0016](ADR-0016-correction-decision-rule.md) | The correction decision is an explicit, evidence-driven rule | Accepted |
 | [ADR-0017](ADR-0017-answer-identity.md) | Answer identity is a per-event identifier, not a content hash | Accepted |
 | [ADR-0018](ADR-0018-answer-persistence.md) | Answer persistence is an append-only store boundary, in-memory for now | Accepted |
+| [ADR-0019](ADR-0019-semantic-grounding-boundary.md) | Semantic grounding is a boundary with only a fixture implementation today | Accepted |
