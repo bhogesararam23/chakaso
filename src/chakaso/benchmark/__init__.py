@@ -30,6 +30,14 @@ from chakaso.benchmark.errors import (
     MalformedCaseEntryError,
     UnknownCaseError,
 )
+from chakaso.benchmark.fixtures import (
+    FIXTURE_SOURCES,
+    FixtureSource,
+    build_corpus,
+    development_benchmark,
+    load_development_benchmark,
+    resolved_chunk_ids,
+)
 from chakaso.benchmark.identity import (
     CaseId,
     DatasetId,
@@ -45,6 +53,7 @@ from chakaso.benchmark.loader import (
 )
 
 __all__ = [
+    "FIXTURE_SOURCES",
     "BenchmarkCase",
     "BenchmarkCategory",
     "BenchmarkDataset",
@@ -54,16 +63,21 @@ __all__ = [
     "DatasetId",
     "DuplicateCaseError",
     "ExpectedBehavior",
+    "FixtureSource",
     "IncompatibleBenchmarkError",
     "InvalidCaseError",
     "InvalidIdentifierError",
     "MalformedCaseEntryError",
     "UnknownCaseError",
+    "build_corpus",
     "canonical_json",
     "content_version",
     "dataset_from_rows",
+    "development_benchmark",
     "load_cases",
     "load_dataset_from_directory",
+    "load_development_benchmark",
     "parse_case",
     "parse_jsonl",
+    "resolved_chunk_ids",
 ]
