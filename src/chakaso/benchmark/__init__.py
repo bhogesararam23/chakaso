@@ -52,6 +52,12 @@ from chakaso.benchmark.loader import (
     parse_case,
     parse_jsonl,
 )
+from chakaso.benchmark.report import (
+    DEVELOPMENT_BENCHMARK_NOTE,
+    format_report,
+    report_json,
+    report_to_dict,
+)
 from chakaso.benchmark.runner import (
     BenchmarkRun,
     CaseOutcome,
@@ -60,6 +66,7 @@ from chakaso.benchmark.runner import (
 )
 
 __all__ = [
+    "DEVELOPMENT_BENCHMARK_NOTE",
     "FIXTURE_SOURCES",
     "BenchmarkCase",
     "BenchmarkCategory",
@@ -85,10 +92,13 @@ __all__ = [
     "content_version",
     "dataset_from_rows",
     "development_benchmark",
+    "format_report",
     "load_cases",
     "load_dataset_from_directory",
     "load_development_benchmark",
     "parse_case",
     "parse_jsonl",
+    "report_json",
+    "report_to_dict",
     "resolved_chunk_ids",
 ]
