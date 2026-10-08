@@ -446,7 +446,7 @@ def test_retrieve_refuses_an_unsupported_format(
 
 
 def test_benchmark_prints_a_development_report(capsys: pytest.CaptureFixture[str]) -> None:
-    assert main(["benchmark"]) == 0
+    assert main(["benchmark", "retrieval"]) == 0
 
     out = capsys.readouterr().out
     assert "Retrieval benchmark report" in out
@@ -459,7 +459,7 @@ def test_benchmark_prints_a_development_report(capsys: pytest.CaptureFixture[str
 def test_benchmark_json_is_machine_readable_and_labels_itself_development(
     capsys: pytest.CaptureFixture[str],
 ) -> None:
-    assert main(["benchmark", "--json"]) == 0
+    assert main(["benchmark", "retrieval", "--json"]) == 0
 
     payload = json.loads(capsys.readouterr().out)
     assert payload["benchmark"]["kind"] == "development"
@@ -468,16 +468,46 @@ def test_benchmark_json_is_machine_readable_and_labels_itself_development(
 
 
 def test_benchmark_output_is_deterministic(capsys: pytest.CaptureFixture[str]) -> None:
-    main(["benchmark", "--json"])
+    main(["benchmark", "retrieval", "--json"])
     first = capsys.readouterr().out
-    main(["benchmark", "--json"])
+    main(["benchmark", "retrieval", "--json"])
     second = capsys.readouterr().out
 
     assert first == second
 
 
 def test_benchmark_honours_top_k(capsys: pytest.CaptureFixture[str]) -> None:
-    assert main(["benchmark", "--json", "--top-k", "1"]) == 0
+    assert main(["benchmark", "retrieval", "--top-k", "1", "--json"]) == 0
 
     payload = json.loads(capsys.readouterr().out)
     assert payload["configuration"]["top_k"] == 1
+
+
+def test_benchmark_correction_reports_the_decision_rule(
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    assert main(["benchmark", "correction"]) == 0
+
+    out = capsys.readouterr().out
+    assert "Correction benchmark report" in out
+    assert "[PASS] retain-supported" in out
+
+
+def test_benchmark_correction_json_is_deterministic_and_development(
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    assert main(["benchmark", "correction", "--json"]) == 0
+    first = json.loads(capsys.readouterr().out)
+    main(["benchmark", "correction", "--json"])
+    second = json.loads(capsys.readouterr().out)
+
+    assert first == second
+    assert first["benchmark"]["subject"] == "correction-decision-rule"
+    assert first["metrics"]["decision_accuracy"] == 1.0
+
+
+def test_benchmark_without_a_subject_asks_for_one(capsys: pytest.CaptureFixture[str]) -> None:
+    assert main(["benchmark"]) == 1
+    err = capsys.readouterr().err
+    assert "retrieval" in err
+    assert "correction" in err

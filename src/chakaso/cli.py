@@ -12,8 +12,8 @@ point. Every command calls the same application layer the library exposes.
 deterministic development double, and the command says so in its own output rather
 than letting a user infer that the replies mean something. ``retrieve`` never generates
 an answer; it ingests, ranks and prints evidence with its provenance. ``benchmark``
-runs the retrieval development benchmark over its synthetic fixtures and prints a
-report that labels itself a development instrument.
+runs a retrieval or correction development benchmark over the shared synthetic fixtures and
+prints a report that labels itself a development instrument.
 """
 
 from __future__ import annotations
@@ -27,7 +27,11 @@ from pathlib import Path
 from chakaso import __version__
 from chakaso.benchmark import (
     BenchmarkError,
+    CorrectionBenchmarkRunner,
     RetrievalBenchmarkRunner,
+    correction_report_json,
+    development_correction_benchmark,
+    format_correction_report,
     format_report,
     load_development_benchmark,
     report_json,
@@ -172,22 +176,49 @@ def _build_parsers() -> tuple[argparse.ArgumentParser, argparse.ArgumentParser]:
 
     benchmark_parser = subparsers.add_parser(
         "benchmark",
-        help="run the retrieval development benchmark and print its report",
+        help="run a development benchmark (retrieval or correction) and print its report",
         description=(
-            "Run the versioned development benchmark (chakaso.benchmark) over its synthetic "
-            "fixture corpus and print a report. It scores retrieval only, evaluates no answer "
-            "(there is no language model), and is far too small to support any claim about "
-            "general performance. Local and offline; the output is deterministic."
+            "Run a versioned development benchmark over the shared synthetic fixtures and print "
+            "a report. Both subjects are development instruments: they score a component against a "
+            "small hand-built set, run no language model, and cannot support any claim about "
+            "general performance. Local, offline and deterministic."
         ),
     )
-    benchmark_parser.add_argument(
+    benchmark_subparsers = benchmark_parser.add_subparsers(
+        dest="benchmark_command", metavar="SUBJECT"
+    )
+
+    retrieval_benchmark = benchmark_subparsers.add_parser(
+        "retrieval",
+        help="score the lexical retriever against the retrieval development benchmark",
+        description=(
+            "Run the retrieval development benchmark (chakaso.benchmark) over its synthetic "
+            "fixture corpus. It scores retrieval only and evaluates no answer."
+        ),
+    )
+    retrieval_benchmark.add_argument(
         "--top-k",
         type=int,
         default=DEFAULT_TOP_K,
         metavar="N",
         help="how many chunks to retrieve per case (default: %(default)s)",
     )
-    benchmark_parser.add_argument(
+    retrieval_benchmark.add_argument(
+        "--json",
+        action="store_true",
+        help="emit the deterministic machine-readable report instead of the text one",
+    )
+
+    correction_benchmark = benchmark_subparsers.add_parser(
+        "correction",
+        help="score the correction decision rule against the correction development benchmark",
+        description=(
+            "Run the correction development benchmark (chakaso.benchmark.correction): synthetic "
+            "cases whose expected decision the correction rule is checked against. It scores a "
+            "decision rule over fixtures, runs no model, and infers no contradiction."
+        ),
+    )
+    correction_benchmark.add_argument(
         "--json",
         action="store_true",
         help="emit the deterministic machine-readable report instead of the text one",
@@ -457,12 +488,24 @@ def _format_retrieval(outcome: RetrievalOutcome) -> str:
 
 
 def _run_benchmark(args: argparse.Namespace) -> int:
+    """Dispatch a benchmark subject. No scoring lives here — the runners and reports do."""
+    if args.benchmark_command == "retrieval":
+        return _run_retrieval_benchmark(args)
+    if args.benchmark_command == "correction":
+        return _run_correction_benchmark(args)
+    print(
+        f"{PROGRAM}: choose a benchmark subject: 'retrieval' or 'correction'",
+        file=sys.stderr,
+    )
+    return 1
+
+
+def _run_retrieval_benchmark(args: argparse.Namespace) -> int:
     """Run the retrieval development benchmark and print its report.
 
-    This wires the pieces the library already exposes — ``load_development_benchmark``,
-    ``RetrievalService`` and ``RetrievalBenchmarkRunner`` — and adds no scoring logic of its
-    own; the report's wording and its "development benchmark" label live in
-    ``chakaso.benchmark.report``. The run is deterministic and offline.
+    Wires ``load_development_benchmark``, ``RetrievalService`` and ``RetrievalBenchmarkRunner``
+    and adds no scoring logic of its own; the report's wording and its "development benchmark"
+    label live in ``chakaso.benchmark.report``. The run is deterministic and offline.
     """
     try:
         corpus, dataset = load_development_benchmark()
@@ -473,6 +516,23 @@ def _run_benchmark(args: argparse.Namespace) -> int:
         return 1
 
     print(report_json(run) if args.json else format_report(run))
+    return 0
+
+
+def _run_correction_benchmark(args: argparse.Namespace) -> int:
+    """Run the correction development benchmark and print its report.
+
+    Wires ``CorrectionBenchmarkRunner`` over the curated dataset; the decision rule and the report
+    live in ``chakaso.correction`` and ``chakaso.benchmark``. It scores a rule over synthetic
+    cases — no model runs and no contradiction is inferred.
+    """
+    try:
+        run = CorrectionBenchmarkRunner().run(development_correction_benchmark())
+    except (BenchmarkError, LookupError) as exc:
+        print(f"{PROGRAM}: {exc}", file=sys.stderr)
+        return 1
+
+    print(correction_report_json(run) if args.json else format_correction_report(run))
     return 0
 
 
