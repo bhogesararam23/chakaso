@@ -26,6 +26,11 @@ from chakaso.correction.decision import (
     CorrectionDecision,
     decide_claim,
 )
+from chakaso.correction.metrics import (
+    CorrectionMetrics,
+    LabeledCorrection,
+    correction_metrics,
+)
 from chakaso.correction.reassess import Reassessment, decide_answer, reassess
 from chakaso.correction.record import CorrectionRecord, record_reassessment
 
@@ -33,8 +38,11 @@ __all__ = [
     "ClaimDisposition",
     "ClaimReassessment",
     "CorrectionDecision",
+    "CorrectionMetrics",
     "CorrectionRecord",
+    "LabeledCorrection",
     "Reassessment",
+    "correction_metrics",
     "decide_answer",
     "decide_claim",
     "reassess",
