@@ -102,7 +102,7 @@ Each component owns one thing and must not grow into its neighbour.
 | Query Planner | Decide whether retrieval is useful; formulate retrieval queries while preserving intent | Source truth | Planned |
 | Retriever | Find candidate documents and chunks | Generate the final answer | Implemented (lexical BM25: ADR-0010 chunking; dense is planned) |
 | Fetcher | Retrieve permitted public content under an explicit policy | Interpret facts | Implemented (bounded, opt-in: ADR-0012) |
-| Document Processor | Extract readable text, metadata and section structure | Invent missing text | Planned |
+| Document Processor | Extract readable text, metadata and section structure | Invent missing text | Implemented (narrow HTML reader: text + headings, no browser; PDF planned) |
 | Chunker | Produce stable evidence units with positions | Rank claims | Implemented (Markdown structure, no overlap: ADR-0010) |
 | Ranker | Order candidate evidence | Generate the answer | Planned |
 | Evidence Store | Persist source and chunk records, metadata and hashes | Produce user-facing prose | Planned |

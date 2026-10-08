@@ -10,6 +10,37 @@ capability is implemented or still planned.
 
 ## Unreleased
 
+### 2026-10-08 — Fetched web content becomes evidence
+
+**Added**
+
+- `chakaso.retrieval.html.parse_html`: a narrow HTML reader (standard-library
+  `HTMLParser`, not a browser) that extracts readable text, captures the `<title>`, maps
+  headings to Markdown so the section-bounded chunker applies, decodes entities, and drops
+  `<script>`/`<style>`/`<noscript>`/`<template>`/`<svg>`.
+- `chakaso.retrieval.web.ingest_acquired`: turns an `AcquiredSource` into the same
+  `IngestedDocument` a local file produces — decode, parse, normalize, chunk — so web and
+  local evidence share one representation. HTML and plain text are accepted; any other
+  media type is refused rather than mangled.
+- `chakaso.retrieval.cache`: an in-memory `AcquisitionCache` keyed by canonical URL (with
+  an optional age limit) and a `CachingFetcher` that wraps any `Fetcher` to avoid
+  refetching.
+
+**Security posture**
+
+- Fetched text is data, never a directive. A prompt-injection line inside a page is stored
+  verbatim as an evidence chunk and is never executed, never changes policy, and never
+  assigns identity — a web source is named by the validated canonical URL, not by anything
+  the page claims about itself (ADR-0003). Regression-tested.
+- Decoding is strict: a declared `charset` is honoured, a UTF-8 byte-order mark is
+  stripped, and bytes invalid in the expected encoding are refused, not replaced.
+
+**Notes**
+
+- Still opt-in and offline. Nothing on a default path fetches; the reader is not a browser
+  and does no boilerplate removal, and PDF and full main-content extraction remain planned
+  (K-008).
+
 ### 2026-10-08 — Bounded, opt-in web fetcher
 
 **Added**

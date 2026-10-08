@@ -1,6 +1,6 @@
 # Current state
 
-Last updated: 2026-10-08, at commit `feat: add a bounded, opt-in web fetcher`.
+Last updated: 2026-10-08, at commit `feat: turn fetched web content into evidence`.
 
 This file is the authority on what exists. If it disagrees with any other
 document, this file is right and the other document is a defect.
@@ -35,9 +35,10 @@ A private planning note is never evidence that something is implemented.
 | Conversation shell | `chakaso chat` | Interactive and one-shot. States in its own output that the engine is a development double |
 | Retrieval CLI | `chakaso retrieve` | Ingests named local files, runs lexical retrieval, prints ranked evidence with provenance. Local and offline |
 | Web fetcher | `src/chakaso/retrieval/acquire.py`, `policy.py`, `netguard.py` | Opt-in, bounded HTTP fetch under a `FetchPolicy`; scheme/size/redirect/timeout/destination rules. Off every default path (ADR-0012) |
+| Web ingestion & cache | `src/chakaso/retrieval/html.py`, `web.py`, `cache.py` | Narrow HTML reader turns fetched bytes into the same evidence records as a local file; an opt-in in-memory cache avoids refetching |
 | Tests | `tests/` | 346 tests at the commit recorded above: package, CLI, configuration, primitives, model boundary, evidence, conversation state, conversation manager, chunking, repository hygiene. The count ages; the command does not. |
 | CI | `.github/workflows/ci.yml` | Green on Python 3.11, 3.12, 3.13 |
-| Dense retrieval, persistence, correction | **do not exist** | An opt-in, bounded fetcher now exists (off the default path); there are no embeddings, no persistent store, no correction, and fetched bytes are not yet turned into evidence |
+| Dense retrieval, persistence, correction | **do not exist** | An opt-in, bounded fetcher and a narrow HTML reader now exist (off the default path); there are no embeddings, no persistent store and no correction |
 
 ## What works
 
@@ -116,6 +117,11 @@ A private planning note is never evidence that something is implemented.
   the command line: it ingests the named files, retrieves, and prints ranked evidence with
   its provenance. It reads only the files given, touches no network and generates no
   answer; an empty retrieval says so.
+- A web source acquired by the opt-in fetcher can be turned into evidence:
+  `ingest_acquired` decodes the bytes, parses HTML into text with headings via a narrow
+  reader (not a browser), normalizes and chunks it into the same records a local file
+  produces. Fetched text is stored as data and is never an instruction or a source
+  identity (ADR-0003); a `CachingFetcher` avoids refetching a canonical URL.
 - CI runs all of the above on three Python versions, with no secrets and no network
   access to a model provider.
 
@@ -146,9 +152,9 @@ one small thing each.
 
 ## What is not implemented
 
-- Turning fetched web content into evidence. A bounded, opt-in fetcher acquires bytes
-  under a policy (ADR-0012), but nothing yet decodes or parses them into a source record;
-  HTML and PDF ingestion do not exist.
+- A full document processor: PDF, robust main-content extraction and boilerplate
+  removal. The HTML reader is narrow and is not a browser — it runs no scripts, applies no
+  CSS and strips no ads.
 - Query planner: nothing decides whether retrieval would help, and nothing decides *which*
   URLs to fetch; the fetcher is only ever handed an explicit URL.
 - Dense embeddings, a vector index and reranking: retrieval is lexical only, matching

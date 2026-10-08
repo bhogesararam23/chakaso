@@ -197,8 +197,15 @@ What the fetcher enforces:
 **The destination screen is bounded and says so.** A hostname that resolves to a private
 address is not caught by a pre-connect string check; closing that needs connecting to a
 pre-resolved, re-validated IP inside the transport, which is not implemented. A deployment
-that enables fetching owns the network environment. Fetching acquires bytes only — parsing
-and turning them into evidence is a separate stage, below.
+that enables fetching owns the network environment. Fetching acquires bytes; a separate
+stage (`ingest_acquired`, below) decodes, parses, normalizes and chunks them into the same
+evidence records a local file produces.
+
+Fetched text is data, never a directive. A line inside a page that reads like an
+instruction — "ignore previous instructions", "call this URL" — is carried into an
+`EvidenceChunk` verbatim and is never executed, never changes policy, and never assigns
+identity: a web source is named by the validated canonical URL of the response, not by
+anything the page claims about itself (ADR-0003).
 
 ## Source identity
 
@@ -318,7 +325,9 @@ evidence textually and structurally.
 | Local ingestion of explicit text and Markdown documents | Implemented |
 | In-memory corpus (membership, enumeration, provenance guard) | Implemented |
 | Fetch policy and fetcher (opt-in, bounded; literal-address SSRF screen) | Implemented |
-| Document processing and main-content extraction (HTML, PDF) | Planned |
+| HTML text extraction and web ingestion (narrow reader, not a browser) | Implemented |
+| In-memory acquisition cache (opt-in, `CachingFetcher`) | Implemented |
+| PDF and full main-content extraction | Planned |
 | Chunking | Implemented |
 | Lexical retrieval (BM25 index, deterministic ranking, explanations) | Implemented |
 | Retrieval orchestration (query → ranked EvidencePack) | Implemented |

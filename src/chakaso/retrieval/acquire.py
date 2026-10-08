@@ -73,7 +73,8 @@ class AcquiredSource:
     ``final_url`` is where the content actually came from after redirects, which may
     differ from the requested URL; both are kept so provenance is not lost. The content
     is raw bytes — decoding and parsing are a separate stage, so a fetcher cannot silently
-    mislabel a binary as text.
+    mislabel a binary as text. ``charset`` is whatever the response's ``Content-Type``
+    declared, if anything; it is a hint for the decoder, not a decision the fetcher makes.
     """
 
     requested_url: str
@@ -81,6 +82,7 @@ class AcquiredSource:
     content: bytes
     media_type: str
     retrieved_at: datetime
+    charset: str | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -163,6 +165,7 @@ class HttpFetcher:
                 content=response.body,
                 media_type=content_type.split(";", 1)[0].strip().lower(),
                 retrieved_at=self._now(),
+                charset=_extract_charset(content_type),
             )
 
     def _check_target(self, url: str, policy: FetchPolicy) -> None:
@@ -188,6 +191,16 @@ class HttpFetcher:
             if key.lower() == name:
                 return value
         return None
+
+
+def _extract_charset(content_type: str) -> str | None:
+    """Return the ``charset`` parameter of a Content-Type value, lowercased, or None."""
+    for parameter in content_type.split(";")[1:]:
+        key, separator, value = parameter.partition("=")
+        if separator and key.strip().lower() == "charset":
+            declared = value.strip().strip('"').lower()
+            return declared or None
+    return None
 
 
 class _NoRedirectHandler(HTTPRedirectHandler):
