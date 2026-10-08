@@ -10,6 +10,13 @@ fixtures — not a claim about real-world performance, and nothing here fabricat
 
 from __future__ import annotations
 
+from chakaso.experiments.compare import (
+    ComparisonDirection,
+    ExperimentComparison,
+    IncompatibleExperimentError,
+    MetricComparison,
+    compare_results,
+)
 from chakaso.experiments.model import (
     BenchmarkKind,
     Experiment,
@@ -22,10 +29,15 @@ from chakaso.experiments.runner import run_experiment
 
 __all__ = [
     "BenchmarkKind",
+    "ComparisonDirection",
     "Experiment",
+    "ExperimentComparison",
     "ExperimentError",
     "ExperimentId",
     "ExperimentResult",
+    "IncompatibleExperimentError",
     "InvalidExperimentError",
+    "MetricComparison",
+    "compare_results",
     "run_experiment",
 ]
