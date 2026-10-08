@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from chakaso.core.errors import ChakasoError
 
-__all__ = ["BenchmarkError", "InvalidIdentifierError"]
+__all__ = ["BenchmarkError", "InvalidCaseError", "InvalidIdentifierError"]
 
 
 class BenchmarkError(ChakasoError, ValueError):
@@ -22,4 +22,13 @@ class InvalidIdentifierError(BenchmarkError):
     Identifiers are the addresses a benchmark is referred to by across runs, machines
     and versions; a malformed one is not a formatting nicety but a case that cannot be
     cited back later.
+    """
+
+
+class InvalidCaseError(BenchmarkError):
+    """A benchmark case definition is internally inconsistent or unusable.
+
+    Raised for a blank query, an empty judgement, or an identifier listed as both gold
+    and forbidden — a case whose "relevant" and "unacceptable" sets overlap is asking to
+    score a chunk as simultaneously right and wrong, which no metric can mean anything by.
     """
