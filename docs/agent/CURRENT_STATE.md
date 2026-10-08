@@ -1,6 +1,6 @@
 # Current state
 
-Last updated: 2026-10-08, at commit `docs: record the claim, citation, grounding and answer-evaluation foundation` (code last changed at `feat: combine citations and grounding into answer evaluation`).
+Last updated: 2026-10-08, at commit `docs: record the correction foundation` (code last changed at `feat: add structural correction metrics over labelled cases`).
 
 This file is the authority on what exists. If it disagrees with any other
 document, this file is right and the other document is a defect.
@@ -14,7 +14,7 @@ A private planning note is never evidence that something is implemented.
 | Repository conventions | `.gitignore`, `.gitattributes`, `.editorconfig` | Private docx pack excluded by `.gitignore` and guarded by a test |
 | License | `LICENSE` | Apache-2.0; rationale in ADR-0004 |
 | Public documentation | `README.md`, `docs/*.md`, `docs/research/` | Specifications with mandatory status labels |
-| Decision records | `docs/decisions/` | ADR-0001 to ADR-0015 |
+| Decision records | `docs/decisions/` | ADR-0001 to ADR-0016 |
 | Contribution guide | `CONTRIBUTING.md` | |
 | Agent contract | `AGENTS.md`, `docs/agent/` | |
 | Python package | `src/chakaso/` | Installs; typed; `py.typed` ships |
@@ -41,9 +41,10 @@ A private planning note is never evidence that something is implemented.
 | Claims | `src/chakaso/claims/` | Immutable `Claim` with a content-derived `ClaimId` and a `ClaimStatus` that records what the supplied evidence supports — never truth. A replaceable `ClaimExtractor` boundary (structured + a documented sentence heuristic) and claim/evidence links (ADR-0014). No trained extractor |
 | Citation validation | `src/chakaso/citation/` | Structural citation checks against a supplied pack (valid / unknown / irrelevant / uncited) plus citation precision/recall. Decides presence and expected-match, never that a source proves a claim |
 | Grounding | `src/chakaso/grounding/` | `GroundingEvaluator` boundary: a structural evaluator (supported / unsupported / not_evaluated) and a manual evaluator that is the only path to contradicted / uncertain; a `Contradiction` names no winner (ADR-0015) |
-| Tests | `tests/` | ~665 tests at the commit recorded above: package, CLI (incl. `retrieve`), configuration, identifiers and hashing, source identity, model boundary, evidence, normalization, chunking, ingestion, corpus, lexical retrieval, retrieval orchestration, end-to-end pipeline, fetch policy and netguard, HTML/web ingestion, cache, evaluation metrics and answer evaluation, benchmark identity/cases/loader/fixtures/runner/report, claims/extract/links, citation validation, grounding, conversation state and manager, repository hygiene. The count ages; `python -m pytest` does not. |
+| Correction foundation | `src/chakaso/correction/` | The reassessment decision rule (retain / qualify / correct / abstain / needs_review, ADR-0016), `reassess` over the grounding boundary, an append-only `CorrectionRecord`, and structural correction metrics. Decides and records; produces no revised prose (there is no model) and is not wired into an automatic loop |
+| Tests | `tests/` | ~701 tests at the commit recorded above: package, CLI (incl. `retrieve`), configuration, identifiers and hashing, source identity, model boundary, evidence, normalization, chunking, ingestion, corpus, lexical retrieval, retrieval orchestration, end-to-end pipeline, fetch policy and netguard, HTML/web ingestion, cache, evaluation metrics and answer evaluation, benchmark identity/cases/loader/fixtures/runner/report, claims/extract/links, citation validation, grounding, correction decision/reassess/record/metrics, conversation state and manager, repository hygiene. The count ages; `python -m pytest` does not. |
 | CI | `.github/workflows/ci.yml` | Green on Python 3.11, 3.12, 3.13 |
-| Dense retrieval, persistence, correction | **do not exist** | An opt-in, bounded fetcher and a narrow HTML reader now exist (off the default path); there are no embeddings, no persistent store and no correction |
+| Dense retrieval, persistence, an automatic correction loop | **do not exist** | An opt-in bounded fetcher and a narrow HTML reader exist (off the default path); the correction *foundation* exists, but there are no embeddings, no persistent store, and no reassessment that runs itself |
 
 ## What works
 
@@ -149,6 +150,14 @@ A private planning note is never evidence that something is implemented.
   dimensions separate — citation precision, evidence coverage (the grounded-claim support
   rate), grounding status and contradictions — and deliberately reports no single merged
   quality score. Claims and evidence are supplied by a caller or fixture, not generated.
+- An answer's claims can be reassessed against evidence and the outcome decided and recorded
+  (`chakaso.correction`): `decide_claim` / `decide_answer` turn prior-vs-now statuses into a
+  per-claim disposition and an answer-level decision under a fixed, written rule (ADR-0016) — a
+  contradiction outranks everything and nothing corrects for recency or source order;
+  `record_reassessment` fixes the outcome into an immutable, content-identified
+  `CorrectionRecord` that supersedes an earlier answer; `correction_metrics` reports success,
+  unjustified-persistence and unnecessary-revision rates over a caller-labelled set. With no
+  model, nothing generates revised wording, and no turn triggers reassessment by itself.
 - CI runs all of the above on three Python versions, with no secrets and no network
   access to a model provider.
 
@@ -192,9 +201,11 @@ one small thing each.
   Whether the cited source actually *proves* the claim — and automatic contradiction or
   uncertainty detection — does not exist; those statuses appear only when a caller supplies a
   judgement.
-- Reassessment and the correction loop. The claim, status and grounding vocabulary correction
-  will consume now exists; nothing compares a previous answer against new evidence, decides
-  retain / qualify / correct, or records a correction.
+- An automatic correction loop and a revised answer. The reassessment *foundation* exists
+  (`chakaso.correction`: the decision rule, `reassess`, the record and structural metrics) and is
+  invoked by a caller on evidence it supplies; nothing decides on its own when to reassess,
+  nothing generates the revised prose (there is no model), and no correction is persisted.
+  Correction is not part of a conversation turn.
 - A general evaluation harness and model benchmarks. A retrieval development benchmark and
   metric functions exist, as do structural claim, citation and grounding evaluation and an
   `evaluate_answer` combiner; the grounded-answer and correction *benchmarks* and any
@@ -224,6 +235,7 @@ one small thing each.
 | ADR-0013 | Benchmark cases have a stable identity and a content-derived version |
 | ADR-0014 | A claim is a first-class, content-identified unit; status is evaluation, not truth |
 | ADR-0015 | Grounding is a boundary; structural evaluation never claims semantic support |
+| ADR-0016 | The correction decision is an explicit, evidence-driven rule |
 
 Two process facts are recorded outside the ADR series because they are repository
 history rather than architecture:
@@ -242,15 +254,14 @@ architectural decision made so far rests on reasoning rather than measurement.
 
 ## Next step
 
-Retrieval (local ingestion, lexical BM25 retrieval, an opt-in bounded fetcher and a narrow
-HTML reader), the retrieval development benchmark, and the claim / citation / grounding /
-answer-evaluation primitives are all built and tested. What the project does not yet have is
-the **reassessment and correction foundation**: taking a previous answer's claims plus new
-evidence, classifying the claims against that evidence (the supported / unsupported /
-contradicted vocabulary now exists), deciding retain / qualify / correct, and recording the
-change. That is the next unit, and it builds on the claim and grounding boundaries already in
-place rather than inventing new ones.
+Retrieval, the retrieval development benchmark, the claim / citation / grounding / answer-
+evaluation primitives, and the correction *foundation* (the decision rule, reassessment, the
+append-only record and structural metrics) are built and tested. The next units are thin
+integration, not new machinery: exercising reassessment as a follow-up over a prior answer's
+claims, and surfacing the benchmark — and, where useful, evaluation and validation — through the
+CLI so the development instrument is runnable from the command line. Both stay offline and
+deterministic.
 
-There is still no language model, so nothing generates an answer to be corrected; the
-correction path is built and tested against claims and evidence a caller supplies. See
+There is still no language model, so nothing generates an answer to revise and no correction
+produces new prose; and there is no automatic loop — reassessment is invoked by a caller. See
 [`ACTIVE_TASK.md`](ACTIVE_TASK.md) for the definition of done.

@@ -108,13 +108,13 @@ Each component owns one thing and must not grow into its neighbour.
 | Evidence Store | Persist source and chunk records, metadata and hashes | Produce user-facing prose | Planned |
 | Model Adapter | Uniform interface to any local or future model | Search | Implemented (boundary and registry; no trained model) |
 | Grounding / Citation Validator | Check that every cited identifier exists and, structurally, whether cited evidence bears on the claim | Rewrite the user's request | Implemented (structural: `chakaso.citation` presence + `chakaso.grounding` supported/unsupported, ADR-0015); semantic support checking planned |
-| Reassessment Engine | Compare previous claims with new evidence and decide retain/qualify/correct | Silently rewrite history | Planned |
+| Reassessment Engine | Compare previous claims with new evidence and decide retain/qualify/correct | Silently rewrite history | Implemented (structural foundation: decide / reassess / record / metrics, ADR-0016; produces no revised prose — there is no model — and is not wired into an automatic turn) |
 | Evaluation | Measure behaviour and detect regressions | Change production behaviour | Implemented (metric functions, a retrieval development benchmark, and structural claim/citation/grounding/answer evaluation via `evaluate_answer`; grounded/correction benchmarks planned) |
 
 A component marked "Planned" has no code. Configuration, the model boundary, the
 evidence records, conversation state and manager, local ingestion, lexical retrieval, the
 bounded opt-in fetcher, the retrieval development benchmark and the claim / citation /
-grounding / answer-evaluation primitives are implemented;
+grounding / answer-evaluation primitives and the correction foundation are implemented;
 [`agent/CURRENT_STATE.md`](agent/CURRENT_STATE.md) is the authority, including on
 the fact that the only implementation of the model boundary is a development double
 rather than a language model, and that the grounding and citation checks are structural.
@@ -167,14 +167,14 @@ The boundaries that exist, or that the project is committed to building:
 | `ConversationManager` | conduct one turn against the model boundary; accept evidence; report the generation and citation outcome | Implemented |
 | `AnswerRecord` | answer text, cited identifiers, model and prompt versions, correction lineage | Planned |
 | Retriever / Fetcher | pluggable retrieval and fetch mechanisms | Implemented (lexical retriever behind a `Retriever` protocol; bounded opt-in fetcher behind a `Fetcher` protocol) |
-| Reassessment | previous answer plus new evidence -> retain/qualify/correct | Planned |
+| Reassessment | previous answer plus new evidence -> retain/qualify/correct | Implemented (structural foundation: retain/qualify/correct + abstain/needs_review, recorded append-only, ADR-0016; revised prose and persistence planned) |
 
 "Planned" here means there is no code, and the shape described is the specification
 to build against rather than a description of something that exists. Configuration,
 the model boundary, the evidence records, conversation state, the conversation manager,
-local ingestion, lexical retrieval and the retrieval development benchmark are
-implemented; fetching exists only behind the opt-in bounded fetcher, so a default run
-neither fetches nor reaches the network, and there is still no trained model.
+local ingestion, lexical retrieval, the retrieval development benchmark and the correction
+foundation are implemented; fetching exists only behind the opt-in bounded fetcher, so a default
+run neither fetches nor reaches the network, and there is still no trained model.
 
 ### The model boundary
 

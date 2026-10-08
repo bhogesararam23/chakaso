@@ -10,6 +10,39 @@ capability is implemented or still planned.
 
 ## Unreleased
 
+### 2026-10-08 — Correction foundation (reassessment, decision, record, metrics)
+
+**Added**
+
+- `chakaso.correction`: the reassessment foundation `docs/correction.md` specifies, built on the
+  claim and grounding boundaries rather than a parallel one (ADR-0016).
+  - `decide_claim` maps a claim's prior status and its status under new evidence onto a per-claim
+    **retain / qualify / correct** disposition under a rule written in full: a claim is corrected
+    only when the supplied evidence *contradicts* it, never because it was produced first or has
+    aged — ADR-0015's refusal to rank by recency or authority is inherited.
+  - `decide_answer` aggregates the dispositions into one answer-level `CorrectionDecision` under a
+    fixed precedence — a contradiction outranks all; an unadjudicated conflict or an unsettled
+    required claim goes to **needs_review** rather than guessing; lost support **qualifies**; total
+    loss of grounding **abstains**; otherwise **retain**.
+  - `reassess` re-runs a `GroundingEvaluator` over a prior answer's claims against a caller-composed
+    pack and returns the `Reassessment`.
+  - `record_reassessment` fixes a reassessment into an immutable, content-derived `CorrectionRecord`
+    naming the answer it supersedes; `is_revision` reports a supersession only when the decision
+    changed *and* a prior is named.
+  - `correction_metrics` reports correction success, unjustified-persistence and unnecessary-revision
+    rates over a caller-labelled set, exposing the raw counts so a rate cannot hide a thin
+    denominator; a rate with no cases is `None`, never a fabricated `0.0` or `1.0`.
+
+**Notes**
+
+- Correction decides and records; it does not rewrite the answer. With no language model, `summary`
+  is a structural tally rather than a revised sentence, the revised prose stays a model step that
+  does not exist, nothing is persisted (there is no `AnswerRecord`), and the loop is not automatic —
+  a caller invokes reassessment on evidence it supplies.
+- The metrics are decision-agreement rates against a supplied label, not a claim that a revised
+  answer is correct. No correction benchmark has been run and no measured correction result exists.
+- ADR-0016 records the decision rule and its honesty constraints.
+
 ### 2026-10-08 — Claim, citation, grounding and answer-evaluation foundation
 
 **Added**

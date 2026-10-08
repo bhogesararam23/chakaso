@@ -113,9 +113,19 @@ structural citation validation and a grounding boundary are in place (`chakaso.c
 only when a caller supplies that judgement). `evaluate_answer` keeps these as separate
 dimensions.
 
-What does **not** exist is the reassessment path itself: nothing takes a previous answer plus
-new evidence, compares the claims, decides retain / qualify / correct, produces a revised
-answer, or records the change. The `AnswerRecord` type that would carry `correction_of` does
-not exist, and no correction loop runs. The status of this area is **Planned**, and the design
-above is the specification to build against. The claim and grounding primitives are its
-inputs, not its implementation.
+The **reassessment foundation** now exists (`chakaso.correction`, ADR-0016): a fixed, written
+rule turns a prior claim's status and its status under new evidence into retain / qualify /
+correct, an aggregation adds the answer-level abstain and needs-review outcomes, `reassess` runs
+it over the grounding boundary, `record_reassessment` fixes the outcome into an append-only
+`CorrectionRecord`, and `correction_metrics` reports success, unjustified-persistence and
+unnecessary-revision rates over a caller-labelled set. It recognises a contradiction rather than
+defending the earlier answer, and nothing in it corrects for recency or source order.
+
+So most of the contract is real: comparison, classification, per-claim and answer-level decision,
+and recording are **Implemented**. What is **Planned** is the rest of the loop — the automatic
+trigger (nothing decides on its own that a turn needs reassessment), the *revised answer* itself
+(producing the new wording needs a language model, which does not exist, so the record carries a
+decision and a structural summary, not a rewritten sentence), and durable persistence (the
+`correction_of` lineage lives inside an in-memory `CorrectionRecord`; there is no `AnswerRecord`
+and nothing is stored). A caller invokes reassessment on evidence it supplies; the system does not
+yet do it to itself.
