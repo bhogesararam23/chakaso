@@ -30,8 +30,11 @@ wrong".
 - **Source provenance.** Which sources and chunks were used, with canonical URL,
   title, domain and retrieval time. This comes from the retrieval layer, never
   from generated text ([ADR-0003](decisions/ADR-0003-evidence-identifier-ownership.md)).
-- **Support relationships.** Which evidence was treated as supporting which claim,
-  where a validator established that.
+- **Support relationships.** Which evidence was treated as supporting which claim, and
+  *how* that was established: a structural check can say a claim cited supplied evidence
+  (and, where a case declared expected evidence, the right evidence); whether the source
+  actually *proves* the claim is a semantic judgement that, today, only a caller-supplied
+  fixture can make (ADR-0015, ADR-0019). The evaluator that produced a status is recorded.
 - **Uncertainty, qualitatively.** Whether sources agree, conflict, or do not
   address the question.
 - **Assumptions.** Where an answer depends on something the system assumed rather
@@ -91,9 +94,13 @@ which unsupported claims were avoided — is a metric, not a slogan
 | Behaviour | Status |
 | --- | --- |
 | Source provenance records | Implemented (data model) |
-| Citation resolution from identifiers | Partly implemented |
-| Qualitative uncertainty language | Planned |
+| Citation resolution from identifiers | Implemented (resolution rejects unknown identifiers; ADR-0003) |
+| Structural citation validation (valid / unknown / irrelevant / uncited) | Implemented (`chakaso.citation`) |
+| Claim decomposition and evaluation status | Implemented (`chakaso.claims`; status is supplied-evidence support, never truth) |
+| Support relationships (structural) | Implemented (`chakaso.grounding`); semantic support is a boundary with a fixture-only judge (ADR-0019) |
+| Answer records and correction lineage | Implemented (in-memory append-only store, `chakaso.answers`, ADR-0017/0018); durable persistence planned |
+| Correction decisions and records | Implemented (decision rule + append-only `CorrectionRecord`, ADR-0016); revised *prose* needs a model that does not exist |
+| Qualitative uncertainty language | Planned (no language model to phrase it) |
 | Assumption and limitation reporting | Planned |
-| Correction notices | Planned |
-| Calibrated confidence | Research — no calibration procedure exists |
-| Claim-level support verification | Planned |
+| Calibrated confidence | Research — no calibration procedure exists; no number is shown |
+| Semantic claim-support verification | Planned (only the boundary exists; no real semantic evaluator) |

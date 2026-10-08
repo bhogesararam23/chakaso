@@ -192,20 +192,23 @@ was not measured, it is not written down.
 | Unit and contract tests | Implemented |
 | Repository hygiene tests | Implemented |
 | Grounded-answer benchmark | Planned |
-| Correction benchmark | Planned |
+| Correction benchmark | Implemented (`chakaso.benchmark.correction`; scores the decision rule over synthetic labelled cases — not real-world correction quality) |
 | Retrieval development benchmark (schema, loader, fixtures, runner, reports) | Implemented (`chakaso.benchmark`) |
 | Metric functions (recall@k, precision@k, MRR, duplicate + unresolved-reference counts, latency observation) | Implemented (`chakaso.evaluation`) |
 | Retrieval metrics *on a benchmark* | Implemented (development fixtures; a pinned-fingerprint regression guards the corpus) |
 | Citation metrics | Implemented (`chakaso.citation`; structural precision/recall and counts, never semantic support) |
 | Claim representation and extraction boundary | Implemented (`chakaso.claims`; deterministic/structured extraction stands in for a model, status is evaluation not truth, ADR-0014) |
 | Grounding evaluation (structural) | Implemented (`chakaso.grounding`; supported / unsupported / not_evaluated, ADR-0015; contradicted / uncertain only via a supplied judgement) |
-| Answer-evaluation combiner (separate dimensions, `evidence_coverage`, `is_grounded`) | Implemented (`chakaso.evaluation.evaluate_answer`) |
+| Semantic grounding evaluator boundary | Implemented (boundary + adapter, `chakaso.grounding`, ADR-0019) — **Experimental**: the only judge is a caller-supplied fixture, not a real semantic evaluator |
+| Answer evaluation (separate dimensions, `evidence_coverage`, `is_grounded`) | Implemented (`chakaso.evaluation.evaluate_answer`) |
+| Answer record and append-only store | Implemented (in-memory, `chakaso.answers`, ADR-0017/0018); durable persistence planned |
+| Experiment records & regression baseline | Implemented (`chakaso.experiments`, ADR-0020); reproducible result fingerprints, deterministic compatible-version comparison; no model-quality claim |
 | Red-team suite | Planned |
 | Standard model benchmarks | Planned |
-| Regression gates beyond unit tests | Planned |
-| Any measured result | Retrieval development metrics only (synthetic fixtures); no model-quality result |
+| Regression gates beyond unit tests | Partially implemented (pinned-fingerprint benchmark regressions and a deterministic experiment baseline comparison; statistical significance deliberately not built) |
+| Any measured result | Retrieval and correction development metrics only (synthetic fixtures); no model-quality result |
 
 No model-quality or general-performance number appears anywhere in this repository,
-because none has been measured. The retrieval development benchmark produces retrieval
-metrics at run time over synthetic fixtures; those are a development instrument, not a
-result about answers.
+because none has been measured. The retrieval and correction development benchmarks
+produce their metrics at run time over synthetic fixtures; those are a development
+instrument, not a result about answers or about real-world correction skill.

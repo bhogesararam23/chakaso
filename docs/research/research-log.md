@@ -151,3 +151,43 @@ the machinery now exists while the semantic capability and any real measurement 
 `GroundingEvaluator` boundary — can set `contradicted`/`uncertain` reliably enough to replace a
 supplied judgement, and whether the correction rule holds against real conflicts once a model
 produces the answers being corrected.
+
+---
+
+## 2026-10-08 — Persistence, reassessment, a semantic boundary and reproducible experiments
+
+**Observation.** Answer identity turned out to be a different kind of decision from evidence
+identity. Everything else in the system derives identifiers from content (ADR-0007), but an answer
+is a runtime event: a corrected answer that happens to repeat the original wording must stay
+distinguishable from the one it supersedes, so a content hash is the wrong tool and a per-event
+random identifier is the right one (ADR-0017). The reproducibility the content hash would have
+given is instead carried by the transcript and the deterministic benchmark version, not the id.
+
+**Observation.** Making persistence a boundary (`AnswerStore`) before building any backend let the
+correction history, the conversation manager and the experiment layer all be written against the
+append-only invariants — no overwrite, no dangling or cross-conversation correction — once, in the
+store, rather than at every call site. The in-memory implementation is enough to test those
+invariants now and leaves a durable one as a drop-in (ADR-0018), so no storage schema is frozen
+before a real workload asks for one.
+
+**Decision recorded.** The semantic grounding capability is specified as a *boundary* whose only
+implementation is a caller-supplied fixture, deliberately not a keyword-overlap heuristic dressed
+up as entailment (ADR-0019). The line ADR-0015 drew — structure is not understanding — is held by
+naming the fixture in every result, so a report cannot mistake a replayed relation for judgement.
+
+**Observation.** Separating an experiment's reproducibility fingerprint from its environment
+metadata was the point of the experiment layer: the same run on the same code reproduces the same
+`result_id` seconds later on a different host, while a change to configuration, benchmark version,
+evaluator or the metrics moves it (ADR-0020). Folding the clock or host into the identity would
+have made every run "different" and destroyed exactly the reproducibility being checked.
+
+**Interpretation.** The correction development benchmark is the first place the decision rule is
+exercised end to end against labelled expectations, and it can fail: a test that corrupts a case's
+expectation flips the run red, which is the pre-condition for a green run meaning anything. This
+narrowed K-001 for the correction path the way the retrieval benchmark did for retrieval — a
+labelled synthetic set, not a real workload.
+
+**Limitation.** No experiment testing a hypothesis about a model has been run. Every benchmark and
+experiment number here is computed over small synthetic fixtures and scores a rule or a retriever,
+not answer quality; there is still no language model, and the semantic boundary has no real judge.
+K-001 stands.

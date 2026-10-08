@@ -2,9 +2,11 @@
 
 ## What you can actually run
 
-Two things: `chakaso chat`, a conversation shell that exercises the conversation plumbing
-end to end, and `chakaso retrieve`, which ingests named local documents and runs lexical
-retrieval over them.
+Several things, all local and offline: `chakaso chat`, a conversation shell that exercises the
+conversation plumbing end to end; `chakaso retrieve`, which ingests named local documents and runs
+lexical retrieval over them; `chakaso benchmark retrieval` and `chakaso benchmark correction`, which
+run the development benchmarks and print their reports; `chakaso experiment run <subject>`, which
+produces a reproducible experiment result; and `chakaso config show` / `chakaso --version`.
 
 **There is no language model in Chakaso.** The only implementation of the model
 boundary is a deterministic development double, which returns fixed text describing
@@ -15,9 +17,13 @@ not an answer.
 
 Retrieval exists but is **local and lexical**: it reads the files you name, normalizes
 and chunks them, and ranks them for a query with BM25 — shared words only, no embeddings
-and no meaning. There is no web fetching, no correction loop, no tokenizer and no
-training code. `chakaso config show` inspects configuration, and `chakaso --version`
-verifies an install.
+and no meaning. Below it, claim/citation/grounding evaluation, a correction decision rule with
+reassessment, an in-memory answer store and reproducible experiment records exist as tested code —
+but there is still no language model, no web fetching on any default path (the fetcher is opt-in),
+no automatic correction loop, no tokenizer and no training code. The benchmark and experiment
+commands report development metrics computed over small synthetic fixtures, not model-quality or
+real-world results. `chakaso config show` inspects configuration, and `chakaso --version` verifies an
+install.
 
 This document describes how to install, verify and run what exists. It will grow as
 the system does, and it will not describe anything that does not exist.
@@ -169,6 +175,27 @@ model to turn retrieved chunks into prose — and an empty result says so plainl
 than inventing evidence. Only plain text and Markdown (`.txt`, `.md`, `.markdown`) are
 read; any other format is refused rather than mangled into text.
 
+## Running the development benchmarks and an experiment
+
+```bash
+# score the lexical retriever over the retrieval development benchmark
+python -m chakaso benchmark retrieval            # add --json for machine-readable output
+python -m chakaso benchmark retrieval --top-k 5
+
+# check the correction decision rule over its development benchmark
+python -m chakaso benchmark correction           # add --json for machine-readable output
+
+# run a baseline experiment and print its reproducible, content-fingerprinted result
+python -m chakaso experiment run correction --json
+```
+
+These run the same library code the tests cover. Every report labels itself a **development**
+instrument: the corpora are small and synthetic, the numbers are computed over those fixtures at run
+time, and none is a claim about real-world retrieval, grounding, correction or model quality. Output
+is deterministic and offline. Because there is no language model, the correction benchmark scores a
+decision rule over labelled cases, not generated answers, and an experiment result is a
+reproducible record of that measurement.
+
 ## Running without installing
 
 The package uses a `src/` layout, so `python -c "import chakaso"` from the
@@ -219,7 +246,16 @@ src/chakaso/           package source
   models/              language-model boundary, capabilities, registry
   evidence/            source records, evidence chunks, packs, citation resolution
   retrieval/           normalization, chunking, ingestion, corpus, lexical index and retrieval
-  conversation/        immutable conversation state
+  conversation/        immutable conversation state, conversation manager
+  claims/              claim representation and extraction boundary
+  citation/            structural citation validation and metrics
+  grounding/           grounding evaluators (structural, manual, semantic boundary)
+  evaluation/          metric functions and the answer-evaluation combiner
+  correction/          decision rule, reassessment, records, metrics, application service
+  benchmark/           versioned cases, fixtures, retrieval and correction runners and reports
+  answers/             answer identity, records and the append-only answer store
+  experiments/         experiment and result records, the runner, regression comparison
+  cli.py               thin command-line entry point
 tests/                 unit, contract and repository-hygiene tests
 configs/               versioned configuration files
 docs/                  documentation (see docs/README.md)

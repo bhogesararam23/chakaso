@@ -1,6 +1,6 @@
 # Current state
 
-Last updated: 2026-10-08, at commit `feat: run the retrieval development benchmark from the command line`.
+Last updated: 2026-10-08, at commit `docs: record the persistence, reassessment, semantic-evaluation and experiment foundation`.
 
 This file is the authority on what exists. If it disagrees with any other
 document, this file is right and the other document is a defect.
@@ -14,11 +14,11 @@ A private planning note is never evidence that something is implemented.
 | Repository conventions | `.gitignore`, `.gitattributes`, `.editorconfig` | Private docx pack excluded by `.gitignore` and guarded by a test |
 | License | `LICENSE` | Apache-2.0; rationale in ADR-0004 |
 | Public documentation | `README.md`, `docs/*.md`, `docs/research/` | Specifications with mandatory status labels |
-| Decision records | `docs/decisions/` | ADR-0001 to ADR-0016 |
+| Decision records | `docs/decisions/` | ADR-0001 to ADR-0020 |
 | Contribution guide | `CONTRIBUTING.md` | |
 | Agent contract | `AGENTS.md`, `docs/agent/` | |
 | Python package | `src/chakaso/` | Installs; typed; `py.typed` ships |
-| CLI | `src/chakaso/cli.py` | `--version`, `info`, `config show`, `chat`, `retrieve`, `benchmark` |
+| CLI | `src/chakaso/cli.py` | `--version`, `info`, `config show`, `chat`, `retrieve`, `benchmark retrieval|correction`, `experiment run` |
 | Configuration | `src/chakaso/config/`, `configs/default.toml` | Typed schema, explicit loading, per-value provenance |
 | Core primitives | `src/chakaso/core/` | Content-derived identifiers, SHA-256 hashing, error base |
 | Model boundary | `src/chakaso/models/` | `LanguageModel` protocol, capabilities, registry, contract tests |
@@ -38,14 +38,16 @@ A private planning note is never evidence that something is implemented.
 | Web fetcher | `src/chakaso/retrieval/acquire.py`, `policy.py`, `netguard.py` | Opt-in, bounded HTTP fetch under a `FetchPolicy`; scheme/size/redirect/timeout/destination rules. Off every default path (ADR-0012) |
 | Web ingestion & cache | `src/chakaso/retrieval/html.py`, `web.py`, `cache.py` | Narrow HTML reader turns fetched bytes into the same evidence records as a local file; an opt-in in-memory cache avoids refetching |
 | Evaluation | `src/chakaso/evaluation/` | Pure metric functions (recall@k, precision@k, MRR, duplicate + unresolved-reference counts, latency observation), and `evaluate_answer`, which combines citation and grounding results into separate answer-evaluation dimensions (`evidence_coverage`, `is_grounded`). No merged quality score and no model-quality number |
-| Benchmark | `src/chakaso/benchmark/` | Versioned case schema, strict JSONL/manifest loader, synthetic development fixtures, a retrieval runner and text/JSON reports. A development instrument, not a scientific benchmark |
+| Benchmark | `src/chakaso/benchmark/` | Versioned case schema, strict JSONL/manifest loader, synthetic development fixtures, a retrieval runner and reports; a correction benchmark (cases, dataset versioning, a runner over `reassess`, per-case + aggregate metrics, text/JSON reports, pinned fingerprint). Development instruments, not scientific benchmarks |
 | Claims | `src/chakaso/claims/` | Immutable `Claim` with a content-derived `ClaimId` and a `ClaimStatus` that records what the supplied evidence supports — never truth. A replaceable `ClaimExtractor` boundary (structured + a documented sentence heuristic) and claim/evidence links (ADR-0014). No trained extractor |
 | Citation validation | `src/chakaso/citation/` | Structural citation checks against a supplied pack (valid / unknown / irrelevant / uncited) plus citation precision/recall. Decides presence and expected-match, never that a source proves a claim |
-| Grounding | `src/chakaso/grounding/` | `GroundingEvaluator` boundary: a structural evaluator (supported / unsupported / not_evaluated) and a manual evaluator that is the only path to contradicted / uncertain; a `Contradiction` names no winner (ADR-0015) |
-| Correction foundation | `src/chakaso/correction/` | The reassessment decision rule (retain / qualify / correct / abstain / needs_review, ADR-0016), `reassess` over the grounding boundary, an append-only `CorrectionRecord`, structural correction metrics, and a follow-up helper (`reassess_followup`) that composes standing + new evidence. Decides and records; produces no revised prose (there is no model) and is not wired into an automatic loop |
-| Tests | `tests/` | ~716 tests at the commit recorded above: package, CLI (incl. `retrieve` and `benchmark`), configuration, identifiers and hashing, source identity, model boundary, evidence, normalization, chunking, ingestion, corpus, lexical retrieval, retrieval orchestration, end-to-end pipeline, fetch policy and netguard, HTML/web ingestion, cache, evaluation metrics and answer evaluation, benchmark identity/cases/loader/fixtures/runner/report, claims/extract/links, citation validation, grounding, correction decision/reassess/record/metrics/follow-up, security and determinism regressions, conversation state and manager, repository hygiene. The count ages; `python -m pytest` does not. |
+| Grounding | `src/chakaso/grounding/` | `GroundingEvaluator` boundary: a structural evaluator (supported / unsupported / not_evaluated) and a manual evaluator that is the only path to contradicted / uncertain; a `Contradiction` names no winner (ADR-0015). A `SemanticJudge` / `SemanticGroundingEvaluator` boundary exists (ADR-0019) but its only implementation is a caller-supplied fixture — no real semantic judgement |
+| Answers & persistence | `src/chakaso/answers/` | `AnswerId` is a per-event typed identifier, not a content hash (ADR-0017). An immutable `AnswerRecord` ties turn + model + evidence + claims + evaluation + a `correction_of` link by reference. `AnswerStore` boundary + in-memory `InMemoryAnswerStore`, append-only with integrity checks (ADR-0018). **No database; nothing persists across a process** |
+| Correction foundation | `src/chakaso/correction/` | The reassessment decision rule (retain / qualify / correct / abstain / needs_review, ADR-0016), `reassess` over the grounding boundary, an append-only `CorrectionRecord`, structural correction metrics, a follow-up helper (`reassess_followup`), and an application-level `reassess_stored_answer` / `reassess_and_record` over a stored answer. Decides and records; produces no revised prose (there is no model) and is not wired into an automatic loop |
+| Experiments | `src/chakaso/experiments/` | `Experiment` (hypothesis + benchmark + configuration) and a content-fingerprinted, environment-separated `ExperimentResult`; `run_experiment` drives a development benchmark; `compare_results` is a deterministic regression baseline that refuses incompatible versions (ADR-0020). No tracker, no database, no model |
+| Tests | `tests/` | ~799 tests at the commit recorded above: package, CLI (incl. `retrieve`, `benchmark` and `experiment`), configuration, identifiers and hashing, source identity, model boundary, evidence, normalization, chunking, ingestion, corpus, lexical retrieval, retrieval orchestration, end-to-end pipeline, fetch policy and netguard, HTML/web ingestion, cache, evaluation metrics and answer evaluation, benchmark identity/cases/loader/fixtures/runner/report and the correction benchmark, claims/extract/links, citation validation, grounding and the semantic boundary, correction decision/reassess/record/metrics/follow-up/service, answer identity/record/store and conversation integration, experiments (model/runner/compare), security/determinism/reproducibility regressions, conversation state and manager, repository hygiene. The count ages; `python -m pytest` does not. |
 | CI | `.github/workflows/ci.yml` | Green on Python 3.11, 3.12, 3.13 |
-| Dense retrieval, persistence, an automatic correction loop | **do not exist** | An opt-in bounded fetcher and a narrow HTML reader exist (off the default path); the correction *foundation* exists, but there are no embeddings, no persistent store, and no reassessment that runs itself |
+| Dense retrieval, durable persistence, an automatic correction loop | **do not exist** | An opt-in bounded fetcher and a narrow HTML reader exist (off the default path). The correction *foundation*, an in-memory answer store, a correction development benchmark and reproducible experiment records exist — but there are no embeddings, no store that survives a process, and no reassessment that runs itself |
 
 ## What works
 
@@ -163,6 +165,31 @@ A private planning note is never evidence that something is implemented.
   `CorrectionRecord` that supersedes an earlier answer; `correction_metrics` reports success,
   unjustified-persistence and unnecessary-revision rates over a caller-labelled set. With no
   model, nothing generates revised wording, and no turn triggers reassessment by itself.
+- An answer can be recorded as a durable-by-design `AnswerRecord` and looked up: `chakaso.answers`
+  gives a per-event `AnswerId` (not a content hash, ADR-0017), an immutable record that references
+  the turn, model, evidence, claims, evaluation and a `correction_of` link, and an `AnswerStore`
+  whose in-memory implementation is append-only and refuses to overwrite a saved answer or to link
+  a correction to a missing or cross-conversation answer (ADR-0018). Nothing is written to disk.
+- A completed turn can be persisted atomically: given a store and a claim extractor,
+  `ConversationManager.send` builds and saves the `AnswerRecord` *before* adopting the new
+  conversation, so a persistence failure aborts the turn and leaves the conversation unchanged
+  (ADR-0008 extended to the record). Without a store the turn behaves exactly as before.
+- Reassessment is an application operation over a *stored* answer: `reassess_stored_answer` /
+  `reassess_and_record` take an `AnswerId` and new evidence, re-ground the recorded claims, and
+  return a decision and a `CorrectionRecord` linked to the prior. The follow-up boundary is
+  identifier-addressed — no natural-language reference resolver is pretended.
+- A semantic grounding *boundary* exists (`SemanticJudge` / `SemanticGroundingEvaluator`,
+  ADR-0019) and composes into answer evaluation and reassess without changing their signatures, so
+  grounding stays a separate dimension from citation. Its only implementation is a caller-supplied
+  `FixtureSemanticJudge`; it names no winner in a conflict and there is no real semantic judge.
+- A correction development benchmark runs (`chakaso.benchmark.correction`): synthetic cases whose
+  expected decision (retain / correct / qualify / needs_review / abstain) the written rule is
+  checked against, scored per case and in aggregate, reported as deterministic text/JSON that labels
+  itself a development instrument, with a pinned-fingerprint regression.
+- Reproducible experiments (`chakaso.experiments`): `run_experiment` drives a development benchmark
+  into a content-fingerprinted `ExperimentResult` whose `result_id` ignores the timestamp and host;
+  `compare_results` gives a deterministic regression baseline that refuses incompatible benchmark or
+  evaluator versions. `chakaso benchmark` and `chakaso experiment run` expose these from the CLI.
 - CI runs all of the above on three Python versions, with no secrets and no network
   access to a model provider.
 
@@ -188,8 +215,11 @@ says anything else.
 
 ## What is experimental
 
-Nothing. There is no code whose approach is unsettled; the code that exists does
-one small thing each.
+The semantic grounding boundary (ADR-0019) and the experiment/comparison layer (ADR-0020) are
+new research scaffolding: implemented, typed and tested, but with only a fixture semantic judge and
+no validated real-workload use. The correction development benchmark scores a decision rule over
+synthetic cases, not measured capability. None of these is a claim that the approach works on real
+data — that is K-001, and it stands. The code that exists still does one small thing each.
 
 ## What is not implemented
 
@@ -200,26 +230,24 @@ one small thing each.
   URLs to fetch; the fetcher is only ever handed an explicit URL.
 - Dense embeddings, a vector index and reranking: retrieval is lexical only, matching
   shared words and no meaning
-- Semantic claim-support checking. Claims, structural citation validation and structural
-  grounding exist (`chakaso.claims`, `chakaso.citation`, `chakaso.grounding`): a claim's
-  citation can be checked for presence and expected-match and marked supported or unsupported.
-  Whether the cited source actually *proves* the claim — and automatic contradiction or
-  uncertainty detection — does not exist; those statuses appear only when a caller supplies a
-  judgement.
-- An automatic correction loop and a revised answer. The reassessment *foundation* exists
-  (`chakaso.correction`: the decision rule, `reassess`, the record and structural metrics) and is
-  invoked by a caller on evidence it supplies; nothing decides on its own when to reassess,
-  nothing generates the revised prose (there is no model), and no correction is persisted.
-  Correction is not part of a conversation turn.
-- A general evaluation harness and model benchmarks. A retrieval development benchmark and
-  metric functions exist, as do structural claim, citation and grounding evaluation and an
-  `evaluate_answer` combiner; the grounded-answer and correction *benchmarks* and any
-  model-quality measurement do not. Structural evaluation checks references and set
-  membership, not meaning.
+- A real semantic judge. A semantic grounding *boundary* exists (`chakaso.grounding`, ADR-0019)
+  but its only implementation replays caller-supplied relations; nothing decides automatically that
+  evidence proves or contradicts a claim. Whether a cited source actually *proves* a claim — and
+  automatic contradiction or uncertainty detection — does not exist.
+- An automatic correction loop and a revised answer. Reassessment is now an application operation
+  over a stored answer and there is a correction development benchmark, but nothing decides on its
+  own that a turn needs reassessing, nothing generates revised prose (there is no model), and no
+  answer or correction is persisted to disk. Correction is not part of an automatic conversation
+  turn.
+- A general evaluation harness and model benchmarks. Retrieval and correction development
+  benchmarks, metric functions, and structural claim/citation/grounding/answer evaluation exist;
+  a *real* grounded-answer benchmark and any model-quality measurement do not. All benchmark
+  numbers are over synthetic fixtures and check structure, not meaning.
 - Tokenizer, dataset pipeline, model code, training loop
 - A local inference adapter, and any model weights of any size
-- Persistence of any kind. Conversation state lives in memory for the duration of the
-  process.
+- Durable persistence. The answer store, correction records and experiment results are in-memory
+  or serializable; the runtime writes nothing to disk and no record survives a process. A database
+  or file backend is a future `AnswerStore` implementation, deliberately not built yet.
 
 ## Decisions made
 
@@ -241,6 +269,10 @@ one small thing each.
 | ADR-0014 | A claim is a first-class, content-identified unit; status is evaluation, not truth |
 | ADR-0015 | Grounding is a boundary; structural evaluation never claims semantic support |
 | ADR-0016 | The correction decision is an explicit, evidence-driven rule |
+| ADR-0017 | Answer identity is a per-event identifier, not a content hash |
+| ADR-0018 | Answer persistence is an append-only store boundary, in-memory for now |
+| ADR-0019 | Semantic grounding is a boundary with only a fixture implementation today |
+| ADR-0020 | Experiments are content-fingerprinted, environment-separated research artifacts |
 
 Two process facts are recorded outside the ADR series because they are repository
 history rather than architecture:
@@ -259,14 +291,21 @@ architectural decision made so far rests on reasoning rather than measurement.
 
 ## Next step
 
-Retrieval, the retrieval development benchmark, the claim / citation / grounding / answer-
-evaluation primitives, and the correction *foundation* (the decision rule, reassessment, the
-append-only record and structural metrics) are built and tested. The next units are thin
-integration, not new machinery: exercising reassessment as a follow-up over a prior answer's
-claims, and surfacing the benchmark — and, where useful, evaluation and validation — through the
-CLI so the development instrument is runnable from the command line. Both stay offline and
-deterministic.
+Retrieval, the retrieval and correction development benchmarks, the claim / citation / grounding /
+answer-evaluation primitives, the correction decision rule with an application-level reassessment
+over stored answers, an in-memory answer store wired atomically into a turn, a fixture-only
+semantic grounding boundary, and reproducible experiment records with a deterministic regression
+baseline are all built and tested. The next real units, in order:
 
-There is still no language model, so nothing generates an answer to revise and no correction
-produces new prose; and there is no automatic loop — reassessment is invoked by a caller. See
-[`ACTIVE_TASK.md`](ACTIVE_TASK.md) for the definition of done.
+1. **Durable persistence** — a file or database `AnswerStore` and a persisted `AnswerRecord` with
+   `correction_of`, so a correction history survives a process and can be replayed (K-007).
+2. **A real semantic judge** — implement the `SemanticJudge` boundary with something beyond a
+   fixture (a trained model or a validated human process), measured against the fixture relations the
+   benchmark already labels.
+3. **A triggered follow-up** — decide *when* a turn warrants reassessment, building on the
+   identifier-addressed boundary already in place, still without pretending natural-language
+   reference resolution exists.
+
+All three stay behind the existing boundaries, so none requires redesigning what is here. There is
+still no language model: nothing generates an answer, produces revised prose, or runs a real
+semantic judgement. See [`ACTIVE_TASK.md`](ACTIVE_TASK.md) for the definition of done.

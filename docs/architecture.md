@@ -98,7 +98,7 @@ Each component owns one thing and must not grow into its neighbour.
 | Component | Responsibility | Must not own | Status |
 | --- | --- | --- | --- |
 | Configuration | Declare, load and validate versioned settings, and report where each value came from | Component behaviour | Implemented |
-| Conversation Manager | Conduct one turn: accept the user's message, project context, call the model, validate, record the answer | Model-specific logic; retrieval; correction | Implemented (orchestration only) |
+| Conversation Manager | Conduct one turn: accept the user's message, project context, call the model, validate, record the answer; optionally persist it as an `AnswerRecord` | Model-specific logic; retrieval; correction; the storage mechanism | Implemented (orchestration; atomic answer recording when a store is given, ADR-0008/0018) |
 | Query Planner | Decide whether retrieval is useful; formulate retrieval queries while preserving intent | Source truth | Planned |
 | Retriever | Find candidate documents and chunks | Generate the final answer | Implemented (lexical BM25: ADR-0010 chunking; dense is planned) |
 | Fetcher | Retrieve permitted public content under an explicit policy | Interpret facts | Implemented (bounded, opt-in: ADR-0012) |
@@ -106,15 +106,17 @@ Each component owns one thing and must not grow into its neighbour.
 | Chunker | Produce stable evidence units with positions | Rank claims | Implemented (Markdown structure, no overlap: ADR-0010) |
 | Ranker | Order candidate evidence | Generate the answer | Planned |
 | Evidence Store | Persist source and chunk records, metadata and hashes | Produce user-facing prose | Planned |
+| Answer Store | Persist answer records and their correction lineage, append-only | Produce prose; own the correction decision | Implemented (in-memory; durable backend planned, ADR-0018) |
 | Model Adapter | Uniform interface to any local or future model | Search | Implemented (boundary and registry; no trained model) |
-| Grounding / Citation Validator | Check that every cited identifier exists and, structurally, whether cited evidence bears on the claim | Rewrite the user's request | Implemented (structural: `chakaso.citation` presence + `chakaso.grounding` supported/unsupported, ADR-0015); semantic support checking planned |
+| Grounding / Citation Validator | Check that every cited identifier exists and, structurally, whether cited evidence bears on the claim | Rewrite the user's request | Implemented (structural: `chakaso.citation` presence + `chakaso.grounding` supported/unsupported, ADR-0015). A semantic grounding boundary exists (ADR-0019) but its only judge is a caller-supplied fixture — no real semantic support checking |
 | Reassessment Engine | Compare previous claims with new evidence and decide retain/qualify/correct | Silently rewrite history | Implemented (structural foundation: decide / reassess / record / metrics, ADR-0016; produces no revised prose — there is no model — and is not wired into an automatic turn) |
-| Evaluation | Measure behaviour and detect regressions | Change production behaviour | Implemented (metric functions, a retrieval development benchmark, and structural claim/citation/grounding/answer evaluation via `evaluate_answer`; grounded/correction benchmarks planned) |
+| Evaluation | Measure behaviour and detect regressions | Change production behaviour | Implemented (metric functions; retrieval and correction development benchmarks; structural claim/citation/grounding/answer evaluation; reproducible experiment records with a deterministic regression baseline, ADR-0020; a real grounded-answer benchmark and model-quality measurement planned) |
 
 A component marked "Planned" has no code. Configuration, the model boundary, the
 evidence records, conversation state and manager, local ingestion, lexical retrieval, the
 bounded opt-in fetcher, the retrieval development benchmark and the claim / citation /
-grounding / answer-evaluation primitives and the correction foundation are implemented;
+grounding / answer-evaluation primitives, the correction foundation with an in-memory answer store,
+the fixture-only semantic grounding boundary and reproducible experiment records are implemented;
 [`agent/CURRENT_STATE.md`](agent/CURRENT_STATE.md) is the authority, including on
 the fact that the only implementation of the model boundary is a development double
 rather than a language model, and that the grounding and citation checks are structural.
@@ -163,17 +165,21 @@ The boundaries that exist, or that the project is committed to building:
 | `Claim` / `ClaimStatus` | an answer decomposed into content-identified units; status records supplied-evidence support, not truth | Implemented (`chakaso.claims`, ADR-0014) |
 | Citation validation | claim citations -> valid / unknown / irrelevant, plus uncited required claims | Implemented (`chakaso.citation`; structural) |
 | `GroundingEvaluator` | claims + pack -> a per-claim grounding status (structural today; a supplied judgement for contradicted/uncertain) | Implemented (`chakaso.grounding`, ADR-0015) |
+| `SemanticJudge` | claim + evidence -> supported / contradicted / uncertain / not_evaluated | Implemented (boundary + adapter, ADR-0019; the only judge is a caller-supplied fixture, not a real semantic evaluator) |
 | `Conversation` | turns with provenance, active topic, entities, open questions, prior sources | Implemented |
 | `ConversationManager` | conduct one turn against the model boundary; accept evidence; report the generation and citation outcome | Implemented |
-| `AnswerRecord` | answer text, cited identifiers, model and prompt versions, correction lineage | Planned |
+| `AnswerRecord` | answer text, cited identifiers, model, claims, evaluation, correction lineage | Implemented (`chakaso.answers`, ADR-0017; per-event id; durable persistence planned) |
+| `AnswerStore` | append-only save / get / list / history with integrity checks | Implemented (in-memory, ADR-0018; a file/database backend is a future implementation of this boundary) |
 | Retriever / Fetcher | pluggable retrieval and fetch mechanisms | Implemented (lexical retriever behind a `Retriever` protocol; bounded opt-in fetcher behind a `Fetcher` protocol) |
-| Reassessment | previous answer plus new evidence -> retain/qualify/correct | Implemented (structural foundation: retain/qualify/correct + abstain/needs_review, recorded append-only, ADR-0016; revised prose and persistence planned) |
+| Reassessment | previous answer plus new evidence -> retain/qualify/correct | Implemented (an application operation `reassess_stored_answer` over a stored answer, ADR-0016; revised prose and a durable store planned) |
 
 "Planned" here means there is no code, and the shape described is the specification
 to build against rather than a description of something that exists. Configuration,
 the model boundary, the evidence records, conversation state, the conversation manager,
-local ingestion, lexical retrieval, the retrieval development benchmark and the correction
-foundation are implemented; fetching exists only behind the opt-in bounded fetcher, so a default
+local ingestion, lexical retrieval, the retrieval and correction development benchmarks, the
+correction foundation, the in-memory answer store, the fixture-only semantic grounding boundary and
+the experiment records are
+implemented; fetching exists only behind the opt-in bounded fetcher, so a default
 run neither fetches nor reaches the network, and there is still no trained model.
 
 ### The model boundary
@@ -201,10 +207,10 @@ run neither fetches nor reaches the network, and there is still no trained model
 
 ## Data flow for one turn
 
-Steps 1, 3, 4, 5 and 6 exist. Steps 2 and 7 do not. The consequence: the retrieval
-pipeline is built and produces an evidence pack, but nothing decides *for* a turn whether
-to retrieve — a caller runs `RetrievalService` and passes the pack to `send`. `chakaso
-chat` does not wire that in, so a chat turn resolves no citations on its own.
+Steps 1, 3, 4, 5, 6 and 7 exist (step 7 as an in-memory record, not a durable one); step 2 does
+not. The consequence: the retrieval pipeline is built and produces an evidence pack, but nothing
+decides *for* a turn whether to retrieve — a caller runs `RetrievalService` and passes the pack to
+`send`. `chakaso chat` does not wire that in, so a chat turn resolves no citations on its own.
 
 1. The Conversation Manager appends the user turn and projects the recent
    conversation into model messages. Reference resolution against state ("this",
@@ -229,12 +235,13 @@ chat` does not wire that in, so a chat turn resolves no citations on its own.
    identifiers as errors, and attaches source metadata to the surviving
    references. This exists as `resolve_citations`, and the conversation manager runs
    it on every answer.
-7. **Not implemented.** The answer and its metadata are recorded as an
-   `AnswerRecord`. Nothing about the retrieval or model provenance is discarded.
-   Today the model's identity is reported in the reply and the assistant turn records
-   which evidence was supplied and which sources were cited, but no record persists
-   across turns, so a model identifier is not recoverable from conversation state
-   alone.
+7. **Implemented (in-memory).** When the manager is given an `AnswerStore`, the answer is recorded
+   as an immutable `AnswerRecord` — model identity (and whether it is a development double), the
+   evidence supplied, the claims and their evaluation, and a `correction_of` link — and saved
+   before the conversation is adopted, so a persistence failure aborts the turn (ADR-0018). Nothing
+   is written to disk, so the record does not survive the process; durable persistence remains
+   planned. Without a store, only the assistant turn (which evidence was supplied and which
+   sources were cited) is recorded in conversation state, as before.
 
 ## Storage
 

@@ -31,9 +31,14 @@ ingestion of explicitly supplied text and Markdown, an in-memory corpus, and a
 deterministic lexical (BM25) retriever that ranks into an evidence pack, reachable through
 `chakaso retrieve`. An opt-in, bounded web fetcher and a narrow HTML reader turn a fetched
 page into the same evidence records, but fetching is off every default path. Retrieval is
-lexical only — shared words, no embeddings, no semantic search. There is still no
-correction loop, no tokenizer and no training code, and no benchmark number exists, because
-nothing has been measured against a dataset.
+lexical only — shared words, no embeddings, no semantic search. Below retrieval the system has a
+measurement and correction spine: claim / citation / grounding evaluation and an answer-evaluation
+combiner, a correction decision rule with an application-level reassessment over stored answers, an
+in-memory append-only answer store, a fixture-only semantic grounding boundary, a correction
+development benchmark, and reproducible experiment records with a deterministic regression baseline.
+There is still no language model, no tokenizer, no training code, and no automatic correction loop;
+the only numbers that exist are development metrics the retrieval and correction benchmarks compute
+over small synthetic fixtures — not model-quality or real-workload results.
 
 The status vocabulary used across this documentation is:
 
@@ -59,12 +64,15 @@ The status vocabulary used across this documentation is:
 | Lexical retrieval (BM25), orchestration into an evidence pack, and `chakaso retrieve` | Implemented |
 | Web fetch (opt-in, bounded) and narrow HTML ingestion | Implemented (off every default path; not a browser) |
 | Evaluation metric functions | Implemented (recall@k, precision@k, MRR, duplicate + citation counts) |
+| Claim / citation / grounding evaluation and the answer-evaluation combiner | Implemented (structural; status is supplied-evidence support, never truth. Semantic grounding is a boundary with a fixture-only judge) |
+| Correction decision rule, reassessment, append-only records and a correction development benchmark | Implemented (foundation: scores the rule over synthetic cases; no revised prose, no automatic loop) |
+| Persistent answers and application-level reassessment | Implemented (in-memory append-only store, ADR-0017/0018); durable persistence planned |
+| Reproducible experiments and a regression baseline | Implemented (development, ADR-0020); no model-quality result |
 | Dense embeddings, vector index and reranking | Planned |
-| Claim-level support checking and the correction loop | Planned |
 | Tokenizer training | Planned |
 | Tiny from-scratch Transformer | Planned |
 | Any trained Chakaso weights | Does not exist |
-| Evaluation harness and benchmarks | Planned (metric functions exist; no dataset or measured result) |
+| Real evaluation harness and model benchmarks | Planned (retrieval and correction development benchmarks exist; no real-workload or model-quality measurement) |
 
 Nothing in this list is aspirational language. If a row says Planned, there is no
 code for it. "Implemented" means the code exists and is covered by tests; in several

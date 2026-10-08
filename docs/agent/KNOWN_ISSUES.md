@@ -99,22 +99,23 @@ already depend on, which is the retrofit the project has been avoiding.
 
 **What would close it:** the evaluation layer, item 6 of the current plan.
 
-### K-007 — An answer's model identity is not recoverable from the transcript
+### K-007 — Answer records do not survive a process
 
-**Impact:** Low now, higher as soon as two models are compared.
+**Impact:** Low now, higher as soon as a correction history must be audited across runs.
 
-The reply reports which model produced an answer and whether it was a development
-double. The assistant turn records which evidence was supplied and which sources
-were cited, but not the model. A transcript alone therefore cannot answer "which
-model said this", which is the first question a comparison between two models
-raises.
+`chakaso.answers` records each answer as an immutable `AnswerRecord` with its model identity
+(including whether that model is a development double), evidence, claims, evaluation and a
+`correction_of` link, and `ConversationManager` can save it atomically per turn. But the only
+`AnswerStore` is in-memory, so nothing survives process exit — a transcript cannot be replayed or
+audited later, and "which model said this" is recoverable only within a run.
 
-**Why it is deferred:** the correction *foundation* (decision, reassessment, an in-memory record)
-exists, but the durable `AnswerRecord` it points to does not — that is the next unit, and
-designing the persisted record before a second model compares against it is the retrofit the
-project avoids.
+**Why it is deferred:** a durable backend is the next unit, behind the existing `AnswerStore`
+boundary (ADR-0018), and freezing a storage schema before a real workload needs one is the
+premature commitment the project avoids. The boundary is what makes this an addition, not a
+redesign.
 
-**What would close it:** the `AnswerRecord` type and a run that uses two adapters.
+**What would close it:** a durable `AnswerStore` implementation and a run that replays a correction
+chain from it across a restart.
 
 ## Resolved
 

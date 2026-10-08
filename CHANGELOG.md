@@ -10,6 +10,84 @@ capability is implemented or still planned.
 
 ## Unreleased
 
+### 2026-10-08 — Reproducible experiments and a regression baseline
+
+**Added**
+
+- `chakaso.experiments`: an `Experiment` (an identifier, a name, a **hypothesis**, the development
+  benchmark it runs, and a configuration) and a content-fingerprinted `ExperimentResult` that keeps
+  environment metadata separate from the measured numbers. `run_experiment` drives a real
+  development benchmark and records its metrics, dataset identity/version and the evaluator(s) that
+  decided; `result_id` fingerprints everything that determines the number and ignores the timestamp
+  and host, so the same experiment reproduces identically on the same code. `compare_results` is a
+  deterministic regression baseline that refuses to compare results defined differently (different
+  benchmark version, configuration, evaluator or experiment) rather than subtracting unlike metrics.
+  `baseline_experiment` supplies the canonical retrieval and correction baselines.
+- `chakaso experiment run <retrieval|correction> [--json]` prints a reproducible experiment result.
+
+**Notes**
+
+- No experiment tracker, database or external service is introduced (ADR-0020, ADR-0001): results
+  are serializable records a person commits, not persisted by the runtime. No statistical
+  significance machinery — a delta over a handful of synthetic fixtures is not a confidence interval.
+
+### 2026-10-08 — Semantic grounding boundary (fixture only)
+
+**Added**
+
+- `chakaso.grounding` gains a semantic grounding *boundary*: a per-claim `SemanticJudge` protocol
+  (`judge(claim, evidence) -> SemanticEvaluation` over supported / contradicted / uncertain /
+  not_evaluated), a `SemanticGroundingEvaluator` that adapts a judge onto the existing
+  `GroundingEvaluator`, and a `FixtureSemanticJudge` that replays caller-supplied relations
+  (ADR-0019). Answer evaluation and reassessment accept a semantic evaluator with no signature
+  change, and grounding stays a separate dimension from citation.
+
+**Notes**
+
+- The only judge is a fixture, named `fixture-semantic-0.1` so a report cannot read it as
+  understanding. No real semantic capability is claimed, no numeric confidence is introduced, and a
+  named conflict still records no winner — resolving a conflict stays correction's job (ADR-0015).
+
+### 2026-10-08 — Correction development benchmark
+
+**Added**
+
+- `chakaso.benchmark.correction`: `CorrectionCase` / `CorrectionDataset` apply the retrieval
+  benchmark's versioning discipline (ADR-0013) to correction — content-derived case versions and a
+  dataset fingerprint make a judgement edit a visible version change. Six synthetic cases cover every
+  reachable decision (retain, correct, qualify, needs_review, abstain, and an irrelevant-evidence
+  retain). `CorrectionBenchmarkRunner` builds real evidence packs from the shared fixture corpus and
+  runs the same `reassess` the application uses, choosing structural or fixture-semantic purely from
+  what a case declares; reports (text and deterministic JSON) give per-case expected-vs-actual and the
+  aggregate metrics, and a pinned-fingerprint regression guards the curated set.
+- `chakaso benchmark` now takes a subject: `retrieval` or `correction` (`--json` for both).
+
+### 2026-10-08 — Persistent answers and application-level reassessment
+
+**Added**
+
+- `chakaso.answers`: a first-class `AnswerRecord` — model identity, evidence supplied, cited
+  sources/chunks, claims, evaluation and a `correction_of` link — referencing the other layers by
+  identifier rather than duplicating them. `AnswerId` is a per-event typed identifier, not a content
+  hash, so a corrected answer is always distinguishable from the one it supersedes (ADR-0017).
+  `AnswerStore` is the persistence boundary with an in-memory implementation that is append-only and
+  refuses to overwrite a saved answer or to link a correction to a missing or cross-conversation
+  answer (ADR-0018).
+- `ConversationManager` optionally records a turn's `AnswerRecord` and saves it *before* adopting
+  the new conversation, so a persistence failure aborts the turn and leaves the conversation
+  unchanged — extending ADR-0008's atomicity to the answer history. Without a store, behaviour is
+  unchanged.
+- `chakaso.correction` gains an application-level operation, `reassess_stored_answer` /
+  `reassess_and_record`, that reads a prior answer by identifier, re-grounds its recorded claims
+  against caller-composed evidence, and pairs the decision with a `CorrectionRecord` linked to it.
+  `reassess_followup` / `merge_evidence` compose standing plus new evidence deterministically.
+
+**Notes**
+
+- Nothing generates revised prose (there is no model), nothing runs reassessment automatically, and
+  nothing is written to disk — the store is in-memory and lost on process exit. A prompt-injection and
+  untrusted-text identity guard and a no-network import check were extended to cover the new layers.
+
 ### 2026-10-08 — Benchmark from the command line
 
 **Added**
