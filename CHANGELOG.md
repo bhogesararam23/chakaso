@@ -10,6 +10,34 @@ capability is implemented or still planned.
 
 ## Unreleased
 
+### 2026-10-08 — Retrieval development benchmark
+
+**Added**
+
+- `chakaso.benchmark`: a versioned benchmark the retrieval metrics can actually be run
+  against. `BenchmarkCase` names gold (acceptable) and forbidden (unacceptable) evidence by
+  the same `ChunkId`/`SourceId` retrieval returns, plus required/forbidden claims, an
+  expected behaviour (answer/qualify/abstain) and a citation requirement; a forbidden set is
+  what catches citation laundering. A strict loader parses JSONL cases plus a `manifest.toml`,
+  refusing unknown/missing/malformed fields by name.
+- Identity and versioning (ADR-0013): a readable `CaseId`/`DatasetId` slug that survives
+  edits, and a content-derived version/fingerprint that cannot drift from what it labels.
+- A curated synthetic fixture corpus and `development_benchmark`, whose gold evidence is
+  resolved by ingesting the same corpus the runner searches, so identifiers always match and
+  the build is fully deterministic.
+- `RetrievalBenchmarkRunner` scores the retrieval service over a dataset into recall@k,
+  precision@k, MRR, hit rate, forbidden hits, false retrievals and duplicates, keeping
+  scored and abstention cases distinct. `format_report`/`report_json` render a run with its
+  provenance, labelled a development instrument.
+
+**Notes**
+
+- This measures retrieval only, against a small hand-built synthetic corpus. It is a
+  development instrument, not a scientific benchmark: no confidence interval or significance
+  test is computed, no answer is evaluated, and no model-quality number is reported.
+- A pinned-fingerprint regression fails if any fixture or case judgement changes, forcing a
+  deliberate dataset-version bump rather than a silent edit.
+
 ### 2026-10-08 — Retrieval evaluation metric functions
 
 **Added**

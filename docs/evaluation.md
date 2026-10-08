@@ -55,6 +55,16 @@ has something to be validated against.
 
 ## Benchmark design
 
+### Retrieval development benchmark
+
+A versioned, hand-built benchmark exists (`chakaso.benchmark`): a case schema with
+gold/forbidden evidence, a strict loader, a small synthetic fixture corpus, a runner that
+scores the retrieval service, and reports that label themselves a *development*
+instrument. It measures retrieval against carefully shaped cases (single-source,
+multi-source, distractor, conflict, outdated, missing evidence, false premise, ambiguity,
+injection text) and nothing else. It is not a scientific benchmark and its numbers are not
+claims about answer quality.
+
 ### Grounded-answer benchmark
 
 A fixed set of questions with authoritative evidence. Each example records:
@@ -105,8 +115,10 @@ For language-model benchmarks, the intent is to use an existing harness
 one. Chakaso-specific behaviour — retrieval, grounding, citations, correction,
 follow-ups — needs its own suite, because no general harness measures those.
 
-No benchmark has been run. No harness has been wired up
-([`research/open-questions.md`](research/open-questions.md)).
+No language-model benchmark has been run. A **retrieval development benchmark** exists and
+runs (`chakaso.benchmark`, `docs`/tests only), reporting retrieval metrics over synthetic
+fixtures; it is not evidence of model quality. The standard-model harness is still to be
+wired up ([`research/open-questions.md`](research/open-questions.md)).
 
 ## Confidence
 
@@ -159,13 +171,16 @@ was not measured, it is not written down.
 | Repository hygiene tests | Implemented |
 | Grounded-answer benchmark | Planned |
 | Correction benchmark | Planned |
+| Retrieval development benchmark (schema, loader, fixtures, runner, reports) | Implemented (`chakaso.benchmark`) |
 | Metric functions (recall@k, precision@k, MRR, duplicate + unresolved-reference counts, latency observation) | Implemented (`chakaso.evaluation`) |
-| Retrieval metrics *on a benchmark* | Planned (functions exist; no dataset to run them on) |
+| Retrieval metrics *on a benchmark* | Implemented (development fixtures; a pinned-fingerprint regression guards the corpus) |
 | Citation metrics | Planned |
 | Red-team suite | Planned |
 | Standard model benchmarks | Planned |
 | Regression gates beyond unit tests | Planned |
-| Any measured result | None exist |
+| Any measured result | Retrieval development metrics only (synthetic fixtures); no model-quality result |
 
-No benchmark number appears anywhere in this repository, because none has been
-measured.
+No model-quality or general-performance number appears anywhere in this repository,
+because none has been measured. The retrieval development benchmark produces retrieval
+metrics at run time over synthetic fixtures; those are a development instrument, not a
+result about answers.
