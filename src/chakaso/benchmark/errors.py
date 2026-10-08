@@ -6,6 +6,7 @@ from chakaso.core.errors import ChakasoError
 
 __all__ = [
     "BenchmarkError",
+    "BenchmarkFileError",
     "DuplicateCaseError",
     "IncompatibleBenchmarkError",
     "InvalidCaseError",
@@ -70,4 +71,13 @@ class IncompatibleBenchmarkError(BenchmarkError):
     A result must be traceable to the exact judgements behind it; running against, or
     recording a result for, a dataset the caller did not intend is how a benchmark number
     silently stops meaning what its label says.
+    """
+
+
+class BenchmarkFileError(BenchmarkError):
+    """A benchmark file is missing, unreadable, or is not the format it claims to be.
+
+    Covers the manifest and the JSONL case file: a directory with no manifest, a manifest
+    missing a required field, or a case file that cannot be read is a configuration fault a
+    developer must see, not an empty benchmark that runs and reports nothing.
     """

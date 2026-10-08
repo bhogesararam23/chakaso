@@ -22,6 +22,7 @@ from chakaso.benchmark.cases import BenchmarkCase, BenchmarkCategory, ExpectedBe
 from chakaso.benchmark.dataset import BenchmarkDataset
 from chakaso.benchmark.errors import (
     BenchmarkError,
+    BenchmarkFileError,
     DuplicateCaseError,
     IncompatibleBenchmarkError,
     InvalidCaseError,
@@ -35,12 +36,20 @@ from chakaso.benchmark.identity import (
     canonical_json,
     content_version,
 )
+from chakaso.benchmark.loader import (
+    dataset_from_rows,
+    load_cases,
+    load_dataset_from_directory,
+    parse_case,
+    parse_jsonl,
+)
 
 __all__ = [
     "BenchmarkCase",
     "BenchmarkCategory",
     "BenchmarkDataset",
     "BenchmarkError",
+    "BenchmarkFileError",
     "CaseId",
     "DatasetId",
     "DuplicateCaseError",
@@ -52,4 +61,9 @@ __all__ = [
     "UnknownCaseError",
     "canonical_json",
     "content_version",
+    "dataset_from_rows",
+    "load_cases",
+    "load_dataset_from_directory",
+    "parse_case",
+    "parse_jsonl",
 ]
