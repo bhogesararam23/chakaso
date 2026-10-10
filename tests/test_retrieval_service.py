@@ -20,6 +20,7 @@ from chakaso.retrieval import (
     RetrievalError,
     RetrievalResult,
     RetrievalService,
+    RetrievalStrategy,
     ingest_text,
 )
 
@@ -173,7 +174,15 @@ class _StubRetriever:
     ) -> tuple[RetrievalResult, ...]:
         if top_k < 1:
             return ()
-        return (RetrievalResult(chunk=self._chunk, score=99.0, rank=1, matched_terms=("stub",)),)
+        return (
+            RetrievalResult(
+                chunk=self._chunk,
+                score=99.0,
+                rank=1,
+                strategy=RetrievalStrategy.LEXICAL,
+                matched_terms=("stub",),
+            ),
+        )
 
 
 def test_a_custom_retriever_can_be_injected() -> None:
@@ -211,7 +220,11 @@ def test_a_source_the_corpus_lacks_is_caught() -> None:
 
     class _OrphanRetriever:
         def retrieve(self, query, *, top_k, source_ids=None):
-            return (RetrievalResult(chunk=orphan, score=1.0, rank=1, matched_terms=()),)
+            return (
+                RetrievalResult(
+                    chunk=orphan, score=1.0, rank=1, strategy=RetrievalStrategy.LEXICAL
+                ),
+            )
 
     with pytest.raises(RetrievalError, match="no source"):
         RetrievalService(corpus, retriever=_OrphanRetriever()).search("x", top_k=1)

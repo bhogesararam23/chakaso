@@ -1,67 +1,69 @@
 # Active task
 
-## Current unit: P11 — dense retrieval boundary and an exact dense index
+## Current unit: P12 — hybrid retrieval (rank fusion)
 
-**Goal.** Introduce a dense retrieval *architecture* behind the existing `Retriever` boundary.
-Define an `EmbeddingModel` protocol (`embed(texts) -> vectors`, plus dimensionality, model identity
-and normalization information), and a **deterministic fixture provider** that stands in for a real
-embedding model — declared, in its own name and metadata, as a development double, never as a
-"semantic" embedding. Implement an exact, in-memory dense index (cosine or dot similarity,
-deterministic tie-breaking, empty-index and duplicate handling) and a `DenseRetriever` that returns
-the same `RetrievalResult` shape as the lexical retriever, with the retrieval strategy that produced
-each result identified.
+**Goal.** Build a hybrid retriever that composes the two retrievers that now exist — lexical
+BM25 and dense similarity — into one ranking through a transparent, deterministic fusion,
+Reciprocal Rank Fusion as the starting method. It implements the existing `Retriever` protocol,
+returns a single `RetrievalResult` sequence tagged `hybrid`, and preserves per-component
+provenance: for each fused result, the lexical rank and score (when present), the dense rank and
+score (when present), the final fused score and the final rank. Fusion configuration (method,
+candidate pool size, final top-k, any component weighting) uses the existing typed config system,
+not a second mechanism. Once it exists, the query planner's `hybrid` mode becomes backed and
+selectable.
 
-**Why this is next.** The deterministic query planner can now name `dense` and `hybrid` but refuses to
-emit them, because no retriever backs them (ADR-0022). Building the dense boundary and an exact index
-is what makes those modes honest to select. The first milestone is the *abstraction plus a CPU-only,
-dependency-free implementation* — not a downloaded embedding model.
+**Why this is next.** The dense retriever now backs `dense` (ADR-0023); `hybrid` is the only
+named-but-refused mode left. Fusing lexical and dense is the standard way to combine their
+complementary strengths, and building it now — over an exact lexical and exact dense retriever —
+keeps the whole retrieval stack deterministic and testable before anything wires it into a turn.
 
-## What the previous unit completed (P10 — deterministic query planner)
+## What the previous unit completed (P11 — dense retrieval boundary and exact index)
 
-Implemented, tested, documented and green on Python 3.11–3.13. It is a typed decision layer, not a
-model, and it is not yet wired into the conversation runtime.
+Implemented, tested, documented and green on Python 3.11–3.13. It makes the dense *shape* real, not
+dense *quality*.
 
-- [x] `chakaso.planning`: a `QueryPlanner` protocol with one implementation,
-      `DeterministicQueryPlanner` (ADR-0022). A future planner replaces it behind the same signature.
-- [x] A frozen, inspectable `QueryPlan`: mode, `retrieval_required`, original + normalized query,
-      prior-source constraints, `top_k`, a reuse flag, `context_used`, `explanation`, and a
-      `planner_version`. Construction refuses a plan that would misreport itself.
-- [x] Meaning-preserving `normalize_query` (whitespace, Unicode NFC, trailing terminal punctuation;
-      no word/case/interior-punctuation change), storing both original and normalized forms.
-- [x] Documented, testable rules: empty → no retrieval; follow-up (conversation prior sources + topic
-      overlap or anaphoric cue) → lexical retrieval constrained to prior sources; information cue or
-      `?` → fresh lexical retrieval; otherwise → none. Retrieval is genuinely optional.
-- [x] `QueryMode` names `none`/`lexical`/`dense`/`hybrid`; the planner refuses `dense`/`hybrid` because
-      they are not backed yet. The no-network import guard covers the package.
-- [x] `CURRENT_STATE`, `architecture` (data-flow steps 2 and 7 and the Query Planner row),
-      `CHANGELOG` and the decisions index synced.
+- [x] `chakaso.retrieval.embeddings`: an `EmbeddingModel` protocol (`metadata` + batch `embed`) with
+      `EmbeddingVector` (fixed-length, finite) and `EmbeddingMetadata` carrying an explicit
+      `is_semantic` flag. The only implementation, `FixtureEmbeddingModel`, is a deterministic hashed
+      bag-of-tokens double declared `is_semantic=False` / `development_double=True` — never called
+      semantic (ADR-0023).
+- [x] `chakaso.retrieval.dense`: an exact in-memory `DenseIndex` (uniform dimension, no duplicate
+      chunk) and a `DenseRetriever`, a second `Retriever` implementation ranking by cosine/dot
+      similarity. No approximate index and no ML dependency; both are deferred until measured need.
+- [x] `RetrievalResult` now carries a required `strategy` (`lexical`/`dense`/`hybrid`); a dense result
+      reports empty `matched_terms` rather than inventing term overlaps.
+- [x] Because a dense retriever exists, `DeterministicQueryPlanner` now accepts `dense` and still
+      refuses `hybrid` until this unit builds the fusion layer.
+- [x] `CURRENT_STATE`, `architecture`, `retrieval` (status table and a corrected stale sentence),
+      `CHANGELOG`, the decisions index and ADR-0023 synced.
 
 ## What this unit is not
 
-- Not a real semantic embedding. The dense provider is a deterministic fixture / development double;
-  a hash or trivial vector must never be described as a semantic embedding, and dense results from it
-  support no claim about understanding.
-- Not hybrid fusion. Combining lexical and dense is the next unit (P-hybrid); this unit only makes a
-  dense retriever exist behind the `Retriever` protocol.
-- Not heavyweight dependencies. No FAISS, no model download, no GPU. The index is an exact CPU
-  implementation in the standard library; an embedding model stays optional and behind the boundary.
-- Not the retrieval-aware runtime. Wiring the planner and retrievers into a turn is P12.
+- Not learned or semantic fusion. The fusion is a written, deterministic formula (RRF or a documented
+  weighted variant), independently testable and configurable — no model ranks the merge.
+- Not a real embedding model. Dense candidates come from the same non-semantic fixture double; a
+  hybrid benchmark run over it is labelled a synthetic development instrument and may not be reported
+  as dense/hybrid superiority on meaning.
+- Not the retrieval-aware runtime. Wiring planner → retrievers into a conversation turn is the next
+  unit; this one only makes a `hybrid` result exist behind the `Retriever` protocol.
 
 ## Ordering after this unit
 
-1. Hybrid retrieval: a transparent, deterministic fusion (reciprocal rank fusion as the starting
-   point) over lexical and dense, preserving each component's rank and score as provenance, with a
-   typed weight/candidate-k/top-k configuration (P13).
-2. A retrieval-aware conversation runtime routing a turn through planner → retrieval → model →
-   AnswerRecord → durable store, retrieval optional and turn atomicity preserved (P14).
+1. A retrieval-aware conversation runtime routing a turn through planner → retrieval → model → claims →
+   citation validation → grounding → `AnswerRecord` → durable store, retrieval optional and turn
+   atomicity preserved; the planner's decision and the retrieval strategy become structured,
+   inspectable metadata on the answer (P13).
+2. Benchmark and experiment expansion comparing lexical / dense / hybrid over the synthetic fixtures,
+   labelled honestly as fixture/synthetic, using the existing experiment framework for regression
+   comparison — only measured results, never invented ones (P14).
 3. A real semantic judge behind `SemanticJudge`, then a triggered follow-up that decides *when* to
    reassess.
 4. A local CPU model adapter, then the tokenizer, dataset pipeline and a tiny Transformer.
 
 ## Known gaps that bound this unit
 
-- K-001: nothing has been measured against a real workload; every benchmark here is synthetic. A
-  fixture dense provider makes the *shape* real, not the retrieval quality.
+- K-001: nothing has been measured against a real workload; every benchmark here is synthetic, and
+  dense/hybrid over a fixture embedding proves the mechanism, not retrieval quality.
 - K-007 (closed by ADR-0021): answers persist across a restart; the runtime does not yet select the
   durable store by itself.
 - K-008: the fetcher's destination screen is partial; fetching stays opt-in and offline by default.

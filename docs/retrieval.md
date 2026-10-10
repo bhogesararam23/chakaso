@@ -333,7 +333,8 @@ evidence textually and structurally.
 | Chunking | Implemented |
 | Lexical retrieval (BM25 index, deterministic ranking, explanations) | Implemented |
 | Retrieval orchestration (query → ranked EvidencePack) | Implemented |
-| Dense embeddings and vector index | Planned |
+| Dense retrieval: `EmbeddingModel` boundary, exact dense index, `DenseRetriever` behind `Retriever` | Implemented (`chakaso.retrieval.embeddings`/`dense`, ADR-0023) — the only embedding is a deterministic, **non-semantic** development double; results are tagged with their producing strategy |
+| A real semantic embedding model, and an approximate (FAISS-like) vector index | Planned |
 | Reranking | Planned |
 | Claim-level support checking | Planned |
 | Retrieval metric functions (recall@k, precision@k, MRR, duplicate + citation counts) | Implemented (`chakaso.evaluation`) |
@@ -341,9 +342,9 @@ evidence textually and structurally.
 
 The records, the pack and resolution are implemented and tested without any
 network access: a record is built from content a caller already has. A lexical retriever
-and an in-memory corpus now exist, but there is no fetcher, so nothing has been
-retrieved from the web — retrieval operates on content a caller ingests from disk or
-supplies.
+and an in-memory corpus now exist. A bounded, opt-in fetcher
+*can* reach the web, but it is off every default path, so a default run neither fetches nor touches
+the network — retrieval operates on content a caller ingests from disk or supplies.
 
 No retrieval metric has been measured. Any number appearing in this repository's
 documentation would be invented; there are none.

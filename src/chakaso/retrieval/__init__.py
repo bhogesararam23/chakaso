@@ -11,9 +11,12 @@ them normalize deterministically and split into evidence chunks with stable iden
 section paths and positions.
 
 Ingestion reads only the single file a caller names. It never crawls a directory, never
-walks a filesystem, and never reads a file because it happens to exist. Retrieval is
-lexical: it matches shared words and nothing more — no embeddings, no vector index, no
-model and no query planning. Web content is reached only through an opt-in, bounded
+walks a filesystem, and never reads a file because it happens to exist. The retriever
+boundary has two implementations: lexical BM25 (shared words, nothing more), and a dense
+exact similarity index over an `EmbeddingModel` boundary — whose only embedding today is a
+deterministic development double that is *not* semantic (ADR-0023), so a dense result is
+token overlap under a different metric, not understanding. Query planning lives outside this
+package (`chakaso.planning`). Web content is reached only through an opt-in, bounded
 fetcher (ADR-0012) that is off every default path: no code here touches the network, and
 CI runs fully offline.
 """
@@ -32,6 +35,15 @@ from chakaso.retrieval.acquire import (
 from chakaso.retrieval.cache import AcquisitionCache, CachingFetcher
 from chakaso.retrieval.chunking import ChunkingConfig, Section, chunk_document, split_sections
 from chakaso.retrieval.corpus import Corpus
+from chakaso.retrieval.dense import DenseIndex, DenseRetriever, build_dense_index
+from chakaso.retrieval.embeddings import (
+    EmbeddingMetadata,
+    EmbeddingModel,
+    EmbeddingVector,
+    EmbedModelError,
+    FixtureEmbeddingModel,
+    SimilarityMetric,
+)
 from chakaso.retrieval.errors import (
     AcquisitionError,
     BlockedDestinationError,
@@ -70,6 +82,7 @@ from chakaso.retrieval.lexical import (
 from chakaso.retrieval.normalize import normalize_document
 from chakaso.retrieval.policy import MAX_ALLOWED_SCHEMES, FetchPolicy
 from chakaso.retrieval.service import DEFAULT_TOP_K, RetrievalOutcome, RetrievalService
+from chakaso.retrieval.strategy import RetrievalStrategy
 from chakaso.retrieval.web import ingest_acquired
 
 __all__ = [
@@ -90,11 +103,18 @@ __all__ = [
     "ContentDecodingError",
     "Corpus",
     "CorpusError",
+    "DenseIndex",
+    "DenseRetriever",
     "DocumentTooLargeError",
     "DocumentUnavailableError",
+    "EmbedModelError",
+    "EmbeddingMetadata",
+    "EmbeddingModel",
+    "EmbeddingVector",
     "FetchPolicy",
     "FetchTimeoutError",
     "Fetcher",
+    "FixtureEmbeddingModel",
     "HttpFetcher",
     "IngestedDocument",
     "IngestionError",
@@ -108,12 +128,15 @@ __all__ = [
     "RetrievalOutcome",
     "RetrievalResult",
     "RetrievalService",
+    "RetrievalStrategy",
     "Retriever",
     "Section",
+    "SimilarityMetric",
     "Transport",
     "TransportResponse",
     "UnsupportedContentTypeError",
     "UnsupportedDocumentError",
+    "build_dense_index",
     "build_lexical_index",
     "chunk_document",
     "ingest_acquired",

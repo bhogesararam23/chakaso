@@ -15,9 +15,10 @@ Three properties the rest of the system depends on:
   runs, and ties are broken by chunk identifier, never by dictionary order.
 * **An inspectable boundary.** :class:`Retriever` is a protocol; a later retriever
   implements it and nothing above has to change.
-* **Honest explanation.** A result carries only what the retriever actually computed —
-  matched terms, a score, a rank. It computes no confidence and claims no understanding,
-  and the score is a ranking artefact, not a probability that anything is true.
+* **Honest explanation.** A result carries only what the retriever actually computed — the
+  strategy that produced it, matched terms, a score, a rank. It computes no confidence and
+  claims no understanding, and the score is a ranking artefact, not a probability that
+  anything is true.
 """
 
 from __future__ import annotations
@@ -32,6 +33,7 @@ from typing import Final, Protocol, runtime_checkable
 from chakaso.core.identifiers import SourceId
 from chakaso.evidence import EvidenceChunk
 from chakaso.retrieval.errors import RetrievalError
+from chakaso.retrieval.strategy import RetrievalStrategy
 
 __all__ = [
     "DEFAULT_B",
@@ -64,12 +66,20 @@ def tokenize(text: str) -> tuple[str, ...]:
 
 @dataclass(frozen=True, slots=True)
 class RetrievalResult:
-    """One ranked chunk, with only the explanation the retriever actually computed."""
+    """One ranked chunk, with only the explanation the retriever actually computed.
+
+    ``strategy`` records which mechanism produced the result — a lexical match, a dense
+    similarity, or a hybrid fusion — so evaluation can attribute a hit to its source rather
+    than infer it from the retriever object that ran (ADR-0022/ADR-0023). ``matched_terms``
+    is what a lexical match actually overlapped; a dense result matched no terms and leaves
+    it empty, because inventing term overlaps it did not compute would be a false explanation.
+    """
 
     chunk: EvidenceChunk
     score: float
     rank: int
-    matched_terms: tuple[str, ...]
+    strategy: RetrievalStrategy
+    matched_terms: tuple[str, ...] = ()
 
 
 @runtime_checkable
@@ -208,7 +218,13 @@ class LexicalRetriever:
         scored.sort(key=lambda item: (-item[0], item[1].chunk_id))
 
         return tuple(
-            RetrievalResult(chunk=chunk, score=score, rank=rank, matched_terms=matched)
+            RetrievalResult(
+                chunk=chunk,
+                score=score,
+                rank=rank,
+                strategy=RetrievalStrategy.LEXICAL,
+                matched_terms=matched,
+            )
             for rank, (score, chunk, matched) in enumerate(scored[:top_k], start=1)
         )
 

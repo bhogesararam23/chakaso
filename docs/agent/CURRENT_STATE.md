@@ -14,7 +14,7 @@ A private planning note is never evidence that something is implemented.
 | Repository conventions | `.gitignore`, `.gitattributes`, `.editorconfig` | Private docx pack excluded by `.gitignore` and guarded by a test |
 | License | `LICENSE` | Apache-2.0; rationale in ADR-0004 |
 | Public documentation | `README.md`, `docs/*.md`, `docs/research/` | Specifications with mandatory status labels |
-| Decision records | `docs/decisions/` | ADR-0001 to ADR-0022 |
+| Decision records | `docs/decisions/` | ADR-0001 to ADR-0023 |
 | Contribution guide | `CONTRIBUTING.md` | |
 | Agent contract | `AGENTS.md`, `docs/agent/` | |
 | Python package | `src/chakaso/` | Installs; typed; `py.typed` ships |
@@ -29,6 +29,7 @@ A private planning note is never evidence that something is implemented.
 | Ingestion | `src/chakaso/retrieval/ingest.py` | Reads one explicitly named local text/Markdown file, or supplied text, into a source record and its chunks; never crawls |
 | Corpus | `src/chakaso/retrieval/corpus.py` | In-memory set of sources and chunks for retrieval: idempotent add, deterministic enumeration, provenance guard |
 | Lexical retrieval | `src/chakaso/retrieval/lexical.py` | Deterministic BM25 index and retriever behind a `Retriever` protocol: ranking, top-k, source filter, inspectable explanations |
+| Dense retrieval | `src/chakaso/retrieval/embeddings.py`, `dense.py` | An `EmbeddingModel` boundary with a deterministic **non-semantic** fixture double, an exact in-memory dense index, and a `DenseRetriever` behind the same `Retriever` protocol; results carry the strategy that produced them (ADR-0023). No real embedding model, no vector store on disk |
 | Retrieval orchestration | `src/chakaso/retrieval/service.py` | `RetrievalService.search`: query → ranked `EvidencePack` with recorded scores and preserved provenance; an empty result makes an empty pack, never invented evidence |
 | Query planning | `src/chakaso/planning/` | A deterministic `QueryPlanner` boundary (ADR-0022): a typed `QueryPlan` (mode, normalized + original query, source constraints, top-k, reuse flag, explanation, planner version), meaning-preserving `normalize_query`, and `DeterministicQueryPlanner` deciding per turn whether to retrieve lexically, reuse the conversation's prior sources for a follow-up, or retrieve nothing. Not an LLM; dense/hybrid modes are named but refused until backed |
 | Conversation state | `src/chakaso/conversation/state.py` | Immutable, append-only turns with provenance; topic, entities and open questions |
@@ -46,9 +47,9 @@ A private planning note is never evidence that something is implemented.
 | Answers & persistence | `src/chakaso/answers/` | `AnswerId` is a per-event typed identifier, not a content hash (ADR-0017). An immutable `AnswerRecord` ties turn + model + evidence + claims + evaluation + a `correction_of` link by reference. `AnswerStore` boundary with two append-only, integrity-checked backends: in-memory `InMemoryAnswerStore` (the default) and a durable `SQLiteAnswerStore` built on the standard library (ADR-0018, ADR-0021). The durable store is proven by a test to survive a process restart, and is opt-in, so nothing writes to disk unless it is selected |
 | Correction foundation | `src/chakaso/correction/` | The reassessment decision rule (retain / qualify / correct / abstain / needs_review, ADR-0016), `reassess` over the grounding boundary, an append-only `CorrectionRecord`, structural correction metrics, a follow-up helper (`reassess_followup`), and an application-level `reassess_stored_answer` / `reassess_and_record` over a stored answer. Decides and records; produces no revised prose (there is no model) and is not wired into an automatic loop |
 | Experiments | `src/chakaso/experiments/` | `Experiment` (hypothesis + benchmark + configuration) and a content-fingerprinted, environment-separated `ExperimentResult`; `run_experiment` drives a development benchmark; `compare_results` is a deterministic regression baseline that refuses incompatible versions (ADR-0020). No tracker, no database, no model |
-| Tests | `tests/` | ~889 tests at the commit recorded above: package, CLI (incl. `retrieve`, `benchmark` and `experiment`), configuration, identifiers and hashing, source identity, model boundary, evidence, normalization, chunking, ingestion, corpus, lexical retrieval, retrieval orchestration, end-to-end pipeline, fetch policy and netguard, HTML/web ingestion, cache, evaluation metrics and answer evaluation, benchmark identity/cases/loader/fixtures/runner/report and the correction benchmark, claims/extract/links, citation validation, grounding and the semantic boundary, correction decision/reassess/record/metrics/follow-up/service, answer identity/record/store/serialization and the durable SQLite store (restart, rollback, schema, integrity) with a two-backend conformance suite and conversation integration, experiments (model/runner/compare), security/determinism/reproducibility regressions, conversation state and manager, query planning (mode/normalization/plan invariants/deterministic rules), repository hygiene. The count ages; `python -m pytest` does not. |
+| Tests | `tests/` | ~913 tests at the commit recorded above: package, CLI (incl. `retrieve`, `benchmark` and `experiment`), configuration, identifiers and hashing, source identity, model boundary, evidence, normalization, chunking, ingestion, corpus, lexical retrieval, dense retrieval (embedding double, exact index, retriever), retrieval orchestration, end-to-end pipeline, fetch policy and netguard, HTML/web ingestion, cache, evaluation metrics and answer evaluation, benchmark identity/cases/loader/fixtures/runner/report and the correction benchmark, claims/extract/links, citation validation, grounding and the semantic boundary, correction decision/reassess/record/metrics/follow-up/service, answer identity/record/store/serialization and the durable SQLite store (restart, rollback, schema, integrity) with a two-backend conformance suite and conversation integration, experiments (model/runner/compare), security/determinism/reproducibility regressions, conversation state and manager, query planning (mode/normalization/plan invariants/deterministic rules), repository hygiene. The count ages; `python -m pytest` does not. |
 | CI | `.github/workflows/ci.yml` | Green on Python 3.11, 3.12, 3.13 |
-| Dense/hybrid retrieval, retrieval wired into a turn, an automatic correction loop | **do not exist** | A deterministic query planner now exists as a standalone layer (ADR-0022) and durable SQLite answer persistence survives a restart (ADR-0021, opt-in). But there are no embeddings, the planner is not yet called by the conversation runtime, and no reassessment runs itself |
+| Hybrid retrieval, retrieval wired into a turn, an automatic correction loop | **do not exist** | A deterministic query planner (ADR-0022), durable SQLite persistence (ADR-0021, opt-in) and a dense retrieval boundary with an exact index over a **non-semantic** fixture embedding (ADR-0023) all exist. But there is no real semantic embedding, no hybrid fusion, the planner is not yet called by the runtime, and no reassessment runs itself |
 
 ## What works
 
@@ -118,6 +119,13 @@ A private planning note is never evidence that something is implemented.
   shared words only — no embeddings, no model, no network — ties break by chunk
   identifier, and a query that matches nothing returns nothing rather than inventing a
   result.
+- Chunks can also be ranked by **dense similarity** behind the same `Retriever` protocol:
+  `build_dense_index` then `DenseRetriever.retrieve` embeds the query and every chunk through an
+  `EmbeddingModel` boundary and ranks by cosine or dot similarity, returning `RetrievalResult`
+  records tagged `dense` with no invented matched terms (ADR-0023). Its only embedding is
+  `FixtureEmbeddingModel`, a deterministic hashed bag-of-tokens double declared `is_semantic=False`
+  — it exercises the boundary and reproduces exactly, but it is not semantic and a dense result from
+  it means token overlap under a different metric, not understanding.
 - A query against a corpus can be run through `RetrievalService`, which ranks chunks,
   records the retriever's score onto the pack's chunks, and assembles a valid
   `EvidencePack` with its sources; `ConversationManager.send(evidence=...)` can now be
@@ -223,6 +231,7 @@ says anything else.
 | Conversation manager | Construction and context bounds, dependency injection through the model boundary, first and follow-up turns, context projection limits, previous state preserved, failures leaving state unchanged for the next turn, model errors propagating untranslated, clock regressions, evidence and citation provenance per turn, evidence not leaking between turns, and end-to-end wiring against the deterministic double |
 | Answers and durable storage | Answer identity and record invariants, the serialization codec (round-trip, evaluation-not-persisted, malformed-document rejection), the append-only invariants run over **both** backends (in-memory and SQLite conformance), and the SQLite store's restart durability (including a separate-process write), transaction rollback, schema/version refusal, and on-disk corruption detection |
 | Query planning | Mode/retrieval-flag consistency and plan construction invariants (reuse needs sources, a retrieving plan needs a non-empty query, every plan explains itself), meaning-preserving normalization (whitespace/Unicode/trailing-punctuation, idempotent, total, interior punctuation kept), the deterministic rules over a conversational sequence (greeting → none, question → fresh, follow-up → reuse prior sources, topic change → no stale reuse), unbacked-mode refusal, and protocol conformance |
+| Dense retrieval | The fixture embedding's honest metadata (`is_semantic=False`, batch order, determinism, unit-length, zero-vector empty text), vector/metadata validation, index invariants (uniform dimension, no duplicate chunk, empty index), and the dense retriever: `dense` strategy tagging with empty matched terms, ranking/determinism, `source_ids` filter, zero-query and empty-index returning nothing, dimension-mismatch rejection, and `Retriever`-protocol conformance |
 | Repository invariants | Private pack never tracked, `.gitignore` rule present, no secret-shaped files, no tracked file over 1 MiB, no commercial provider dependency, ADR numbering and indexing, documentation links resolve |
 
 ## What is experimental
@@ -231,7 +240,9 @@ The semantic grounding boundary (ADR-0019) and the experiment/comparison layer (
 new research scaffolding: implemented, typed and tested, but with only a fixture semantic judge and
 no validated real-workload use. The correction development benchmark scores a decision rule over
 synthetic cases, not measured capability. None of these is a claim that the approach works on real
-data — that is K-001, and it stands. The code that exists still does one small thing each.
+data — that is K-001, and it stands. The code that exists still does one small thing each. The
+dense retrieval boundary (ADR-0023) is the same kind of scaffolding: a real retriever and an exact
+index, but over a non-semantic fixture embedding, so it proves the shape, not any dense quality.
 
 ## What is not implemented
 
@@ -242,8 +253,10 @@ data — that is K-001, and it stands. The code that exists still does one small
   decides, per turn, whether to retrieve and with which prior sources (ADR-0022), but the conversation
   runtime does not yet call it, and nothing decides *which* URLs to fetch; the fetcher is only ever
   handed an explicit URL.
-- Dense embeddings, a vector index and reranking: retrieval is lexical only, matching
-  shared words and no meaning
+- Dense embeddings, a real semantic embedding model, an approximate vector index and reranking:
+  a dense *boundary* and an exact in-memory index exist over a deterministic non-semantic fixture
+  embedding (ADR-0023), but there is no genuine embedding model, no approximate (FAISS-like) index,
+  and no reranking
 - A real semantic judge. A semantic grounding *boundary* exists (`chakaso.grounding`, ADR-0019)
   but its only implementation replays caller-supplied relations; nothing decides automatically that
   evidence proves or contradicts a claim. Whether a cited source actually *proves* a claim — and
@@ -289,6 +302,7 @@ data — that is K-001, and it stands. The code that exists still does one small
 | ADR-0020 | Experiments are content-fingerprinted, environment-separated research artifacts |
 | ADR-0021 | Durable answer storage is a SQLite backend behind the existing store boundary |
 | ADR-0022 | Query planning is a deterministic decision boundary, not a model |
+| ADR-0023 | Dense retrieval is an embedding boundary with an exact index; the only embedding is a non-semantic double |
 
 Two process facts are recorded outside the ADR series because they are repository
 history rather than architecture:
@@ -315,16 +329,17 @@ whether and how to retrieve (ADR-0022), a fixture-only semantic grounding bounda
 experiment records with a deterministic regression baseline are all built and tested. The next real
 units, in order:
 
-1. **Dense and hybrid retrieval** — an embedding boundary with a deterministic development double
-   behind it (not a real semantic embedding), an exact dense index, and a transparent fusion of lexical
-   and dense results, each result labelled with the strategy that produced it. This is what finally
-   backs the `dense` / `hybrid` modes the planner already names but refuses to emit.
+1. **Hybrid retrieval** — a transparent, deterministic fusion (reciprocal rank fusion to start) of
+   the now-existing lexical and dense retrievers, preserving each component's rank and score as
+   provenance, with typed weight/candidate-k/top-k configuration. This is what finally backs the
+   planner's `hybrid` mode.
 2. **A retrieval-aware conversation runtime** — wire the existing planner → retrieval → model →
    claims → citation validation → grounding → `AnswerRecord` → durable store into a turn, with
    retrieval optional and the all-or-nothing turn guarantee preserved.
 
 A **real semantic judge** (the `SemanticJudge` boundary is fixture-only today) and an **automatic,
-triggered correction** follow these. All of it stays behind the existing boundaries, so none requires
-redesigning what is here. There is still no language model: nothing generates an answer, produces
-revised prose, or runs a real semantic judgement. See [`ACTIVE_TASK.md`](ACTIVE_TASK.md) for the
-definition of done.
+triggered correction** follow these. Dense retrieval is built, but its only embedding is a
+non-semantic fixture double (ADR-0023) — a real embedding model is what would make it more. All of it
+stays behind the existing boundaries, so none requires redesigning what is here. There is still no
+language model: nothing generates an answer, produces revised prose, or runs a real semantic
+judgement. See [`ACTIVE_TASK.md`](ACTIVE_TASK.md) for the definition of done.

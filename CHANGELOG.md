@@ -10,6 +10,31 @@ capability is implemented or still planned.
 
 ## Unreleased
 
+### 2026-10-10 — Dense retrieval boundary and an exact index
+
+**Added**
+
+- `chakaso.retrieval.embeddings`: an `EmbeddingModel` boundary (`metadata` plus a batch
+  `embed(texts) -> vectors`) with `EmbeddingVector` (fixed-length, finite) and `EmbeddingMetadata`
+  that carries a decisive `is_semantic` flag. Its only implementation is `FixtureEmbeddingModel`, a
+  deterministic hashed bag-of-tokens double declared `is_semantic=False` and `development_double=True`
+  — a development double, **not** a semantic embedding (ADR-0023).
+- `chakaso.retrieval.dense`: an exact in-memory `DenseIndex` (uniform-dimension and duplicate-chunk
+  validated) and a `DenseRetriever`, the second implementation of the `Retriever` protocol, ranking by
+  cosine or dot similarity. A CPU-only, dependency-free exact scan; an approximate (FAISS-like) index
+  is deferred until a measured corpus needs it.
+- Every `RetrievalResult` now carries a `strategy` (`lexical` / `dense` / `hybrid`) so evaluation can
+  attribute a hit to its mechanism; a dense result reports no matched terms rather than inventing some.
+- Because a dense retriever exists, the query planner now backs the `dense` mode: `DeterministicQueryPlanner`
+  accepts `lexical` and `dense`, and still refuses `hybrid` until the fusion layer is built.
+
+**Notes**
+
+- This makes the dense *shape* real, not dense *quality*. With the fixture embedding, a dense result is
+  token overlap under a different metric; no benchmark here may claim dense beats lexical on meaning.
+  There is still no real embedding model and the retrieval corpus and its indexes remain in-memory
+  (nothing persists vectors to disk).
+
 ### 2026-10-10 — Deterministic query planner
 
 **Added**

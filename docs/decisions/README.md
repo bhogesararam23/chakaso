@@ -115,3 +115,4 @@ creates.
 | [ADR-0020](ADR-0020-experiment-artifacts.md) | Experiments are content-fingerprinted, environment-separated research artifacts | Accepted |
 | [ADR-0021](ADR-0021-sqlite-answer-store.md) | Durable answer storage is a SQLite backend behind the existing store boundary | Accepted |
 | [ADR-0022](ADR-0022-query-planner-boundary.md) | Query planning is a deterministic decision boundary, not a model | Accepted |
+| [ADR-0023](ADR-0023-dense-retrieval-boundary.md) | Dense retrieval is an embedding boundary with an exact index; the only embedding is a non-semantic double | Accepted |

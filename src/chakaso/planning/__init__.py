@@ -10,9 +10,10 @@ no evidence identifiers, and claims no semantic understanding.
 
 The boundary (`QueryPlanner`, `QueryPlan`, `QueryMode`, `normalize_query`) lives here; the
 only implementation, `DeterministicQueryPlanner`, is in `chakaso.planning.deterministic`.
-Today a plan can choose only to retrieve lexically or not at all, because `DENSE` and
-`HYBRID` are named for the retrieval strategies that will land in later phases and are not
-backed by a retriever yet.
+Today a plan can retrieve lexically or densely (both backed by a retriever, ADR-0023), or not
+at all; `HYBRID` is refused until the fusion layer exists. The dense retriever's embedding is a
+non-semantic development double, so a dense plan promises similarity computation, not
+understanding.
 """
 
 from __future__ import annotations

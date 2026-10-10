@@ -25,8 +25,9 @@ The rules, in precedence order (each decision is echoed in the plan's ``explanat
 
 The cue lists are the documented heuristic this planner is built on: they are keyword
 rules, deliberately simple and inspectable, and they are *not* presented as understanding.
-Today the planner can only choose ``LEXICAL`` retrieval (or none); ``DENSE`` and ``HYBRID``
-are refused at construction because no retriever backs them yet.
+Today the planner can choose ``LEXICAL`` or ``DENSE`` retrieval — both are backed by a
+retriever (BM25 and the exact dense index, ADR-0023) — but it refuses ``HYBRID`` at
+construction because the fusion layer that would produce a hybrid result does not exist yet.
 """
 
 from __future__ import annotations
@@ -114,9 +115,9 @@ class DeterministicQueryPlanner:
         Args:
             default_top_k: How many results a planned retrieval asks for, or ``None`` to
                 leave the decision to the retriever's own default.
-            retrieval_mode: The mode used when the planner decides to retrieve. Only
-                ``QueryMode.LEXICAL`` is backed by a retriever today; ``DENSE`` and
-                ``HYBRID`` are refused rather than promised, and ``NONE`` cannot retrieve.
+            retrieval_mode: The mode used when the planner decides to retrieve. ``LEXICAL``
+                and ``DENSE`` are backed by retrievers today (ADR-0023); ``HYBRID`` is refused
+                until the fusion layer exists, and ``NONE`` cannot retrieve.
 
         Raises:
             PlanningError: ``retrieval_mode`` is not a mode a retriever backs, or
@@ -125,10 +126,10 @@ class DeterministicQueryPlanner:
         if retrieval_mode is QueryMode.NONE:
             message = "a planner cannot retrieve with retrieval_mode=NONE"
             raise PlanningError(message)
-        if retrieval_mode is not QueryMode.LEXICAL:
+        if retrieval_mode is QueryMode.HYBRID:
             message = (
-                f"retrieval_mode {retrieval_mode.value!r} is not backed by a retriever yet; "
-                "only 'lexical' is available (dense and hybrid arrive with their retrievers)"
+                "retrieval_mode 'hybrid' is not backed by a retriever yet; it needs the fusion "
+                "layer, so only 'lexical' and 'dense' are available"
             )
             raise PlanningError(message)
         if default_top_k is not None and default_top_k < 1:

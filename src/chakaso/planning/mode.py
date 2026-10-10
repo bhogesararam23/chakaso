@@ -4,12 +4,12 @@ ADR-0022 keeps planning a decision layer: a plan names *how* to retrieve without
 performing retrieval. These modes are the strategies the retrieval stack can produce.
 
 ``NONE`` is not a strategy but the decision not to retrieve — a greeting needs no
-evidence. ``LEXICAL`` is the only mode a retriever backs today (BM25,
-`chakaso.retrieval`). ``DENSE`` and ``HYBRID`` name the retrieval strategies added in
-later phases behind an embedding boundary; they are declared here so the planner's
-vocabulary is stable, but a planner must not select them until a retriever exists, and a
-fixture dense provider must never be described as semantic. Naming a mode makes no claim
-that meaning was understood.
+evidence. ``LEXICAL`` and ``DENSE`` are both backed by a retriever today (BM25 and the exact
+dense index in `chakaso.retrieval`, ADR-0023). ``HYBRID`` names the fusion of the two, so the
+planner's vocabulary is stable, but a planner must not select it until a hybrid retriever
+exists. The dense retriever's only embedding is a non-semantic development double, so a
+dense result is similarity under a fixture metric, never understanding. Naming a mode makes no
+claim that meaning was understood.
 """
 
 from __future__ import annotations
