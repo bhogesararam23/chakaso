@@ -10,6 +10,23 @@ capability is implemented or still planned.
 
 ## Unreleased
 
+### 2026-10-10 — End-to-end integration and security verification
+
+**Added**
+
+- An end-to-end integration demonstration that runs a query through the whole assembled runtime to a
+  durable SQLite store and proves, on reopen, that the grounded answer and its `correction_of` lineage
+  survive the process — the answer's substance persisted, its volatile evaluation recomputed.
+- A deliberate "test-the-tests" check that a failing persistence save aborts the turn and leaves the
+  conversation unchanged (no phantom answer), and an untrusted-content check that text inside a
+  retrieved document stays inert data while an identifier never supplied resolves to nothing (ADR-0003).
+
+**Notes**
+
+- These verify the wiring built across the run; they add no capability and make no semantic claim — the
+  flow still runs the deterministic double and the non-semantic fixture embedding. The no-network import
+  guard already covers the planning and runtime packages; no default runtime path reaches the network.
+
 ### 2026-10-10 — Measured retrieval-strategy comparison
 
 **Added**
