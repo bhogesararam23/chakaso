@@ -10,6 +10,31 @@ capability is implemented or still planned.
 
 ## Unreleased
 
+### 2026-10-10 — Durable SQLite answer storage
+
+**Added**
+
+- `chakaso.answers.sqlite.SQLiteAnswerStore`, a durable implementation of the existing `AnswerStore`
+  boundary (ADR-0018) on the standard library's `sqlite3` — no new dependency and no third-party or
+  hosted database (ADR-0001). Answer history, including the `correction_of` lineage, now survives the
+  process that wrote it: a test writes an answer from a *separate process* and reads it back after
+  restart. The default backend stays in-memory, so nothing is written to disk unless a caller opts in.
+- An explicit schema version (`PRAGMA user_version`) with a migration boundary: a database from a newer
+  or unsupported schema version is refused rather than opened for writing, and a store whose schema
+  table is missing is reported as corrupt instead of being silently recreated over the top of it.
+- Transactional appends: every save runs in one `BEGIN`/`COMMIT`, and a failure anywhere in a batch
+  rolls the whole batch back, so a correction chain is never half-written. `save_many` appends a batch
+  atomically on both backends, enforced by a new conformance suite run against in-memory and SQLite alike.
+- Strict-read integrity: a row's indexed columns are cross-checked against its serialized document, and a
+  malformed or divergent stored record raises rather than being repaired. An answer's `evaluation` is
+  deliberately not persisted — it is recomputed against the current evaluator, not frozen into history.
+
+**Notes**
+
+- Recorded as ADR-0021; this closes K-007 (answer records did not survive a process). Concurrency is
+  scoped honestly: the store is single-thread, cross-process *restart* is tested, but simultaneous
+  multi-process writing is neither built nor claimed.
+
 ### 2026-10-08 — Reproducible experiments and a regression baseline
 
 **Added**

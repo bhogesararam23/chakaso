@@ -18,7 +18,8 @@ not an answer.
 Retrieval exists but is **local and lexical**: it reads the files you name, normalizes
 and chunks them, and ranks them for a query with BM25 — shared words only, no embeddings
 and no meaning. Below it, claim/citation/grounding evaluation, a correction decision rule with
-reassessment, an in-memory answer store and reproducible experiment records exist as tested code —
+reassessment, an answer store (in-memory and, since ADR-0021, a durable SQLite backend that
+survives a process restart) and reproducible experiment records exist as tested code —
 but there is still no language model, no web fetching on any default path (the fetcher is opt-in),
 no automatic correction loop, no tokenizer and no training code. The benchmark and experiment
 commands report development metrics computed over small synthetic fixtures, not model-quality or

@@ -1,6 +1,6 @@
 # Current state
 
-Last updated: 2026-10-08, at commit `docs: record the persistence, reassessment, semantic-evaluation and experiment foundation`.
+Last updated: 2026-10-10, at the commit adding durable SQLite answer storage (ADR-0021).
 
 This file is the authority on what exists. If it disagrees with any other
 document, this file is right and the other document is a defect.
@@ -14,7 +14,7 @@ A private planning note is never evidence that something is implemented.
 | Repository conventions | `.gitignore`, `.gitattributes`, `.editorconfig` | Private docx pack excluded by `.gitignore` and guarded by a test |
 | License | `LICENSE` | Apache-2.0; rationale in ADR-0004 |
 | Public documentation | `README.md`, `docs/*.md`, `docs/research/` | Specifications with mandatory status labels |
-| Decision records | `docs/decisions/` | ADR-0001 to ADR-0020 |
+| Decision records | `docs/decisions/` | ADR-0001 to ADR-0021 |
 | Contribution guide | `CONTRIBUTING.md` | |
 | Agent contract | `AGENTS.md`, `docs/agent/` | |
 | Python package | `src/chakaso/` | Installs; typed; `py.typed` ships |
@@ -42,12 +42,12 @@ A private planning note is never evidence that something is implemented.
 | Claims | `src/chakaso/claims/` | Immutable `Claim` with a content-derived `ClaimId` and a `ClaimStatus` that records what the supplied evidence supports — never truth. A replaceable `ClaimExtractor` boundary (structured + a documented sentence heuristic) and claim/evidence links (ADR-0014). No trained extractor |
 | Citation validation | `src/chakaso/citation/` | Structural citation checks against a supplied pack (valid / unknown / irrelevant / uncited) plus citation precision/recall. Decides presence and expected-match, never that a source proves a claim |
 | Grounding | `src/chakaso/grounding/` | `GroundingEvaluator` boundary: a structural evaluator (supported / unsupported / not_evaluated) and a manual evaluator that is the only path to contradicted / uncertain; a `Contradiction` names no winner (ADR-0015). A `SemanticJudge` / `SemanticGroundingEvaluator` boundary exists (ADR-0019) but its only implementation is a caller-supplied fixture — no real semantic judgement |
-| Answers & persistence | `src/chakaso/answers/` | `AnswerId` is a per-event typed identifier, not a content hash (ADR-0017). An immutable `AnswerRecord` ties turn + model + evidence + claims + evaluation + a `correction_of` link by reference. `AnswerStore` boundary + in-memory `InMemoryAnswerStore`, append-only with integrity checks (ADR-0018). **No database; nothing persists across a process** |
+| Answers & persistence | `src/chakaso/answers/` | `AnswerId` is a per-event typed identifier, not a content hash (ADR-0017). An immutable `AnswerRecord` ties turn + model + evidence + claims + evaluation + a `correction_of` link by reference. `AnswerStore` boundary with two append-only, integrity-checked backends: in-memory `InMemoryAnswerStore` (the default) and a durable `SQLiteAnswerStore` built on the standard library (ADR-0018, ADR-0021). The durable store is proven by a test to survive a process restart, and is opt-in, so nothing writes to disk unless it is selected |
 | Correction foundation | `src/chakaso/correction/` | The reassessment decision rule (retain / qualify / correct / abstain / needs_review, ADR-0016), `reassess` over the grounding boundary, an append-only `CorrectionRecord`, structural correction metrics, a follow-up helper (`reassess_followup`), and an application-level `reassess_stored_answer` / `reassess_and_record` over a stored answer. Decides and records; produces no revised prose (there is no model) and is not wired into an automatic loop |
 | Experiments | `src/chakaso/experiments/` | `Experiment` (hypothesis + benchmark + configuration) and a content-fingerprinted, environment-separated `ExperimentResult`; `run_experiment` drives a development benchmark; `compare_results` is a deterministic regression baseline that refuses incompatible versions (ADR-0020). No tracker, no database, no model |
-| Tests | `tests/` | ~799 tests at the commit recorded above: package, CLI (incl. `retrieve`, `benchmark` and `experiment`), configuration, identifiers and hashing, source identity, model boundary, evidence, normalization, chunking, ingestion, corpus, lexical retrieval, retrieval orchestration, end-to-end pipeline, fetch policy and netguard, HTML/web ingestion, cache, evaluation metrics and answer evaluation, benchmark identity/cases/loader/fixtures/runner/report and the correction benchmark, claims/extract/links, citation validation, grounding and the semantic boundary, correction decision/reassess/record/metrics/follow-up/service, answer identity/record/store and conversation integration, experiments (model/runner/compare), security/determinism/reproducibility regressions, conversation state and manager, repository hygiene. The count ages; `python -m pytest` does not. |
+| Tests | `tests/` | ~842 tests at the commit recorded above: package, CLI (incl. `retrieve`, `benchmark` and `experiment`), configuration, identifiers and hashing, source identity, model boundary, evidence, normalization, chunking, ingestion, corpus, lexical retrieval, retrieval orchestration, end-to-end pipeline, fetch policy and netguard, HTML/web ingestion, cache, evaluation metrics and answer evaluation, benchmark identity/cases/loader/fixtures/runner/report and the correction benchmark, claims/extract/links, citation validation, grounding and the semantic boundary, correction decision/reassess/record/metrics/follow-up/service, answer identity/record/store/serialization and the durable SQLite store (restart, rollback, schema, integrity) with a two-backend conformance suite and conversation integration, experiments (model/runner/compare), security/determinism/reproducibility regressions, conversation state and manager, repository hygiene. The count ages; `python -m pytest` does not. |
 | CI | `.github/workflows/ci.yml` | Green on Python 3.11, 3.12, 3.13 |
-| Dense retrieval, durable persistence, an automatic correction loop | **do not exist** | An opt-in bounded fetcher and a narrow HTML reader exist (off the default path). The correction *foundation*, an in-memory answer store, a correction development benchmark and reproducible experiment records exist — but there are no embeddings, no store that survives a process, and no reassessment that runs itself |
+| Dense/hybrid retrieval, query planning, an automatic correction loop | **do not exist** | An opt-in bounded fetcher and a narrow HTML reader exist (off the default path). Durable SQLite answer persistence now exists (ADR-0021, opt-in, survives a restart). But there are no embeddings, no query planner, and no reassessment that runs itself |
 
 ## What works
 
@@ -169,7 +169,11 @@ A private planning note is never evidence that something is implemented.
   gives a per-event `AnswerId` (not a content hash, ADR-0017), an immutable record that references
   the turn, model, evidence, claims, evaluation and a `correction_of` link, and an `AnswerStore`
   whose in-memory implementation is append-only and refuses to overwrite a saved answer or to link
-  a correction to a missing or cross-conversation answer (ADR-0018). Nothing is written to disk.
+  a correction to a missing or cross-conversation answer (ADR-0018). A second backend,
+  `SQLiteAnswerStore`, persists the same history to a local SQLite file — an explicit schema version,
+  transactional all-or-nothing appends, strict-read integrity checks, and a test proving it survives a
+  process restart (ADR-0021). It is opt-in, so nothing is written to disk by default, and a stored
+  answer's evaluation is recomputed rather than persisted.
 - A completed turn can be persisted atomically: given a store and a claim extractor,
   `ConversationManager.send` builds and saves the `AnswerRecord` *before* adopting the new
   conversation, so a persistence failure aborts the turn and leaves the conversation unchanged
@@ -211,6 +215,7 @@ says anything else.
 | Model boundary | The inherited contract suite (metadata, provenance of results, repeatability at zero temperature, empty-request rejection, length ceiling, unsupported-capability failures, declared capabilities being implemented), plus capability reconciliation, parameter validation, registry failure paths and the double's documented behaviour |
 | Evidence | Canonicalization idempotence and non-merging, tracking-parameter removal, scheme and credential refusal, IPv6 handling, record immutability, naive-timestamp rejection, content-hash validation, change detection, pack validation, and citation resolution including fabricated and malformed references |
 | Conversation manager | Construction and context bounds, dependency injection through the model boundary, first and follow-up turns, context projection limits, previous state preserved, failures leaving state unchanged for the next turn, model errors propagating untranslated, clock regressions, evidence and citation provenance per turn, evidence not leaking between turns, and end-to-end wiring against the deterministic double |
+| Answers and durable storage | Answer identity and record invariants, the serialization codec (round-trip, evaluation-not-persisted, malformed-document rejection), the append-only invariants run over **both** backends (in-memory and SQLite conformance), and the SQLite store's restart durability (including a separate-process write), transaction rollback, schema/version refusal, and on-disk corruption detection |
 | Repository invariants | Private pack never tracked, `.gitignore` rule present, no secret-shaped files, no tracked file over 1 MiB, no commercial provider dependency, ADR numbering and indexing, documentation links resolve |
 
 ## What is experimental
@@ -237,17 +242,17 @@ data — that is K-001, and it stands. The code that exists still does one small
 - An automatic correction loop and a revised answer. Reassessment is now an application operation
   over a stored answer and there is a correction development benchmark, but nothing decides on its
   own that a turn needs reassessing, nothing generates revised prose (there is no model), and no
-  answer or correction is persisted to disk. Correction is not part of an automatic conversation
-  turn.
+  reassessment is wired into a conversation turn to run by itself. An answer can be persisted durably
+  (ADR-0021), but that is a store a caller selects, not an automatic correction.
 - A general evaluation harness and model benchmarks. Retrieval and correction development
   benchmarks, metric functions, and structural claim/citation/grounding/answer evaluation exist;
   a *real* grounded-answer benchmark and any model-quality measurement do not. All benchmark
   numbers are over synthetic fixtures and check structure, not meaning.
 - Tokenizer, dataset pipeline, model code, training loop
 - A local inference adapter, and any model weights of any size
-- Durable persistence. The answer store, correction records and experiment results are in-memory
-  or serializable; the runtime writes nothing to disk and no record survives a process. A database
-  or file backend is a future `AnswerStore` implementation, deliberately not built yet.
+- Automatic persistence of correction records and experiment results. Answer history can now be
+  persisted durably to SQLite (ADR-0021), but a `CorrectionRecord` or an `ExperimentResult` is still
+  only serializable — the runtime does not write it to disk unless a caller wires it to a store.
 
 ## Decisions made
 
@@ -273,6 +278,7 @@ data — that is K-001, and it stands. The code that exists still does one small
 | ADR-0018 | Answer persistence is an append-only store boundary, in-memory for now |
 | ADR-0019 | Semantic grounding is a boundary with only a fixture implementation today |
 | ADR-0020 | Experiments are content-fingerprinted, environment-separated research artifacts |
+| ADR-0021 | Durable answer storage is a SQLite backend behind the existing store boundary |
 
 Two process facts are recorded outside the ADR series because they are repository
 history rather than architecture:
@@ -293,19 +299,23 @@ architectural decision made so far rests on reasoning rather than measurement.
 
 Retrieval, the retrieval and correction development benchmarks, the claim / citation / grounding /
 answer-evaluation primitives, the correction decision rule with an application-level reassessment
-over stored answers, an in-memory answer store wired atomically into a turn, a fixture-only
-semantic grounding boundary, and reproducible experiment records with a deterministic regression
-baseline are all built and tested. The next real units, in order:
+over stored answers, an answer store wired atomically into a turn — in-memory and, since ADR-0021, a
+durable SQLite backend that survives a restart — a fixture-only semantic grounding boundary, and
+reproducible experiment records with a deterministic regression baseline are all built and tested. The
+next real units, in order:
 
-1. **Durable persistence** — a file or database `AnswerStore` and a persisted `AnswerRecord` with
-   `correction_of`, so a correction history survives a process and can be replayed (K-007).
-2. **A real semantic judge** — implement the `SemanticJudge` boundary with something beyond a
-   fixture (a trained model or a validated human process), measured against the fixture relations the
-   benchmark already labels.
-3. **A triggered follow-up** — decide *when* a turn warrants reassessment, building on the
-   identifier-addressed boundary already in place, still without pretending natural-language
-   reference resolution exists.
+1. **Query planning** — a deterministic, typed decision layer that chooses whether and how to retrieve
+   for a turn, reusing conversation state to tell a follow-up from a new topic. It is not an LLM and
+   must not claim semantic reasoning.
+2. **Dense and hybrid retrieval** — an embedding boundary with a deterministic development double
+   behind it (not a real semantic embedding), an exact dense index, and a transparent fusion of lexical
+   and dense results, each result labelled with the strategy that produced it.
+3. **A retrieval-aware conversation runtime** — route a turn through planner → retrieval → model →
+   claims → citation validation → grounding → `AnswerRecord` → durable store, with retrieval optional
+   and the existing all-or-nothing turn guarantee preserved.
 
-All three stay behind the existing boundaries, so none requires redesigning what is here. There is
-still no language model: nothing generates an answer, produces revised prose, or runs a real
-semantic judgement. See [`ACTIVE_TASK.md`](ACTIVE_TASK.md) for the definition of done.
+A **real semantic judge** (the `SemanticJudge` boundary is fixture-only today) and an **automatic,
+triggered correction** follow these. All of it stays behind the existing boundaries, so none requires
+redesigning what is here. There is still no language model: nothing generates an answer, produces
+revised prose, or runs a real semantic judgement. See [`ACTIVE_TASK.md`](ACTIVE_TASK.md) for the
+definition of done.

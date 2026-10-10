@@ -3,7 +3,7 @@
 Real problems with the current state, including the ones that are only
 inconvenient. An empty file here would mean nobody has looked.
 
-Last reviewed: 2026-10-08.
+Last reviewed: 2026-10-10.
 
 ## Open
 
@@ -99,24 +99,6 @@ already depend on, which is the retrofit the project has been avoiding.
 
 **What would close it:** the evaluation layer, item 6 of the current plan.
 
-### K-007 — Answer records do not survive a process
-
-**Impact:** Low now, higher as soon as a correction history must be audited across runs.
-
-`chakaso.answers` records each answer as an immutable `AnswerRecord` with its model identity
-(including whether that model is a development double), evidence, claims, evaluation and a
-`correction_of` link, and `ConversationManager` can save it atomically per turn. But the only
-`AnswerStore` is in-memory, so nothing survives process exit — a transcript cannot be replayed or
-audited later, and "which model said this" is recoverable only within a run.
-
-**Why it is deferred:** a durable backend is the next unit, behind the existing `AnswerStore`
-boundary (ADR-0018), and freezing a storage schema before a real workload needs one is the
-premature commitment the project avoids. The boundary is what makes this an addition, not a
-redesign.
-
-**What would close it:** a durable `AnswerStore` implementation and a run that replays a correction
-chain from it across a restart.
-
 ## Resolved
 
 ### Retired — no package, no tests and no CI existed
@@ -141,3 +123,14 @@ and the fetcher enforces each, tested offline (ADR-0012). The security posture i
 `docs/retrieval.md` is no longer a list of threats with no corresponding limits. What
 remains — the DNS-rebinding gap in the destination screen, and politeness (robots, rate
 limiting) — is carried forward honestly as K-008 rather than claimed as solved.
+
+### Retired — answer records did not survive a process
+
+Closed on 2026-10-10 (this was K-007). `chakaso.answers.sqlite.SQLiteAnswerStore` now persists the
+append-only answer history to a local SQLite file behind the same `AnswerStore` boundary ADR-0018 set,
+with an explicit schema version, transactional all-or-nothing appends, strict-read integrity checks,
+and a test that writes an answer from a *separate process* and reads it back after restart (ADR-0021).
+The default backend stays in-memory, so the runtime still writes nothing to disk unless a caller
+selects the durable store. What this does **not** close: a `CorrectionRecord` or `ExperimentResult` is
+still only serializable rather than auto-persisted, and simultaneous multi-process write concurrency
+is deliberately neither built nor claimed.

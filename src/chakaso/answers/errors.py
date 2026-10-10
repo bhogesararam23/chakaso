@@ -17,6 +17,7 @@ __all__ = [
     "AnswerSerializationError",
     "AnswerStoreError",
     "InvalidAnswerError",
+    "StorageSchemaError",
     "UnknownAnswerError",
 ]
 
@@ -62,4 +63,14 @@ class AnswerSerializationError(AnswerError):
     identifier, unparseable JSON — is reported rather than guessed at or silently
     repaired, because a corrupted research history that loads "successfully" into a wrong
     record is worse than one that refuses to load.
+    """
+
+
+class StorageSchemaError(AnswerError):
+    """A durable store's schema does not match what this code can safely use.
+
+    A database from a newer version, or one older than the migrations here can bring
+    forward, is refused rather than opened and mutated: silently writing an unknown or
+    partially-migrated schema into research history is unrecoverable, so the store stops
+    and says which version it found and which it expects.
     """

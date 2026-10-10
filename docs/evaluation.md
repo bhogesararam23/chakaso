@@ -201,7 +201,7 @@ was not measured, it is not written down.
 | Grounding evaluation (structural) | Implemented (`chakaso.grounding`; supported / unsupported / not_evaluated, ADR-0015; contradicted / uncertain only via a supplied judgement) |
 | Semantic grounding evaluator boundary | Implemented (boundary + adapter, `chakaso.grounding`, ADR-0019) — **Experimental**: the only judge is a caller-supplied fixture, not a real semantic evaluator |
 | Answer evaluation (separate dimensions, `evidence_coverage`, `is_grounded`) | Implemented (`chakaso.evaluation.evaluate_answer`) |
-| Answer record and append-only store | Implemented (in-memory, `chakaso.answers`, ADR-0017/0018); durable persistence planned |
+| Answer record and append-only store | Implemented (in-memory **and** a durable SQLite backend, `chakaso.answers`, ADR-0017/0018/0021); the durable store is proven to survive a process restart |
 | Experiment records & regression baseline | Implemented (`chakaso.experiments`, ADR-0020); reproducible result fingerprints, deterministic compatible-version comparison; no model-quality claim |
 | Red-team suite | Planned |
 | Standard model benchmarks | Planned |

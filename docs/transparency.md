@@ -98,7 +98,7 @@ which unsupported claims were avoided — is a metric, not a slogan
 | Structural citation validation (valid / unknown / irrelevant / uncited) | Implemented (`chakaso.citation`) |
 | Claim decomposition and evaluation status | Implemented (`chakaso.claims`; status is supplied-evidence support, never truth) |
 | Support relationships (structural) | Implemented (`chakaso.grounding`); semantic support is a boundary with a fixture-only judge (ADR-0019) |
-| Answer records and correction lineage | Implemented (in-memory append-only store, `chakaso.answers`, ADR-0017/0018); durable persistence planned |
+| Answer records and correction lineage | Implemented (in-memory **and** a durable SQLite append-only store, `chakaso.answers`, ADR-0017/0018/0021); the durable store survives a process restart |
 | Correction decisions and records | Implemented (decision rule + append-only `CorrectionRecord`, ADR-0016); revised *prose* needs a model that does not exist |
 | Qualitative uncertainty language | Planned (no language model to phrase it) |
 | Assumption and limitation reporting | Planned |

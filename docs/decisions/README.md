@@ -113,3 +113,4 @@ creates.
 | [ADR-0018](ADR-0018-answer-persistence.md) | Answer persistence is an append-only store boundary, in-memory for now | Accepted |
 | [ADR-0019](ADR-0019-semantic-grounding-boundary.md) | Semantic grounding is a boundary with only a fixture implementation today | Accepted |
 | [ADR-0020](ADR-0020-experiment-artifacts.md) | Experiments are content-fingerprinted, environment-separated research artifacts | Accepted |
+| [ADR-0021](ADR-0021-sqlite-answer-store.md) | Durable answer storage is a SQLite backend behind the existing store boundary | Accepted |
