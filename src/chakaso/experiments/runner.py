@@ -28,7 +28,9 @@ from chakaso.benchmark import (
 )
 from chakaso.benchmark.runner import BenchmarkRun
 from chakaso.experiments.model import BenchmarkKind, Experiment, ExperimentResult
-from chakaso.retrieval import DEFAULT_TOP_K, RetrievalService
+from chakaso.planning import QueryMode
+from chakaso.retrieval import DEFAULT_TOP_K
+from chakaso.runtime import build_retrieval_services
 
 
 def _default_environment() -> dict[str, str]:
@@ -77,8 +79,10 @@ def run_experiment(
 
 def _run_retrieval(experiment: Experiment) -> BenchmarkRun:
     top_k = int(experiment.configuration.get("top_k", DEFAULT_TOP_K))
+    strategy = experiment.configuration.get("retriever", "lexical")
     corpus, dataset = load_development_benchmark()
-    runner = RetrievalBenchmarkRunner(RetrievalService(corpus), top_k=top_k)
+    service = build_retrieval_services(corpus)[QueryMode(strategy)]
+    runner = RetrievalBenchmarkRunner(service, top_k=top_k, retriever_name=strategy)
     return runner.run(dataset)
 
 

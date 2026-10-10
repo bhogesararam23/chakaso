@@ -203,10 +203,11 @@ was not measured, it is not written down.
 | Answer evaluation (separate dimensions, `evidence_coverage`, `is_grounded`) | Implemented (`chakaso.evaluation.evaluate_answer`) |
 | Answer record and append-only store | Implemented (in-memory **and** a durable SQLite backend, `chakaso.answers`, ADR-0017/0018/0021); the durable store is proven to survive a process restart |
 | Experiment records & regression baseline | Implemented (`chakaso.experiments`, ADR-0020); reproducible result fingerprints, deterministic compatible-version comparison; no model-quality claim |
+| Retrieval-strategy comparison (lexical vs dense vs hybrid over the fixtures) | Implemented (`chakaso.experiments.compare_retrieval_strategies`); measured deltas only, labelled development — dense/hybrid run over the non-semantic fixture embedding (E-001 showed no gain, a small MRR regression) |
 | Red-team suite | Planned |
 | Standard model benchmarks | Planned |
 | Regression gates beyond unit tests | Partially implemented (pinned-fingerprint benchmark regressions and a deterministic experiment baseline comparison; statistical significance deliberately not built) |
-| Any measured result | Retrieval and correction development metrics only (synthetic fixtures); no model-quality result |
+| Any measured result | Retrieval, correction and retrieval-strategy development metrics only (synthetic fixtures, E-001); no model-quality result, and no test of a semantic-retrieval hypothesis |
 
 No model-quality or general-performance number appears anywhere in this repository,
 because none has been measured. The retrieval and correction development benchmarks

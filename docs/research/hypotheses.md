@@ -116,3 +116,24 @@ should stop treating it as one.
 
 **Depends on.** A tokenizer, a model, a corpus, and enough compute to run
 configurations more than once. None exist.
+
+---
+
+## H7 — A real dense (semantic) retriever exceeds lexical retrieval on paraphrased evidence
+
+**Hypothesis.** A genuine embedding model, dense retrieval over it, retrieves paraphrased gold
+evidence that lexical BM25 misses, raising recall@k above the lexical baseline on a corpus whose
+gold chunks match the query in meaning but not in surface tokens.
+
+**Falsified if.** On such a corpus, dense recall@k is not above lexical's — or any gain disappears
+once gold chunks share no surface token with the query.
+
+**Why it matters.** It is the research reason to build dense and hybrid retrieval at all. If a real
+embedding does not beat lexical on paraphrase, the added machinery earns nothing and the project
+should stop treating dense retrieval as a path to better grounding.
+
+**Depends on.** A real (semantic) embedding model and a paraphrase-rich gold corpus. Neither exists.
+The fixture embedding built in [ADR-0023](../decisions/ADR-0023-dense-retrieval-boundary.md) is
+explicitly non-semantic, so the retrieval-strategy comparison run today
+([research-log E-001](research-log.md)) does **not** test this hypothesis — over the fixture it
+showed no gain and a small MRR regression. H7 remains untested.

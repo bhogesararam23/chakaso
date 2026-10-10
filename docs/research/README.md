@@ -37,9 +37,12 @@ measurement over time.
 
 ## Current state
 
-**No experiment testing a hypothesis has been run.** There is still no model, no tokenizer and
-no dataset. A local lexical retrieval and a small, synthetic *development* benchmark now exist
-(`chakaso.benchmark`, run with `chakaso benchmark`), and they report retrieval numbers over
-hand-built fixtures — a development instrument, not a measurement of a hypothesis or of model
-quality. Everything else in this directory today is design reasoning and open questions, and it
-is labelled as such.
+**No experiment testing any of H1–H7 has been run.** One experiment has been executed —
+E-001 in [`research-log.md`](research-log.md) compares lexical, dense and hybrid retrieval over the
+synthetic development fixtures — but it exercises the *mechanism and the measuring instrument*, not a
+hypothesis: the dense component is an explicitly non-semantic fixture embedding, so E-001 neither
+supports nor refutes H7 (it showed no gain and a small MRR regression). There is still no model, no
+tokenizer, no dataset and no real embedding. The retrieval, correction and strategy-comparison numbers
+are development instruments over hand-built fixtures (`chakaso.benchmark`, run with
+`chakaso benchmark`), not measurements of a hypothesis or of model quality. Everything else in this
+directory today is design reasoning and open questions, and it is labelled as such.

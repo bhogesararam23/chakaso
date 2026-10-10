@@ -191,3 +191,44 @@ labelled synthetic set, not a real workload.
 experiment number here is computed over small synthetic fixtures and scores a rule or a retriever,
 not answer quality; there is still no language model, and the semantic boundary has no real judge.
 K-001 stands.
+
+---
+
+## 2026-10-10 — Durable storage through the runtime, and the first strategy comparison
+
+**Observation.** The layers built across this run — a durable SQLite answer store (ADR-0021), a
+deterministic query planner (ADR-0022), a dense retrieval boundary over a non-semantic fixture
+embedding (ADR-0023), reciprocal-rank-fusion hybrid retrieval (ADR-0024) and a retrieval-aware
+conversation runtime (ADR-0025) — each entered as a boundary with one honest implementation, the
+same move that kept the model, storage and semantic-judging seams open. The runtime composes them
+without a monolith: a grounded turn runs plan → retrieve → generate → validate → record → persist,
+while the deterministic double still cites nothing, so the loop executes without any answer being
+real.
+
+**Experiment E-001 — does dense or hybrid retrieval change measured retrieval, over the synthetic
+development fixtures?** Configuration: dataset `dev-retrieval` v`1.0.0`, content fingerprint
+`36e65ab20468d141`; `top_k=5`; baseline `lexical` (BM25); candidates `dense` and `hybrid`, both over
+`FixtureEmbeddingModel` (`fixture-hash-embedding-64`, seed `chakaso-fixture-embedding`,
+`is_semantic=false`); fusion `rrf_k=60`, weights 1.0/1.0. Offline and deterministic; reproduced by
+`chakaso benchmark strategies`.
+
+**Result (measured, not assumed).** recall@k: lexical 1.000, dense 1.000, hybrid 1.000. precision@k:
+0.257 for all three. hit_rate: 1.000 for all three. forbidden_hits: 2 for all three; false_retrievals:
+3 for all three; duplicates: 0 for all three. **MRR: lexical 1.000, dense 0.929, hybrid 0.929** — a
+−0.071 *regression* against the baseline for both non-lexical strategies.
+
+**Interpretation.** Over a non-semantic hashed bag-of-tokens embedding, dense and hybrid retrieval
+produce no measurable gain on recall, precision or hit rate, and reorder the top of the ranking
+slightly worse (lower MRR) than BM25. That is the expected signature of a fixture double: it
+re-derives token overlap in vector form, so fusion mostly reshuffles near-ties rather than surfacing
+semantically-relevant-but-lexantically-absent evidence.
+
+**Limitation.** This is a neutral-to-negative result about the *mechanism over synthetic fixtures*,
+not about dense or hybrid retrieval in general. The embedding is explicitly non-semantic, the corpus is
+a hand-built toy, and no model answers. It neither supports nor refutes H7 (a *real* dense retriever
+exceeding lexical on paraphrase), which needs a genuine embedding model and a paraphrase-rich gold
+corpus — neither exists. It is recorded so a future semantic embedding has a concrete number to beat:
+to count as progress on this fixture, it must exceed a −0.071 MRR delta, not merely differ.
+
+**Conclusion.** The strategy-comparison instrument works and reports honestly, including a regression;
+no strategy is claimed superior. K-001 stands.

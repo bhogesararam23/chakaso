@@ -12,9 +12,12 @@ point. Every command calls the same application layer the library exposes.
 deterministic development double, and the command says so in its own output rather
 than letting a user infer that the replies mean something. ``retrieve`` never generates
 an answer; it ingests, ranks and prints evidence with its provenance. ``benchmark``
-runs a retrieval or correction development benchmark over the shared synthetic fixtures and
-prints a report that labels itself a development instrument; ``experiment run`` executes a
-baseline experiment and prints its reproducible, content-fingerprinted result. ``storage``
+runs a retrieval, correction, or strategy-comparison development benchmark over the shared
+synthetic fixtures and prints a report that labels itself a development instrument
+(``benchmark strategies`` measures lexical, dense and hybrid over the same data and reports the
+measured deltas); ``experiment run`` executes a
+baseline experiment and prints its reproducible, content-fingerprinted result.
+``storage``
 checks or migrates a durable SQLite answer store and reports its schema and integrity, reading
 or writing only the explicit path it is given.
 """
@@ -49,8 +52,15 @@ from chakaso.conversation import (
     Reply,
     new_conversation_id,
 )
-from chakaso.experiments import BenchmarkKind, baseline_experiment, run_experiment
+from chakaso.experiments import (
+    BenchmarkKind,
+    RetrievalStrategyReport,
+    baseline_experiment,
+    compare_retrieval_strategies,
+    run_experiment,
+)
 from chakaso.models import GenerationParams, ModelError, UnknownModelError, create_model
+from chakaso.planning import QueryMode
 from chakaso.retrieval import (
     DEFAULT_TOP_K,
     Corpus,
@@ -60,6 +70,7 @@ from chakaso.retrieval import (
     RetrievalService,
     ingest_file,
 )
+from chakaso.runtime import build_retrieval_services
 
 __all__ = ["build_parser", "main"]
 
@@ -210,6 +221,12 @@ def _build_parsers() -> tuple[argparse.ArgumentParser, argparse.ArgumentParser]:
         help="how many chunks to retrieve per case (default: %(default)s)",
     )
     retrieval_benchmark.add_argument(
+        "--strategy",
+        choices=["lexical", "dense", "hybrid"],
+        default="lexical",
+        help="which retriever to score (default: %(default)s; dense/hybrid use the fixture embedding)",
+    )
+    retrieval_benchmark.add_argument(
         "--json",
         action="store_true",
         help="emit the deterministic machine-readable report instead of the text one",
@@ -225,6 +242,29 @@ def _build_parsers() -> tuple[argparse.ArgumentParser, argparse.ArgumentParser]:
         ),
     )
     correction_benchmark.add_argument(
+        "--json",
+        action="store_true",
+        help="emit the deterministic machine-readable report instead of the text one",
+    )
+
+    strategies_benchmark = benchmark_subparsers.add_parser(
+        "strategies",
+        help="measure and compare lexical, dense and hybrid retrieval over the development fixtures",
+        description=(
+            "Run the retrieval development benchmark with each retriever over the same synthetic "
+            "dataset and report the measured metrics and deltas against a baseline strategy. Dense and "
+            "hybrid use the non-semantic fixture embedding, so results describe mechanism, not real or "
+            "semantic quality. Local, offline, deterministic; no winner is hard-coded."
+        ),
+    )
+    strategies_benchmark.add_argument(
+        "--top-k",
+        type=int,
+        default=DEFAULT_TOP_K,
+        metavar="N",
+        help="how many chunks to retrieve per case for every strategy (default: %(default)s)",
+    )
+    strategies_benchmark.add_argument(
         "--json",
         action="store_true",
         help="emit the deterministic machine-readable report instead of the text one",
@@ -572,8 +612,10 @@ def _run_benchmark(args: argparse.Namespace) -> int:
         return _run_retrieval_benchmark(args)
     if args.benchmark_command == "correction":
         return _run_correction_benchmark(args)
+    if args.benchmark_command == "strategies":
+        return _run_strategy_benchmark(args)
     print(
-        f"{PROGRAM}: choose a benchmark subject: 'retrieval' or 'correction'",
+        f"{PROGRAM}: choose a benchmark subject: 'retrieval', 'correction' or 'strategies'",
         file=sys.stderr,
     )
     return 1
@@ -588,14 +630,62 @@ def _run_retrieval_benchmark(args: argparse.Namespace) -> int:
     """
     try:
         corpus, dataset = load_development_benchmark()
-        runner = RetrievalBenchmarkRunner(RetrievalService(corpus), top_k=args.top_k)
+        service = build_retrieval_services(corpus)[QueryMode(args.strategy)]
+        runner = RetrievalBenchmarkRunner(service, top_k=args.top_k, retriever_name=args.strategy)
         run = runner.run(dataset)
-    except (BenchmarkError, IngestionError, RetrievalError) as exc:
+    except (BenchmarkError, IngestionError, RetrievalError, ValueError) as exc:
         print(f"{PROGRAM}: {exc}", file=sys.stderr)
         return 1
 
     print(report_json(run) if args.json else format_report(run))
     return 0
+
+
+def _run_strategy_benchmark(args: argparse.Namespace) -> int:
+    """Score every retrieval strategy over the same fixtures and print the measured comparison.
+
+    Thin wiring: :func:`chakaso.experiments.compare_retrieval_strategies` runs each retriever and
+    computes the deltas; this only formats its report. The numbers come from an actual run — nothing
+    is hard-coded, and a strategy that does not win is reported as not winning.
+    """
+    try:
+        corpus, dataset = load_development_benchmark()
+        report = compare_retrieval_strategies(corpus, dataset, top_k=args.top_k)
+    except (BenchmarkError, IngestionError, RetrievalError, ValueError) as exc:
+        print(f"{PROGRAM}: {exc}", file=sys.stderr)
+        return 1
+
+    if args.json:
+        print(json.dumps(report.to_dict(), sort_keys=True, indent=2, ensure_ascii=False))
+    else:
+        print(_format_strategy_report(report))
+    return 0
+
+
+def _format_strategy_report(report: RetrievalStrategyReport) -> str:
+    """Render a strategy comparison as a fixed-width table plus baseline deltas."""
+    lines = [
+        "retrieval strategy comparison - a development benchmark over synthetic fixtures; dense and",
+        "hybrid use a non-semantic fixture embedding (not a real/semantic result). "
+        f"baseline={report.baseline!r} top_k={report.top_k}",
+        "",
+        f"{'strategy':<9}{'recall@k':>9}{'prec@k':>9}{'mrr':>9}{'hit':>9}{'forb':>6}{'false':>7}{'dup':>5}",
+    ]
+    for row in report.results:
+        lines.append(
+            f"{row.strategy:<9}{row.recall_at_k:>9.3f}{row.precision_at_k:>9.3f}{row.mrr:>9.3f}"
+            f"{row.hit_rate:>9.3f}{row.forbidden_hits:>6d}{row.false_retrievals:>7d}{row.duplicates:>5d}"
+        )
+    lines.append("")
+    lines.append(f"deltas vs {report.baseline!r}:")
+    if not report.deltas:
+        lines.append("  (no non-baseline strategies were run)")
+    for delta in report.deltas:
+        lines.append(
+            f"  {delta.strategy} {delta.metric}: {delta.baseline:.3f} -> {delta.candidate:.3f} "
+            f"({delta.delta:+.3f}, {delta.direction})"
+        )
+    return "\n".join(lines)
 
 
 def _run_correction_benchmark(args: argparse.Namespace) -> int:

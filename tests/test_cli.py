@@ -618,3 +618,36 @@ def test_storage_check_refuses_a_newer_schema_version(
 
     assert main(["storage", "check", "--path", str(db)]) == 1
     assert "newer" in capsys.readouterr().err
+
+
+# ---------------------------------------------------------------------------
+# benchmark strategies
+# ---------------------------------------------------------------------------
+
+
+def test_benchmark_strategies_reports_a_measured_comparison(
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    assert main(["benchmark", "strategies"]) == 0
+
+    out = capsys.readouterr().out
+    assert "retrieval strategy comparison" in out
+    for strategy in ("lexical", "dense", "hybrid"):
+        assert strategy in out
+    # The honesty label is part of the output, not an afterthought.
+    assert "non-semantic" in out
+
+
+def test_benchmark_strategies_json_is_a_valid_report(capsys: pytest.CaptureFixture[str]) -> None:
+    assert main(["benchmark", "strategies", "--json"]) == 0
+
+    payload = json.loads(capsys.readouterr().out)
+    assert [row["strategy"] for row in payload["results"]] == ["lexical", "dense", "hybrid"]
+    assert payload["baseline"] == "lexical"
+
+
+def test_benchmark_retrieval_accepts_a_strategy(capsys: pytest.CaptureFixture[str]) -> None:
+    assert main(["benchmark", "retrieval", "--strategy", "hybrid", "--json"]) == 0
+
+    payload = json.loads(capsys.readouterr().out)
+    assert "recall_at_k" in payload["metrics"]

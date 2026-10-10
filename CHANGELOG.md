@@ -10,6 +10,28 @@ capability is implemented or still planned.
 
 ## Unreleased
 
+### 2026-10-10 — Measured retrieval-strategy comparison
+
+**Added**
+
+- `chakaso.experiments.compare_retrieval_strategies`: runs the retrieval development benchmark with
+  each retriever (lexical, dense, hybrid) over the *same* synthetic dataset and reports the measured
+  metrics plus per-metric deltas against a baseline strategy — the strategy being the deliberate
+  variable, which is why this is a separate tool from `compare_results` (a regression baseline that
+  correctly refuses differing configurations). It hard-codes no winner.
+- `retrieval_strategy_experiment` (a measured experiment per strategy), and the experiment runner now
+  honours a configured `retriever` strategy when running a retrieval experiment.
+- `chakaso benchmark strategies [--top-k N] [--json]` prints the measured comparison; `chakaso
+  benchmark retrieval --strategy lexical|dense|hybrid` scores a single strategy.
+
+**Notes**
+
+- The first run of this (E-001, recorded in `docs/research/research-log.md`) is a neutral-to-negative
+  result: over the non-semantic fixture embedding, dense and hybrid match lexical on recall@k/precision
+  @k/hit-rate and *regress* MRR by 0.071. It tests the mechanism and the instrument, not the
+  semantic-retrieval hypothesis (H7), which needs a real embedding model. No number was invented; the
+  regression is reported as the measured outcome it is.
+
 ### 2026-10-10 — Retrieval-aware conversation runtime
 
 **Added**
