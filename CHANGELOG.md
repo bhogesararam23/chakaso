@@ -10,6 +10,33 @@ capability is implemented or still planned.
 
 ## Unreleased
 
+### 2026-10-10 — Retrieval-aware conversation runtime
+
+**Added**
+
+- `chakaso.runtime`: a `RetrievalAwareConversation` that composes the whole pipeline for one turn —
+  the planner decides, the chosen retriever (lexical, dense or hybrid) produces an evidence pack, and
+  the existing `ConversationManager` generates, validates citations, evaluates, records an
+  `AnswerRecord` and persists it (ADR-0025). It is a thin coordinator, not a monolith: it delegates
+  to every layer rather than reimplementing one.
+- Retrieval is genuinely optional: a greeting plans no retrieval and produces an ordinary turn, while
+  a knowledge question retrieves against the plan's prior-source constraints. Because planning and
+  retrieval run before the manager's transactional `send`, a failed plan, unwired mode or raising
+  retriever leaves the conversation and store untouched — no phantom answer, no half-recorded turn.
+- `build_retrieval_services(corpus)` wires one service per mode over a corpus, each labelled with the
+  strategy it actually uses; `render_evidence_context(pack)` renders the pack into a structured,
+  citation-safe model-facing context (identifiers and text, never instructions, ADR-0003).
+- The planner's decision and the retrieval strategy are recorded on each answer as provenance and
+  metadata, so a grounded turn is inspectable afterwards; `ConversationManager.send` gained one
+  optional `provenance` parameter to carry it.
+
+**Notes**
+
+- This makes the target flow executable and tested end to end offline — but still around a model that
+  does not exist: generation is the deterministic double and dense/hybrid use the non-semantic fixture
+  embedding, so the runtime grounds, cites and persists honestly and makes no semantic claim.
+  `chakaso chat` is not yet wired to the runtime; no CLI command drives it yet.
+
 ### 2026-10-10 — Hybrid retrieval (reciprocal rank fusion)
 
 **Added**

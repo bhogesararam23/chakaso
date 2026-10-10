@@ -39,7 +39,7 @@ the answer history (ADR-0018). Without a store the manager behaves exactly as it
 
 from __future__ import annotations
 
-from collections.abc import Callable
+from collections.abc import Callable, Mapping
 from dataclasses import dataclass
 from datetime import UTC, datetime
 
@@ -186,7 +186,13 @@ class ConversationManager:
         """The projection bound, or ``None`` when the whole conversation is used."""
         return self._max_context_turns
 
-    def send(self, text: str, *, evidence: EvidencePack | None = None) -> Reply:
+    def send(
+        self,
+        text: str,
+        *,
+        evidence: EvidencePack | None = None,
+        provenance: Mapping[str, str] | None = None,
+    ) -> Reply:
         """Conduct one turn: record the user's message, answer it, record the answer.
 
         Args:
@@ -196,6 +202,11 @@ class ConversationManager:
                 nothing was retrieved. A request with no evidence resolves no
                 citations, so a reference in the answer is reported as unresolved
                 rather than resolved to a source.
+            provenance: Extra key/value metadata to attach to the recorded answer, when
+                a record is produced — how a caller (e.g. a retrieval-aware runtime) ran
+                the turn. It is merged into the record's provenance alongside the model
+                identity and never changes what is cited, evaluated or persisted; omitted,
+                the record carries only its own provenance, exactly as before.
 
         Returns:
             The reply, including the new conversation state.
@@ -238,7 +249,9 @@ class ConversationManager:
 
         answer_record: AnswerRecord | None = None
         if self._answer_store is not None:
-            answer_record = self._build_answer_record(updated, result, resolution, supplied)
+            answer_record = self._build_answer_record(
+                updated, result, resolution, supplied, extra_provenance=provenance
+            )
             # Persistence is part of the turn's atomicity (ADR-0018): a save that fails
             # raises here, before the live conversation is swapped, so the conversation is
             # left exactly as it was and no half-recorded answer is left behind.
@@ -261,6 +274,8 @@ class ConversationManager:
         result: GenerationResult,
         resolution: CitationResolution,
         supplied: EvidencePack,
+        *,
+        extra_provenance: Mapping[str, str] | None = None,
     ) -> AnswerRecord:
         """Assemble the persistent record for the assistant turn just completed.
 
@@ -277,6 +292,9 @@ class ConversationManager:
             else ()
         )
         metadata = self._model.metadata
+        provenance: dict[str, str] = {"model_display_name": metadata.display_name}
+        if extra_provenance:
+            provenance.update(extra_provenance)
         return AnswerRecord(
             answer_id=answer_id,
             conversation_id=conversation.conversation_id,
@@ -290,7 +308,7 @@ class ConversationManager:
             retrieval_metadata=supplied.retrieval_config,
             evaluation=evaluate_answer(str(answer_id), claims, supplied),
             turn_index=len(conversation.turns) - 1,
-            provenance={"model_display_name": metadata.display_name},
+            provenance=provenance,
         )
 
     def _reject_unusable(self, result: GenerationResult) -> None:

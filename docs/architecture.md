@@ -99,6 +99,7 @@ Each component owns one thing and must not grow into its neighbour.
 | --- | --- | --- | --- |
 | Configuration | Declare, load and validate versioned settings, and report where each value came from | Component behaviour | Implemented |
 | Conversation Manager | Conduct one turn: accept the user's message, project context, call the model, validate, record the answer; optionally persist it as an `AnswerRecord` | Model-specific logic; retrieval; correction; the storage mechanism | Implemented (orchestration; atomic answer recording when a store is given, ADR-0008/0018) |
+| Retrieval-aware Runtime | Compose a turn — planner → retrieval → model → record → store — keeping retrieval optional and atomicity intact | Own any single layer's logic (it delegates) | Implemented (thin coordinator, `chakaso.runtime`, ADR-0025; `chakaso chat` not yet wired to it) |
 | Query Planner | Decide whether retrieval is useful; formulate retrieval queries while preserving intent | Source truth | Implemented (deterministic rules, `chakaso.planning`, ADR-0022; not yet wired into the turn; can plan lexical, dense or hybrid retrieval — all backed) |
 | Retriever | Find candidate documents and chunks | Generate the final answer | Implemented (three `Retriever`s: lexical BM25 (ADR-0010), an exact dense similarity index over an `EmbeddingModel` boundary (ADR-0023), and a hybrid lexical+dense rank fusion (ADR-0024); the dense embedding is a non-semantic development double; every result is tagged with its producing strategy, hybrid results carrying per-component provenance) |
 | Fetcher | Retrieve permitted public content under an explicit policy | Interpret facts | Implemented (bounded, opt-in: ADR-0012) |
@@ -117,7 +118,8 @@ evidence records, conversation state and manager, local ingestion, lexical, dens
 bounded opt-in fetcher, the retrieval development benchmark and the claim / citation /
 grounding / answer-evaluation primitives, the correction foundation with an answer store (in-memory
 and durable SQLite, ADR-0021), the fixture-only semantic grounding boundary, reproducible experiment
-records and a deterministic query planner (ADR-0022) are implemented;
+records, a deterministic query planner (ADR-0022) and a retrieval-aware runtime (ADR-0025) are
+implemented;
 [`agent/CURRENT_STATE.md`](agent/CURRENT_STATE.md) is the authority, including on
 the fact that the only implementation of the model boundary is a development double
 rather than a language model, and that the grounding and citation checks are structural.
@@ -174,6 +176,7 @@ The boundaries that exist, or that the project is committed to building:
 | Retriever / Fetcher | pluggable retrieval and fetch mechanisms | Implemented (lexical, dense and hybrid retrievers behind a `Retriever` protocol, each result carrying its strategy and hybrid results their per-component provenance; bounded opt-in fetcher behind a `Fetcher` protocol) |
 | `EmbeddingModel` / `DenseIndex` | batch `embed(texts) -> vectors` + metadata (dimension, `is_semantic`); an exact similarity index | Implemented (`chakaso.retrieval.embeddings`/`dense`, ADR-0023) — the only embedding is a deterministic, non-semantic development double |
 | QueryPlanner / QueryPlan | message + conversation state -> an inspectable retrieval decision (mode, normalized query, source constraints, explanation, planner version) | Implemented (`chakaso.planning`, ADR-0022; deterministic rules; can plan lexical, dense or hybrid retrieval, all backed by retrievers) |
+| `RetrievalAwareConversation` | a turn: plan → chosen retrieval → `send`; returns the plan, retrieval outcome, evidence context and reply | Implemented (`chakaso.runtime`, ADR-0025; a thin coordinator, not a monolith; `chakaso chat` not yet wired to it) |
 | Reassessment | previous answer plus new evidence -> retain/qualify/correct | Implemented (an application operation `reassess_stored_answer` over a stored answer, ADR-0016; revised prose is planned — there is no model — and a durable answer store now exists, ADR-0021) |
 
 "Planned" here means there is no code, and the shape described is the specification
@@ -210,22 +213,21 @@ run neither fetches nor reaches the network, and there is still no trained model
 
 ## Data flow for one turn
 
-Steps 1, 3–7 exist (step 7 can record in memory or durably to SQLite, ADR-0021); step 2's planner
-now exists as a standalone layer (ADR-0022) but is not wired into the live turn. The consequence: the
-retrieval pipeline is built and produces an evidence pack, and a deterministic planner can decide per
-turn whether to retrieve — but nothing runs the planner *for* a turn in the loop yet, so a caller still
-runs `RetrievalService` and passes the pack to `send`, and `chakaso chat` resolves no citations on its
-own.
+Steps 1 and 3–7 exist (step 7 in memory or durably to SQLite, ADR-0021), and step 2's planner now runs
+inside a retrieval-aware runtime (ADR-0025) that calls the planner, retrieves the chosen evidence and
+hands the pack to `send`. The consequence: the whole flow is executable as a library and tested, but
+`chakaso chat` does not yet drive the runtime, so an interactive turn still resolves no citations on its
+own — a caller, or the runtime, runs `RetrievalService` and passes the pack to `send`.
 
 1. The Conversation Manager appends the user turn and projects the recent
    conversation into model messages. Reference resolution against state ("this",
    "why not", "and the second one") is not implemented; the projected messages carry
    the previous turns, and nothing more specific.
-2. **Implemented as a layer (deterministic); not wired into the turn.** The `QueryPlanner`
+2. **Implemented, and now run by the runtime (ADR-0025).** The `QueryPlanner`
    ([ADR-0022](decisions/ADR-0022-query-planner-boundary.md)) decides whether a turn needs fresh
    evidence and produces a plan — a mode, a normalized query, and prior-source constraints for a
-   follow-up. It is a standalone deterministic decision system; the live conversation loop does not
-   yet call it, so retrieval is still invoked explicitly by a caller.
+   follow-up. The retrieval-aware runtime calls it and hands the chosen retriever's pack to `send`;
+   `chakaso chat` does not yet drive that runtime.
 3. **Implemented (local; fetch opt-in).** `RetrievalService` retrieves candidate chunks
    from a corpus and ranks them with the lexical (BM25) retriever, preserving source and
    section boundaries through chunking. Documents reach the corpus through local
