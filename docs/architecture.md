@@ -99,7 +99,7 @@ Each component owns one thing and must not grow into its neighbour.
 | --- | --- | --- | --- |
 | Configuration | Declare, load and validate versioned settings, and report where each value came from | Component behaviour | Implemented |
 | Conversation Manager | Conduct one turn: accept the user's message, project context, call the model, validate, record the answer; optionally persist it as an `AnswerRecord` | Model-specific logic; retrieval; correction; the storage mechanism | Implemented (orchestration; atomic answer recording when a store is given, ADR-0008/0018) |
-| Query Planner | Decide whether retrieval is useful; formulate retrieval queries while preserving intent | Source truth | Planned |
+| Query Planner | Decide whether retrieval is useful; formulate retrieval queries while preserving intent | Source truth | Implemented (deterministic rules, `chakaso.planning`, ADR-0022; not yet wired into the turn; dense/hybrid modes named but refused) |
 | Retriever | Find candidate documents and chunks | Generate the final answer | Implemented (lexical BM25: ADR-0010 chunking; dense is planned) |
 | Fetcher | Retrieve permitted public content under an explicit policy | Interpret facts | Implemented (bounded, opt-in: ADR-0012) |
 | Document Processor | Extract readable text, metadata and section structure | Invent missing text | Implemented (narrow HTML reader: text + headings, no browser; PDF planned) |
@@ -116,8 +116,8 @@ A component marked "Planned" has no code. Configuration, the model boundary, the
 evidence records, conversation state and manager, local ingestion, lexical retrieval, the
 bounded opt-in fetcher, the retrieval development benchmark and the claim / citation /
 grounding / answer-evaluation primitives, the correction foundation with an answer store (in-memory
-and durable SQLite, ADR-0021), the fixture-only semantic grounding boundary and reproducible
-experiment records are implemented;
+and durable SQLite, ADR-0021), the fixture-only semantic grounding boundary, reproducible experiment
+records and a deterministic query planner (ADR-0022) are implemented;
 [`agent/CURRENT_STATE.md`](agent/CURRENT_STATE.md) is the authority, including on
 the fact that the only implementation of the model boundary is a development double
 rather than a language model, and that the grounding and citation checks are structural.
@@ -172,6 +172,7 @@ The boundaries that exist, or that the project is committed to building:
 | `AnswerRecord` | answer text, cited identifiers, model, claims, evaluation, correction lineage | Implemented (`chakaso.answers`, ADR-0017; per-event id; the answer's substance is persisted durably by SQLite (ADR-0021), its evaluation recomputed rather than frozen) |
 | `AnswerStore` | append-only save / get / list / history, atomic `save_many`, with integrity checks | Implemented (in-memory **and** durable SQLite backends behind one protocol, ADR-0018/0021; the durable store survives a process restart) |
 | Retriever / Fetcher | pluggable retrieval and fetch mechanisms | Implemented (lexical retriever behind a `Retriever` protocol; bounded opt-in fetcher behind a `Fetcher` protocol) |
+| QueryPlanner / QueryPlan | message + conversation state -> an inspectable retrieval decision (mode, normalized query, source constraints, explanation, planner version) | Implemented (`chakaso.planning`, ADR-0022; deterministic rules; dense/hybrid modes named but refused until a retriever backs them) |
 | Reassessment | previous answer plus new evidence -> retain/qualify/correct | Implemented (an application operation `reassess_stored_answer` over a stored answer, ADR-0016; revised prose is planned — there is no model — and a durable answer store now exists, ADR-0021) |
 
 "Planned" here means there is no code, and the shape described is the specification
@@ -179,7 +180,7 @@ to build against rather than a description of something that exists. Configurati
 the model boundary, the evidence records, conversation state, the conversation manager,
 local ingestion, lexical retrieval, the retrieval and correction development benchmarks, the
 correction foundation, an answer store (in-memory and durable SQLite, ADR-0021), the fixture-only
-semantic grounding boundary and the experiment records are
+semantic grounding boundary, the experiment records and the deterministic query planner (ADR-0022) are
 implemented; fetching exists only behind the opt-in bounded fetcher, so a default
 run neither fetches nor reaches the network, and there is still no trained model.
 
@@ -208,18 +209,22 @@ run neither fetches nor reaches the network, and there is still no trained model
 
 ## Data flow for one turn
 
-Steps 1, 3, 4, 5, 6 and 7 exist (step 7 as an in-memory record, not a durable one); step 2 does
-not. The consequence: the retrieval pipeline is built and produces an evidence pack, but nothing
-decides *for* a turn whether to retrieve — a caller runs `RetrievalService` and passes the pack to
-`send`. `chakaso chat` does not wire that in, so a chat turn resolves no citations on its own.
+Steps 1, 3–7 exist (step 7 can record in memory or durably to SQLite, ADR-0021); step 2's planner
+now exists as a standalone layer (ADR-0022) but is not wired into the live turn. The consequence: the
+retrieval pipeline is built and produces an evidence pack, and a deterministic planner can decide per
+turn whether to retrieve — but nothing runs the planner *for* a turn in the loop yet, so a caller still
+runs `RetrievalService` and passes the pack to `send`, and `chakaso chat` resolves no citations on its
+own.
 
 1. The Conversation Manager appends the user turn and projects the recent
    conversation into model messages. Reference resolution against state ("this",
    "why not", "and the second one") is not implemented; the projected messages carry
    the previous turns, and nothing more specific.
-2. **Not implemented.** The Query Planner decides whether the turn can be answered
-   from conversation context or needs fresh evidence, and produces zero or more
-   retrieval queries. Until it exists, retrieval is invoked explicitly by a caller.
+2. **Implemented as a layer (deterministic); not wired into the turn.** The `QueryPlanner`
+   ([ADR-0022](decisions/ADR-0022-query-planner-boundary.md)) decides whether a turn needs fresh
+   evidence and produces a plan — a mode, a normalized query, and prior-source constraints for a
+   follow-up. It is a standalone deterministic decision system; the live conversation loop does not
+   yet call it, so retrieval is still invoked explicitly by a caller.
 3. **Implemented (local; fetch opt-in).** `RetrievalService` retrieves candidate chunks
    from a corpus and ranks them with the lexical (BM25) retriever, preserving source and
    section boundaries through chunking. Documents reach the corpus through local
@@ -236,19 +241,23 @@ decides *for* a turn whether to retrieve — a caller runs `RetrievalService` an
    identifiers as errors, and attaches source metadata to the surviving
    references. This exists as `resolve_citations`, and the conversation manager runs
    it on every answer.
-7. **Implemented (in-memory).** When the manager is given an `AnswerStore`, the answer is recorded
+7. **Implemented.** When the manager is given an `AnswerStore`, the answer is recorded
    as an immutable `AnswerRecord` — model identity (and whether it is a development double), the
    evidence supplied, the claims and their evaluation, and a `correction_of` link — and saved
-   before the conversation is adopted, so a persistence failure aborts the turn (ADR-0018). Nothing
-   is written to disk, so the record does not survive the process; durable persistence remains
-   planned. Without a store, only the assistant turn (which evidence was supplied and which
-   sources were cited) is recorded in conversation state, as before.
+   before the conversation is adopted, so a persistence failure aborts the turn (ADR-0018). The
+   store may be the in-memory one or the durable SQLite backend, which survives a process restart
+   (ADR-0021); nothing is written to disk unless the durable store is selected. Without a store,
+   only the assistant turn (which evidence was supplied and which sources were cited) is recorded
+   in conversation state, as before.
 
 ## Storage
 
-Storage is deliberately undecided beyond the properties it must have, because
-committing to an index or a database before there is data to store would be a
-guess ([ADR-0001](decisions/ADR-0001-local-first-runtime.md)).
+Answer-history storage is now decided: a local SQLite backend, chosen in
+[ADR-0021](decisions/ADR-0021-sqlite-answer-store.md) and selected through configuration, defaulting
+to in-memory so nothing is written unless a caller opts in. Storage beyond that — the retrieval
+corpus, an evidence store — is deliberately still undecided, because committing to an index for it
+before there is data that needs one would be a guess
+([ADR-0001](decisions/ADR-0001-local-first-runtime.md)).
 
 What is fixed:
 

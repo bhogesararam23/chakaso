@@ -40,6 +40,7 @@ ANALYSIS_PACKAGES = (
     "answers",
     "conversation",
     "experiments",
+    "planning",
 )
 
 FORBIDDEN_NETWORK_ROOTS = frozenset(

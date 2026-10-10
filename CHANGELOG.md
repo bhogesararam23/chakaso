@@ -10,6 +10,35 @@ capability is implemented or still planned.
 
 ## Unreleased
 
+### 2026-10-10 — Deterministic query planner
+
+**Added**
+
+- `chakaso.planning`: a `QueryPlanner` boundary (ADR-0022) with one implementation,
+  `DeterministicQueryPlanner` — a typed rule system, not a language model and not a discourse
+  resolver. Given a turn and the conversation state it returns an inspectable `QueryPlan`: the
+  retrieval mode, whether retrieval is required, the original and a meaning-preserving normalized
+  query, prior-source constraints for a follow-up, `top_k`, the context that informed the decision,
+  the reasons that actually fired, and a `planner_version`.
+- Retrieval stays optional: a greeting plans no retrieval, a knowledge question plans fresh lexical
+  retrieval, and a follow-up that shares the conversation's topic or uses an anaphoric cue plans
+  retrieval constrained to the sources already in play — a topic change does not reuse stale evidence.
+- `normalize_query` collapses whitespace, composes Unicode NFC and trims trailing terminal punctuation
+  without rewriting words, case or interior punctuation; both the original and the normalized form are
+  kept on the plan.
+- `QueryMode` names `none`, `lexical`, `dense` and `hybrid`, but the planner refuses `dense`/`hybrid`
+  at construction because no retriever backs them yet — the vocabulary is stable without promising a
+  capability that does not exist. Construction enforces that a plan never misreports itself (a mode
+  cannot disagree with its `retrieval_required` flag, a retrieving plan needs a query, reuse needs a
+  source, and every plan must explain itself). The no-network import guard now covers the package.
+
+**Notes**
+
+- The planner is a standalone decision layer; the conversation runtime does not yet call it, so
+  retrieval is still invoked explicitly by a caller. Its decisions are documented keyword rules, not
+  semantic understanding, and are echoed verbatim in each plan so nothing about the reasoning is
+  fabricated.
+
 ### 2026-10-10 — Durable SQLite answer storage
 
 **Added**
