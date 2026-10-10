@@ -62,6 +62,7 @@ from chakaso.retrieval.errors import (
     UnsupportedDocumentError,
 )
 from chakaso.retrieval.html import ParsedHtml, parse_html
+from chakaso.retrieval.hybrid import FusionMethod, HybridConfig, HybridRetriever
 from chakaso.retrieval.ingest import (
     DEFAULT_MAX_BYTES,
     SUPPORTED_FORMATS,
@@ -82,7 +83,7 @@ from chakaso.retrieval.lexical import (
 from chakaso.retrieval.normalize import normalize_document
 from chakaso.retrieval.policy import MAX_ALLOWED_SCHEMES, FetchPolicy
 from chakaso.retrieval.service import DEFAULT_TOP_K, RetrievalOutcome, RetrievalService
-from chakaso.retrieval.strategy import RetrievalStrategy
+from chakaso.retrieval.strategy import HybridProvenance, RetrievalStrategy
 from chakaso.retrieval.web import ingest_acquired
 
 __all__ = [
@@ -115,7 +116,11 @@ __all__ = [
     "FetchTimeoutError",
     "Fetcher",
     "FixtureEmbeddingModel",
+    "FusionMethod",
     "HttpFetcher",
+    "HybridConfig",
+    "HybridProvenance",
+    "HybridRetriever",
     "IngestedDocument",
     "IngestionError",
     "InvalidSchemeError",

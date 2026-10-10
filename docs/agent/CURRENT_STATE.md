@@ -14,7 +14,7 @@ A private planning note is never evidence that something is implemented.
 | Repository conventions | `.gitignore`, `.gitattributes`, `.editorconfig` | Private docx pack excluded by `.gitignore` and guarded by a test |
 | License | `LICENSE` | Apache-2.0; rationale in ADR-0004 |
 | Public documentation | `README.md`, `docs/*.md`, `docs/research/` | Specifications with mandatory status labels |
-| Decision records | `docs/decisions/` | ADR-0001 to ADR-0023 |
+| Decision records | `docs/decisions/` | ADR-0001 to ADR-0024 |
 | Contribution guide | `CONTRIBUTING.md` | |
 | Agent contract | `AGENTS.md`, `docs/agent/` | |
 | Python package | `src/chakaso/` | Installs; typed; `py.typed` ships |
@@ -30,8 +30,9 @@ A private planning note is never evidence that something is implemented.
 | Corpus | `src/chakaso/retrieval/corpus.py` | In-memory set of sources and chunks for retrieval: idempotent add, deterministic enumeration, provenance guard |
 | Lexical retrieval | `src/chakaso/retrieval/lexical.py` | Deterministic BM25 index and retriever behind a `Retriever` protocol: ranking, top-k, source filter, inspectable explanations |
 | Dense retrieval | `src/chakaso/retrieval/embeddings.py`, `dense.py` | An `EmbeddingModel` boundary with a deterministic **non-semantic** fixture double, an exact in-memory dense index, and a `DenseRetriever` behind the same `Retriever` protocol; results carry the strategy that produced them (ADR-0023). No real embedding model, no vector store on disk |
+| Hybrid retrieval | `src/chakaso/retrieval/hybrid.py` | A `HybridRetriever` that composes the lexical and dense retrievers with transparent reciprocal-rank fusion, returning one ranking tagged `hybrid` where each result carries `HybridProvenance` — the lexical and dense ranks/scores that fed it (ADR-0024). Deterministic and offline; over the fixture embedding it re-ranks token overlap, not meaning |
 | Retrieval orchestration | `src/chakaso/retrieval/service.py` | `RetrievalService.search`: query → ranked `EvidencePack` with recorded scores and preserved provenance; an empty result makes an empty pack, never invented evidence |
-| Query planning | `src/chakaso/planning/` | A deterministic `QueryPlanner` boundary (ADR-0022): a typed `QueryPlan` (mode, normalized + original query, source constraints, top-k, reuse flag, explanation, planner version), meaning-preserving `normalize_query`, and `DeterministicQueryPlanner` deciding per turn whether to retrieve lexically, reuse the conversation's prior sources for a follow-up, or retrieve nothing. Not an LLM; dense/hybrid modes are named but refused until backed |
+| Query planning | `src/chakaso/planning/` | A deterministic `QueryPlanner` boundary (ADR-0022): a typed `QueryPlan` (mode, normalized + original query, source constraints, top-k, reuse flag, explanation, planner version), meaning-preserving `normalize_query`, and `DeterministicQueryPlanner` deciding per turn whether to retrieve lexically, reuse the conversation's prior sources for a follow-up, or retrieve nothing. Not an LLM; lexical, dense and hybrid retrieval are all backed by retrievers (ADR-0022/ADR-0024) |
 | Conversation state | `src/chakaso/conversation/state.py` | Immutable, append-only turns with provenance; topic, entities and open questions |
 | Conversation manager | `src/chakaso/conversation/manager.py` | Conducts one turn: context projection, model call, validation, evidence and citation recording. Transactional (ADR-0008) |
 | Conversation shell | `chakaso chat` | Interactive and one-shot. States in its own output that the engine is a development double |
@@ -47,9 +48,9 @@ A private planning note is never evidence that something is implemented.
 | Answers & persistence | `src/chakaso/answers/` | `AnswerId` is a per-event typed identifier, not a content hash (ADR-0017). An immutable `AnswerRecord` ties turn + model + evidence + claims + evaluation + a `correction_of` link by reference. `AnswerStore` boundary with two append-only, integrity-checked backends: in-memory `InMemoryAnswerStore` (the default) and a durable `SQLiteAnswerStore` built on the standard library (ADR-0018, ADR-0021). The durable store is proven by a test to survive a process restart, and is opt-in, so nothing writes to disk unless it is selected |
 | Correction foundation | `src/chakaso/correction/` | The reassessment decision rule (retain / qualify / correct / abstain / needs_review, ADR-0016), `reassess` over the grounding boundary, an append-only `CorrectionRecord`, structural correction metrics, a follow-up helper (`reassess_followup`), and an application-level `reassess_stored_answer` / `reassess_and_record` over a stored answer. Decides and records; produces no revised prose (there is no model) and is not wired into an automatic loop |
 | Experiments | `src/chakaso/experiments/` | `Experiment` (hypothesis + benchmark + configuration) and a content-fingerprinted, environment-separated `ExperimentResult`; `run_experiment` drives a development benchmark; `compare_results` is a deterministic regression baseline that refuses incompatible versions (ADR-0020). No tracker, no database, no model |
-| Tests | `tests/` | ~913 tests at the commit recorded above: package, CLI (incl. `retrieve`, `benchmark` and `experiment`), configuration, identifiers and hashing, source identity, model boundary, evidence, normalization, chunking, ingestion, corpus, lexical retrieval, dense retrieval (embedding double, exact index, retriever), retrieval orchestration, end-to-end pipeline, fetch policy and netguard, HTML/web ingestion, cache, evaluation metrics and answer evaluation, benchmark identity/cases/loader/fixtures/runner/report and the correction benchmark, claims/extract/links, citation validation, grounding and the semantic boundary, correction decision/reassess/record/metrics/follow-up/service, answer identity/record/store/serialization and the durable SQLite store (restart, rollback, schema, integrity) with a two-backend conformance suite and conversation integration, experiments (model/runner/compare), security/determinism/reproducibility regressions, conversation state and manager, query planning (mode/normalization/plan invariants/deterministic rules), repository hygiene. The count ages; `python -m pytest` does not. |
+| Tests | `tests/` | ~928 tests at the commit recorded above: package, CLI (incl. `retrieve`, `benchmark` and `experiment`), configuration, identifiers and hashing, source identity, model boundary, evidence, normalization, chunking, ingestion, corpus, lexical retrieval, dense retrieval (embedding double, exact index, retriever), hybrid retrieval (reciprocal-rank fusion, per-component provenance), retrieval orchestration, end-to-end pipeline, fetch policy and netguard, HTML/web ingestion, cache, evaluation metrics and answer evaluation, benchmark identity/cases/loader/fixtures/runner/report and the correction benchmark, claims/extract/links, citation validation, grounding and the semantic boundary, correction decision/reassess/record/metrics/follow-up/service, answer identity/record/store/serialization and the durable SQLite store (restart, rollback, schema, integrity) with a two-backend conformance suite and conversation integration, experiments (model/runner/compare), security/determinism/reproducibility regressions, conversation state and manager, query planning (mode/normalization/plan invariants/deterministic rules), repository hygiene. The count ages; `python -m pytest` does not. |
 | CI | `.github/workflows/ci.yml` | Green on Python 3.11, 3.12, 3.13 |
-| Hybrid retrieval, retrieval wired into a turn, an automatic correction loop | **do not exist** | A deterministic query planner (ADR-0022), durable SQLite persistence (ADR-0021, opt-in) and a dense retrieval boundary with an exact index over a **non-semantic** fixture embedding (ADR-0023) all exist. But there is no real semantic embedding, no hybrid fusion, the planner is not yet called by the runtime, and no reassessment runs itself |
+| Retrieval wired into a turn, an automatic correction loop | **do not exist** | A deterministic query planner (ADR-0022), durable SQLite persistence (ADR-0021, opt-in), a dense retrieval boundary over a **non-semantic** fixture embedding (ADR-0023) and a hybrid rank-fusion retriever (ADR-0024) all exist. But there is no real semantic embedding, the planner is not yet called by the runtime, and no reassessment runs itself |
 
 ## What works
 
@@ -126,6 +127,11 @@ A private planning note is never evidence that something is implemented.
   `FixtureEmbeddingModel`, a deterministic hashed bag-of-tokens double declared `is_semantic=False`
   — it exercises the boundary and reproduces exactly, but it is not semantic and a dense result from
   it means token overlap under a different metric, not understanding.
+- Chunks can be ranked by **hybrid fusion**: `HybridRetriever` composes the lexical and dense
+  retrievers with transparent reciprocal-rank fusion, returning one ranking tagged `hybrid` where each
+  result records the lexical and dense ranks/scores that produced it (`HybridProvenance`, ADR-0024).
+  It is deterministic and offline; over the fixture embedding it re-ranks token overlap, so it
+  demonstrates the fusion mechanism, not any semantic advantage.
 - A query against a corpus can be run through `RetrievalService`, which ranks chunks,
   records the retriever's score onto the pack's chunks, and assembles a valid
   `EvidencePack` with its sources; `ConversationManager.send(evidence=...)` can now be
@@ -232,6 +238,7 @@ says anything else.
 | Answers and durable storage | Answer identity and record invariants, the serialization codec (round-trip, evaluation-not-persisted, malformed-document rejection), the append-only invariants run over **both** backends (in-memory and SQLite conformance), and the SQLite store's restart durability (including a separate-process write), transaction rollback, schema/version refusal, and on-disk corruption detection |
 | Query planning | Mode/retrieval-flag consistency and plan construction invariants (reuse needs sources, a retrieving plan needs a non-empty query, every plan explains itself), meaning-preserving normalization (whitespace/Unicode/trailing-punctuation, idempotent, total, interior punctuation kept), the deterministic rules over a conversational sequence (greeting → none, question → fresh, follow-up → reuse prior sources, topic change → no stale reuse), unbacked-mode refusal, and protocol conformance |
 | Dense retrieval | The fixture embedding's honest metadata (`is_semantic=False`, batch order, determinism, unit-length, zero-vector empty text), vector/metadata validation, index invariants (uniform dimension, no duplicate chunk, empty index), and the dense retriever: `dense` strategy tagging with empty matched terms, ranking/determinism, `source_ids` filter, zero-query and empty-index returning nothing, dimension-mismatch rejection, and `Retriever`-protocol conformance |
+| Hybrid retrieval | Reciprocal-rank fusion of the lexical and dense retrievers: `hybrid` strategy tagging with full per-component provenance (both ranks when a chunk appears in both, `None` for the component that missed it — never fabricated), exact RRF score arithmetic, weight-driven favoring, `candidate_k` pooling, `source_ids` pass-through, determinism, invalid-config refusal, and `Retriever`-protocol conformance |
 | Repository invariants | Private pack never tracked, `.gitignore` rule present, no secret-shaped files, no tracked file over 1 MiB, no commercial provider dependency, ADR numbering and indexing, documentation links resolve |
 
 ## What is experimental
@@ -303,6 +310,7 @@ index, but over a non-semantic fixture embedding, so it proves the shape, not an
 | ADR-0021 | Durable answer storage is a SQLite backend behind the existing store boundary |
 | ADR-0022 | Query planning is a deterministic decision boundary, not a model |
 | ADR-0023 | Dense retrieval is an embedding boundary with an exact index; the only embedding is a non-semantic double |
+| ADR-0024 | Hybrid retrieval fuses lexical and dense results by reciprocal rank fusion |
 
 Two process facts are recorded outside the ADR series because they are repository
 history rather than architecture:
@@ -329,17 +337,18 @@ whether and how to retrieve (ADR-0022), a fixture-only semantic grounding bounda
 experiment records with a deterministic regression baseline are all built and tested. The next real
 units, in order:
 
-1. **Hybrid retrieval** — a transparent, deterministic fusion (reciprocal rank fusion to start) of
-   the now-existing lexical and dense retrievers, preserving each component's rank and score as
-   provenance, with typed weight/candidate-k/top-k configuration. This is what finally backs the
-   planner's `hybrid` mode.
-2. **A retrieval-aware conversation runtime** — wire the existing planner → retrieval → model →
-   claims → citation validation → grounding → `AnswerRecord` → durable store into a turn, with
-   retrieval optional and the all-or-nothing turn guarantee preserved.
+1. **A retrieval-aware conversation runtime** — wire the existing planner → retrieval (lexical, dense
+   or hybrid) → model → claims → citation validation → grounding → `AnswerRecord` → durable store into
+   a turn, with retrieval optional and the all-or-nothing turn guarantee preserved; make the planner's
+   decision and the retrieval strategy structured, inspectable metadata on the answer.
+2. **Benchmark and experiment expansion** — compare lexical / dense / hybrid over the synthetic
+   fixtures through the existing experiment framework, reporting only measured, honestly-labelled
+   development numbers (the dense component is the fixture double, so results stay synthetic).
 
 A **real semantic judge** (the `SemanticJudge` boundary is fixture-only today) and an **automatic,
-triggered correction** follow these. Dense retrieval is built, but its only embedding is a
-non-semantic fixture double (ADR-0023) — a real embedding model is what would make it more. All of it
-stays behind the existing boundaries, so none requires redesigning what is here. There is still no
-language model: nothing generates an answer, produces revised prose, or runs a real semantic
-judgement. See [`ACTIVE_TASK.md`](ACTIVE_TASK.md) for the definition of done.
+triggered correction** follow these. All three retrieval modes are now backed, but the planner is not
+yet called by the conversation runtime, and dense/hybrid run over a non-semantic fixture embedding
+(ADR-0023/ADR-0024) — a real embedding model is what would make them more. All of it stays behind the
+existing boundaries, so none requires redesigning what is here. There is still no language model:
+nothing generates an answer, produces revised prose, or runs a real semantic judgement. See
+[`ACTIVE_TASK.md`](ACTIVE_TASK.md) for the definition of done.

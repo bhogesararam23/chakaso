@@ -150,18 +150,16 @@ def test_source_constraints_are_deduplicated_in_order() -> None:
 # -- deterministic planner: construction guards ----------------------------------
 
 
-@pytest.mark.parametrize("mode", [QueryMode.NONE, QueryMode.HYBRID])
-def test_the_planner_refuses_modes_it_cannot_back(mode: QueryMode) -> None:
-    # LEXICAL and DENSE have retrievers (ADR-0023); NONE cannot retrieve and HYBRID has no
-    # fusion layer yet, so those are refused rather than promised.
-    with pytest.raises(PlanningError, match=r"not backed|NONE"):
-        DeterministicQueryPlanner(retrieval_mode=mode)
+def test_the_planner_refuses_none_as_a_retrieval_mode() -> None:
+    with pytest.raises(PlanningError, match="NONE"):
+        DeterministicQueryPlanner(retrieval_mode=QueryMode.NONE)
 
 
-def test_the_planner_can_plan_dense_retrieval() -> None:
-    # Now that a dense retriever exists, planning dense is honest to allow.
-    plan = DeterministicQueryPlanner(retrieval_mode=QueryMode.DENSE).plan("what is evidence")
-    assert plan.mode is QueryMode.DENSE
+@pytest.mark.parametrize("mode", [QueryMode.LEXICAL, QueryMode.DENSE, QueryMode.HYBRID])
+def test_the_planner_can_plan_every_backed_mode(mode: QueryMode) -> None:
+    # Lexical, dense and hybrid each have a retriever now (ADR-0023/ADR-0024).
+    plan = DeterministicQueryPlanner(retrieval_mode=mode).plan("what is evidence")
+    assert plan.mode is mode
     assert plan.retrieval_required is True
 
 

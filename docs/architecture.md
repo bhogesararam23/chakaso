@@ -99,8 +99,8 @@ Each component owns one thing and must not grow into its neighbour.
 | --- | --- | --- | --- |
 | Configuration | Declare, load and validate versioned settings, and report where each value came from | Component behaviour | Implemented |
 | Conversation Manager | Conduct one turn: accept the user's message, project context, call the model, validate, record the answer; optionally persist it as an `AnswerRecord` | Model-specific logic; retrieval; correction; the storage mechanism | Implemented (orchestration; atomic answer recording when a store is given, ADR-0008/0018) |
-| Query Planner | Decide whether retrieval is useful; formulate retrieval queries while preserving intent | Source truth | Implemented (deterministic rules, `chakaso.planning`, ADR-0022; not yet wired into the turn; can plan lexical or dense retrieval, hybrid named but refused until the fusion layer) |
-| Retriever | Find candidate documents and chunks | Generate the final answer | Implemented (two `Retriever`s: lexical BM25 (ADR-0010) and an exact dense similarity index over an `EmbeddingModel` boundary; the dense embedding is a non-semantic development double, ADR-0023; every result is tagged with its producing strategy) |
+| Query Planner | Decide whether retrieval is useful; formulate retrieval queries while preserving intent | Source truth | Implemented (deterministic rules, `chakaso.planning`, ADR-0022; not yet wired into the turn; can plan lexical, dense or hybrid retrieval — all backed) |
+| Retriever | Find candidate documents and chunks | Generate the final answer | Implemented (three `Retriever`s: lexical BM25 (ADR-0010), an exact dense similarity index over an `EmbeddingModel` boundary (ADR-0023), and a hybrid lexical+dense rank fusion (ADR-0024); the dense embedding is a non-semantic development double; every result is tagged with its producing strategy, hybrid results carrying per-component provenance) |
 | Fetcher | Retrieve permitted public content under an explicit policy | Interpret facts | Implemented (bounded, opt-in: ADR-0012) |
 | Document Processor | Extract readable text, metadata and section structure | Invent missing text | Implemented (narrow HTML reader: text + headings, no browser; PDF planned) |
 | Chunker | Produce stable evidence units with positions | Rank claims | Implemented (Markdown structure, no overlap: ADR-0010) |
@@ -113,7 +113,7 @@ Each component owns one thing and must not grow into its neighbour.
 | Evaluation | Measure behaviour and detect regressions | Change production behaviour | Implemented (metric functions; retrieval and correction development benchmarks; structural claim/citation/grounding/answer evaluation; reproducible experiment records with a deterministic regression baseline, ADR-0020; a real grounded-answer benchmark and model-quality measurement planned) |
 
 A component marked "Planned" has no code. Configuration, the model boundary, the
-evidence records, conversation state and manager, local ingestion, lexical and dense retrieval, the
+evidence records, conversation state and manager, local ingestion, lexical, dense and hybrid retrieval, the
 bounded opt-in fetcher, the retrieval development benchmark and the claim / citation /
 grounding / answer-evaluation primitives, the correction foundation with an answer store (in-memory
 and durable SQLite, ADR-0021), the fixture-only semantic grounding boundary, reproducible experiment
@@ -171,15 +171,15 @@ The boundaries that exist, or that the project is committed to building:
 | `ConversationManager` | conduct one turn against the model boundary; accept evidence; report the generation and citation outcome | Implemented |
 | `AnswerRecord` | answer text, cited identifiers, model, claims, evaluation, correction lineage | Implemented (`chakaso.answers`, ADR-0017; per-event id; the answer's substance is persisted durably by SQLite (ADR-0021), its evaluation recomputed rather than frozen) |
 | `AnswerStore` | append-only save / get / list / history, atomic `save_many`, with integrity checks | Implemented (in-memory **and** durable SQLite backends behind one protocol, ADR-0018/0021; the durable store survives a process restart) |
-| Retriever / Fetcher | pluggable retrieval and fetch mechanisms | Implemented (lexical and dense retrievers behind a `Retriever` protocol, each result carrying its strategy; bounded opt-in fetcher behind a `Fetcher` protocol) |
+| Retriever / Fetcher | pluggable retrieval and fetch mechanisms | Implemented (lexical, dense and hybrid retrievers behind a `Retriever` protocol, each result carrying its strategy and hybrid results their per-component provenance; bounded opt-in fetcher behind a `Fetcher` protocol) |
 | `EmbeddingModel` / `DenseIndex` | batch `embed(texts) -> vectors` + metadata (dimension, `is_semantic`); an exact similarity index | Implemented (`chakaso.retrieval.embeddings`/`dense`, ADR-0023) — the only embedding is a deterministic, non-semantic development double |
-| QueryPlanner / QueryPlan | message + conversation state -> an inspectable retrieval decision (mode, normalized query, source constraints, explanation, planner version) | Implemented (`chakaso.planning`, ADR-0022; deterministic rules; can plan lexical or dense, hybrid named but refused until a fusion retriever backs it) |
+| QueryPlanner / QueryPlan | message + conversation state -> an inspectable retrieval decision (mode, normalized query, source constraints, explanation, planner version) | Implemented (`chakaso.planning`, ADR-0022; deterministic rules; can plan lexical, dense or hybrid retrieval, all backed by retrievers) |
 | Reassessment | previous answer plus new evidence -> retain/qualify/correct | Implemented (an application operation `reassess_stored_answer` over a stored answer, ADR-0016; revised prose is planned — there is no model — and a durable answer store now exists, ADR-0021) |
 
 "Planned" here means there is no code, and the shape described is the specification
 to build against rather than a description of something that exists. Configuration,
 the model boundary, the evidence records, conversation state, the conversation manager,
-local ingestion, lexical and dense retrieval, the retrieval and correction development benchmarks, the
+local ingestion, lexical, dense and hybrid retrieval, the retrieval and correction development benchmarks, the
 correction foundation, an answer store (in-memory and durable SQLite, ADR-0021), the fixture-only
 semantic grounding boundary, the experiment records and the deterministic query planner (ADR-0022) are
 implemented; fetching exists only behind the opt-in bounded fetcher, so a default

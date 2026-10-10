@@ -33,7 +33,7 @@ from typing import Final, Protocol, runtime_checkable
 from chakaso.core.identifiers import SourceId
 from chakaso.evidence import EvidenceChunk
 from chakaso.retrieval.errors import RetrievalError
-from chakaso.retrieval.strategy import RetrievalStrategy
+from chakaso.retrieval.strategy import HybridProvenance, RetrievalStrategy
 
 __all__ = [
     "DEFAULT_B",
@@ -73,6 +73,8 @@ class RetrievalResult:
     than infer it from the retriever object that ran (ADR-0022/ADR-0023). ``matched_terms``
     is what a lexical match actually overlapped; a dense result matched no terms and leaves
     it empty, because inventing term overlaps it did not compute would be a false explanation.
+    ``provenance`` is set only by a hybrid result, to record the lexical and dense ranks and
+    scores that fused into it (ADR-0024); a single-strategy result leaves it ``None``.
     """
 
     chunk: EvidenceChunk
@@ -80,6 +82,7 @@ class RetrievalResult:
     rank: int
     strategy: RetrievalStrategy
     matched_terms: tuple[str, ...] = ()
+    provenance: HybridProvenance | None = None
 
 
 @runtime_checkable

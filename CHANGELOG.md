@@ -10,6 +10,32 @@ capability is implemented or still planned.
 
 ## Unreleased
 
+### 2026-10-10 — Hybrid retrieval (reciprocal rank fusion)
+
+**Added**
+
+- `chakaso.retrieval.hybrid`: a `HybridRetriever`, a third implementation of the `Retriever`
+  protocol, that composes the lexical and dense retrievers into one ranking through transparent,
+  deterministic **reciprocal rank fusion** (ADR-0024). The formula is written out —
+  `fused(c) = Σ weight / (rrf_k + rank)` over the components that returned a chunk — chosen because
+  it needs only each component's *ranks*, not a shared score scale a BM25 score and a cosine
+  similarity do not have.
+- A `HybridConfig` (method, `rrf_k`, `candidate_k`, `lexical_weight`, `dense_weight`) validates at
+  construction (only RRF, positive `rrf_k`, non-negative weights not both zero), and is the typed
+  tuning object — deliberately not a second configuration system.
+- `RetrievalResult` gained an optional `provenance`; a hybrid result carries a `HybridProvenance`
+  recording the lexical and dense rank/score that fed it (or `None` for a component that missed the
+  chunk) and the fused score that ordered it, so a hybrid hit stays auditable rather than an opaque
+  number.
+- With a hybrid retriever present, the query planner now backs `hybrid`: lexical, dense and hybrid are
+  all selectable modes.
+
+**Notes**
+
+- Over the non-semantic fixture embedding (ADR-0023), hybrid mostly re-ranks token overlap; it
+  demonstrates the fusion mechanism, and no claim of dense/hybrid superiority on meaning is made or
+  supported. It stays in-memory and offline.
+
 ### 2026-10-10 — Dense retrieval boundary and an exact index
 
 **Added**

@@ -334,6 +334,7 @@ evidence textually and structurally.
 | Lexical retrieval (BM25 index, deterministic ranking, explanations) | Implemented |
 | Retrieval orchestration (query → ranked EvidencePack) | Implemented |
 | Dense retrieval: `EmbeddingModel` boundary, exact dense index, `DenseRetriever` behind `Retriever` | Implemented (`chakaso.retrieval.embeddings`/`dense`, ADR-0023) — the only embedding is a deterministic, **non-semantic** development double; results are tagged with their producing strategy |
+| Hybrid retrieval: reciprocal-rank fusion of the lexical and dense retrievers, with per-component provenance | Implemented (`chakaso.retrieval.hybrid`, ADR-0024) — over the fixture dense embedding it re-ranks token overlap, not meaning |
 | A real semantic embedding model, and an approximate (FAISS-like) vector index | Planned |
 | Reranking | Planned |
 | Claim-level support checking | Planned |

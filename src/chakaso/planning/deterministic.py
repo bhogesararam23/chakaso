@@ -25,9 +25,9 @@ The rules, in precedence order (each decision is echoed in the plan's ``explanat
 
 The cue lists are the documented heuristic this planner is built on: they are keyword
 rules, deliberately simple and inspectable, and they are *not* presented as understanding.
-Today the planner can choose ``LEXICAL`` or ``DENSE`` retrieval — both are backed by a
-retriever (BM25 and the exact dense index, ADR-0023) — but it refuses ``HYBRID`` at
-construction because the fusion layer that would produce a hybrid result does not exist yet.
+Every retrieval mode — ``LEXICAL``, ``DENSE`` and ``HYBRID`` — is now backed by a retriever
+(BM25, the exact dense index, and reciprocal-rank fusion, ADR-0023/ADR-0024), so the planner
+can emit any of them; only ``NONE`` (no retrieval) is refused as a construction mode.
 """
 
 from __future__ import annotations
@@ -115,9 +115,9 @@ class DeterministicQueryPlanner:
         Args:
             default_top_k: How many results a planned retrieval asks for, or ``None`` to
                 leave the decision to the retriever's own default.
-            retrieval_mode: The mode used when the planner decides to retrieve. ``LEXICAL``
-                and ``DENSE`` are backed by retrievers today (ADR-0023); ``HYBRID`` is refused
-                until the fusion layer exists, and ``NONE`` cannot retrieve.
+            retrieval_mode: The mode used when the planner decides to retrieve. ``LEXICAL``,
+                ``DENSE`` and ``HYBRID`` are all backed by retrievers today (ADR-0023/ADR-0024);
+                ``NONE`` cannot retrieve and is refused.
 
         Raises:
             PlanningError: ``retrieval_mode`` is not a mode a retriever backs, or
@@ -125,12 +125,6 @@ class DeterministicQueryPlanner:
         """
         if retrieval_mode is QueryMode.NONE:
             message = "a planner cannot retrieve with retrieval_mode=NONE"
-            raise PlanningError(message)
-        if retrieval_mode is QueryMode.HYBRID:
-            message = (
-                "retrieval_mode 'hybrid' is not backed by a retriever yet; it needs the fusion "
-                "layer, so only 'lexical' and 'dense' are available"
-            )
             raise PlanningError(message)
         if default_top_k is not None and default_top_k < 1:
             message = f"default_top_k must be at least 1 when given, got {default_top_k}"
