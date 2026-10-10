@@ -223,6 +223,20 @@ def test_journal_mode_and_path_are_reported_as_set(tmp_path: Path) -> None:
         store.close()
 
 
+def test_a_read_only_check_leaves_the_existing_journal_untouched(tmp_path: Path) -> None:
+    # journal_mode=None must not rewrite the file header, which is what a check command
+    # relies on: opening to inspect is not opening to change.
+    path = tmp_path / "answers.db"
+    writer = SQLiteAnswerStore(path, journal_mode="wal")
+    writer.close()
+
+    reader = SQLiteAnswerStore(path, journal_mode=None, initialize=False)
+    try:
+        assert reader.journal_mode == "wal"
+    finally:
+        reader.close()
+
+
 def test_an_unsupported_journal_mode_is_rejected_before_connecting(tmp_path: Path) -> None:
     path = tmp_path / "answers.db"
 

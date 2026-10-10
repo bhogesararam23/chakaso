@@ -91,7 +91,7 @@ class SQLiteAnswerStore:
         self,
         path: str | Path,
         *,
-        journal_mode: str = "delete",
+        journal_mode: str | None = "delete",
         initialize: bool = True,
         timeout: float = 5.0,
     ) -> None:
@@ -102,8 +102,10 @@ class SQLiteAnswerStore:
                 or the in-memory ``:memory:`` sentinel is refused because a store that does
                 not survive the call that opened it is not durable, and the restart guarantee
                 this class exists to provide would be a lie.
-            journal_mode: A SQLite journal mode drawn from the supported set; it is applied
-                with ``PRAGMA`` and read back so the value in use is the one actually set.
+            journal_mode: A SQLite journal mode drawn from the supported set, applied with
+                ``PRAGMA`` and read back so the value reported is the one actually set. Pass
+                ``None`` to leave the database's existing journal untouched — a read-only
+                check must not mutate the file header, and setting a mode does exactly that.
             initialize: Create the schema when the database is empty. ``False`` opens an
                 existing database without touching its structure, so an absent schema is a
                 reported error rather than something silently created.
@@ -124,7 +126,8 @@ class SQLiteAnswerStore:
         # would not be enforced and a dangling link could be written despite the checks, so a
         # durable history would depend only on application code getting it right.
         self._conn.execute("PRAGMA foreign_keys = ON")
-        self._conn.execute(f"PRAGMA journal_mode = {self._journal_mode}")
+        if self._journal_mode is not None:
+            self._conn.execute(f"PRAGMA journal_mode = {self._journal_mode}")
         self._conn.row_factory = None
 
         # A schema refusal must not leave the connection it opened dangling: an unclosed
@@ -159,9 +162,9 @@ class SQLiteAnswerStore:
 
     @property
     def journal_mode(self) -> str:
-        """The journal mode actually in effect, as SQLite reports it."""
+        """The journal mode actually in effect, as SQLite reports it (a read, not a write)."""
         row = self._conn.execute("PRAGMA journal_mode").fetchone()
-        return str(row[0]) if row else self._journal_mode
+        return str(row[0]) if row else (self._journal_mode or "")
 
     # -- AnswerStore protocol ----------------------------------------------------
 
@@ -419,12 +422,14 @@ class SQLiteAnswerStore:
         return candidate
 
     @staticmethod
-    def _validate_journal_mode(journal_mode: str) -> str:
-        """Accept a journal mode from the supported set, rejecting anything else."""
+    def _validate_journal_mode(journal_mode: str | None) -> str | None:
+        """Accept a journal mode from the supported set; ``None`` means leave it unset."""
+        if journal_mode is None:
+            return None
         if journal_mode not in _SUPPORTED_JOURNAL_MODES:
             message = (
                 f"unsupported journal_mode {journal_mode!r}; expected one of "
-                f"{sorted(_SUPPORTED_JOURNAL_MODES)}"
+                f"{sorted(_SUPPORTED_JOURNAL_MODES)} or None"
             )
             raise AnswerStoreError(message)
         return journal_mode

@@ -18,8 +18,8 @@ A private planning note is never evidence that something is implemented.
 | Contribution guide | `CONTRIBUTING.md` | |
 | Agent contract | `AGENTS.md`, `docs/agent/` | |
 | Python package | `src/chakaso/` | Installs; typed; `py.typed` ships |
-| CLI | `src/chakaso/cli.py` | `--version`, `info`, `config show`, `chat`, `retrieve`, `benchmark retrieval|correction`, `experiment run` |
-| Configuration | `src/chakaso/config/`, `configs/default.toml` | Typed schema, explicit loading, per-value provenance |
+| CLI | `src/chakaso/cli.py` | `--version`, `info`, `config show`, `chat`, `retrieve`, `benchmark retrieval|correction`, `experiment run`, `storage check|migrate` |
+| Configuration | `src/chakaso/config/`, `configs/default.toml` | Typed schema in sections (`model`, `storage`), explicit loading, per-value provenance; storage defaults to the in-memory backend so nothing is written |
 | Core primitives | `src/chakaso/core/` | Content-derived identifiers, SHA-256 hashing, error base |
 | Model boundary | `src/chakaso/models/` | `LanguageModel` protocol, capabilities, registry, contract tests |
 | Model implementations | `src/chakaso/models/deterministic.py` | A development double only. **No language model exists.** |
@@ -194,6 +194,11 @@ A private planning note is never evidence that something is implemented.
   into a content-fingerprinted `ExperimentResult` whose `result_id` ignores the timestamp and host;
   `compare_results` gives a deterministic regression baseline that refuses incompatible benchmark or
   evaluator versions. `chakaso benchmark` and `chakaso experiment run` expose these from the CLI.
+- The durable store is configurable and inspectable: `config.storage` carries the backend
+  (`memory` default, or `sqlite`), the database path and the SQLite journal mode, validated by the
+  existing typed schema (ADR-0006, ADR-0021). `chakaso storage check --path ...` reports a store's
+  schema version and integrity read-only; `chakaso storage migrate --path ...` creates or confirms
+  its schema. Local, offline, and nothing is created or changed unless a real path is given.
 - CI runs all of the above on three Python versions, with no secrets and no network
   access to a model provider.
 
@@ -209,8 +214,8 @@ says anything else.
 | Area | Coverage |
 | --- | --- |
 | Package installation | Version shape, distribution metadata agreement, console script entry point, `py.typed` |
-| CLI | Version, help, unknown command, `info`, `config show` including failure paths |
-| Configuration | Defaults, file layering and precedence, provenance, unknown keys, wrong types, boolean-vs-integer, ranges, name pattern, missing file, directory, invalid TOML, array values, immutability, schema/dataclass agreement, shipped file vs built-in defaults |
+| CLI | Version, help, unknown command, `info`, `config show` including failure paths, and `storage check`/`migrate` (path resolution, absent file, healthy report, non-store and newer-schema refusal) |
+| Configuration | Defaults, file layering and precedence, provenance, unknown keys, wrong types, boolean-vs-integer, ranges, name pattern, missing file, directory, invalid TOML, array values, immutability, schema/dataclass agreement, shipped file vs built-in defaults, and the `storage` section (defaults write nothing, backend/journal-mode patterns rejected) |
 | Identifiers and hashing | Digest agreement with `hashlib`, UTF-8 handling, truncation bounds, part-separator ambiguity, derivation determinism, deduplication, content-change distinction, position and text sensitivity, malformed identifier rejection, ordering and hashing |
 | Model boundary | The inherited contract suite (metadata, provenance of results, repeatability at zero temperature, empty-request rejection, length ceiling, unsupported-capability failures, declared capabilities being implemented), plus capability reconciliation, parameter validation, registry failure paths and the double's documented behaviour |
 | Evidence | Canonicalization idempotence and non-merging, tracking-parameter removal, scheme and credential refusal, IPv6 handling, record immutability, naive-timestamp rejection, content-hash validation, change detection, pack validation, and citation resolution including fabricated and malformed references |

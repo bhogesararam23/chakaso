@@ -106,7 +106,7 @@ Each component owns one thing and must not grow into its neighbour.
 | Chunker | Produce stable evidence units with positions | Rank claims | Implemented (Markdown structure, no overlap: ADR-0010) |
 | Ranker | Order candidate evidence | Generate the answer | Planned |
 | Evidence Store | Persist source and chunk records, metadata and hashes | Produce user-facing prose | Planned |
-| Answer Store | Persist answer records and their correction lineage, append-only | Produce prose; own the correction decision | Implemented (in-memory; durable backend planned, ADR-0018) |
+| Answer Store | Persist answer records and their correction lineage, append-only | Produce prose; own the correction decision | Implemented (in-memory default **and** a durable SQLite backend that survives a process restart, ADR-0018/0021) |
 | Model Adapter | Uniform interface to any local or future model | Search | Implemented (boundary and registry; no trained model) |
 | Grounding / Citation Validator | Check that every cited identifier exists and, structurally, whether cited evidence bears on the claim | Rewrite the user's request | Implemented (structural: `chakaso.citation` presence + `chakaso.grounding` supported/unsupported, ADR-0015). A semantic grounding boundary exists (ADR-0019) but its only judge is a caller-supplied fixture — no real semantic support checking |
 | Reassessment Engine | Compare previous claims with new evidence and decide retain/qualify/correct | Silently rewrite history | Implemented (structural foundation: decide / reassess / record / metrics, ADR-0016; produces no revised prose — there is no model — and is not wired into an automatic turn) |
@@ -115,8 +115,9 @@ Each component owns one thing and must not grow into its neighbour.
 A component marked "Planned" has no code. Configuration, the model boundary, the
 evidence records, conversation state and manager, local ingestion, lexical retrieval, the
 bounded opt-in fetcher, the retrieval development benchmark and the claim / citation /
-grounding / answer-evaluation primitives, the correction foundation with an in-memory answer store,
-the fixture-only semantic grounding boundary and reproducible experiment records are implemented;
+grounding / answer-evaluation primitives, the correction foundation with an answer store (in-memory
+and durable SQLite, ADR-0021), the fixture-only semantic grounding boundary and reproducible
+experiment records are implemented;
 [`agent/CURRENT_STATE.md`](agent/CURRENT_STATE.md) is the authority, including on
 the fact that the only implementation of the model boundary is a development double
 rather than a language model, and that the grounding and citation checks are structural.
@@ -168,17 +169,17 @@ The boundaries that exist, or that the project is committed to building:
 | `SemanticJudge` | claim + evidence -> supported / contradicted / uncertain / not_evaluated | Implemented (boundary + adapter, ADR-0019; the only judge is a caller-supplied fixture, not a real semantic evaluator) |
 | `Conversation` | turns with provenance, active topic, entities, open questions, prior sources | Implemented |
 | `ConversationManager` | conduct one turn against the model boundary; accept evidence; report the generation and citation outcome | Implemented |
-| `AnswerRecord` | answer text, cited identifiers, model, claims, evaluation, correction lineage | Implemented (`chakaso.answers`, ADR-0017; per-event id; durable persistence planned) |
-| `AnswerStore` | append-only save / get / list / history with integrity checks | Implemented (in-memory, ADR-0018; a file/database backend is a future implementation of this boundary) |
+| `AnswerRecord` | answer text, cited identifiers, model, claims, evaluation, correction lineage | Implemented (`chakaso.answers`, ADR-0017; per-event id; the answer's substance is persisted durably by SQLite (ADR-0021), its evaluation recomputed rather than frozen) |
+| `AnswerStore` | append-only save / get / list / history, atomic `save_many`, with integrity checks | Implemented (in-memory **and** durable SQLite backends behind one protocol, ADR-0018/0021; the durable store survives a process restart) |
 | Retriever / Fetcher | pluggable retrieval and fetch mechanisms | Implemented (lexical retriever behind a `Retriever` protocol; bounded opt-in fetcher behind a `Fetcher` protocol) |
-| Reassessment | previous answer plus new evidence -> retain/qualify/correct | Implemented (an application operation `reassess_stored_answer` over a stored answer, ADR-0016; revised prose and a durable store planned) |
+| Reassessment | previous answer plus new evidence -> retain/qualify/correct | Implemented (an application operation `reassess_stored_answer` over a stored answer, ADR-0016; revised prose is planned — there is no model — and a durable answer store now exists, ADR-0021) |
 
 "Planned" here means there is no code, and the shape described is the specification
 to build against rather than a description of something that exists. Configuration,
 the model boundary, the evidence records, conversation state, the conversation manager,
 local ingestion, lexical retrieval, the retrieval and correction development benchmarks, the
-correction foundation, the in-memory answer store, the fixture-only semantic grounding boundary and
-the experiment records are
+correction foundation, an answer store (in-memory and durable SQLite, ADR-0021), the fixture-only
+semantic grounding boundary and the experiment records are
 implemented; fetching exists only behind the opt-in bounded fetcher, so a default
 run neither fetches nor reaches the network, and there is still no trained model.
 

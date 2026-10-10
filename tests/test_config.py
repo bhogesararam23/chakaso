@@ -21,9 +21,10 @@ from chakaso.config import (
     ConfigValidationError,
     FieldSpec,
     ModelConfig,
+    StorageConfig,
     load_config,
 )
-from chakaso.config.schema import SPECS_BY_KEY, model_config_field_names, validate_field
+from chakaso.config.schema import SPECS_BY_KEY, config_field_names, validate_field
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 DEFAULT_CONFIG_FILE = REPO_ROOT / "configs" / "default.toml"
@@ -43,6 +44,16 @@ def test_built_in_defaults_are_used_when_no_file_is_given() -> None:
     assert loaded.config.model.temperature == 0.0
     assert loaded.sources == ()
     assert set(loaded.provenance.values()) == {BUILT_IN_SOURCE}
+
+
+def test_storage_defaults_are_local_and_write_nothing() -> None:
+    # The default backend must not persist anything and must not name a path, so the built-in
+    # configuration cannot write into the working tree (or anywhere) unless a caller opts in.
+    storage = load_config().config.storage
+
+    assert storage.backend == "memory"
+    assert storage.path == ""
+    assert storage.journal_mode == "delete"
 
 
 def test_shipped_default_config_matches_the_built_in_defaults() -> None:
@@ -267,8 +278,10 @@ def test_provenance_mapping_cannot_be_mutated() -> None:
 
 def test_schema_and_dataclasses_cover_the_same_fields() -> None:
     # A field added to a dataclass without a spec (or a spec left behind after a
-    # field is removed) would otherwise be caught only at runtime, if at all.
-    assert set(SPECS_BY_KEY) == model_config_field_names()
+    # field is removed) would otherwise be caught only at runtime, if at all. The
+    # expected set is derived from every section dataclass, so adding a section stays a
+    # one-place change rather than a re-listing here that can go stale.
+    assert set(SPECS_BY_KEY) == config_field_names()
 
 
 @pytest.mark.parametrize("spec", SPECS, ids=lambda spec: spec.key)
@@ -280,17 +293,18 @@ def test_declared_defaults_satisfy_their_own_spec(spec: FieldSpec) -> None:
     assert validate_field(spec, spec.default) == spec.default
 
 
-def test_model_config_and_config_are_separate_types() -> None:
+def test_config_sections_are_separate_types() -> None:
     # Guards against a refactor that flattens the sections, which would break the
     # dotted-key contract that error messages and provenance depend on.
     #
-    # The field names are checked against the schema rather than restated here.
-    # Restating them made every new setting a two-place edit, which trains people to
-    # update the test without reading it. Deriving them keeps the guard and removes
-    # the churn.
-    assert set(Config.__dataclass_fields__) == {"model"}
+    # The field names are checked against the schema rather than restated here. Deriving
+    # them keeps the guard meaningful while making each new setting a one-place edit.
+    assert set(Config.__dataclass_fields__) == {"model", "storage"}
     assert set(ModelConfig.__dataclass_fields__) == {
-        spec.key.removeprefix("model.") for spec in SPECS
+        spec.key.removeprefix("model.") for spec in SPECS if spec.key.startswith("model.")
+    }
+    assert set(StorageConfig.__dataclass_fields__) == {
+        spec.key.removeprefix("storage.") for spec in SPECS if spec.key.startswith("storage.")
     }
 
 
@@ -306,3 +320,37 @@ def test_relative_paths_are_reported_as_given(
 
     assert loaded.sources == (Path("config.toml"),)
     assert loaded.provenance["model.max_new_tokens"] == "config.toml"
+
+
+def test_a_storage_section_is_applied_with_provenance(tmp_path: Path) -> None:
+    path = write_config(
+        tmp_path,
+        '[storage]\nbackend = "sqlite"\npath = "run/answers.db"\n',
+    )
+
+    loaded = load_config(path)
+
+    assert loaded.config.storage.backend == "sqlite"
+    assert loaded.config.storage.path == "run/answers.db"
+    # An untouched field keeps its built-in default, and the provenance records that.
+    assert loaded.config.storage.journal_mode == "delete"
+    assert loaded.provenance["storage.backend"] == str(path)
+    assert loaded.provenance["storage.journal_mode"] == BUILT_IN_SOURCE
+
+
+@pytest.mark.parametrize("backend", ["postgres", "sqllite", "SQLite", "memory ", ""])
+def test_storage_backend_must_be_a_known_value(tmp_path: Path, backend: str) -> None:
+    # A typo'd or invented backend is a load-time error, not a store that fails to open
+    # later with a less specific message.
+    path = write_config(tmp_path, f'[storage]\nbackend = "{backend}"\n')
+
+    with pytest.raises(ConfigValidationError):
+        load_config(path)
+
+
+@pytest.mark.parametrize("mode", ["wa1", "WAL", "journal", ""])
+def test_storage_journal_mode_must_be_a_known_value(tmp_path: Path, mode: str) -> None:
+    path = write_config(tmp_path, f'[storage]\njournal_mode = "{mode}"\n')
+
+    with pytest.raises(ConfigValidationError):
+        load_config(path)

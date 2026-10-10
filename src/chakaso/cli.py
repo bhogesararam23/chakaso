@@ -14,7 +14,9 @@ than letting a user infer that the replies mean something. ``retrieve`` never ge
 an answer; it ingests, ranks and prints evidence with its provenance. ``benchmark``
 runs a retrieval or correction development benchmark over the shared synthetic fixtures and
 prints a report that labels itself a development instrument; ``experiment run`` executes a
-baseline experiment and prints its reproducible, content-fingerprinted result.
+baseline experiment and prints its reproducible, content-fingerprinted result. ``storage``
+checks or migrates a durable SQLite answer store and reports its schema and integrity, reading
+or writing only the explicit path it is given.
 """
 
 from __future__ import annotations
@@ -27,6 +29,7 @@ from collections.abc import Sequence
 from pathlib import Path
 
 from chakaso import __version__
+from chakaso.answers import AnswerError, SQLiteAnswerStore
 from chakaso.benchmark import (
     BenchmarkError,
     CorrectionBenchmarkRunner,
@@ -255,6 +258,30 @@ def _build_parsers() -> tuple[argparse.ArgumentParser, argparse.ArgumentParser]:
         help="emit the machine-readable result record instead of a one-line summary",
     )
 
+    storage_parser = subparsers.add_parser(
+        "storage",
+        help="check or migrate a durable answer store",
+        description=(
+            "Inspect or bring forward a durable SQLite answer store (ADR-0021). Local and offline: "
+            "it opens the file named by --path (or by configuration) and reports or migrates its "
+            "schema. Nothing is created or changed unless a real path is given; the in-memory default "
+            "backend has nothing durable to inspect."
+        ),
+    )
+    storage_subparsers = storage_parser.add_subparsers(dest="storage_command", metavar="ACTION")
+    storage_check = storage_subparsers.add_parser(
+        "check",
+        help="report a durable store's schema version and integrity",
+        description="Read a durable store's structure without writing to it.",
+    )
+    _add_storage_arguments(storage_check)
+    storage_migrate = storage_subparsers.add_parser(
+        "migrate",
+        help="initialize or bring a durable store's schema up to date",
+        description="Create a fresh store schema, or confirm an existing one is current.",
+    )
+    _add_storage_arguments(storage_migrate)
+
     return parser, config_parser
 
 
@@ -268,6 +295,21 @@ def _add_config_arguments(parser: argparse.ArgumentParser) -> None:
             "configuration file to apply; repeat to layer files, later ones winning. "
             "Omit to use the built-in defaults."
         ),
+    )
+
+
+def _add_storage_arguments(parser: argparse.ArgumentParser) -> None:
+    _add_config_arguments(parser)
+    parser.add_argument(
+        "--path",
+        default=None,
+        metavar="PATH",
+        help="the durable store file to inspect; overrides the configured storage.path",
+    )
+    parser.add_argument(
+        "--json",
+        action="store_true",
+        help="emit the machine-readable report instead of a text summary",
     )
 
 
@@ -300,6 +342,9 @@ def main(argv: Sequence[str] | None = None) -> int:
 
     if args.command == "experiment":
         return _run_experiment_command(args)
+
+    if args.command == "storage":
+        return _run_storage(args)
 
     # Unreachable while every subcommand is handled above. argparse rejects
     # unknown commands before this point, so reaching here means a subcommand was
@@ -598,6 +643,72 @@ def _run_experiment_command(args: argparse.Namespace) -> int:
             f"on {result.dataset_id} v{result.dataset_version}"
         )
     return 0
+
+
+def _run_storage(args: argparse.Namespace) -> int:
+    """Dispatch a storage action. No store logic lives here — ``check()``/``migrate()`` do."""
+    action = args.storage_command
+    if action not in ("check", "migrate"):
+        print(f"{PROGRAM}: choose a storage action: 'check' or 'migrate'", file=sys.stderr)
+        return 1
+
+    try:
+        loaded = _load_or_report(args.config)
+    except ConfigError as exc:
+        print(f"{PROGRAM}: {exc}", file=sys.stderr)
+        return 1
+
+    path = (args.path or loaded.config.storage.path).strip()
+    if not path:
+        print(
+            f"{PROGRAM}: no durable store path is configured (backend "
+            f"{loaded.config.storage.backend!r}); nothing to {action}"
+        )
+        return 0
+
+    if action == "check":
+        return _check_store(Path(path), args.json)
+    return _migrate_store(Path(path), loaded.config.storage.journal_mode, args.json)
+
+
+def _check_store(target: Path, as_json: bool) -> int:
+    """Report a durable store's health without writing to it."""
+    if not target.is_file():
+        print(f"{PROGRAM}: no durable store file at {target}; nothing to check")
+        return 0
+    try:
+        # initialize=False so an absent schema is reported rather than created, and
+        # journal_mode=None so a read is never silently a write to the file header.
+        with SQLiteAnswerStore(target, journal_mode=None, initialize=False) as store:
+            report = dict(store.check())
+    except (AnswerError, OSError) as exc:
+        print(f"{PROGRAM}: {exc}", file=sys.stderr)
+        return 1
+    print(_format_storage_report(report, as_json))
+    return 0 if report.get("ok") else 1
+
+
+def _migrate_store(target: Path, journal_mode: str, as_json: bool) -> int:
+    """Create or confirm a durable store's schema, then report the outcome."""
+    try:
+        with SQLiteAnswerStore(target, journal_mode=journal_mode, initialize=True) as store:
+            result: dict[str, object] = {"path": str(target), **store.migrate()}
+    except (AnswerError, OSError) as exc:
+        print(f"{PROGRAM}: {exc}", file=sys.stderr)
+        return 1
+    print(_format_storage_report(result, as_json))
+    return 0
+
+
+def _format_storage_report(report: dict[str, object], as_json: bool) -> str:
+    if as_json:
+        return json.dumps(report, sort_keys=True, indent=2, ensure_ascii=False)
+    lines: list[str] = []
+    for key in sorted(report):
+        value = report[key]
+        rendered = value if isinstance(value, str) else json.dumps(value, sort_keys=True)
+        lines.append(f"{key}: {rendered}")
+    return "\n".join(lines)
 
 
 def _format_config(loaded: LoadedConfig) -> str:

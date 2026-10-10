@@ -11,7 +11,9 @@ variable is silently substituted for a file value.
     loaded.provenance["model.adapter"]
 
 The schema is deliberately small. A field exists here when something that already
-exists requires it, not when the roadmap anticipates it.
+exists requires it, not when the roadmap anticipates it. Configuration is grouped in
+sections (``model``, ``storage``); each section is its own frozen dataclass so the
+dotted-key contract that error messages and provenance rely on is preserved.
 """
 
 from __future__ import annotations
@@ -23,7 +25,7 @@ from chakaso.config.errors import (
     ConfigValidationError,
 )
 from chakaso.config.loader import BUILT_IN_SOURCE, LoadedConfig, ResolvedValue, load_config
-from chakaso.config.schema import SPECS, Config, FieldSpec, ModelConfig
+from chakaso.config.schema import SPECS, Config, FieldSpec, ModelConfig, StorageConfig
 
 __all__ = [
     "BUILT_IN_SOURCE",
@@ -37,5 +39,6 @@ __all__ = [
     "LoadedConfig",
     "ModelConfig",
     "ResolvedValue",
+    "StorageConfig",
     "load_config",
 ]

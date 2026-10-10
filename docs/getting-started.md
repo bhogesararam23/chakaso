@@ -6,7 +6,8 @@ Several things, all local and offline: `chakaso chat`, a conversation shell that
 conversation plumbing end to end; `chakaso retrieve`, which ingests named local documents and runs
 lexical retrieval over them; `chakaso benchmark retrieval` and `chakaso benchmark correction`, which
 run the development benchmarks and print their reports; `chakaso experiment run <subject>`, which
-produces a reproducible experiment result; and `chakaso config show` / `chakaso --version`.
+produces a reproducible experiment result; `chakaso storage check` / `chakaso storage migrate`, which
+inspect or initialize a durable answer store; and `chakaso config show` / `chakaso --version`.
 
 **There is no language model in Chakaso.** The only implementation of the model
 boundary is a deterministic development double, which returns fixed text describing
@@ -196,6 +197,24 @@ time, and none is a claim about real-world retrieval, grounding, correction or m
 is deterministic and offline. Because there is no language model, the correction benchmark scores a
 decision rule over labelled cases, not generated answers, and an experiment result is a
 reproducible record of that measurement.
+
+## Inspecting durable storage
+
+The answer history can be persisted to a local SQLite file (ADR-0021), but only when the durable
+backend is selected and pointed at a path — the default backend is in-memory and writes nothing. A
+developer can create or confirm a store's schema, and inspect it without changing it:
+
+```bash
+# create (or confirm) a durable store's schema at an explicit path
+python -m chakaso storage migrate --path ./answers.db
+
+# report its schema version and integrity, read-only
+python -m chakaso storage check --path ./answers.db --json
+```
+
+Both commands touch only the path given, and either refuses a database whose schema it cannot safely
+interpret rather than repairing it. There is still no automatic persistence: a normal conversation
+writes nothing to disk unless a caller wires a durable store in.
 
 ## Running without installing
 

@@ -28,6 +28,13 @@ capability is implemented or still planned.
 - Strict-read integrity: a row's indexed columns are cross-checked against its serialized document, and a
   malformed or divergent stored record raises rather than being repaired. An answer's `evaluation` is
   deliberately not persisted — it is recomputed against the current evaluator, not frozen into history.
+- Typed configuration for the store: a `storage` section (`config.storage`) in the existing schema
+  selects the backend (`memory` default | `sqlite`), the database path and the SQLite journal mode,
+  validated by the same mechanism as every other setting (ADR-0006). The default is in-memory, so the
+  built-in configuration writes nothing anywhere.
+- `chakaso storage check` reports a durable store's schema version and integrity without writing to it;
+  `chakaso storage migrate` creates or confirms its schema. Both act only on an explicit `--path` (or
+  the configured `storage.path`), and both refuse a database they cannot safely interpret.
 
 **Notes**
 

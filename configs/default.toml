@@ -36,3 +36,23 @@ temperature = 0.0
 # cannot be described as fitting the model's context window. The value is a
 # deliberately conservative placeholder rather than a measured optimum.
 max_context_turns = 40
+
+[storage]
+# Which answer-store backend a retrieval-aware runtime would use (ADR-0021). This is
+# the single place the persistence mechanism is chosen, exactly as [model].adapter is
+# the single place the language model is chosen (ADR-0002).
+#
+# "memory" is the default: the in-memory, append-only store that loses history at
+# process exit (ADR-0018). "sqlite" selects the durable local store, which survives a
+# restart but must be pointed at an explicit path below — nothing writes to disk unless
+# both are set. There is no hosted or third-party database option (ADR-0001).
+backend = "memory"
+
+# File path for the durable SQLite store. Empty by default so the built-in
+# configuration writes nothing anywhere; a real deployment sets this to a location it
+# controls, and tests point it at a temporary directory, never the repository tree.
+path = ""
+
+# SQLite journal mode. "delete" is SQLite's own default. "wal" trades extra side-car
+# files for readers that are not blocked by a writer; no tested workload needs that yet.
+journal_mode = "delete"

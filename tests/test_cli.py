@@ -10,6 +10,7 @@ from __future__ import annotations
 import io
 import json
 import platform
+import sqlite3
 import sys
 from collections.abc import Sequence
 from datetime import UTC, datetime
@@ -18,6 +19,7 @@ from pathlib import Path
 import pytest
 
 from chakaso import __version__
+from chakaso.answers import SQLiteAnswerStore
 from chakaso.cli import _report_caveats, build_parser, main
 from chakaso.config import load_config
 from chakaso.conversation import Conversation, ConversationManager
@@ -544,3 +546,75 @@ def test_experiment_run_retrieval_prints_a_summary(capsys: pytest.CaptureFixture
 def test_experiment_without_an_action_is_reported(capsys: pytest.CaptureFixture[str]) -> None:
     assert main(["experiment"]) == 1
     assert "run" in capsys.readouterr().err
+
+
+# ---------------------------------------------------------------------------
+# storage
+# ---------------------------------------------------------------------------
+
+
+def test_storage_without_an_action_fails_loudly(capsys: pytest.CaptureFixture[str]) -> None:
+    assert main(["storage"]) == 1
+    assert "choose a storage action" in capsys.readouterr().err
+
+
+def test_storage_check_without_a_configured_path_reports_nothing(
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    # The built-in configuration selects the in-memory backend with no path, so there is
+    # nothing durable to inspect and the command says so rather than inventing a database.
+    assert main(["storage", "check"]) == 0
+    assert "no durable store path" in capsys.readouterr().out
+
+
+def test_storage_migrate_creates_a_store_and_check_reports_it_healthy(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    db = tmp_path / "answers.db"
+    assert main(["storage", "migrate", "--path", str(db)]) == 0
+    capsys.readouterr()  # discard the migrate summary
+    assert db.is_file()
+
+    assert main(["storage", "check", "--path", str(db), "--json"]) == 0
+    payload = json.loads(capsys.readouterr().out)
+    assert payload["ok"] is True
+    assert payload["schema_version"] == 1
+    assert payload["answer_count"] == 0
+
+
+def test_storage_check_on_an_absent_file_creates_nothing(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    db = tmp_path / "missing.db"
+
+    assert main(["storage", "check", "--path", str(db)]) == 0
+
+    assert "no durable store file" in capsys.readouterr().out
+    assert not db.exists()  # a check must not create the database it inspects
+
+
+def test_storage_check_refuses_a_database_that_is_not_an_answer_store(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    db = tmp_path / "other.db"
+    raw = sqlite3.connect(str(db))
+    raw.execute("CREATE TABLE unrelated (x INTEGER)")
+    raw.commit()
+    raw.close()
+
+    assert main(["storage", "check", "--path", str(db)]) == 1
+    assert "not a Chakaso answer store" in capsys.readouterr().err
+
+
+def test_storage_check_refuses_a_newer_schema_version(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    db = tmp_path / "answers.db"
+    SQLiteAnswerStore(db).close()
+    raw = sqlite3.connect(str(db))
+    raw.execute("PRAGMA user_version = 999")
+    raw.commit()
+    raw.close()
+
+    assert main(["storage", "check", "--path", str(db)]) == 1
+    assert "newer" in capsys.readouterr().err

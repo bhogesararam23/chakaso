@@ -31,7 +31,11 @@ __all__ = [
     "FieldSpec",
     "FieldValue",
     "ModelConfig",
+    "StorageConfig",
     "build_config",
+    "config_field_names",
+    "model_config_field_names",
+    "storage_config_field_names",
 ]
 
 # The value types a configuration field may hold. TOML produces exactly these, so
@@ -69,6 +73,13 @@ class FieldSpec:
 # model registry validates against this same pattern, so a name that cannot be
 # configured cannot be registered either.
 ADAPTER_NAME_PATTERN = r"[a-z][a-z0-9_]*"
+
+# The two answer-store backends, and the SQLite journal modes the durable store will
+# accept. Both are restricted here so a typo ('sqllite', 'wa1') is a configuration
+# error at load time rather than a surprise when a store is first opened. The journal
+# set mirrors SQLiteAnswerStore._SUPPORTED_JOURNAL_MODES.
+STORAGE_BACKEND_PATTERN = r"(memory|sqlite)"
+STORAGE_JOURNAL_MODE_PATTERN = r"(delete|truncate|persist|memory|wal|off)"
 
 SPECS: tuple[FieldSpec, ...] = (
     FieldSpec(
@@ -110,6 +121,37 @@ SPECS: tuple[FieldSpec, ...] = (
         minimum=1,
         maximum=10_000,
     ),
+    FieldSpec(
+        key="storage.backend",
+        kind=str,
+        # The answer store is selected here, in one place, exactly as the model adapter
+        # is (ADR-0002's discipline applied to persistence). "memory" is the default:
+        # nothing is written to disk unless a caller chooses the durable SQLite backend
+        # (ADR-0018 kept in-memory the default; ADR-0021 added the durable option).
+        default="memory",
+        description="Answer-store backend to use: 'memory' or 'sqlite' (ADR-0021)",
+        pattern=STORAGE_BACKEND_PATTERN,
+    ),
+    FieldSpec(
+        key="storage.path",
+        kind=str,
+        # Empty by default so the built-in configuration writes nothing anywhere. A
+        # durable path is set explicitly, and only then does backend='sqlite' make
+        # sense; requiring a non-empty path when sqlite is chosen is a composition-time
+        # check, not a schema one, because it depends on the backend value.
+        default="",
+        description="File path for the durable SQLite answer store; unused for 'memory'",
+    ),
+    FieldSpec(
+        key="storage.journal_mode",
+        kind=str,
+        # SQLite's own default. The set matches SQLiteAnswerStore._SUPPORTED_JOURNAL_MODES;
+        # 'wal' is available for readers concurrent with a writer but is not the default,
+        # because it adds side-car files and no tested workload needs it yet.
+        default="delete",
+        description="SQLite journal mode for the durable store (ADR-0021)",
+        pattern=STORAGE_JOURNAL_MODE_PATTERN,
+    ),
 )
 
 SPECS_BY_KEY: dict[str, FieldSpec] = {spec.key: spec for spec in SPECS}
@@ -126,6 +168,15 @@ class ModelConfig:
 
 
 @dataclass(frozen=True, slots=True)
+class StorageConfig:
+    """Settings that select and configure the durable answer-store backend (ADR-0021)."""
+
+    backend: str
+    path: str
+    journal_mode: str
+
+
+@dataclass(frozen=True, slots=True)
 class Config:
     """The resolved configuration.
 
@@ -134,6 +185,7 @@ class Config:
     """
 
     model: ModelConfig
+    storage: StorageConfig
 
 
 def validate_field(spec: FieldSpec, value: object) -> FieldValue:
@@ -212,7 +264,12 @@ def build_config(values: dict[str, FieldValue]) -> Config:
             max_new_tokens=cast(int, values["model.max_new_tokens"]),
             temperature=cast(float, values["model.temperature"]),
             max_context_turns=cast(int, values["model.max_context_turns"]),
-        )
+        ),
+        storage=StorageConfig(
+            backend=cast(str, values["storage.backend"]),
+            path=cast(str, values["storage.path"]),
+            journal_mode=cast(str, values["storage.journal_mode"]),
+        ),
     )
 
 
@@ -223,3 +280,19 @@ def model_config_field_names() -> set[str]:
     without a spec, or removed from one without removing the spec, fails CI.
     """
     return {f"model.{field.name}" for field in fields(ModelConfig)}
+
+
+def storage_config_field_names() -> set[str]:
+    """Field names of :class:`StorageConfig`, prefixed with their section."""
+    return {f"storage.{field.name}" for field in fields(StorageConfig)}
+
+
+def config_field_names() -> set[str]:
+    """Every dotted configuration key derived from the section dataclasses.
+
+    The parity test compares this against the flat spec keys, so adding a section
+    dataclass without its specs (or the reverse) fails CI rather than surfacing when
+    a value is unexpectedly missing. Deriving the expected set from the dataclasses —
+    rather than restating it in the test — is what keeps adding a field a one-place edit.
+    """
+    return model_config_field_names() | storage_config_field_names()
