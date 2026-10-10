@@ -12,7 +12,13 @@ from __future__ import annotations
 
 from chakaso.core.errors import ChakasoError
 
-__all__ = ["AnswerError", "AnswerStoreError", "InvalidAnswerError", "UnknownAnswerError"]
+__all__ = [
+    "AnswerError",
+    "AnswerSerializationError",
+    "AnswerStoreError",
+    "InvalidAnswerError",
+    "UnknownAnswerError",
+]
 
 
 class AnswerError(ChakasoError, ValueError):
@@ -46,4 +52,14 @@ class UnknownAnswerError(AnswerError):
     Reassessing or linking to a missing answer is refused rather than treated as a
     no-op: silently succeeding would let a correction target that never existed pass for
     one that did, which is exactly the corrupted history the layer exists to prevent.
+    """
+
+
+class AnswerSerializationError(AnswerError):
+    """A stored answer document is malformed or inconsistent and cannot be read back.
+
+    A durable record that does not match its own schema — a missing field, a non-string
+    identifier, unparseable JSON — is reported rather than guessed at or silently
+    repaired, because a corrupted research history that loads "successfully" into a wrong
+    record is worse than one that refuses to load.
     """

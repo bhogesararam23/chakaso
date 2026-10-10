@@ -18,6 +18,7 @@ from __future__ import annotations
 
 from chakaso.answers.errors import (
     AnswerError,
+    AnswerSerializationError,
     AnswerStoreError,
     InvalidAnswerError,
     UnknownAnswerError,
@@ -31,6 +32,7 @@ __all__ = [
     "AnswerError",
     "AnswerId",
     "AnswerRecord",
+    "AnswerSerializationError",
     "AnswerStore",
     "AnswerStoreError",
     "InMemoryAnswerStore",
