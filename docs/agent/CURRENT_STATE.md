@@ -21,7 +21,7 @@ A private planning note is never evidence that something is implemented.
 | CLI | `src/chakaso/cli.py` | `--version`, `info`, `capabilities`, `config show`, `chat`, `retrieve`, `benchmark retrieval|correction|strategies`, `experiment run`, `storage check|migrate`, `answers list|show|lineage`; `chat` builds its graph through `chakaso.app` and drives the runtime |
 | Application composition | `src/chakaso/app.py` | `build_application(loaded, …)` is the single place a resolved `Config` becomes the runtime's dependencies: model via the registry, the configured answer store (`memory` or durable `sqlite`, never a silent downgrade), retrieval services over a corpus, the planner at the configured strategy/limits, and the manager. Every dependency is injectable for tests (ADR-0026) |
 | Configuration | `src/chakaso/config/`, `configs/default.toml` | Typed schema in sections (`model`, `storage`, `retrieval`), explicit loading, per-value provenance; storage defaults to the in-memory backend so nothing is written; `retrieval` selects the strategy (`lexical`/`dense`/`hybrid`), `top_k`, hybrid fusion knobs and an ingest size bound, and whether grounding is on at all |
-| Core primitives | `src/chakaso/core/` | Content-derived identifiers, SHA-256 hashing, error base |
+| Core primitives | `src/chakaso/core/` | Content-derived identifiers, SHA-256 hashing, terminal-safe rendering of untrusted text (`safe_for_terminal`), error base |
 | Model boundary | `src/chakaso/models/` | `LanguageModel` protocol, capabilities, registry, contract tests |
 | Model implementations | `src/chakaso/models/deterministic.py` | A development double only. **No language model exists.** |
 | Evidence records | `src/chakaso/evidence/` | `SourceRecord`, `EvidenceChunk`, `EvidencePack`, typed source references (web/file/text, ADR-0011), URL canonicalization, citation resolution |
@@ -239,6 +239,12 @@ A private planning note is never evidence that something is implemented.
   processes, so there is nothing to inspect unless `[storage]` selects `sqlite` with a real file.
 - CI runs all of the above on three Python versions, with no secrets and no network
   access to a model provider.
+- Untrusted text (retrieved evidence, source titles/references, model replies) is rendered
+  inert on the human-readable CLI paths: control characters and bidirectional overrides are
+  replaced with visible escapes by `chakaso.core.safe_for_terminal` before they reach a
+  terminal, so the application does not emit terminal-control sequences from hostile content.
+  `--json` output is not passed through it — the serializer keeps the exact bytes. This is a
+  display-boundary guarantee, not a claim a model resists prompt injection.
 
 **No language model is present in this repository.** The only implementation of the
 model boundary is a development double declared as such in its own metadata, so a

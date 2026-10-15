@@ -1,4 +1,4 @@
-"""Shared primitives: identifiers, content hashing and the error base.
+"""Shared primitives: identifiers, content hashing, terminal-safe rendering and the error base.
 
 Modules live here when they are used by more than one component and belong to no
 single one. Everything in :mod:`chakaso.core` is standard-library only.
@@ -17,6 +17,7 @@ from chakaso.core.identifiers import (
     derive_chunk_id,
     derive_source_id,
 )
+from chakaso.core.text import safe_for_terminal
 
 __all__ = [
     "CHUNK_ID_PREFIX",
@@ -29,6 +30,7 @@ __all__ = [
     "SourceId",
     "derive_chunk_id",
     "derive_source_id",
+    "safe_for_terminal",
     "sha256_hex",
     "short_sha256_hex",
 ]

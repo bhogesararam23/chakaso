@@ -301,6 +301,7 @@ processing layers must handle:
 | Duplicated or boilerplate-heavy sources | Deduplication by canonical URL and content hash before chunking. |
 | Misleading titles | Titles are recorded as extracted and are not treated as evidence of content. |
 | Stale sources | `published_at` and `retrieved_at` are recorded so freshness can be reasoned about explicitly. |
+| Terminal-output injection | When untrusted text reaches a human-readable terminal, control characters (the `ESC` byte, the C0/C1 blocks and `DEL`) and the bidirectional embedding/isolate controls are made inert as *visible escapes* by `chakaso.core.safe_for_terminal`. Machine-readable JSON goes through the serializer instead, which keeps the exact bytes. This is a structural display guarantee, not a claim that a model resists injection. |
 
 The fetcher enforces the parts of this that a fetch can enforce at request time — the
 scheme allowlist, the response-size cap, a bounded and re-validated redirect chain, a

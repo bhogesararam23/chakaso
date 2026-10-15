@@ -57,6 +57,7 @@ from chakaso.benchmark import (
 from chakaso.config import ConfigError, LoadedConfig, RetrievalConfig, load_config
 from chakaso.conversation import Reply
 from chakaso.core.errors import ChakasoError
+from chakaso.core.text import safe_for_terminal
 from chakaso.evaluation.semantic_benchmark import (
     ProbeSupportAllJudge,
     ProbeUncertainJudge,
@@ -673,7 +674,7 @@ def _answer_once(app: Application, message: str) -> int:
         print(f"{PROGRAM}: {exc}", file=sys.stderr)
         return 1
 
-    print(turn.text)
+    print(safe_for_terminal(turn.text))
     _report_caveats(turn.reply)
     _report_grounding(turn)
     return 0
@@ -697,7 +698,7 @@ def _converse(app: Application) -> int:
                 print(f"{PROGRAM}: {exc}", file=sys.stderr)
                 continue
 
-            print(f"{PROGRAM}> {turn.text}")
+            print(f"{PROGRAM}> {safe_for_terminal(turn.text)}")
             _report_caveats(turn.reply)
             _report_grounding(turn)
     except KeyboardInterrupt:
@@ -800,13 +801,21 @@ def _format_retrieval(outcome: RetrievalOutcome) -> str:
         source = outcome.pack.source_for(chunk.source_id)
         title = source.title if source is not None else "?"
         reference = source.canonical_reference if source is not None else "?"
+        # Every field below is derived from a document the caller supplied, so it is
+        # untrusted: a title, reference, matched term or chunk body can carry control
+        # bytes that mean something to a terminal. They are rendered as inert text here
+        # (JSON output keeps the raw value for a machine). See chakaso.core.text.
+        safe_title = safe_for_terminal(title)
+        safe_reference = safe_for_terminal(reference)
+        safe_matched = safe_for_terminal(", ".join(result.matched_terms))
+        safe_text = safe_for_terminal(chunk.text)
         lines.append(
             f"{result.rank}. score={result.score:.4f}  section={chunk.section or '-'}  "
             f"chunk_id={chunk.chunk_id}"
         )
-        lines.append(f"   source: {title} <{reference}>")
-        lines.append(f"   matched: {', '.join(result.matched_terms)}")
-        lines.append(f"   {chunk.text}")
+        lines.append(f"   source: {safe_title} <{safe_reference}>")
+        lines.append(f"   matched: {safe_matched}")
+        lines.append(f"   {safe_text}")
     return "\n".join(lines)
 
 

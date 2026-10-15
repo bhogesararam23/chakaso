@@ -10,6 +10,28 @@ capability is implemented or still planned.
 
 ## Unreleased
 
+### 2026-10-15 — Untrusted text is made inert before it reaches a terminal
+
+**Added**
+
+- `chakaso.core.safe_for_terminal`: a dependency-free rendering primitive that makes
+  control characters (the `ESC` byte, the C0/C1 blocks and `DEL`) and the bidirectional
+  embedding/isolate controls inert in text shown to a person, replacing each with a
+  *visible* escape (`\x1b`, `\u202e`) rather than dropping it silently. Ordinary text,
+  newline, tab, accents and emoji pass through unchanged; the function is total and
+  idempotent on already-safe output.
+- The CLI's human-readable paths — the `retrieve` evidence listing (title, reference,
+  matched terms, chunk body) and the `chat` reply — now render untrusted content through
+  it. `--json` output is left to the serializer, which keeps the exact bytes.
+
+**Notes**
+
+- This is a structural display boundary against terminal-output injection (ESC sequences,
+  carriage-return overwrite, Trojan-Source reordering), not a claim that a language model
+  resists prompt injection — no model exists, and the retrieved-content-stays-data property
+  was already tested elsewhere (ADR-0003). The threat is recorded honestly: the primitive
+  neutralises the characters Chakaso emits; a reader's own terminal remains their own.
+
 ### 2026-10-15 — Semantic-evaluation development dataset and deterministic scorer
 
 **Added**
