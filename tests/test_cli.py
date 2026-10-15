@@ -742,3 +742,186 @@ def test_benchmark_retrieval_accepts_a_strategy(capsys: pytest.CaptureFixture[st
 
     payload = json.loads(capsys.readouterr().out)
     assert "recall_at_k" in payload["metrics"]
+
+
+# ---------------------------------------------------------------------------
+# capabilities
+# ---------------------------------------------------------------------------
+
+
+def test_capabilities_reports_model_strategy_and_storage(
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    assert main(["capabilities"]) == 0
+
+    out = capsys.readouterr().out
+    assert "model: deterministic" in out
+    assert "development double: yes" in out
+    assert "retrieval: on (strategy=lexical" in out
+    assert "storage: memory" in out
+
+
+def test_capabilities_json_is_a_valid_report(capsys: pytest.CaptureFixture[str]) -> None:
+    assert main(["capabilities", "--json"]) == 0
+
+    payload = json.loads(capsys.readouterr().out)
+    assert payload["model"]["development_double"] is True
+    assert payload["retrieval"]["strategy"] == "lexical"
+    assert payload["retrieval"]["enabled"] is True
+    assert payload["storage"]["backend"] == "memory"
+
+
+def test_capabilities_reflects_configured_storage(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    config = tmp_path / "config.toml"
+    config.write_text(
+        '[storage]\nbackend = "sqlite"\npath = "run/answers.db"\n'
+        '[retrieval]\nstrategy = "hybrid"\ntop_k = 7\n',
+        encoding="utf-8",
+    )
+
+    assert main(["capabilities", "--config", str(config), "--json"]) == 0
+
+    payload = json.loads(capsys.readouterr().out)
+    assert payload["retrieval"]["strategy"] == "hybrid"
+    assert payload["retrieval"]["top_k"] == 7
+    assert payload["storage"]["backend"] == "sqlite"
+    assert payload["storage"]["path"] == "run/answers.db"
+
+
+def test_capabilities_reports_an_unknown_adapter(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    config = tmp_path / "config.toml"
+    config.write_text("[model]\nadapter = 'nope'\n", encoding="utf-8")
+
+    assert main(["capabilities", "--config", str(config)]) == 1
+    assert "nope" in capsys.readouterr().err
+
+
+# ---------------------------------------------------------------------------
+# answers
+# ---------------------------------------------------------------------------
+
+
+def _durable_chat(tmp_path: Path) -> tuple[Path, Path]:
+    """Run one durable-backed chat turn and return the (config, database) paths it wrote."""
+    db = tmp_path / "answers.db"
+    config = tmp_path / "config.toml"
+    config.write_text(
+        f'[storage]\nbackend = "sqlite"\npath = "{db.as_posix()}"\n',
+        encoding="utf-8",
+    )
+    assert main(["chat", "--config", str(config), "--message", "What is Chakaso?"]) == 0
+    return config, db
+
+
+def test_answers_without_an_action_fails(capsys: pytest.CaptureFixture[str]) -> None:
+    assert main(["answers"]) == 1
+    assert "choose an answers action" in capsys.readouterr().err
+
+
+def test_answers_list_reports_nothing_for_the_memory_backend(
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    # The default backend keeps nothing across processes, so inspection says so rather than
+    # inventing a store to read.
+    assert main(["answers", "list"]) == 0
+    assert "in-memory backend holds nothing" in capsys.readouterr().out
+
+
+def test_answers_list_reports_when_the_durable_file_is_absent(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    config = tmp_path / "config.toml"
+    config.write_text('[storage]\nbackend = "sqlite"\npath = "missing.db"\n', encoding="utf-8")
+
+    assert main(["answers", "list", "--config", str(config)]) == 0
+
+    out = capsys.readouterr().out
+    assert "no durable store file" in out
+    assert not (tmp_path / "missing.db").exists()  # listing must not create the database
+
+
+def test_answers_list_shows_a_durable_record_written_by_chat(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    config, _db = _durable_chat(tmp_path)
+    capsys.readouterr()  # discard the chat output
+
+    assert main(["answers", "list", "--config", str(config)]) == 0
+
+    out = capsys.readouterr().out
+    assert "ans_" in out
+    assert "conversation=" in out
+
+
+def test_answers_list_json_is_valid_and_matches_the_record(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    config, db = _durable_chat(tmp_path)
+    capsys.readouterr()
+
+    assert main(["answers", "list", "--config", str(config), "--json"]) == 0
+
+    payload = json.loads(capsys.readouterr().out)
+    assert len(payload) == 1
+    answer_id = payload[0]["answer_id"]
+    assert payload[0]["development_double"] is True
+    assert payload[0]["retrieval_strategy"] in {"lexical", "none"}
+
+    # The listing agrees with what is actually in the durable store.
+    with SQLiteAnswerStore(db, journal_mode=None, initialize=False) as store:
+        assert str(store.list()[0].answer_id) == answer_id
+
+
+def test_answers_show_prints_the_full_record(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    config, db = _durable_chat(tmp_path)
+    capsys.readouterr()
+    with SQLiteAnswerStore(db, journal_mode=None, initialize=False) as store:
+        answer_id = str(store.list()[0].answer_id)
+
+    assert main(["answers", "show", answer_id, "--config", str(config)]) == 0
+
+    out = capsys.readouterr().out
+    assert f"answer: {answer_id}" in out
+    assert "text:" in out
+    assert "development double" in out
+
+
+def test_answers_show_rejects_a_malformed_identifier(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    config, _db = _durable_chat(tmp_path)
+    capsys.readouterr()
+
+    assert main(["answers", "show", "not-an-id", "--config", str(config)]) == 1
+    assert "not a valid answer identifier" in capsys.readouterr().err
+
+
+def test_answers_show_reports_a_missing_answer(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    config, _db = _durable_chat(tmp_path)
+    capsys.readouterr()
+
+    assert main(["answers", "show", "ans_0000000000000000", "--config", str(config)]) == 1
+    assert "no answer" in capsys.readouterr().err
+
+
+def test_answers_lineage_walks_the_chain_from_the_durable_store(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    config, db = _durable_chat(tmp_path)
+    capsys.readouterr()
+    with SQLiteAnswerStore(db, journal_mode=None, initialize=False) as store:
+        answer_id = str(store.list()[0].answer_id)
+
+    assert main(["answers", "lineage", answer_id, "--config", str(config)]) == 0
+
+    out = capsys.readouterr().out
+    assert "correction lineage" in out
+    assert "original" in out

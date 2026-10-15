@@ -18,7 +18,7 @@ A private planning note is never evidence that something is implemented.
 | Contribution guide | `CONTRIBUTING.md` | |
 | Agent contract | `AGENTS.md`, `docs/agent/` | |
 | Python package | `src/chakaso/` | Installs; typed; `py.typed` ships |
-| CLI | `src/chakaso/cli.py` | `--version`, `info`, `config show`, `chat`, `retrieve`, `benchmark retrieval|correction|strategies`, `experiment run`, `storage check|migrate`; `chat` builds its graph through `chakaso.app` and drives the runtime |
+| CLI | `src/chakaso/cli.py` | `--version`, `info`, `capabilities`, `config show`, `chat`, `retrieve`, `benchmark retrieval|correction|strategies`, `experiment run`, `storage check|migrate`, `answers list|show|lineage`; `chat` builds its graph through `chakaso.app` and drives the runtime |
 | Application composition | `src/chakaso/app.py` | `build_application(loaded, …)` is the single place a resolved `Config` becomes the runtime's dependencies: model via the registry, the configured answer store (`memory` or durable `sqlite`, never a silent downgrade), retrieval services over a corpus, the planner at the configured strategy/limits, and the manager. Every dependency is injectable for tests (ADR-0026) |
 | Configuration | `src/chakaso/config/`, `configs/default.toml` | Typed schema in sections (`model`, `storage`, `retrieval`), explicit loading, per-value provenance; storage defaults to the in-memory backend so nothing is written; `retrieval` selects the strategy (`lexical`/`dense`/`hybrid`), `top_k`, hybrid fusion knobs and an ingest size bound, and whether grounding is on at all |
 | Core primitives | `src/chakaso/core/` | Content-derived identifiers, SHA-256 hashing, error base |
@@ -220,6 +220,16 @@ A private planning note is never evidence that something is implemented.
   existing typed schema (ADR-0006, ADR-0021). `chakaso storage check --path ...` reports a store's
   schema version and integrity read-only; `chakaso storage migrate --path ...` creates or confirms
   its schema. Local, offline, and nothing is created or changed unless a real path is given.
+- `python -m chakaso capabilities` reports, read-only and offline, what the resolved configuration
+  selects: the model adapter and whether it is a development double, the retrieval strategy and
+  limits, and the answer-store backend (with its path). It builds only the model to read its own
+  metadata — it opens no store and reads no files — so inspecting capabilities never creates a
+  database. `--json` gives a machine-readable report.
+- `python -m chakaso answers list|show|lineage` inspects the persisted answer history from the
+  configured durable store (ADR-0021): list recorded answers with their provenance, show one by
+  `ans_…` identifier, or walk a correction chain oldest-first. It is read-only (`initialize=False`,
+  no journal write) and honest about the in-memory default — which persists nothing across
+  processes, so there is nothing to inspect unless `[storage]` selects `sqlite` with a real file.
 - CI runs all of the above on three Python versions, with no secrets and no network
   access to a model provider.
 
@@ -235,7 +245,7 @@ says anything else.
 | Area | Coverage |
 | --- | --- |
 | Package installation | Version shape, distribution metadata agreement, console script entry point, `py.typed` |
-| CLI | Version, help, unknown command, `info`, `config show` including failure paths, and `storage check`/`migrate` (path resolution, absent file, healthy report, non-store and newer-schema refusal) |
+| CLI | Version, help, unknown command, `info`, `config show` including failure paths, `capabilities` (model/strategy/storage report, JSON, unknown-adapter failure), the retrieval-aware `chat` (grounding over `--file`, `--no-retrieval`, `--strategy`/`--top-k` overrides, durable-store recording, missing-file and bad-top-k failure), `answers list|show|lineage` (memory and absent-file inspection say there is nothing to read, a chat-written durable record is listed/shown/walked, malformed and unknown identifiers fail), and `storage check`/`migrate` (path resolution, absent file, healthy report, non-store and newer-schema refusal) |
 | Configuration | Defaults, file layering and precedence, provenance, unknown keys, wrong types, boolean-vs-integer, ranges, name pattern, missing file, directory, invalid TOML, array values, immutability, schema/dataclass agreement, shipped file vs built-in defaults, and the `storage` section (defaults write nothing, backend/journal-mode patterns rejected) |
 | Identifiers and hashing | Digest agreement with `hashlib`, UTF-8 handling, truncation bounds, part-separator ambiguity, derivation determinism, deduplication, content-change distinction, position and text sensitivity, malformed identifier rejection, ordering and hashing |
 | Model boundary | The inherited contract suite (metadata, provenance of results, repeatability at zero temperature, empty-request rejection, length ceiling, unsupported-capability failures, declared capabilities being implemented), plus capability reconciliation, parameter validation, registry failure paths and the double's documented behaviour |

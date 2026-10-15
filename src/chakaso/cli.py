@@ -33,13 +33,15 @@ from dataclasses import replace
 from pathlib import Path
 
 from chakaso import __version__
-from chakaso.answers import AnswerError, SQLiteAnswerStore
+from chakaso.answers import AnswerError, AnswerId, AnswerRecord, SQLiteAnswerStore
 from chakaso.app import (
     Application,
     ApplicationError,
     ApplicationTurn,
+    Capabilities,
     build_application,
     build_corpus,
+    describe_capabilities,
 )
 from chakaso.benchmark import (
     BenchmarkError,
@@ -353,6 +355,57 @@ def _build_parsers() -> tuple[argparse.ArgumentParser, argparse.ArgumentParser]:
     )
     _add_storage_arguments(storage_migrate)
 
+    capabilities_parser = subparsers.add_parser(
+        "capabilities",
+        help="report the model, retrieval and storage the configuration selects",
+        description=(
+            "Print what Chakaso would wire from the resolved configuration: the model adapter and "
+            "whether it is a development double, the retrieval strategy and limits, and the answer-"
+            "store backend. Local, offline and read-only — it opens no store and reads no files."
+        ),
+    )
+    _add_config_arguments(capabilities_parser)
+    capabilities_parser.add_argument(
+        "--json",
+        action="store_true",
+        help="emit the machine-readable capability report instead of a text summary",
+    )
+
+    answers_parser = subparsers.add_parser(
+        "answers",
+        help="inspect persisted answers and their correction lineage",
+        description=(
+            "Read recorded answers from the configured durable store (ADR-0021): list them, show one "
+            "by answer identifier, or walk a correction chain. The in-memory default backend persists "
+            "nothing across processes, so there is nothing to inspect unless [storage] selects 'sqlite' "
+            "with a real file path. Local, offline and read-only."
+        ),
+    )
+    answers_subparsers = answers_parser.add_subparsers(dest="answers_command", metavar="ACTION")
+    answers_list = answers_subparsers.add_parser(
+        "list", help="list recorded answers with their provenance"
+    )
+    _add_config_arguments(answers_list)
+    answers_list.add_argument(
+        "--conversation-id",
+        default=None,
+        metavar="ID",
+        help="restrict the listing to one conversation",
+    )
+    answers_list.add_argument("--json", action="store_true", help="machine-readable output")
+    answers_show = answers_subparsers.add_parser("show", help="show one recorded answer")
+    answers_show.add_argument("answer_id", metavar="ANSWER_ID", help="the ans_… identifier to show")
+    _add_config_arguments(answers_show)
+    answers_show.add_argument("--json", action="store_true", help="machine-readable output")
+    answers_lineage = answers_subparsers.add_parser(
+        "lineage", help="walk an answer's correction chain, oldest first"
+    )
+    answers_lineage.add_argument(
+        "answer_id", metavar="ANSWER_ID", help="the ans_… identifier whose chain to walk"
+    )
+    _add_config_arguments(answers_lineage)
+    answers_lineage.add_argument("--json", action="store_true", help="machine-readable output")
+
     return parser, config_parser
 
 
@@ -416,6 +469,12 @@ def main(argv: Sequence[str] | None = None) -> int:
 
     if args.command == "storage":
         return _run_storage(args)
+
+    if args.command == "capabilities":
+        return _run_capabilities(args)
+
+    if args.command == "answers":
+        return _run_answers(args)
 
     # Unreachable while every subcommand is handled above. argparse rejects
     # unknown commands before this point, so reaching here means a subcommand was
@@ -916,6 +975,208 @@ def _format_storage_report(report: dict[str, object], as_json: bool) -> str:
         value = report[key]
         rendered = value if isinstance(value, str) else json.dumps(value, sort_keys=True)
         lines.append(f"{key}: {rendered}")
+    return "\n".join(lines)
+
+
+def _run_capabilities(args: argparse.Namespace) -> int:
+    """Report the capabilities the configuration selects, without running a turn or opening a store."""
+    try:
+        loaded = _load_or_report(args.config)
+    except ConfigError as exc:
+        print(f"{PROGRAM}: {exc}", file=sys.stderr)
+        return 1
+
+    try:
+        capabilities = describe_capabilities(loaded)
+    except ChakasoError as exc:
+        print(f"{PROGRAM}: {exc}", file=sys.stderr)
+        return 1
+
+    if args.json:
+        print(json.dumps(capabilities.to_dict(), sort_keys=True, indent=2, ensure_ascii=False))
+    else:
+        print(_format_capabilities(capabilities))
+    return 0
+
+
+def _format_capabilities(capabilities: Capabilities) -> str:
+    double = (
+        "yes — returns fixed text, not answers"
+        if capabilities.model_is_development_double
+        else "no"
+    )
+    if capabilities.retrieval_enabled:
+        retrieval = (
+            f"on (strategy={capabilities.retrieval_strategy}, top_k={capabilities.retrieval_top_k})"
+        )
+    else:
+        retrieval = "off"
+    storage = capabilities.storage_backend
+    if capabilities.storage_backend == "sqlite" and capabilities.storage_path.strip():
+        storage = f"sqlite at {capabilities.storage_path}"
+    return "\n".join(
+        [
+            f"model: {capabilities.model_id} ({capabilities.model_display_name})",
+            f"development double: {double}",
+            f"retrieval: {retrieval}",
+            f"storage: {storage}",
+        ]
+    )
+
+
+def _open_inspectable_store(loaded: LoadedConfig) -> tuple[SQLiteAnswerStore | None, str]:
+    """Return a read-only handle on the configured durable store, or why there is nothing to read."""
+    storage = loaded.config.storage
+    if storage.backend != "sqlite":
+        return (
+            None,
+            "the in-memory backend holds nothing after this process exits; configure "
+            "[storage] backend='sqlite' with a path to inspect persisted answers",
+        )
+    path = storage.path.strip()
+    if not path:
+        return None, "storage.backend is 'sqlite' but storage.path is empty; nothing to inspect"
+    target = Path(path)
+    if not target.is_file():
+        return None, f"no durable store file at {target}; nothing to inspect"
+    # initialize=False and journal_mode=None so inspection never creates a database or writes to
+    # the file header: reading the answer history must not mutate it.
+    return SQLiteAnswerStore(target, journal_mode=None, initialize=False), ""
+
+
+def _run_answers(args: argparse.Namespace) -> int:
+    action = args.answers_command
+    if action not in ("list", "show", "lineage"):
+        print(f"{PROGRAM}: choose an answers action: 'list', 'show' or 'lineage'", file=sys.stderr)
+        return 1
+
+    try:
+        loaded = _load_or_report(args.config)
+    except ConfigError as exc:
+        print(f"{PROGRAM}: {exc}", file=sys.stderr)
+        return 1
+
+    store, note = _open_inspectable_store(loaded)
+    if store is None:
+        print(f"{PROGRAM}: {note}")
+        return 0
+
+    try:
+        with store:
+            if action == "list":
+                return _answers_list(store, args)
+            if action == "show":
+                return _answers_show(store, args)
+            return _answers_lineage(store, args)
+    except (AnswerError, ChakasoError) as exc:
+        print(f"{PROGRAM}: {exc}", file=sys.stderr)
+        return 1
+
+
+def _answer_brief(record: AnswerRecord) -> dict[str, object]:
+    """A stable, machine-readable summary of one recorded answer (structure, not quality)."""
+    return {
+        "answer_id": str(record.answer_id),
+        "conversation_id": record.conversation_id,
+        "created_at": record.created_at.isoformat(),
+        "model_id": record.model_id,
+        "development_double": record.model_is_development_double,
+        "retrieval_strategy": record.provenance.get("retrieval_strategy", "unknown"),
+        "planner_mode": record.provenance.get("planner_mode", "unknown"),
+        "evidence_source_ids": [str(item) for item in record.evidence_source_ids],
+        "cited_source_ids": [str(item) for item in record.cited_source_ids],
+        "claim_count": record.claim_count,
+        "correction_of": str(record.correction_of) if record.correction_of is not None else None,
+    }
+
+
+def _answers_list(store: SQLiteAnswerStore, args: argparse.Namespace) -> int:
+    records = store.list(conversation_id=args.conversation_id)
+    if args.json:
+        payload = [_answer_brief(record) for record in records]
+        print(json.dumps(payload, sort_keys=True, indent=2, ensure_ascii=False))
+        return 0
+    if not records:
+        scope = f" for conversation {args.conversation_id!r}" if args.conversation_id else ""
+        print(f"no recorded answers{scope}")
+        return 0
+    for record in records:
+        strategy = record.provenance.get("retrieval_strategy", "unknown")
+        double = " (development double)" if record.model_is_development_double else ""
+        print(
+            f"{record.answer_id}  {record.created_at.isoformat()}  {strategy}{double}\n"
+            f"   conversation={record.conversation_id} "
+            f"evidence={len(record.evidence_source_ids)} "
+            f"cited={len(record.cited_source_ids)} claims={record.claim_count}"
+        )
+    return 0
+
+
+def _answers_show(store: SQLiteAnswerStore, args: argparse.Namespace) -> int:
+    answer_id = _parse_answer_id(args.answer_id)
+    if answer_id is None:
+        return 1
+    record = store.get(answer_id)
+    if record is None:
+        print(f"{PROGRAM}: no answer {answer_id} is recorded", file=sys.stderr)
+        return 1
+    if args.json:
+        detail = {
+            **_answer_brief(record),
+            "text": record.text,
+            "provenance": dict(record.provenance),
+        }
+        print(json.dumps(detail, sort_keys=True, indent=2, ensure_ascii=False))
+        return 0
+    print(_format_answer(record))
+    return 0
+
+
+def _answers_lineage(store: SQLiteAnswerStore, args: argparse.Namespace) -> int:
+    answer_id = _parse_answer_id(args.answer_id)
+    if answer_id is None:
+        return 1
+    # history() raises AnswerError for an unknown identifier, which the caller reports.
+    chain = store.history(answer_id)
+    if args.json:
+        payload = [_answer_brief(record) for record in chain]
+        print(json.dumps(payload, sort_keys=True, indent=2, ensure_ascii=False))
+        return 0
+    print(f"correction lineage for {answer_id} ({len(chain)} answer(s), oldest first):")
+    for record in chain:
+        marker = f"corrects {record.correction_of}" if record.correction_of else "original"
+        print(f"  {record.answer_id}  {record.created_at.isoformat()}  {marker}")
+    return 0
+
+
+def _parse_answer_id(raw: str) -> AnswerId | None:
+    try:
+        return AnswerId.parse(raw)
+    except ChakasoError as exc:
+        print(f"{PROGRAM}: {exc}", file=sys.stderr)
+        return None
+
+
+def _format_answer(record: AnswerRecord) -> str:
+    double = (
+        " (development double — not a language model)" if record.model_is_development_double else ""
+    )
+    evidence = ", ".join(str(item) for item in record.evidence_source_ids) or "(none)"
+    cited = ", ".join(str(item) for item in record.cited_source_ids) or "(none)"
+    lines = [
+        f"answer: {record.answer_id}",
+        f"conversation: {record.conversation_id}  turn_index: {record.turn_index}",
+        f"created: {record.created_at.isoformat()}",
+        f"model: {record.model_id}{double}",
+    ]
+    for key in sorted(record.provenance):
+        lines.append(f"provenance.{key}: {record.provenance[key]}")
+    lines.append(f"evidence sources: {evidence}")
+    lines.append(f"cited sources: {cited}")
+    lines.append(f"claims: {record.claim_count}")
+    if record.correction_of is not None:
+        lines.append(f"corrects: {record.correction_of}")
+    lines.append(f"text: {record.text}")
     return "\n".join(lines)
 
 

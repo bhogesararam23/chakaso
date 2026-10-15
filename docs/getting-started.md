@@ -4,7 +4,9 @@
 
 Several things, all local and offline: `chakaso chat`, a conversation shell that grounds each turn
 through the retrieval-aware runtime; `chakaso retrieve`, which ingests named local documents and runs
-lexical retrieval over them; `chakaso benchmark retrieval` and `chakaso benchmark correction`, which
+lexical retrieval over them; `chakaso capabilities`, which reports what configuration selects; and
+`chakaso answers list|show|lineage`, which inspects persisted answers and their correction lineage;
+`chakaso benchmark retrieval` and `chakaso benchmark correction`, which
 run the development benchmarks and print their reports; `chakaso experiment run <subject>`, which
 produces a reproducible experiment result; `chakaso storage check` / `chakaso storage migrate`, which
 inspect or initialize a durable answer store; and `chakaso config show` / `chakaso --version`.
@@ -249,6 +251,33 @@ PYTHONPATH=src python -m pytest
 $env:PYTHONPATH = "src"; python -m pytest
 ```
 
+## Inspecting capabilities and stored answers
+
+Before running anything, ask what the configuration would wire — read-only, and without creating a
+store or reading a file:
+
+```bash
+python -m chakaso capabilities            # the selected model, strategy and store backend
+python -m chakaso capabilities --config configs/default.toml --json
+```
+
+The model line reports whether the engine is a development double, straight from its own metadata,
+so the output cannot quietly claim a model that does not exist.
+
+Answers recorded to a durable store can be inspected back through the same store `chat` wrote to.
+With the default in-memory backend there is nothing to read after the process exits, and the command
+says so:
+
+```bash
+python -m chakaso answers list --config configs/default.toml
+python -m chakaso answers show <ans_...> --config configs/default.toml --json
+python -m chakaso answers lineage <ans_...> --config configs/default.toml
+```
+
+This reads the configured SQLite store only (`initialize=False`, so it never creates or mutates a
+database) and prints the answer's provenance — model identity, retrieval strategy, evidence and cited
+sources, and any `correction_of` link — so a grounded turn is auditable after the fact.
+
 ## Configuration
 
 Configuration is TOML, parsed with the standard library and loaded explicitly. No
@@ -285,6 +314,8 @@ src/chakaso/           package source
   evidence/            source records, evidence chunks, packs, citation resolution
   retrieval/           normalization, chunking, ingestion, corpus, lexical index and retrieval
   conversation/        immutable conversation state, conversation manager
+  runtime/             retrieval-aware runtime: plan → retrieve → model → record → store
+  app.py               application composition root: configuration → assembled dependencies
   claims/              claim representation and extraction boundary
   citation/            structural citation validation and metrics
   grounding/           grounding evaluators (structural, manual, semantic boundary)

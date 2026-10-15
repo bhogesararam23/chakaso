@@ -10,6 +10,27 @@ capability is implemented or still planned.
 
 ## Unreleased
 
+### 2026-10-15 — CLI capability and answer-history inspection
+
+**Added**
+
+- `chakaso capabilities [--json]` — a read-only report of what the resolved configuration wires: the
+  model adapter and whether it is a development double (read from the model's own metadata, not a
+  hard-coded string), the retrieval strategy and limits, and the answer-store backend and path. It
+  opens no store and reads no files, so inspecting capabilities never creates a database.
+- `chakaso answers list|show|lineage [--json]` — inspects persisted answers through the same durable
+  store `chakaso chat` writes to (ADR-0021): list recorded answers with their provenance, show one
+  by `ans_…` identifier, or walk a correction chain oldest-first. It opens the store read-only
+  (`initialize=False`, no journal write), validates identifiers before lookup, and is explicit that
+  the in-memory default persists nothing across processes, so there is nothing to inspect unless
+  `[storage]` selects `sqlite` with a real file.
+
+**Notes**
+
+- Both commands report only capabilities that genuinely exist and structure that genuinely happened.
+  A resolved citation is shown as a source that was referenced, never as one that proves a claim, and
+  no confidence, quality or model capability is invented.
+
 ### 2026-10-15 — Chat wired to the retrieval-aware runtime behind a typed composition root
 
 **Added**

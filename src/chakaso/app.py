@@ -49,8 +49,10 @@ __all__ = [
     "Application",
     "ApplicationError",
     "ApplicationTurn",
+    "Capabilities",
     "build_application",
     "build_corpus",
+    "describe_capabilities",
 ]
 
 
@@ -181,6 +183,69 @@ class Application:
 
     def __exit__(self, *_exc: object) -> None:
         self.close()
+
+
+@dataclass(frozen=True, slots=True)
+class Capabilities:
+    """A read-only report of what the configuration selects, without running a turn.
+
+    It names the real capabilities a command would wire: the model adapter and whether it is a
+    development double, the retrieval strategy and limits, and the answer-store backend. It reads
+    the model's own metadata rather than a hard-coded string, so it reports what the component says
+    about itself. It opens no store and touches no corpus, so inspecting capabilities never creates
+    a database or reads a file.
+    """
+
+    model_id: str
+    model_display_name: str
+    model_is_development_double: bool
+    retrieval_enabled: bool
+    retrieval_strategy: str
+    retrieval_top_k: int
+    storage_backend: str
+    storage_path: str
+
+    def to_dict(self) -> dict[str, object]:
+        return {
+            "model": {
+                "model_id": self.model_id,
+                "display_name": self.model_display_name,
+                "development_double": self.model_is_development_double,
+            },
+            "retrieval": {
+                "enabled": self.retrieval_enabled,
+                "strategy": self.retrieval_strategy,
+                "top_k": self.retrieval_top_k,
+            },
+            "storage": {"backend": self.storage_backend, "path": self.storage_path},
+        }
+
+
+def describe_capabilities(
+    loaded: LoadedConfig,
+    *,
+    model: LanguageModel | None = None,
+    registry: ModelRegistry | None = None,
+) -> Capabilities:
+    """Report the capabilities the resolved configuration selects, offline and without a turn.
+
+    Builds only the model (through the registry, ADR-0002) to read its self-declared metadata; a
+    misconfigured adapter raises :class:`~chakaso.models.UnknownModelError` here, exactly as the
+    composition would. Nothing is opened or fetched.
+    """
+    config = loaded.config
+    resolved_model = model if model is not None else create_model(config, registry=registry)
+    metadata = resolved_model.metadata
+    return Capabilities(
+        model_id=metadata.model_id,
+        model_display_name=metadata.display_name,
+        model_is_development_double=metadata.development_double,
+        retrieval_enabled=config.retrieval.enabled,
+        retrieval_strategy=config.retrieval.strategy,
+        retrieval_top_k=config.retrieval.top_k,
+        storage_backend=config.storage.backend,
+        storage_path=config.storage.path,
+    )
 
 
 def build_corpus(
