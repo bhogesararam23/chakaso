@@ -10,6 +10,36 @@ capability is implemented or still planned.
 
 ## Unreleased
 
+### 2026-10-15 — Chat wired to the retrieval-aware runtime behind a typed composition root
+
+**Added**
+
+- `chakaso.app` — the application composition root: the single, injectable place a resolved
+  `Config` becomes a running system. It builds the model through the registry, the **configured**
+  answer store (in-memory or durable SQLite — choosing `sqlite` with no path is an explicit error,
+  never a silent downgrade), the retrieval services over a corpus, the query planner at the
+  configured strategy and limits, and the conversation manager. Every dependency can be injected
+  in tests (ADR-0026).
+- A typed `[retrieval]` configuration section — `enabled`, `strategy` (`lexical`/`dense`/`hybrid`),
+  `top_k`, `candidate_k`, `rrf_k` and `max_ingest_bytes` — validated by the same specs/dataclass
+  parity mechanism as `[model]` and `[storage]`, with offline defaults and no silent strategy
+  fallback.
+- `chakaso chat` now conducts turns through the retrieval-aware runtime: the planner decides each
+  turn, retrieval runs over any `--file` documents, and every answer is recorded in the configured
+  store. An honest notice names the engine (a development double), the active strategy, whether the
+  corpus has documents, and whether answers persist. `--message` runs one turn for scripts; new
+  `--file`, `--strategy`, `--top-k` and `--no-retrieval` flags are real overrides, reported on
+  stderr.
+
+**Notes**
+
+- This wires components that already existed and were tested in isolation; it adds no language
+  model and makes no semantic claim. With the deterministic double and the non-semantic fixture
+  embedding, `chat` grounds, cites and records honestly but produces no real answer, and with no
+  `--file` a retrieving turn returns no evidence. Tests assert that a configuration change actually
+  changes runtime behaviour, not merely that a config object serialises; the offline no-network
+  import guard now covers `chakaso.app`.
+
 ### 2026-10-10 — End-to-end integration and security verification
 
 **Added**

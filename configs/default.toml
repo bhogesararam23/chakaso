@@ -56,3 +56,34 @@ path = ""
 # SQLite journal mode. "delete" is SQLite's own default. "wal" trades extra side-car
 # files for readers that are not blocked by a writer; no tested workload needs that yet.
 journal_mode = "delete"
+
+[retrieval]
+# Whether a conversation turn is grounded in retrieved evidence by the retrieval-aware
+# runtime (ADR-0025). On by default so `chakaso chat` runs through the real composition —
+# planner, retrieval, model boundary, answer record — rather than the bare conversation.
+# With no documents supplied the planner still runs and retrieval honestly returns an
+# empty pack; no evidence is invented. Turning this off restores a retrieval-free turn.
+enabled = true
+
+# Which retriever the planner selects when it decides to retrieve. All three are backed by
+# a retriever, so an explicit choice is honoured and never silently falls back to another:
+# "lexical" (BM25), "dense" (an exact similarity index) and "hybrid" (reciprocal-rank
+# fusion). "dense" and "hybrid" run over the non-semantic fixture embedding (ADR-0023/24),
+# so they exercise the boundary and reproduce, but they are not semantic understanding.
+strategy = "lexical"
+
+# How many chunks a retrieval turn returns.
+top_k = 5
+
+# The per-component candidate pool for hybrid fusion, used only when strategy is "hybrid"
+# (ADR-0024). Over-retrieving here trades latency for a better merged ranking.
+candidate_k = 10
+
+# The reciprocal-rank-fusion smoothing constant for the "hybrid" strategy (the published
+# default is 60). A larger value flattens the influence of the top ranks.
+rrf_k = 60
+
+# Maximum size, in bytes, of a local document the runtime will read into the corpus. It is
+# checked against the file's size before its bytes are loaded, so an oversized file is
+# refused rather than allowed to exhaust memory.
+max_ingest_bytes = 10485760

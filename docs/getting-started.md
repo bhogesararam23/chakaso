@@ -2,8 +2,8 @@
 
 ## What you can actually run
 
-Several things, all local and offline: `chakaso chat`, a conversation shell that exercises the
-conversation plumbing end to end; `chakaso retrieve`, which ingests named local documents and runs
+Several things, all local and offline: `chakaso chat`, a conversation shell that grounds each turn
+through the retrieval-aware runtime; `chakaso retrieve`, which ingests named local documents and runs
 lexical retrieval over them; `chakaso benchmark retrieval` and `chakaso benchmark correction`, which
 run the development benchmarks and print their reports; `chakaso experiment run <subject>`, which
 produces a reproducible experiment result; `chakaso storage check` / `chakaso storage migrate`, which
@@ -112,53 +112,71 @@ On Linux and macOS the paths are `.venv311/bin/python` instead.
 python -m chakaso chat
 ```
 
-The shell reads messages from standard input and prints replies to standard output.
-Two commands end it: `:quit` and `:exit`, and end of input works too. Blank lines are
-ignored rather than sent. A failed turn is reported and the session continues, because
-a failure leaves the conversation unchanged
+`chat` conducts turns through the retrieval-aware runtime, assembled by `chakaso.app` from the
+resolved configuration (ADR-0026): the query planner decides each turn, retrieval runs over any
+documents you supply with `--file`, and every answer is recorded in the configured store. The shell
+reads messages from standard input and prints replies to standard output. Two commands end it:
+`:quit` and `:exit`, and end of input works too. Blank lines are ignored rather than sent. A failed
+turn is reported and the session continues, because a failure leaves the conversation unchanged
 ([ADR-0008](decisions/ADR-0008-transactional-turns.md)).
 
-To send one message and exit, which is what a script wants:
+To ground answers in local documents, name them with `--file` (repeat the flag):
+
+```bash
+python -m chakaso chat --file docs/roadmap.md --file notes/spec.md
+```
+
+With no `--file` the corpus is empty, so a retrieving turn honestly returns no evidence — the
+planner still runs and nothing is invented. To send one message and exit, which is what a script
+wants:
 
 ```bash
 python -m chakaso chat --message "What does the specification say?"
 ```
 
-Configuration is chosen the same way `config show` chooses it:
+Configuration is chosen the same way `config show` chooses it, and a few `[retrieval]` settings can
+be overridden per run — `--strategy lexical|dense|hybrid`, `--top-k N`, and `--no-retrieval` to
+conduct turns without grounding. Each override is named on standard error so a run never looks like
+it used the file's values when it did not:
 
 ```bash
-python -m chakaso chat --config configs/default.toml
+python -m chakaso chat --config configs/default.toml --strategy hybrid
 ```
+
+`dense` and `hybrid` run over a non-semantic fixture embedding (ADR-0023/ADR-0024): they exercise
+the retrieval boundary and reproduce exactly, but they are not semantic understanding.
 
 ### Read this before believing a reply
 
-The shell prints a notice on **standard error** before the first reply:
+The shell prints a notice on **standard error** before the first reply. With the default
+configuration (retrieval on, no documents, in-memory store) it reads:
 
 ```
 engine: deterministic (Deterministic double (not a language model))
 This is a development double, not a language model. It returns fixed text that
 exercises the conversation plumbing, and it does not answer anything.
-No retrieval, no citations, no correction, and no confidence. The conversation is
-not saved and is lost when this process exits.
+retrieval: lexical selected, but no documents were supplied, so a retrieving turn
+returns no evidence (pass --file to ground answers).
+answers are recorded in memory for this process only and are not saved to disk.
 ```
 
-That is not a disclaimer bolted on at the end. The `development_double` flag is part
-of the model's own metadata, so the notice is derived from what the model says about
-itself rather than from a hard-coded string that could drift out of date.
+That is not a disclaimer bolted on at the end. The `development_double` flag is part of the model's
+own metadata, and the retrieval and persistence lines describe what the composition actually wired
+from configuration — so the notice is derived from what the components say about themselves rather
+than a hard-coded string that could drift out of date.
 
-The reply goes to standard output and everything else to standard error, so
-`--message` stays usable in a pipeline. Scripting it is fine; reading its output as
-an answer is not.
+The reply goes to standard output and every report line to standard error, so `--message` stays
+usable in a pipeline. Scripting it is fine; reading its output as an answer is not.
 
 Two more things the shell will tell you about, on standard error, when they happen:
 
-- **A truncated reply.** Generation stopped at the configured length ceiling, so the
-  reply is incomplete. A caller that cannot tell that from a finished answer would
-  present one as the other.
-- **An unresolved evidence reference.** The reply cited evidence it was not given.
-  Nothing was resolved to a source, and the reference is listed
-  ([ADR-0009](decisions/ADR-0009-unresolved-references-are-recorded.md)). The shell
-  supplies no evidence, so this is only reachable with a model that invents identifiers.
+- **A truncated reply.** Generation stopped at the configured length ceiling, so the reply is
+  incomplete. A caller that cannot tell that from a finished answer would present one as the other.
+- **An unresolved evidence reference.** The reply cited evidence it was not given. Nothing was
+  resolved to a source, and the reference is listed
+  ([ADR-0009](decisions/ADR-0009-unresolved-references-are-recorded.md)). Grounding is structural:
+  a resolved citation shows a source was referenced, never that it proves the answer, and a
+  grounded turn is reported with the planner's decision, the evidence offered and the sources cited.
 
 ## Retrieving from local documents
 

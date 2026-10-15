@@ -48,6 +48,11 @@ FORBIDDEN_NETWORK_ROOTS = frozenset(
     {"urllib", "urllib3", "http", "httpx", "socket", "requests", "ftplib", "telnetlib", "smtplib"}
 )
 
+#: Top-level modules that are not a package directory but compose the layers and so must stay
+#: network-free like the analysis packages above. `chakaso.app` is the composition root (ADR-0026):
+#: it wires the offline layers and touches disk only through explicitly supplied paths.
+ANALYSIS_MODULES = ("app.py",)
+
 #: The pinned content fingerprint of the development dataset. A change here is a deliberate
 #: dataset-version bump, not something a path or clock can move.
 DEVELOPMENT_FINGERPRINT = "36e65ab20468d141"
@@ -70,12 +75,17 @@ def _imported_roots(tree: ast.AST) -> set[str]:
 
 def test_analysis_layers_import_nothing_that_touches_the_network() -> None:
     offenders: list[str] = []
-    for package in ANALYSIS_PACKAGES:
-        for path in sorted((REPO_ROOT / "src" / "chakaso" / package).rglob("*.py")):
-            tree = ast.parse(path.read_text(encoding="utf-8"), filename=str(path))
-            bad = _imported_roots(tree) & FORBIDDEN_NETWORK_ROOTS
-            if bad:
-                offenders.append(f"{path.relative_to(REPO_ROOT).as_posix()}: {sorted(bad)}")
+    analysis_files = [
+        path
+        for package in ANALYSIS_PACKAGES
+        for path in sorted((REPO_ROOT / "src" / "chakaso" / package).rglob("*.py"))
+    ]
+    analysis_files += [REPO_ROOT / "src" / "chakaso" / module for module in ANALYSIS_MODULES]
+    for path in analysis_files:
+        tree = ast.parse(path.read_text(encoding="utf-8"), filename=str(path))
+        bad = _imported_roots(tree) & FORBIDDEN_NETWORK_ROOTS
+        if bad:
+            offenders.append(f"{path.relative_to(REPO_ROOT).as_posix()}: {sorted(bad)}")
 
     assert not offenders, "an analysis layer imports a network library: " + "; ".join(offenders)
 

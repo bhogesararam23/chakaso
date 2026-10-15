@@ -231,14 +231,105 @@ def test_chat_states_that_the_engine_is_not_a_language_model(
     assert "does not answer anything" in err
 
 
-def test_chat_states_what_is_absent_and_that_nothing_is_saved(
+def test_chat_reports_the_grounding_and_persistence_that_are_active(
     capsys: pytest.CaptureFixture[str],
 ) -> None:
+    # The notice is honest about what the default configuration actually does: retrieval is
+    # selected but, with no documents supplied, it grounds nothing; the in-memory store keeps
+    # answers for this process only. Neither is mistaken for a capability that fired.
     main(["chat", "--message", "hello"])
 
     err = capsys.readouterr().err
-    assert "No retrieval" in err
-    assert "not saved" in err
+    assert "retrieval: lexical" in err
+    assert "no documents were supplied" in err
+    assert "not saved to disk" in err
+
+
+def test_chat_explains_why_a_turn_retrieved_nothing(
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    # A greeting is not a knowledge request: the planner chooses no retrieval and says so, and
+    # the reason the rules produced is surfaced rather than hidden.
+    main(["chat", "--message", "hello"])
+
+    err = capsys.readouterr().err
+    assert "no retrieval this turn (planner chose none)" in err
+
+
+def test_chat_grounds_a_turn_over_a_supplied_document(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    # With a document in the corpus a knowledge turn retrieves it. The reply is still the
+    # double's fixed text, but the grounding note reports the evidence actually offered and is
+    # explicit that a citation is structure, not proof.
+    document = tmp_path / "spec.md"
+    document.write_text(
+        "# Purpose\n\nChakaso grounds answers in retrieved evidence.\n", encoding="utf-8"
+    )
+
+    assert main(["chat", "--file", str(document), "--message", "What is Chakaso?"]) == 0
+
+    err = capsys.readouterr().err
+    assert "retrieval: lexical over 1 source(s)" in err
+    assert "retrieved via lexical" in err
+    assert "proves the answer" in err
+
+
+def test_chat_no_retrieval_disables_grounding(
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    main(["chat", "--no-retrieval", "--message", "hello"])
+
+    err = capsys.readouterr().err
+    assert "retrieval disabled" in err
+    assert "overridden from configuration: retrieval.enabled=false" in err
+
+
+def test_chat_reports_a_strategy_override(capsys: pytest.CaptureFixture[str]) -> None:
+    # An explicit strategy is honoured and named; the notice is clear that dense runs over the
+    # non-semantic fixture embedding rather than pretending semantic retrieval.
+    assert main(["chat", "--strategy", "dense", "--message", "hello"]) == 0
+
+    err = capsys.readouterr().err
+    assert "retrieval.strategy='dense' (--strategy)" in err
+    assert "retrieval: dense" in err
+
+
+def test_chat_rejects_a_non_positive_top_k(capsys: pytest.CaptureFixture[str]) -> None:
+    assert main(["chat", "--top-k", "0", "--message", "hello"]) == 1
+    assert "--top-k must be at least 1" in capsys.readouterr().err
+
+
+def test_chat_reports_a_missing_corpus_file_without_a_traceback(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    missing = tmp_path / "absent.md"
+
+    assert main(["chat", "--file", str(missing), "--message", "hello"]) == 1
+
+    err = capsys.readouterr().err
+    assert "does not exist" in err
+    assert "Traceback" not in err
+
+
+def test_chat_records_answers_to_a_durable_store(tmp_path: Path) -> None:
+    # The configured store is the one actually used: a knowledge turn persists an answer to the
+    # SQLite backend, and it survives closing the application (the durable store is not silently
+    # replaced by the in-memory default).
+    from chakaso.answers import SQLiteAnswerStore
+
+    db = tmp_path / "answers.db"
+    config = tmp_path / "config.toml"
+    config.write_text(
+        f'[storage]\nbackend = "sqlite"\npath = "{db.as_posix()}"\n',
+        encoding="utf-8",
+    )
+
+    assert main(["chat", "--config", str(config), "--message", "What is Chakaso?"]) == 0
+
+    with SQLiteAnswerStore(db, initialize=False) as store:
+        assert store.list()
+        assert store.list()[0].provenance["retrieval_strategy"] in {"lexical", "none"}
 
 
 def test_chat_rejects_an_empty_message_without_a_traceback(

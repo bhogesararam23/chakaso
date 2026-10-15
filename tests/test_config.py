@@ -21,6 +21,7 @@ from chakaso.config import (
     ConfigValidationError,
     FieldSpec,
     ModelConfig,
+    RetrievalConfig,
     StorageConfig,
     load_config,
 )
@@ -156,12 +157,12 @@ def test_unknown_section_is_rejected(tmp_path: Path) -> None:
     path = write_config(
         tmp_path,
         """
-        [retrieval]
-        top_k = 5
+        [search]
+        provider = "commercial"
         """,
     )
 
-    with pytest.raises(ConfigValidationError, match=r"retrieval\.top_k"):
+    with pytest.raises(ConfigValidationError, match=r"search\.provider"):
         load_config(path)
 
 
@@ -299,12 +300,15 @@ def test_config_sections_are_separate_types() -> None:
     #
     # The field names are checked against the schema rather than restated here. Deriving
     # them keeps the guard meaningful while making each new setting a one-place edit.
-    assert set(Config.__dataclass_fields__) == {"model", "storage"}
+    assert set(Config.__dataclass_fields__) == {"model", "storage", "retrieval"}
     assert set(ModelConfig.__dataclass_fields__) == {
         spec.key.removeprefix("model.") for spec in SPECS if spec.key.startswith("model.")
     }
     assert set(StorageConfig.__dataclass_fields__) == {
         spec.key.removeprefix("storage.") for spec in SPECS if spec.key.startswith("storage.")
+    }
+    assert set(RetrievalConfig.__dataclass_fields__) == {
+        spec.key.removeprefix("retrieval.") for spec in SPECS if spec.key.startswith("retrieval.")
     }
 
 
@@ -353,4 +357,72 @@ def test_storage_journal_mode_must_be_a_known_value(tmp_path: Path, mode: str) -
     path = write_config(tmp_path, f'[storage]\njournal_mode = "{mode}"\n')
 
     with pytest.raises(ConfigValidationError):
+        load_config(path)
+
+
+def test_retrieval_defaults_are_enabled_lexical_and_offline() -> None:
+    # The built-in retrieval configuration is what `chakaso chat` uses with no file: the
+    # runtime is wired (enabled), the strategy is the one with no fixture-embedding caveat
+    # (lexical), and every limit is a bounded scalar. Nothing here reaches the network or
+    # writes to disk.
+    retrieval = load_config().config.retrieval
+
+    assert retrieval.enabled is True
+    assert retrieval.strategy == "lexical"
+    assert retrieval.top_k == 5
+    assert retrieval.candidate_k == 10
+    assert retrieval.rrf_k == 60
+    assert retrieval.max_ingest_bytes == 10_485_760
+
+
+def test_a_retrieval_section_is_applied_with_provenance(tmp_path: Path) -> None:
+    path = write_config(
+        tmp_path,
+        '[retrieval]\nenabled = false\nstrategy = "hybrid"\ntop_k = 8\n',
+    )
+
+    loaded = load_config(path)
+
+    assert loaded.config.retrieval.enabled is False
+    assert loaded.config.retrieval.strategy == "hybrid"
+    assert loaded.config.retrieval.top_k == 8
+    # An untouched field keeps its built-in default, and the provenance records that.
+    assert loaded.config.retrieval.rrf_k == 60
+    assert loaded.provenance["retrieval.enabled"] == str(path)
+    assert loaded.provenance["retrieval.rrf_k"] == BUILT_IN_SOURCE
+
+
+@pytest.mark.parametrize("strategy", ["Lexical", "semantic", "bm25", "none", "", "hybrid "])
+def test_retrieval_strategy_must_be_a_known_value(tmp_path: Path, strategy: str) -> None:
+    # An invented or mis-cased strategy is a load-time error, not a runtime that silently
+    # falls back to a different retriever than the caller asked for.
+    path = write_config(tmp_path, f'[retrieval]\nstrategy = "{strategy}"\n')
+
+    with pytest.raises(ConfigValidationError):
+        load_config(path)
+
+
+@pytest.mark.parametrize(
+    ("line", "expected"),
+    [
+        ("top_k = 0", "minimum"),
+        ("top_k = 1001", "maximum"),
+        ("candidate_k = 0", "minimum"),
+        ("rrf_k = 0", "minimum"),
+        ("max_ingest_bytes = 0", "minimum"),
+    ],
+)
+def test_retrieval_numeric_limits_are_enforced(tmp_path: Path, line: str, expected: str) -> None:
+    path = write_config(tmp_path, f"[retrieval]\n{line}\n")
+
+    with pytest.raises(ConfigValidationError, match=expected):
+        load_config(path)
+
+
+def test_retrieval_enabled_must_be_a_boolean(tmp_path: Path) -> None:
+    # bool is its own kind; an integer 1 for `enabled` would otherwise be accepted by a
+    # truthy check while meaning nothing to the loader.
+    path = write_config(tmp_path, "[retrieval]\nenabled = 1\n")
+
+    with pytest.raises(ConfigValidationError, match="expected a boolean"):
         load_config(path)

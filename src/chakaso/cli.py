@@ -29,10 +29,18 @@ import json
 import platform
 import sys
 from collections.abc import Sequence
+from dataclasses import replace
 from pathlib import Path
 
 from chakaso import __version__
 from chakaso.answers import AnswerError, SQLiteAnswerStore
+from chakaso.app import (
+    Application,
+    ApplicationError,
+    ApplicationTurn,
+    build_application,
+    build_corpus,
+)
 from chakaso.benchmark import (
     BenchmarkError,
     CorrectionBenchmarkRunner,
@@ -44,14 +52,9 @@ from chakaso.benchmark import (
     load_development_benchmark,
     report_json,
 )
-from chakaso.config import ConfigError, LoadedConfig, load_config
-from chakaso.conversation import (
-    Conversation,
-    ConversationError,
-    ConversationManager,
-    Reply,
-    new_conversation_id,
-)
+from chakaso.config import ConfigError, LoadedConfig, RetrievalConfig, load_config
+from chakaso.conversation import Reply
+from chakaso.core.errors import ChakasoError
 from chakaso.experiments import (
     BenchmarkKind,
     RetrievalStrategyReport,
@@ -59,7 +62,7 @@ from chakaso.experiments import (
     compare_retrieval_strategies,
     run_experiment,
 )
-from chakaso.models import GenerationParams, ModelError, UnknownModelError, create_model
+from chakaso.models import UnknownModelError
 from chakaso.planning import QueryMode
 from chakaso.retrieval import (
     DEFAULT_TOP_K,
@@ -142,12 +145,15 @@ def _build_parsers() -> tuple[argparse.ArgumentParser, argparse.ArgumentParser]:
 
     chat_parser = subparsers.add_parser(
         "chat",
-        help="hold a conversation against the configured model",
+        help="hold a conversation through the retrieval-aware runtime",
         description=(
-            "Hold a conversation. Replies come from the model selected in "
-            "configuration, which today is a deterministic development double: fixed "
-            "text that exercises the conversation plumbing, not answers. Nothing is "
-            "retrieved and the conversation is not saved."
+            "Hold a conversation grounded by the retrieval-aware runtime: the planner decides "
+            "whether a turn retrieves, retrieval (lexical, dense or hybrid) runs over the "
+            "documents given by --file, and each answer is recorded in the configured store. "
+            "Replies still come from the model in configuration, which today is a deterministic "
+            "development double: fixed text, not answers. dense/hybrid run over a non-semantic "
+            "fixture embedding. Local and offline; with no --file the corpus is empty and "
+            "retrieval honestly returns no evidence."
         ),
     )
     _add_config_arguments(chat_parser)
@@ -159,6 +165,31 @@ def _build_parsers() -> tuple[argparse.ArgumentParser, argparse.ArgumentParser]:
             "send one message, print the reply and exit, instead of reading messages "
             "from standard input"
         ),
+    )
+    chat_parser.add_argument(
+        "--file",
+        action="append",
+        default=None,
+        metavar="PATH",
+        help="a local document to add to the retrieval corpus; repeat for multiple sources",
+    )
+    chat_parser.add_argument(
+        "--strategy",
+        choices=[QueryMode.LEXICAL.value, QueryMode.DENSE.value, QueryMode.HYBRID.value],
+        default=None,
+        help="override the configured retrieval strategy (dense/hybrid use the fixture embedding)",
+    )
+    chat_parser.add_argument(
+        "--top-k",
+        type=int,
+        default=None,
+        metavar="N",
+        help="override how many chunks a retrieval turn returns",
+    )
+    chat_parser.add_argument(
+        "--no-retrieval",
+        action="store_true",
+        help="run the conversation without grounding (the planner and retrieval are skipped)",
     )
 
     retrieve_parser = subparsers.add_parser(
@@ -434,78 +465,135 @@ def _load_or_report(paths: list[str] | None) -> LoadedConfig:
     return load_config(primary, overrides=files[1:])
 
 
-def _build_manager(loaded: LoadedConfig) -> ConversationManager:
-    """Compose a model and a conversation into a manager.
+def _apply_chat_overrides(loaded: LoadedConfig, args: argparse.Namespace) -> LoadedConfig:
+    """Fold the ``chat`` command's flags into the resolved configuration.
 
-    This is the application's composition root: the one place where configuration,
-    the model registry and the conversation layer meet. It is wiring rather than
-    behaviour, which is why it lives at the entry point instead of inside a
-    component.
+    The typed configuration stays the single source of truth for construction; a CLI flag is an
+    explicit, named override of one field, applied with :func:`dataclasses.replace` rather than a
+    second configuration path. Which fields were overridden is reported separately so provenance
+    is not silently rewritten to claim the file supplied them.
     """
-    config = loaded.config
-    return ConversationManager(
-        create_model(config),
-        Conversation(conversation_id=new_conversation_id()),
-        params=GenerationParams(
-            max_new_tokens=config.model.max_new_tokens,
-            temperature=config.model.temperature,
-        ),
-        max_context_turns=config.model.max_context_turns,
+    retrieval = loaded.config.retrieval
+    enabled = False if args.no_retrieval else retrieval.enabled
+    strategy = args.strategy if args.strategy is not None else retrieval.strategy
+    top_k = args.top_k if args.top_k is not None else retrieval.top_k
+    if (enabled, strategy, top_k) == (retrieval.enabled, retrieval.strategy, retrieval.top_k):
+        return loaded
+    overridden = RetrievalConfig(
+        enabled=enabled,
+        strategy=strategy,
+        top_k=top_k,
+        candidate_k=retrieval.candidate_k,
+        rrf_k=retrieval.rrf_k,
+        max_ingest_bytes=retrieval.max_ingest_bytes,
     )
+    return replace(loaded, config=replace(loaded.config, retrieval=overridden))
 
 
 def _run_chat(args: argparse.Namespace) -> int:
+    if args.top_k is not None and args.top_k < 1:
+        print(f"{PROGRAM}: --top-k must be at least 1", file=sys.stderr)
+        return 1
+
     try:
         loaded = _load_or_report(args.config)
     except ConfigError as exc:
         print(f"{PROGRAM}: {exc}", file=sys.stderr)
         return 1
 
+    loaded = _apply_chat_overrides(loaded, args)
+
+    # The corpus is built from only the files the caller names, before any turn runs: reading one
+    # is an explicit request, and a path that cannot be read is reported whole rather than
+    # swallowed into a silently smaller corpus.
     try:
-        manager = _build_manager(loaded)
-    except UnknownModelError as exc:
+        corpus = build_corpus(
+            args.file or [],
+            max_bytes=loaded.config.retrieval.max_ingest_bytes,
+        )
+    except IngestionError as exc:
         print(f"{PROGRAM}: {exc}", file=sys.stderr)
         return 1
 
-    # Everything a person needs in order not to mistake this for an assistant goes
-    # to stderr, so that stdout carries the reply alone and stays scriptable.
-    print(_engine_notice(manager), file=sys.stderr)
+    try:
+        app = build_application(loaded, corpus=corpus)
+    except (UnknownModelError, ApplicationError, ChakasoError) as exc:
+        print(f"{PROGRAM}: {exc}", file=sys.stderr)
+        return 1
 
-    if args.message is not None:
-        return _answer_once(manager, args.message)
+    # Everything a person needs in order not to mistake this for a real assistant goes to
+    # stderr, so that stdout carries the reply alone and the command stays scriptable.
+    print(_engine_notice(app), file=sys.stderr)
+    _report_config_overrides(args)
 
-    return _converse(manager)
+    with app:
+        if args.message is not None:
+            return _answer_once(app, args.message)
+        return _converse(app)
 
 
-def _engine_notice(manager: ConversationManager) -> str:
-    """State plainly what produced the replies, before any are produced."""
-    metadata = manager.model_metadata
+def _engine_notice(app: Application) -> str:
+    """State plainly what produces the replies and what grounds them, before any reply."""
+    metadata = app.model_metadata
     lines = [f"engine: {metadata.model_id} ({metadata.display_name})"]
     if metadata.development_double:
         lines.append(
             "This is a development double, not a language model. It returns fixed text "
             "that exercises the conversation plumbing, and it does not answer anything."
         )
-    lines.append(
-        "No retrieval, no citations, no correction, and no confidence. "
-        "The conversation is not saved and is lost when this process exits."
-    )
+    if app.retrieval_enabled:
+        corpus = app.corpus
+        if corpus.is_empty:
+            lines.append(
+                f"retrieval: {app.strategy.value} selected, but no documents were supplied, so a "
+                "retrieving turn returns no evidence (pass --file to ground answers)."
+            )
+        else:
+            lines.append(
+                f"retrieval: {app.strategy.value} over {corpus.source_count} source(s) and "
+                f"{corpus.chunk_count} chunk(s). This grounds and cites structurally only — no "
+                "semantic judgement, and dense/hybrid run over a non-semantic fixture embedding."
+            )
+    else:
+        lines.append("retrieval disabled: no planner runs and turns are not grounded in evidence.")
+    if app.storage_backend == "sqlite":
+        lines.append(f"answers persist durably to {app.storage_path} and survive a restart.")
+    else:
+        lines.append(
+            "answers are recorded in memory for this process only and are not saved to disk."
+        )
     return "\n".join(lines)
 
 
-def _answer_once(manager: ConversationManager, message: str) -> int:
+def _report_config_overrides(args: argparse.Namespace) -> None:
+    """Name the configuration the command line overrode, so a run is not mistaken for default."""
+    overridden: list[str] = []
+    if args.no_retrieval:
+        overridden.append("retrieval.enabled=false (--no-retrieval)")
+    if args.strategy is not None:
+        overridden.append(f"retrieval.strategy={args.strategy!r} (--strategy)")
+    if args.top_k is not None:
+        overridden.append(f"retrieval.top_k={args.top_k} (--top-k)")
+    if overridden:
+        print(f"{PROGRAM}: overridden from configuration: {', '.join(overridden)}", file=sys.stderr)
+
+
+def _answer_once(app: Application, message: str) -> int:
     try:
-        reply = manager.send(message)
-    except (ConversationError, ModelError) as exc:
+        turn = app.turn(message)
+    except ChakasoError as exc:
+        # Every deliberate failure keeps its own message; a failed turn leaves the conversation
+        # unchanged, so nothing half-recorded is left behind.
         print(f"{PROGRAM}: {exc}", file=sys.stderr)
         return 1
 
-    print(reply.text)
-    _report_caveats(reply)
+    print(turn.text)
+    _report_caveats(turn.reply)
+    _report_grounding(turn)
     return 0
 
 
-def _converse(manager: ConversationManager) -> int:
+def _converse(app: Application) -> int:
     """Read messages until end of input or a quit command."""
     try:
         for line in sys.stdin:
@@ -516,19 +604,49 @@ def _converse(manager: ConversationManager) -> int:
                 break
 
             try:
-                reply = manager.send(text)
-            except (ConversationError, ModelError) as exc:
+                turn = app.turn(text)
+            except ChakasoError as exc:
                 # A failed turn leaves the conversation unchanged, so the session can
                 # continue rather than losing everything said so far.
                 print(f"{PROGRAM}: {exc}", file=sys.stderr)
                 continue
 
-            print(f"{PROGRAM}> {reply.text}")
-            _report_caveats(reply)
+            print(f"{PROGRAM}> {turn.text}")
+            _report_caveats(turn.reply)
+            _report_grounding(turn)
     except KeyboardInterrupt:
         print("", file=sys.stderr)
         return 130
     return 0
+
+
+def _report_grounding(turn: ApplicationTurn) -> None:
+    """Report what grounding actually happened on a turn — to stderr, never inventing a claim.
+
+    This is the runtime's provenance made visible: the planner's decision and why it fired, how
+    much evidence retrieval offered, and how many sources the answer actually cited. It states
+    plainly that a resolved citation is structure, not a source proving a claim.
+    """
+    plan = turn.plan
+    if plan is None:
+        return
+
+    if not turn.retrieved:
+        reason = "; ".join(plan.explanation) if plan.explanation else "no reasons recorded"
+        print(
+            f"{PROGRAM}: no retrieval this turn (planner chose {plan.mode.value}): {reason}",
+            file=sys.stderr,
+        )
+        return
+
+    offered = max(len(turn.evidence_context) - 1, 0)
+    cited = len(turn.reply.citation_resolution.cited_source_ids)
+    print(
+        f"{PROGRAM}: retrieved via {plan.mode.value}; {offered} chunk(s) offered, {cited} "
+        f"source(s) cited. A resolved citation shows a source was referenced, not that it "
+        "proves the answer.",
+        file=sys.stderr,
+    )
 
 
 def _report_caveats(reply: Reply) -> None:

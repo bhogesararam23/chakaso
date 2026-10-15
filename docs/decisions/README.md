@@ -118,3 +118,4 @@ creates.
 | [ADR-0023](ADR-0023-dense-retrieval-boundary.md) | Dense retrieval is an embedding boundary with an exact index; the only embedding is a non-semantic double | Accepted |
 | [ADR-0024](ADR-0024-hybrid-rank-fusion.md) | Hybrid retrieval fuses lexical and dense results by reciprocal rank fusion | Accepted |
 | [ADR-0025](ADR-0025-retrieval-aware-runtime.md) | The retrieval-aware conversation runtime is a thin coordinator, not a monolith | Accepted |
+| [ADR-0026](ADR-0026-application-composition-root.md) | The application composition root is a thin, injectable layer separate from the runtime | Accepted |

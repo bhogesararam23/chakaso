@@ -1,63 +1,68 @@
 # Active task
 
-## Current unit: P15 — end-to-end + restart integration demonstration, test-the-tests, security review
+## Current unit: P17 — a credible semantic-evaluation boundary
 
-**Goal.** Prove the assembled system as integration, not just as units: a deterministic, offline
-end-to-end demonstration that runs a user query through planner → retrieval → evidence pack → the
-development model → claims → citation validation → grounding → `AnswerRecord` → durable SQLite store,
-then closes and reopens the store to show the grounded answer history survives the process; a
-follow-up/correction path recorded against the stored history. Add deliberate "test-the-tests"
-corruption checks on the critical invariants (turn atomicity, persistence integrity, retrieval
-provenance, hybrid ranking, the model boundary) — corrupt the behaviour, show the test fails, restore.
-Run a security review of the new runtime surface: untrusted retrieved content, prompt-injection
-through evidence, persisted serialized records, filesystem/SQLite paths, and confirmation that no
-default path reaches the network.
+**Goal.** Turn the fixture-only `SemanticJudge` into an honest path toward semantic evaluation
+without claiming it already exists: sharpen the semantic-evaluation contract so it preserves the
+claim, the relevant evidence references, the judgement, the evaluator identity/version, a structured
+reason, the supported/contradicted/unresolved distinction, and an explicit indeterminate outcome; keep
+structural grounding and semantic evaluation as separate dimensions that never overwrite each other;
+deliver a versioned, clearly-labelled synthetic semantic-evaluation dataset; and connect a semantic
+judgement to correction decisions only through explicit composition. If a genuinely local, CPU-feasible
+semantic evaluator can be built and tested honestly, add it behind the boundary with optional
+dependencies, explicit identity, no implicit downloads and clear failure when weights/hardware are
+missing; if it cannot, deliver the tested interface, capability detection, configuration and
+integration tests and document precisely what is missing. The fixture judge must remain available for
+deterministic tests and must never be relabelled as a real judge.
 
-**Why this is next.** Phases 2–7 built and unit-tested durable storage, the planner, dense and hybrid
-retrieval, and the runtime that composes them, and the first measured strategy comparison (E-001) is
-recorded. What has not been done is an *integration* demonstration that the whole flow holds together
-across a restart, the deliberate-corruption checks that prove the guarantees can fail (so that passing
-means something), and an explicit security pass over the new runtime. This unit is verification and
-honesty, not new capability.
+**Why this is next.** P16 connected the tested runtime to an actual command (`chakaso chat`) through a
+typed composition root, so the system is now usable end to end offline — but every turn is still
+grounded only structurally. The single largest honesty gap in the project (K-001 aside) is that nothing
+judges whether a cited source actually *bears on* a claim: a citation resolves to structure, not
+meaning. The next real unit is therefore the semantic-evaluation boundary, which is what a real
+retrieval-grounded answer needs before its grounding claims mean anything.
 
-## What the previous unit completed (P14 — measured retrieval-strategy comparison)
+## What the previous unit completed (P16 — connect `chakaso chat` to the retrieval-aware runtime)
 
-Implemented, tested, documented and green on Python 3.11–3.13. It produces real numbers; it invents none.
+Implemented, tested, documented and green on Python 3.11–3.13. It wires what already existed; it
+invents no capability and produces no real answer.
 
-- [x] `chakaso.experiments.compare_retrieval_strategies`: scores lexical/dense/hybrid over the same
-      dataset and reports measured per-metric deltas against a baseline; hard-codes no winner.
-- [x] `retrieval_strategy_experiment` and a runner that honours a configured `retriever` strategy.
-- [x] `chakaso benchmark strategies` and `chakaso benchmark retrieval --strategy …`.
-- [x] The first run (E-001) recorded in `docs/research/research-log.md` with its real numbers — a
-      neutral-to-negative result (dense/hybrid match lexical on recall/precision/hit, regress MRR by
-      0.071 over the non-semantic fixture embedding); H7 added and left explicitly untested.
+- [x] `chakaso.app` — a thin, injectable application composition root: resolved `Config` → model
+      (registry), the *configured* answer store (never a silent downgrade), retrieval services over a
+      corpus, the planner at the configured strategy/limits, and the manager (ADR-0026).
+- [x] A typed `[retrieval]` configuration section (`enabled`, `strategy`, `top_k`, `candidate_k`,
+      `rrf_k`, `max_ingest_bytes`) validated by the existing specs/dataclass-parity mechanism.
+- [x] `chakaso chat` now drives the runtime over any `--file` documents and records every answer to
+      the configured store, with an honest notice naming the engine, the active strategy, the corpus
+      state and the persistence mode; `--no-retrieval`, `--strategy`, `--top-k` are real overrides.
+- [x] Tests proving a configuration change changes runtime behaviour (store used, strategy, top-k,
+      enabled/disabled), durable recording, sqlite-without-path refusal, and the offline no-network
+      import guard extended to `chakaso.app`.
 
 ## What this unit is not
 
-- Not a new capability or feature. It is integration proof, corruption checks, and a security review.
-- Not a real model or semantic claim: the demonstration runs the deterministic double and the
-  non-semantic fixture embedding, so it proves the wiring, not answer quality.
-- Not automatic correction or a triggered follow-up; those remain later.
+- Not a trained model, not a semantic claim: any evaluator that ships must declare its identity and
+  limits and the fixture judge stays a fixture.
+- Not an automatic rewrite of an answer from a semantic judgement, and not a merged answer-quality
+  score; structural and semantic results stay separate dimensions.
 
 ## Ordering after this unit
 
-1. Final synchronisation sweep across docs/ADRs/research/CHANGELOG, the full 3.11–3.13 validation, CI
-   green, and a clean tree with `HEAD == origin/main`.
-2. Wiring the runtime into `chakaso chat` / the CLI behind typed retrieval configuration.
-3. A real semantic judge behind `SemanticJudge`; then a triggered follow-up that decides *when* to
-   reassess.
-4. A local CPU model adapter, then the tokenizer, dataset pipeline and a tiny Transformer.
+1. A triggered follow-up that decides *when* to reassess, wired into the runtime behind explicit
+   composition (not a fake autonomous loop).
+2. A local CPU model adapter behind the `LanguageModel` boundary, only if a genuinely available,
+   maintainable dependency exists; then the tokenizer, dataset pipeline and a tiny Transformer.
 
 ## Known gaps that bound this unit
 
-- K-001: the demonstration is offline and synthetic; a real workload still has not been run.
-- K-007 (closed by ADR-0021): answers persist across a restart — this unit demonstrates it end to end.
-- K-008: the fetcher's destination screen is partial; the security pass must confirm no runtime default
-  path reaches the network and record any limitation in scope rather than fixing it silently.
+- K-001: nothing here has been run against a real workload; a semantic-evaluation dataset is synthetic
+  and its numbers describe structure/mechanism, not general language understanding.
+- K-002: `docs/architecture.md` still names Planned components; the semantic-boundary unit must keep
+  its status labels honest (an interface is not an implemented capability).
 
 ## What previous units knowingly left undone
 
-- Nothing records across turns how often a model invents an evidence reference; the runtime detects it
-  per turn, but no store aggregates the rate across a session (K-006).
-- Nothing resolves references to earlier turns; the planner uses an anaphoric-cue heuristic, not a
-  discourse resolver.
+- The runtime is wired to `chakaso chat` (P16), but no reassessment is triggered automatically; the
+  correction path is still an explicit application operation over a stored answer.
+- Nothing records across turns how often a model invents an evidence reference (K-006), and the
+  planner uses an anaphoric-cue heuristic, not a discourse resolver.

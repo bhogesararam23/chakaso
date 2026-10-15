@@ -1,6 +1,6 @@
 # Current state
 
-Last updated: 2026-10-10, at the commit adding durable SQLite answer storage (ADR-0021).
+Last updated: 2026-10-15, at the commit wiring `chakaso chat` to the retrieval-aware runtime through a typed application composition root (ADR-0026).
 
 This file is the authority on what exists. If it disagrees with any other
 document, this file is right and the other document is a defect.
@@ -18,8 +18,9 @@ A private planning note is never evidence that something is implemented.
 | Contribution guide | `CONTRIBUTING.md` | |
 | Agent contract | `AGENTS.md`, `docs/agent/` | |
 | Python package | `src/chakaso/` | Installs; typed; `py.typed` ships |
-| CLI | `src/chakaso/cli.py` | `--version`, `info`, `config show`, `chat`, `retrieve`, `benchmark retrieval|correction`, `experiment run`, `storage check|migrate` |
-| Configuration | `src/chakaso/config/`, `configs/default.toml` | Typed schema in sections (`model`, `storage`), explicit loading, per-value provenance; storage defaults to the in-memory backend so nothing is written |
+| CLI | `src/chakaso/cli.py` | `--version`, `info`, `config show`, `chat`, `retrieve`, `benchmark retrieval|correction|strategies`, `experiment run`, `storage check|migrate`; `chat` builds its graph through `chakaso.app` and drives the runtime |
+| Application composition | `src/chakaso/app.py` | `build_application(loaded, …)` is the single place a resolved `Config` becomes the runtime's dependencies: model via the registry, the configured answer store (`memory` or durable `sqlite`, never a silent downgrade), retrieval services over a corpus, the planner at the configured strategy/limits, and the manager. Every dependency is injectable for tests (ADR-0026) |
+| Configuration | `src/chakaso/config/`, `configs/default.toml` | Typed schema in sections (`model`, `storage`, `retrieval`), explicit loading, per-value provenance; storage defaults to the in-memory backend so nothing is written; `retrieval` selects the strategy (`lexical`/`dense`/`hybrid`), `top_k`, hybrid fusion knobs and an ingest size bound, and whether grounding is on at all |
 | Core primitives | `src/chakaso/core/` | Content-derived identifiers, SHA-256 hashing, error base |
 | Model boundary | `src/chakaso/models/` | `LanguageModel` protocol, capabilities, registry, contract tests |
 | Model implementations | `src/chakaso/models/deterministic.py` | A development double only. **No language model exists.** |
@@ -36,7 +37,7 @@ A private planning note is never evidence that something is implemented.
 | Conversation state | `src/chakaso/conversation/state.py` | Immutable, append-only turns with provenance; topic, entities and open questions |
 | Conversation manager | `src/chakaso/conversation/manager.py` | Conducts one turn: context projection, model call, validation, evidence and citation recording. Transactional (ADR-0008) |
 | Retrieval-aware runtime | `src/chakaso/runtime/` | `RetrievalAwareConversation` composes planner → retrieval (lexical/dense/hybrid) → model → claims → citation validation → grounding → `AnswerRecord` → store as a thin coordinator, not a monolith (ADR-0025): retrieval optional, turn atomicity preserved, the planner decision and retrieval strategy recorded as provenance/metadata, and a structured, citation-safe evidence context rendered for the model. Runs the deterministic double; no model, no semantic claim |
-| Conversation shell | `chakaso chat` | Interactive and one-shot. States in its own output that the engine is a development double |
+| Conversation shell | `chakaso chat` | Interactive (`--message` for one-shot). Grounds turns through the retrieval-aware runtime over any `--file` documents, records each answer to the configured store, and states in its own output that the engine is a development double, names the active strategy, and says whether answers persist. `--no-retrieval` runs it ungrounded |
 | Retrieval CLI | `chakaso retrieve` | Ingests named local files, runs lexical retrieval, prints ranked evidence with provenance. Local and offline |
 | Benchmark CLI | `chakaso benchmark` | Runs the retrieval, correction, or strategy-comparison development benchmark over its synthetic fixtures and prints a text or deterministic JSON report that labels itself a development instrument (`strategies` measures lexical/dense/hybrid and reports measured deltas). Local and offline |
 | Web fetcher | `src/chakaso/retrieval/acquire.py`, `policy.py`, `netguard.py` | Opt-in, bounded HTTP fetch under a `FetchPolicy`; scheme/size/redirect/timeout/destination rules. Off every default path (ADR-0012) |
@@ -49,9 +50,9 @@ A private planning note is never evidence that something is implemented.
 | Answers & persistence | `src/chakaso/answers/` | `AnswerId` is a per-event typed identifier, not a content hash (ADR-0017). An immutable `AnswerRecord` ties turn + model + evidence + claims + evaluation + a `correction_of` link by reference. `AnswerStore` boundary with two append-only, integrity-checked backends: in-memory `InMemoryAnswerStore` (the default) and a durable `SQLiteAnswerStore` built on the standard library (ADR-0018, ADR-0021). The durable store is proven by a test to survive a process restart, and is opt-in, so nothing writes to disk unless it is selected |
 | Correction foundation | `src/chakaso/correction/` | The reassessment decision rule (retain / qualify / correct / abstain / needs_review, ADR-0016), `reassess` over the grounding boundary, an append-only `CorrectionRecord`, structural correction metrics, a follow-up helper (`reassess_followup`), and an application-level `reassess_stored_answer` / `reassess_and_record` over a stored answer. Decides and records; produces no revised prose (there is no model) and is not wired into an automatic loop |
 | Experiments | `src/chakaso/experiments/` | `Experiment` (hypothesis + benchmark + configuration) and a content-fingerprinted, environment-separated `ExperimentResult`; `run_experiment` drives a development benchmark (the retrieval runner honours a configured `retriever` strategy); `compare_results` is a deterministic regression baseline that refuses incompatible versions, and `compare_retrieval_strategies` measures lexical vs dense vs hybrid over the same fixtures (ADR-0020). No tracker, no database, no model |
-| Tests | `tests/` | ~956 tests at the commit recorded above: package, CLI (incl. `retrieve`, `benchmark` and `experiment`), configuration, identifiers and hashing, source identity, model boundary, evidence, normalization, chunking, ingestion, corpus, lexical retrieval, dense retrieval (embedding double, exact index, retriever), hybrid retrieval (reciprocal-rank fusion, per-component provenance), retrieval orchestration, end-to-end pipeline, fetch policy and netguard, HTML/web ingestion, cache, evaluation metrics and answer evaluation, benchmark identity/cases/loader/fixtures/runner/report and the correction benchmark, claims/extract/links, citation validation, grounding and the semantic boundary, correction decision/reassess/record/metrics/follow-up/service, answer identity/record/store/serialization and the durable SQLite store (restart, rollback, schema, integrity) with a two-backend conformance suite and conversation integration, experiments (model/runner/compare), security/determinism/reproducibility regressions, conversation state and manager, query planning (mode/normalization/plan invariants/deterministic rules), retrieval-aware runtime (plan→retrieve→record, atomicity, provenance), retrieval-strategy comparison (measured, deterministic lexical/dense/hybrid), end-to-end grounded-turn + restart integration and untrusted-content security checks, repository hygiene. The count ages; `python -m pytest` does not. |
+| Tests | `tests/` | ~996 tests at the commit recorded above: package, CLI (incl. `retrieve`, `benchmark` and `experiment`, and the retrieval-aware `chat` wiring — corpus grounding, `--no-retrieval`, strategy/top-k overrides, durable-store recording), configuration (incl. the `retrieval` section: defaults, strategy pattern, numeric limits, boolean `enabled`, provenance), application composition (`chakaso.app`: the configured store is used and never silently downgraded, strategy/top-k/enabled change real runtime behaviour, SQLite-backed answers survive a reopen, sqlite-without-path is refused, corpus building bounds file size, close is idempotent), identifiers and hashing, source identity, model boundary, evidence, normalization, chunking, ingestion, corpus, lexical retrieval, dense retrieval (embedding double, exact index, retriever), hybrid retrieval (reciprocal-rank fusion, per-component provenance), retrieval orchestration, end-to-end pipeline, fetch policy and netguard, HTML/web ingestion, cache, evaluation metrics and answer evaluation, benchmark identity/cases/loader/fixtures/runner/report and the correction benchmark, claims/extract/links, citation validation, grounding and the semantic boundary, correction decision/reassess/record/metrics/follow-up/service, answer identity/record/store/serialization and the durable SQLite store (restart, rollback, schema, integrity) with a two-backend conformance suite and conversation integration, experiments (model/runner/compare), security/determinism/reproducibility regressions (the no-network import guard covers `chakaso.app`), conversation state and manager, query planning (mode/normalization/plan invariants/deterministic rules), retrieval-aware runtime (plan→retrieve→record, atomicity, provenance), retrieval-strategy comparison (measured, deterministic lexical/dense/hybrid), end-to-end grounded-turn + restart integration and untrusted-content security checks, repository hygiene. The count ages; `python -m pytest` does not. |
 | CI | `.github/workflows/ci.yml` | Green on Python 3.11, 3.12, 3.13 |
-| Retrieval wired into an interactive command, an automatic correction loop | **do not exist** | The retrieval-aware runtime now composes planner → retrieval → model → record → store (ADR-0025) and is tested, but no conversation command drives it yet (only tests do), there is no real semantic embedding, and no reassessment runs itself |
+| An automatic correction loop that decides on its own when to reassess | **does not exist** | The retrieval-aware runtime composes planner → retrieval → model → record → store (ADR-0025) and `chakaso chat` drives it through the composition root (ADR-0026), but no reassessment runs itself, there is no real semantic embedding, and the only model is the development double |
 
 ## What works
 
@@ -94,11 +95,15 @@ A private planning note is never evidence that something is implemented.
 - Evidence supplied to `send` is what citations resolve against. A reference the
   model was not given is reported as unresolved and is never resolved to a source
   (ADR-0009).
-- `python -m chakaso chat` holds a conversation: interactive on stdin, or one
-  message with `--message`. It prints a notice on stderr naming the engine and
-  saying that it is a development double, that nothing is retrieved, and that the
-  conversation is not saved. The reply goes to stdout so the command stays
-  scriptable.
+- `python -m chakaso chat` holds a conversation through the retrieval-aware runtime: interactive
+  on stdin, or one message with `--message`. It builds its dependencies with `chakaso.app` from the
+  resolved configuration, so the planner decides each turn, lexical/dense/hybrid retrieval runs over
+  any `--file` documents, and every answer is recorded in the configured store (in-memory by
+  default; durable SQLite when `[storage]` selects it). It prints a notice on stderr naming the
+  engine as a development double, the active retrieval strategy, whether the corpus has documents
+  (with none, a retrieving turn honestly returns no evidence), and whether answers persist. The
+  reply and per-turn grounding go to stderr for the report lines so stdout stays scriptable;
+  `--no-retrieval` conducts turns without grounding or planning.
 - Document text can be split into evidence chunks with section paths, document
   positions and content-derived identifiers, and those chunks can be assembled into
   an `EvidencePack`. Nothing yet ranks chunks.
@@ -241,6 +246,7 @@ says anything else.
 | Dense retrieval | The fixture embedding's honest metadata (`is_semantic=False`, batch order, determinism, unit-length, zero-vector empty text), vector/metadata validation, index invariants (uniform dimension, no duplicate chunk, empty index), and the dense retriever: `dense` strategy tagging with empty matched terms, ranking/determinism, `source_ids` filter, zero-query and empty-index returning nothing, dimension-mismatch rejection, and `Retriever`-protocol conformance |
 | Hybrid retrieval | Reciprocal-rank fusion of the lexical and dense retrievers: `hybrid` strategy tagging with full per-component provenance (both ranks when a chunk appears in both, `None` for the component that missed it — never fabricated), exact RRF score arithmetic, weight-driven favoring, `candidate_k` pooling, `source_ids` pass-through, determinism, invalid-config refusal, and `Retriever`-protocol conformance |
 | Conversation runtime | A grounded turn through the real pipeline: a greeting retrieves nothing but still records, a knowledge turn retrieves and records its evidence with the planner decision + retrieval strategy on the answer, a follow-up reuses prior sources, a topic change does not, dense/hybrid flow through, an unwired mode or bad top-k is refused at construction, a retriever failure leaves the conversation and store untouched, and the evidence-context renderer emits ids + reference + text (empty pack → nothing) |
+| Application composition | `chakaso.app` turns typed configuration into a running system: the built-in config wires the runtime over the in-memory store; the configured store is used and never silently replaced; `sqlite` with no path is refused rather than downgraded; changing `strategy`/`top_k`/`enabled` changes what the assembled application actually does on a turn; a durable-backed answer survives closing and reopening the store; corpus building reads only named files and bounds their size; `close()` is idempotent |
 | End-to-end & security | The whole flow as integration: a grounded turn persists to the durable SQLite store and survives a reopen (substance kept, evaluation recomputed), a `correction_of` lineage survives a restart, a failing save aborts the turn and leaves the conversation unchanged, and untrusted retrieved text stays data with a never-supplied identifier resolving to nothing; the no-network import guard covers the planning and runtime packages |
 | Repository invariants | Private pack never tracked, `.gitignore` rule present, no secret-shaped files, no tracked file over 1 MiB, no commercial provider dependency, ADR numbering and indexing, documentation links resolve |
 
@@ -259,10 +265,10 @@ index, but over a non-semantic fixture embedding, so it proves the shape, not an
 - A full document processor: PDF, robust main-content extraction and boilerplate
   removal. The HTML reader is narrow and is not a browser — it runs no scripts, applies no
   CSS and strips no ads.
-- The retrieval-aware runtime is not wired into an interactive command. `chakaso.runtime` composes
-  planner → retrieval → model → record (ADR-0025) and is exercised by tests, but `chakaso chat` does
-  not use it, so an interactive session still neither plans nor retrieves; and nothing decides *which*
-  URLs to fetch — the fetcher is only ever handed an explicit URL.
+- The retrieval-aware runtime is wired into `chakaso chat` through the composition root
+  (`chakaso.app`, ADR-0025/ADR-0026), but nothing yet decides *which* URLs to fetch — the fetcher is
+  only ever handed an explicit URL, and the CLI corpus comes only from `--file` documents a caller
+  names. There is no durable source index: the corpus is rebuilt in memory each run.
 - Dense embeddings, a real semantic embedding model, an approximate vector index and reranking:
   a dense *boundary* and an exact in-memory index exist over a deterministic non-semantic fixture
   embedding (ADR-0023), but there is no genuine embedding model, no approximate (FAISS-like) index,
@@ -315,6 +321,7 @@ index, but over a non-semantic fixture embedding, so it proves the shape, not an
 | ADR-0023 | Dense retrieval is an embedding boundary with an exact index; the only embedding is a non-semantic double |
 | ADR-0024 | Hybrid retrieval fuses lexical and dense results by reciprocal rank fusion |
 | ADR-0025 | The retrieval-aware conversation runtime is a thin coordinator, not a monolith |
+| ADR-0026 | The application composition root is a thin, injectable layer separate from the runtime |
 
 Two process facts are recorded outside the ADR series because they are repository
 history rather than architecture:
@@ -350,9 +357,10 @@ in order:
    close/reopen, with deliberate "test-the-tests" corruption checks on atomicity, provenance and
    persistence, and a security review of the new runtime.
 
-A **real semantic judge** (the `SemanticJudge` boundary is fixture-only today), wiring the runtime
-into **`chakaso chat`/the CLI**, and an **automatic, triggered correction** follow these. The full
-retrieval flow is now executable and tested in the runtime (ADR-0025), but no interactive command
-drives it yet, and dense/hybrid run over a non-semantic fixture embedding (ADR-0023/ADR-0024) — a real
-embedding model, and a real language model, are what would make the answers mean something. All of it
-stays behind the existing boundaries. See [`ACTIVE_TASK.md`](ACTIVE_TASK.md) for the definition of done.
+A **real semantic judge** (the `SemanticJudge` boundary is fixture-only today) and an **automatic,
+triggered correction** follow the now-completed wiring of the runtime into **`chakaso chat`** behind
+typed retrieval configuration (ADR-0026). The full retrieval flow is executable, tested and driven by
+an interactive command, but dense/hybrid run over a non-semantic fixture embedding (ADR-0023/ADR-0024)
+and the only model is the development double — a real embedding model, and a real language model, are
+what would make the answers mean something. All of it stays behind the existing boundaries. See
+[`ACTIVE_TASK.md`](ACTIVE_TASK.md) for the definition of done.

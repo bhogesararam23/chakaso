@@ -26,15 +26,18 @@ from chakaso.config.errors import ConfigValidationError
 
 __all__ = [
     "ADAPTER_NAME_PATTERN",
+    "RETRIEVAL_STRATEGY_PATTERN",
     "SPECS",
     "Config",
     "FieldSpec",
     "FieldValue",
     "ModelConfig",
+    "RetrievalConfig",
     "StorageConfig",
     "build_config",
     "config_field_names",
     "model_config_field_names",
+    "retrieval_config_field_names",
     "storage_config_field_names",
 ]
 
@@ -80,6 +83,13 @@ ADAPTER_NAME_PATTERN = r"[a-z][a-z0-9_]*"
 # set mirrors SQLiteAnswerStore._SUPPORTED_JOURNAL_MODES.
 STORAGE_BACKEND_PATTERN = r"(memory|sqlite)"
 STORAGE_JOURNAL_MODE_PATTERN = r"(delete|truncate|persist|memory|wal|off)"
+
+# The retrieval strategies a query planner and the retrieval-aware runtime can select.
+# All three are backed by a retriever today (lexical BM25, the exact dense index over the
+# non-semantic fixture embedding, and reciprocal-rank fusion — ADR-0023/ADR-0024), so a
+# configured strategy always has a real retriever behind it and never silently falls back
+# to another. The set mirrors `chakaso.planning.QueryMode`'s retrieval modes.
+RETRIEVAL_STRATEGY_PATTERN = r"(lexical|dense|hybrid)"
 
 SPECS: tuple[FieldSpec, ...] = (
     FieldSpec(
@@ -152,6 +162,69 @@ SPECS: tuple[FieldSpec, ...] = (
         description="SQLite journal mode for the durable store (ADR-0021)",
         pattern=STORAGE_JOURNAL_MODE_PATTERN,
     ),
+    FieldSpec(
+        key="retrieval.enabled",
+        kind=bool,
+        # The retrieval-aware runtime is what makes a turn grounded in evidence (ADR-0025).
+        # It is on by default so `chakaso chat` runs through the real composition rather
+        # than the bare conversation; with no documents supplied the planner still runs and
+        # retrieval honestly returns an empty pack. Turning it off restores a retrieval-free
+        # conversation, which is a distinct, deliberate mode rather than a degraded one.
+        default=True,
+        description="Whether the conversation runtime grounds turns in retrieved evidence (ADR-0025)",
+    ),
+    FieldSpec(
+        key="retrieval.strategy",
+        kind=str,
+        # Which retriever the planner selects when it decides to retrieve. Every value is
+        # backed by a retriever, so an explicit choice is honoured rather than substituted.
+        # "dense"/"hybrid" run over the non-semantic fixture embedding (ADR-0023/ADR-0024).
+        default="lexical",
+        description="Retrieval strategy the planner selects: 'lexical', 'dense' or 'hybrid'",
+        pattern=RETRIEVAL_STRATEGY_PATTERN,
+    ),
+    FieldSpec(
+        key="retrieval.top_k",
+        kind=int,
+        # How many chunks a planned retrieval asks for. It matches the retrieval service's
+        # own default so an unset configuration behaves exactly as the library does today.
+        default=5,
+        description="How many chunks a retrieval turn returns",
+        minimum=1,
+        maximum=1_000,
+    ),
+    FieldSpec(
+        key="retrieval.candidate_k",
+        kind=int,
+        # The pool each hybrid component draws from before fusion (ADR-0024). It is used
+        # only when the strategy is 'hybrid'; over-retrieving here trades latency for a
+        # better merged ranking and has no effect on the lexical or dense paths.
+        default=10,
+        description="Per-component candidate pool for hybrid fusion (used when strategy is 'hybrid')",
+        minimum=1,
+        maximum=10_000,
+    ),
+    FieldSpec(
+        key="retrieval.rrf_k",
+        kind=int,
+        # The reciprocal-rank-fusion smoothing constant (Cormack et al.; published default
+        # 60). Used only for the 'hybrid' strategy. A larger value flattens rank influence.
+        default=60,
+        description="RRF smoothing constant for hybrid fusion (used when strategy is 'hybrid')",
+        minimum=1,
+        maximum=10_000,
+    ),
+    FieldSpec(
+        key="retrieval.max_ingest_bytes",
+        kind=int,
+        # A bound on how large a document the runtime will read into the corpus, checked
+        # against file size before bytes are loaded. It mirrors the ingestion layer's own
+        # default so the built-in configuration matches today's behaviour exactly.
+        default=10_485_760,
+        description="Maximum size in bytes of a document the runtime will ingest",
+        minimum=1,
+        maximum=1_073_741_824,
+    ),
 )
 
 SPECS_BY_KEY: dict[str, FieldSpec] = {spec.key: spec for spec in SPECS}
@@ -177,6 +250,24 @@ class StorageConfig:
 
 
 @dataclass(frozen=True, slots=True)
+class RetrievalConfig:
+    """Settings that construct the retrieval-aware runtime (ADR-0025).
+
+    These are the values the application composition reads to decide whether a turn is
+    grounded, which retriever the planner selects, and what limits bound the corpus. They
+    cover only what genuinely exists: enabling retrieval, choosing among the strategies that
+    have a retriever behind them, and the fusion/limit knobs those retrievers actually take.
+    """
+
+    enabled: bool
+    strategy: str
+    top_k: int
+    candidate_k: int
+    rrf_k: int
+    max_ingest_bytes: int
+
+
+@dataclass(frozen=True, slots=True)
 class Config:
     """The resolved configuration.
 
@@ -186,6 +277,7 @@ class Config:
 
     model: ModelConfig
     storage: StorageConfig
+    retrieval: RetrievalConfig
 
 
 def validate_field(spec: FieldSpec, value: object) -> FieldValue:
@@ -270,6 +362,14 @@ def build_config(values: dict[str, FieldValue]) -> Config:
             path=cast(str, values["storage.path"]),
             journal_mode=cast(str, values["storage.journal_mode"]),
         ),
+        retrieval=RetrievalConfig(
+            enabled=cast(bool, values["retrieval.enabled"]),
+            strategy=cast(str, values["retrieval.strategy"]),
+            top_k=cast(int, values["retrieval.top_k"]),
+            candidate_k=cast(int, values["retrieval.candidate_k"]),
+            rrf_k=cast(int, values["retrieval.rrf_k"]),
+            max_ingest_bytes=cast(int, values["retrieval.max_ingest_bytes"]),
+        ),
     )
 
 
@@ -287,6 +387,11 @@ def storage_config_field_names() -> set[str]:
     return {f"storage.{field.name}" for field in fields(StorageConfig)}
 
 
+def retrieval_config_field_names() -> set[str]:
+    """Field names of :class:`RetrievalConfig`, prefixed with their section."""
+    return {f"retrieval.{field.name}" for field in fields(RetrievalConfig)}
+
+
 def config_field_names() -> set[str]:
     """Every dotted configuration key derived from the section dataclasses.
 
@@ -295,4 +400,6 @@ def config_field_names() -> set[str]:
     a value is unexpectedly missing. Deriving the expected set from the dataclasses —
     rather than restating it in the test — is what keeps adding a field a one-place edit.
     """
-    return model_config_field_names() | storage_config_field_names()
+    return (
+        model_config_field_names() | storage_config_field_names() | retrieval_config_field_names()
+    )
