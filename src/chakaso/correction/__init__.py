@@ -26,6 +26,10 @@ from chakaso.correction.decision import (
     CorrectionDecision,
     decide_claim,
 )
+from chakaso.correction.errors import (
+    AmbiguousReassessmentTargetError,
+    CorrectionError,
+)
 from chakaso.correction.followup import merge_evidence, reassess_followup
 from chakaso.correction.metrics import (
     CorrectionMetrics,
@@ -35,18 +39,30 @@ from chakaso.correction.metrics import (
 from chakaso.correction.reassess import Reassessment, decide_answer, reassess
 from chakaso.correction.record import CorrectionRecord, record_reassessment
 from chakaso.correction.service import reassess_and_record, reassess_stored_answer
+from chakaso.correction.trigger import (
+    DeterministicReassessmentTrigger,
+    ReassessmentTriggerKind,
+    TriggerDecision,
+    detect_reassessment_request,
+)
 
 __all__ = [
+    "AmbiguousReassessmentTargetError",
     "ClaimDisposition",
     "ClaimReassessment",
     "CorrectionDecision",
+    "CorrectionError",
     "CorrectionMetrics",
     "CorrectionRecord",
+    "DeterministicReassessmentTrigger",
     "LabeledCorrection",
     "Reassessment",
+    "ReassessmentTriggerKind",
+    "TriggerDecision",
     "correction_metrics",
     "decide_answer",
     "decide_claim",
+    "detect_reassessment_request",
     "merge_evidence",
     "reassess",
     "reassess_and_record",

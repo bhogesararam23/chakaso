@@ -335,6 +335,80 @@ def test_chat_records_answers_to_a_durable_store(tmp_path: Path) -> None:
         assert store.list()[0].provenance["retrieval_strategy"] in {"lexical", "none"}
 
 
+def test_chat_names_the_recorded_answer_identifier_so_it_can_be_reassessed(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    # Reassessment addresses a stored answer by its ``ans_…`` identifier, so the shell must surface
+    # it or the feature is unreachable in practice. The identifier is reported on stderr, keeping
+    # stdout the reply alone.
+    document = tmp_path / "spec.md"
+    document.write_text("# P\n\nChakaso grounds answers.\n", encoding="utf-8")
+
+    assert main(["chat", "--file", str(document), "--message", "What is Chakaso?"]) == 0
+
+    err = capsys.readouterr().err
+    assert "recorded answer ans_" in err
+    assert "reassess" in err
+
+
+def test_chat_routes_an_answer_naming_follow_up_into_a_reassessment(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    # The whole P21 path is reachable from the supported runtime interface: a first turn records a
+    # durable answer, and a later follow-up naming that identifier composes a reassessment instead of
+    # an ordinary reply — and the original answer is still the only answer in the store.
+    from chakaso.answers import SQLiteAnswerStore
+
+    document = tmp_path / "spec.md"
+    document.write_text("# P\n\nChakaso grounds answers in retrieved evidence.\n", "utf-8")
+    db = tmp_path / "answers.db"
+    config = tmp_path / "config.toml"
+    config.write_text(
+        f'[storage]\nbackend = "sqlite"\npath = "{db.as_posix()}"\n', encoding="utf-8"
+    )
+
+    assert (
+        main(
+            [
+                "chat",
+                "--config",
+                str(config),
+                "--file",
+                str(document),
+                "--message",
+                "What is Chakaso?",
+            ]
+        )
+        == 0
+    )
+    with SQLiteAnswerStore(db, initialize=False) as store:
+        answer_id = str(store.list()[0].answer_id)
+    capsys.readouterr()  # discard the first command's output
+
+    assert (
+        main(
+            [
+                "chat",
+                "--config",
+                str(config),
+                "--file",
+                str(document),
+                "--message",
+                f"reconsider {answer_id}",
+            ]
+        )
+        == 0
+    )
+
+    captured = capsys.readouterr()
+    assert f"reassessment of {answer_id}" in captured.out
+    assert "decision" in captured.out
+    assert "no revised wording" in captured.err
+    assert "no language model" in captured.err
+    with SQLiteAnswerStore(db, initialize=False) as store:
+        assert len(store.list()) == 1  # a reassessment never appended a rewritten answer
+
+
 def test_chat_rejects_an_empty_message_without_a_traceback(
     capsys: pytest.CaptureFixture[str],
 ) -> None:

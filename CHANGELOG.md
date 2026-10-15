@@ -10,6 +10,37 @@ capability is implemented or still planned.
 
 ## Unreleased
 
+### 2026-10-15 — A follow-up that names a stored answer can trigger an explicit reassessment (P21)
+
+**Added**
+
+- `chakaso.correction.trigger`: a deterministic, inspectable **reassessment trigger** that reads a
+  follow-up for an explicit, validated `ans_…` reference and classifies the turn as naming zero, one, or
+  several distinct stored answers. It detects *intent only* — it reads no store, runs no evaluator,
+  retrieves no evidence and mutates nothing — so intent detection is independently testable from
+  execution. A vague reference is never inferred, and two distinct identifiers are treated as **ambiguous**
+  rather than resolved by a guess.
+- `chakaso.correction.errors.AmbiguousReassessmentTargetError`, alongside the existing `UnknownAnswerError`,
+  as the typed refusals the composition raises instead of guessing a target.
+- `Application.reassess_followup` composes the trigger with the existing `reassess_and_record` boundary at
+  the application root (ADR-0026/ADR-0029): a named, recorded answer is re-grounded against its **standing
+  evidence** (the corpus chunks still present for the sources it named) merged with whatever the follow-up
+  retrieves through a new **read-only** `RetrievalAwareConversation.gather_evidence` seam (no model call,
+  no answer recorded, no conversation or store mutation).
+- `chakaso chat` now routes a follow-up that explicitly names a stored answer into reassessment and
+  reports the decision honestly, and after each recorded turn prints the answer's `ans_…` identifier on
+  standard error so a later turn can name it — making the path reachable from the supported runtime
+  interface, not only callable in a test.
+
+**Notes**
+
+- A reassessment is a **distinct append-only `CorrectionRecord`**; the original `AnswerRecord` and its
+  historical `evaluation_provenance` (ADR-0028) are never rewritten, and **no revised prose is generated**
+  because there is no language model — the record's summary is a structural tally. This is explicit
+  composition, **not** an autonomous correction loop: nothing decides on its own that a turn needs
+  revising, and a correction record is surfaced, not auto-persisted. Recorded in
+  [ADR-0029](docs/decisions/ADR-0029-explicit-reassessment-trigger.md).
+
 ### 2026-10-15 — Public documentation reconciled with what the code actually does
 
 **Changed**

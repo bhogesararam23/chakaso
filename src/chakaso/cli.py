@@ -51,6 +51,7 @@ from chakaso.app import (
     ApplicationError,
     ApplicationTurn,
     Capabilities,
+    ReassessmentOutcome,
     build_application,
     build_corpus,
     describe_capabilities,
@@ -777,7 +778,61 @@ def _report_config_overrides(args: argparse.Namespace) -> None:
         print(f"{PROGRAM}: overridden from configuration: {', '.join(overridden)}", file=sys.stderr)
 
 
+def _run_reassessment(app: Application, message: str) -> int | None:
+    """Handle an explicit reassessment, or return ``None`` when the message is an ordinary turn.
+
+    This is the runtime route for P21: a follow-up that names a stored answer is composed into a
+    reassessment, while anything else falls through to a conversational turn untouched. A non-``None``
+    return is an exit code for the reassessment path (0 handled, 1 a typed refusal such as an unknown
+    or ambiguous target), already reported on standard error.
+    """
+    try:
+        outcome = app.reassess_followup(message)
+    except ChakasoError as exc:
+        print(f"{PROGRAM}: {exc}", file=sys.stderr)
+        return 1
+    if outcome is None:
+        return None
+    _report_reassessment(outcome)
+    return 0
+
+
+def _report_reassessment(outcome: ReassessmentOutcome) -> None:
+    """Print a reassessment decision honestly: a structural outcome, never a rewritten answer.
+
+    The body goes to standard output as this turn's result; the caveats that stop a reader mistaking
+    it for a real revision go to standard error. It names the evidence the decision was made against,
+    states the original answer is unchanged, and says plainly that no revised prose was produced
+    because there is no language model.
+    """
+    record = outcome.record
+    if outcome.evidence_available:
+        basis = (
+            f"{outcome.standing_chunk_count} standing + {outcome.new_chunk_count} newly retrieved "
+            "chunk(s)"
+        )
+    else:
+        basis = (
+            "no evidence was available — the corpus holds nothing for this answer's sources, so "
+            "recorded support could not be re-established"
+        )
+    print(f"reassessment of {outcome.target}")
+    print(f"  decision (structural, against supplied evidence): {record.decision.value}")
+    print(f"  evidence basis: {basis}")
+    print(f"  summary: {safe_for_terminal(record.summary)}")
+    print(f"  correction record: {record.record_id}")
+    print(
+        f"{PROGRAM}: this was an explicit, triggered reassessment composed at the application "
+        "boundary, not an automatic loop. The original answer and its provenance are unchanged, and "
+        "no revised wording was generated because there is no language model.",
+        file=sys.stderr,
+    )
+
+
 def _answer_once(app: Application, message: str) -> int:
+    reassessment = _run_reassessment(app, message)
+    if reassessment is not None:
+        return reassessment
     try:
         turn = app.turn(message)
     except ChakasoError as exc:
@@ -787,6 +842,7 @@ def _answer_once(app: Application, message: str) -> int:
         return 1
 
     print(safe_for_terminal(turn.text))
+    _report_answer_id(turn.reply)
     _report_caveats(turn.reply)
     _report_grounding(turn)
     return 0
@@ -802,6 +858,12 @@ def _converse(app: Application) -> int:
             if text in _QUIT_COMMANDS:
                 break
 
+            reassessment = _run_reassessment(app, text)
+            if reassessment is not None:
+                # The message was an explicit reassessment (handled or refused); the conversation
+                # was not advanced and the session continues.
+                continue
+
             try:
                 turn = app.turn(text)
             except ChakasoError as exc:
@@ -811,12 +873,31 @@ def _converse(app: Application) -> int:
                 continue
 
             print(f"{PROGRAM}> {safe_for_terminal(turn.text)}")
+            _report_answer_id(turn.reply)
             _report_caveats(turn.reply)
             _report_grounding(turn)
     except KeyboardInterrupt:
         print("", file=sys.stderr)
         return 130
     return 0
+
+
+def _report_answer_id(reply: Reply) -> None:
+    """Name the identifier a completed turn was recorded under, so it can be referenced later.
+
+    Reassessment (P21) addresses a stored answer by its ``ans_…`` identifier, so a shell that never
+    surfaces the identifier makes the feature unreachable in practice. The line goes to standard
+    error, keeping stdout the reply alone, and states what the identifier is for without implying the
+    answer can be revised in prose (there is no language model).
+    """
+    record = reply.answer_record
+    if record is None:
+        return
+    print(
+        f"{PROGRAM}: recorded answer {record.answer_id} — name it in a later turn "
+        "(for example, 'reconsider that identifier') to reassess it against current evidence.",
+        file=sys.stderr,
+    )
 
 
 def _report_grounding(turn: ApplicationTurn) -> None:

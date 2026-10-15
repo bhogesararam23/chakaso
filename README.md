@@ -71,7 +71,7 @@ The status vocabulary used across this documentation is:
 | Web fetch (opt-in, bounded) and narrow HTML ingestion | Implemented (off every default path; not a browser) |
 | Evaluation metric functions | Implemented (recall@k, precision@k, MRR, duplicate + citation counts) |
 | Claim / citation / grounding evaluation and the answer-evaluation combiner | Implemented (structural; status is supplied-evidence support, never truth. Semantic grounding is a boundary with a fixture-only judge) |
-| Correction decision rule, reassessment, append-only records and a correction development benchmark | Implemented (foundation: scores the rule over synthetic cases; no revised prose, no automatic loop) |
+| Correction decision rule, reassessment, append-only records and a correction development benchmark | Implemented (foundation: scores the rule over synthetic cases; a deterministic, identifier-triggered reassessment is composed into `chakaso chat` — an explicit reference, never an autonomous guess, ADR-0029; no revised prose, no automatic loop) |
 | Persistent answers and application-level reassessment | Implemented (append-only store, ADR-0017/0018; durable SQLite backend when configured survives a restart, ADR-0021; reassessment over a stored, identifier-addressed answer) |
 | Reproducible experiments and a regression baseline | Implemented (development, ADR-0020); no model-quality result |
 | Dense retrieval (embedding boundary + exact index) and hybrid reciprocal-rank fusion | Experimental (ADR-0023/ADR-0024) — the only embedding is a deterministic, non-semantic fixture double, so these re-rank token overlap, not meaning |

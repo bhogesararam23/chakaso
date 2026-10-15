@@ -130,11 +130,18 @@ restart); `reassess_stored_answer` makes
 reassessment an application operation over a stored, identifier-addressed prior answer, pairing a
 decision with a `CorrectionRecord` linked to the answer it supersedes. A correction development
 benchmark (`chakaso.benchmark.correction`) checks the rule against labelled cases, and
-`chakaso benchmark correction` runs it.
+`chakaso benchmark correction` runs it. Since [ADR-0029](decisions/ADR-0029-explicit-reassessment-trigger.md)
+the *trigger* is also real, but explicitly composed rather than autonomous: a deterministic trigger
+(`chakaso.correction.trigger`) reads a follow-up for an explicit `ans_…` reference, and the application
+root wires it to `reassess_and_record`, so `chakaso chat` reassesses a named stored answer against its
+standing evidence plus what the follow-up retrieves — a distinct append-only event, with the original
+answer never rewritten. An ambiguous reference (two distinct identifiers) is refused, not guessed.
 
 What is still **Planned** is the rest of the loop: the *autonomous* trigger (nothing decides on its
-own that a turn needs reassessment — a follow-up must name a stored answer, and the reassessment is
-composed explicitly rather than fired by a decision the system does not make), and the *revised
+own that a turn needs reassessment — since ADR-0029 a follow-up must name a stored answer by its
+identifier, and the reassessment is composed explicitly rather than fired by a decision the system does
+not make), and the *revised
 answer* itself (producing the new wording needs a language model that does not exist, so the record
-carries a decision and a structural summary, not a rewritten sentence). A caller invokes reassessment
-on evidence it supplies; the system does not yet decide to do it to itself.
+carries a decision and a structural summary, not a rewritten sentence). A caller (or `chakaso chat`, on
+an identifier the user supplied) invokes reassessment on evidence it makes available; the system does
+not yet decide to do it to itself.

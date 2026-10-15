@@ -31,6 +31,7 @@ from collections.abc import Mapping
 from dataclasses import dataclass
 
 from chakaso.conversation import ConversationManager, Reply
+from chakaso.evidence import EvidencePack
 from chakaso.planning import QueryMode, QueryPlan, QueryPlanner
 from chakaso.retrieval import (
     DEFAULT_TOP_K,
@@ -162,6 +163,30 @@ class RetrievalAwareConversation:
             provenance=_plan_provenance(plan, strategy=outcome.retrieval_config["retriever"]),
         )
         return GroundedTurn(plan=plan, retrieval=outcome, evidence_context=context, reply=reply)
+
+    def gather_evidence(self, message: str) -> EvidencePack:
+        """Retrieve the evidence a follow-up would bring, without generating or recording.
+
+        This is the read-only seam the reassessment composition uses (P21): it runs the same
+        planner and the same retrievers a grounded turn would, and returns the resulting pack, but
+        it calls no model, records no answer and mutates neither the conversation nor the store. A
+        turn is atomic (ADR-0008); this never even starts one. When the planner decides no retrieval
+        is needed, or the corpus is empty, an empty pack comes back — honestly "nothing new", never
+        fabricated evidence (ADR-0003).
+        """
+        plan = self._planner.plan(message, conversation=self._manager.conversation)
+        if not plan.retrieval_required:
+            return EvidencePack.of((), ())
+        service = self._services.get(plan.mode)
+        if service is None:  # defensive: the constructor requires every backed mode be wired
+            return EvidencePack.of((), ())
+        top_k = plan.top_k if plan.top_k is not None else self._default_top_k
+        outcome = service.search(
+            plan.normalized_query,
+            top_k=top_k,
+            source_ids=plan.source_constraints or None,
+        )
+        return outcome.pack
 
 
 def _plan_provenance(plan: QueryPlan, *, strategy: str | None) -> dict[str, str]:

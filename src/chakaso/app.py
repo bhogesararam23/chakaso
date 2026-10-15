@@ -34,11 +34,31 @@ from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
 
-from chakaso.answers import AnswerStore, InMemoryAnswerStore, SQLiteAnswerStore
+from chakaso.answers import (
+    AnswerId,
+    AnswerStore,
+    InMemoryAnswerStore,
+    SQLiteAnswerStore,
+    UnknownAnswerError,
+)
 from chakaso.claims.extract import ClaimExtractor, SentenceClaimExtractor
 from chakaso.config import Config, LoadedConfig
 from chakaso.conversation import Conversation, ConversationManager, Reply, new_conversation_id
 from chakaso.core.errors import ChakasoError
+from chakaso.core.identifiers import SourceId
+from chakaso.correction import (
+    CorrectionRecord,
+    Reassessment,
+    merge_evidence,
+    reassess_and_record,
+)
+from chakaso.correction.errors import AmbiguousReassessmentTargetError
+from chakaso.correction.trigger import (
+    DeterministicReassessmentTrigger,
+    ReassessmentTriggerKind,
+    TriggerDecision,
+)
+from chakaso.evidence import EvidencePack, SourceRecord
 from chakaso.grounding import describe_semantic_capability
 from chakaso.models import GenerationParams, LanguageModel, ModelMetadata, create_model
 from chakaso.models.registry import ModelRegistry
@@ -51,6 +71,7 @@ __all__ = [
     "ApplicationError",
     "ApplicationTurn",
     "Capabilities",
+    "ReassessmentOutcome",
     "build_application",
     "build_corpus",
     "describe_capabilities",
@@ -90,6 +111,35 @@ class ApplicationTurn:
         return self.reply.text
 
 
+@dataclass(frozen=True, slots=True)
+class ReassessmentOutcome:
+    """The result of a composed, explicit reassessment of a stored answer (P21).
+
+    It carries the trigger decision that identified the target, the reassessment the existing
+    boundary produced, and the append-only ``CorrectionRecord`` that stands as the distinct event —
+    the original ``AnswerRecord`` is never touched. The chunk counts make the evidence basis visible
+    so a reader can see what the decision was made against; the record's own ``summary`` is a
+    structural tally, never revised prose (there is no language model).
+    """
+
+    target: AnswerId
+    decision: TriggerDecision
+    reassessment: Reassessment
+    record: CorrectionRecord
+    standing_chunk_count: int
+    new_chunk_count: int
+
+    @property
+    def changed(self) -> bool:
+        """Whether the reassessment decided to do anything to the answer at all."""
+        return self.reassessment.changed
+
+    @property
+    def evidence_available(self) -> bool:
+        """Whether any evidence (standing or newly retrieved) backed the reassessment."""
+        return (self.standing_chunk_count + self.new_chunk_count) > 0
+
+
 class Application:
     """A fully wired conversation application and the store that persists its answers."""
 
@@ -103,6 +153,7 @@ class Application:
         config: Config,
         store_path: str,
         close_store: Callable[[], None] | None,
+        reassessment_trigger: DeterministicReassessmentTrigger | None = None,
     ) -> None:
         self._manager = manager
         self._runtime = runtime
@@ -111,6 +162,11 @@ class Application:
         self._config = config
         self._store_path = store_path
         self._close_store = close_store
+        self._reassessment_trigger = (
+            reassessment_trigger
+            if reassessment_trigger is not None
+            else DeterministicReassessmentTrigger()
+        )
 
     # -- capabilities a caller reports -----------------------------------------
 
@@ -172,6 +228,61 @@ class Application:
                 evidence_context=grounded.evidence_context,
             )
         return ApplicationTurn(reply=self._manager.send(message), plan=None, retrieved=False)
+
+    # -- explicit, composed reassessment (P21) --------------------------------
+
+    def reassess_followup(self, message: str) -> ReassessmentOutcome | None:
+        """Reassess a stored answer when a follow-up *explicitly names* it, else do nothing.
+
+        This is the composition P21 adds, and it is deliberately not an autonomous loop. The front
+        edge is the deterministic :class:`~chakaso.correction.trigger.DeterministicReassessmentTrigger`;
+        the operation is the existing ``reassess_and_record`` boundary. The two are separate so intent
+        and execution are independently testable.
+
+        Returns ``None`` when the follow-up names no stored answer, which is an ordinary conversational
+        turn — reassessment is never inferred from a vague reference, and an ordinary follow-up is never
+        treated as a correction request. When exactly one answer is named, the prior record is read from
+        the store and re-grounded against the evidence this follow-up makes available: the chunks still
+        standing in the corpus for the answer's own sources (withdrawn support then reads as withdrawal)
+        merged with whatever the retrievers return for the follow-up. It raises the boundary's own typed
+        errors rather than guessing — never mutating the original answer or its provenance (ADR-0028).
+
+        Raises:
+            AmbiguousReassessmentTargetError: the follow-up named two or more distinct answers; the
+                runtime refuses to choose between them.
+            UnknownAnswerError: the named answer is not recorded in the store.
+        """
+        decision = self._reassessment_trigger.detect(message)
+        if decision.kind is ReassessmentTriggerKind.NO_TARGET:
+            return None
+        if decision.kind is ReassessmentTriggerKind.AMBIGUOUS:
+            named = ", ".join(str(answer_id) for answer_id in decision.references)
+            message_text = (
+                f"cannot reassess: the follow-up names {len(decision.references)} stored answers "
+                f"({named}); name exactly one to reconsider"
+            )
+            raise AmbiguousReassessmentTargetError(message_text)
+
+        target = decision.answer_id
+        if target is None:  # defensive: EXPLICIT always carries one target
+            return None
+        prior = self._store.get(target)
+        if prior is None:
+            message_text = f"cannot reassess answer {target}: it is not recorded in the store"
+            raise UnknownAnswerError(message_text)
+
+        standing = _standing_evidence(self._corpus, prior.evidence_source_ids)
+        new_evidence = self._runtime.gather_evidence(message) if self._runtime is not None else None
+        composed = standing if new_evidence is None else merge_evidence(standing, new_evidence)
+        reassessment, record = reassess_and_record(self._store, target, composed)
+        return ReassessmentOutcome(
+            target=target,
+            decision=decision,
+            reassessment=reassessment,
+            record=record,
+            standing_chunk_count=len(standing.chunks),
+            new_chunk_count=0 if new_evidence is None else len(new_evidence.chunks),
+        )
 
     def close(self) -> None:
         """Release the store's resources, if it holds any. Idempotent."""
@@ -274,6 +385,27 @@ def build_corpus(
     for path in paths:
         corpus.add_document(ingest_file(path, max_bytes=max_bytes, now=clock))
     return corpus
+
+
+def _standing_evidence(corpus: Corpus, source_ids: Sequence[SourceId]) -> EvidencePack:
+    """The chunks still present in ``corpus`` for the named sources, assembled as a valid pack.
+
+    A persisted answer references its evidence by source identifier only (P20): the bodies live in the
+    in-memory corpus and are not re-readable from the answer store. So the evidence "still standing" for
+    an answer is exactly what the current corpus holds for the sources it named — no more, and nothing
+    invented (ADR-0003). A source the corpus no longer holds contributes nothing, which is precisely how
+    support that was withdrawn reads as withdrawn rather than silently retained.
+    """
+    wanted = set(source_ids)
+    if not wanted:
+        return EvidencePack.of((), ())
+    chunks = tuple(chunk for chunk in corpus.chunks if chunk.source_id in wanted)
+    sources: dict[SourceId, SourceRecord] = {}
+    for chunk in chunks:
+        source = corpus.source_for(chunk.source_id)
+        if source is not None:
+            sources[source.source_id] = source
+    return EvidencePack.of(chunks, sources.values())
 
 
 def _select_store(config: Config) -> tuple[AnswerStore, str, Callable[[], None] | None]:

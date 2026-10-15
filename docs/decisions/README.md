@@ -121,3 +121,4 @@ creates.
 | [ADR-0026](ADR-0026-application-composition-root.md) | The application composition root is a thin, injectable layer separate from the runtime | Accepted |
 | [ADR-0027](ADR-0027-semantic-evaluation-contract.md) | The semantic-evaluation contract carries evaluator version and an explicit error outcome; no real evaluator is simulated | Accepted |
 | [ADR-0028](ADR-0028-answer-evaluation-provenance.md) | An answer persists the historical evaluation it reached; the live view stays recomputed | Accepted |
+| [ADR-0029](ADR-0029-explicit-reassessment-trigger.md) | Reassessment is triggered by an explicit identifier and composed at the application root | Accepted |
