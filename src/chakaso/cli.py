@@ -1014,12 +1014,22 @@ def _format_capabilities(capabilities: Capabilities) -> str:
     storage = capabilities.storage_backend
     if capabilities.storage_backend == "sqlite" and capabilities.storage_path.strip():
         storage = f"sqlite at {capabilities.storage_path}"
+    if capabilities.semantic_real_evaluator_available:
+        semantic = (
+            f"available (judges: {', '.join(capabilities.semantic_available_judges) or 'none'})"
+        )
+    else:
+        semantic = (
+            "no real evaluator — only a caller-supplied fixture judge exists; grounding is "
+            "structural"
+        )
     return "\n".join(
         [
             f"model: {capabilities.model_id} ({capabilities.model_display_name})",
             f"development double: {double}",
             f"retrieval: {retrieval}",
             f"storage: {storage}",
+            f"semantic evaluation: {semantic}",
         ]
     )
 

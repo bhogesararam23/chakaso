@@ -759,6 +759,8 @@ def test_capabilities_reports_model_strategy_and_storage(
     assert "development double: yes" in out
     assert "retrieval: on (strategy=lexical" in out
     assert "storage: memory" in out
+    # The report is honest that no real semantic evaluator exists — only the fixture judge.
+    assert "semantic evaluation: no real evaluator" in out
 
 
 def test_capabilities_json_is_a_valid_report(capsys: pytest.CaptureFixture[str]) -> None:
@@ -769,6 +771,8 @@ def test_capabilities_json_is_a_valid_report(capsys: pytest.CaptureFixture[str])
     assert payload["retrieval"]["strategy"] == "lexical"
     assert payload["retrieval"]["enabled"] is True
     assert payload["storage"]["backend"] == "memory"
+    assert payload["semantic_evaluation"]["real_evaluator_available"] is False
+    assert payload["semantic_evaluation"]["available_judges"] == ["fixture-semantic-0.1"]
 
 
 def test_capabilities_reflects_configured_storage(

@@ -10,6 +10,33 @@ capability is implemented or still planned.
 
 ## Unreleased
 
+### 2026-10-15 — Semantic-evaluation contract hardened; no real evaluator simulated
+
+**Changed**
+
+- `SemanticEvaluation` and the grounding result now carry an evaluator **version** alongside the
+  evaluator name, so changing which evaluator judged a claim is visible in evaluation provenance.
+  Judges may declare a `version`; `FixtureSemanticJudge` does.
+- A dedicated `SemanticJudgeError` marks an evaluator that fails or abstains on a claim. The
+  `SemanticGroundingEvaluator` records it per claim as `not_evaluated` — never as support — and one
+  failing claim no longer aborts the whole answer. Structural grounding stays usable with no semantic
+  evaluator wired at all.
+
+**Added**
+
+- `describe_semantic_capability()` reports honestly that no real semantic evaluator exists and that
+  the only judge is `FixtureSemanticJudge` (which replays caller-supplied relations). `chakaso
+  capabilities` now surfaces this, so a run states plainly that its grounding is structural.
+
+**Notes**
+
+- No capability was invented: the project forbids presenting a fixture or token overlap as semantic
+  understanding (§2.1), and ADR-0001 keeps the runtime dependency-free and offline. There is no
+  dependency-feasible, CPU-only real semantic evaluator to ship yet, so the boundary, capability
+  detection and the honest limitation are delivered instead. A real evaluator plugs into the same
+  `SemanticJudge` boundary later without touching `evaluate_answer`, `reassess` or the correction rule
+  (ADR-0027).
+
 ### 2026-10-15 — CLI capability and answer-history inspection
 
 **Added**

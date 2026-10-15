@@ -21,7 +21,9 @@ from chakaso.grounding import (
     SemanticEvaluation,
     SemanticGroundingEvaluator,
     SemanticJudge,
+    SemanticJudgeError,
     SemanticJudgement,
+    describe_semantic_capability,
 )
 from chakaso.retrieval import ingest_text
 
@@ -148,3 +150,89 @@ def test_reassessment_can_take_the_semantic_evaluator_unchanged() -> None:
 
     assert result.decision is CorrectionDecision.CORRECT
     assert result.evaluator_name == "fixture-semantic-0.1"
+
+
+# -- contract hardening: evaluator version, errors, capability detection ------
+
+
+class _VersionedJudge:
+    name = "custom-semantic"
+    version = "2.3"
+
+    def judge(self, claim: Claim, evidence: EvidencePack) -> SemanticEvaluation:
+        return SemanticEvaluation(
+            claim_id=claim.claim_id,
+            judgement=SemanticJudgement.SUPPORTED,
+            evaluator_name=self.name,
+            evaluator_version=self.version,
+        )
+
+
+class _ErroringJudge:
+    """Raises on one claim (an evaluator failure or abstention) and supports another."""
+
+    name = "flaky-semantic"
+    version = "0.1"
+
+    def __init__(self, raises_for: object) -> None:
+        self._raises_for = raises_for
+
+    def judge(self, claim: Claim, evidence: EvidencePack) -> SemanticEvaluation:
+        if claim.claim_id == self._raises_for:
+            message = "evaluator could not decide"
+            raise SemanticJudgeError(message)
+        return SemanticEvaluation(
+            claim_id=claim.claim_id,
+            judgement=SemanticJudgement.SUPPORTED,
+            evaluator_name=self.name,
+            evaluator_version=self.version,
+        )
+
+
+def test_the_fixture_evaluation_carries_the_evaluator_version() -> None:
+    target = claim(0)
+    evaluation = FixtureSemanticJudge({target.claim_id: SemanticJudgement.SUPPORTED}).judge(
+        target, PACK
+    )
+
+    assert evaluation.evaluator_name == "fixture-semantic-0.1"
+    assert evaluation.evaluator_version == "0.1"
+
+
+def test_a_changed_evaluator_identity_and_version_reaches_the_result() -> None:
+    # The result's provenance reflects exactly which evaluator judged, so a different evaluator or
+    # version is visible rather than hidden behind a single generic name.
+    result = SemanticGroundingEvaluator(_VersionedJudge()).evaluate("ans", [claim(0)], PACK)
+
+    assert result.evaluator_name == "custom-semantic"
+    assert result.evaluator_version == "2.3"
+
+
+def test_an_evaluator_error_is_recorded_as_not_evaluated_never_as_support() -> None:
+    failed = claim(0)
+    supported = claim(1)
+    evaluator = SemanticGroundingEvaluator(_ErroringJudge(raises_for=failed.claim_id))
+
+    result = evaluator.evaluate("ans", [failed, supported], PACK)
+
+    # The judge raised for `failed`; it must not read as support, and the error must not abort
+    # the answer — the other claim is still evaluated.
+    assert result.status_of(failed) is ClaimStatus.NOT_EVALUATED
+    assert result.status_of(supported) is ClaimStatus.SUPPORTED
+
+
+def test_structural_grounding_still_works_without_a_semantic_evaluator() -> None:
+    # The boundary is optional composition: omitting a semantic evaluator leaves the structural
+    # dimension usable, judged by the default structural evaluator.
+    result = evaluate_answer("ans", [claim(0, (CHUNK_A,))], PACK)
+
+    assert result.citations.valid == 1
+    assert result.grounding.evaluator_name == "structural-0.1"
+
+
+def test_capability_detection_is_honest_that_no_real_evaluator_exists() -> None:
+    capability = describe_semantic_capability()
+
+    assert capability.real_evaluator_available is False
+    assert capability.available_judges == ("fixture-semantic-0.1",)
+    assert "not semantic" in capability.note or "FixtureSemanticJudge" in capability.note

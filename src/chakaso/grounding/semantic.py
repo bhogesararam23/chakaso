@@ -33,16 +33,30 @@ from types import MappingProxyType
 from typing import Protocol, runtime_checkable
 
 from chakaso.claims.model import Claim, ClaimId, ClaimStatus
+from chakaso.core.errors import ChakasoError
 from chakaso.core.identifiers import ChunkId
 from chakaso.evidence import EvidencePack
 from chakaso.grounding.model import Contradiction, GroundingResult
 
+
+class SemanticJudgeError(ChakasoError):
+    """A semantic judge could not reach a defensible verdict for a claim.
+
+    It is raised deliberately when an evaluator fails or abstains, and the adapter records it as
+    *not evaluated* — never as support. A judge error that quietly became a successful judgment
+    would turn a broken evaluator into false confidence, the exact failure this boundary forbids.
+    """
+
+
 __all__ = [
     "FixtureSemanticJudge",
+    "SemanticCapability",
     "SemanticEvaluation",
     "SemanticGroundingEvaluator",
     "SemanticJudge",
+    "SemanticJudgeError",
     "SemanticJudgement",
+    "describe_semantic_capability",
 ]
 
 
@@ -78,6 +92,7 @@ class SemanticEvaluation:
     claim_id: ClaimId
     judgement: SemanticJudgement
     evaluator_name: str
+    evaluator_version: str = ""
     rationale: str = ""
     conflicting_chunk_ids: tuple[ChunkId, ...] = ()
 
@@ -111,6 +126,7 @@ class FixtureSemanticJudge:
     """
 
     name: str = "fixture-semantic-0.1"
+    version: str = "0.1"
 
     def __init__(self, judgements: Mapping[ClaimId, SemanticJudgement]) -> None:
         self._judgements = MappingProxyType(dict(judgements))
@@ -123,6 +139,7 @@ class FixtureSemanticJudge:
             claim_id=claim.claim_id,
             judgement=judgement,
             evaluator_name=self.name,
+            evaluator_version=self.version,
             rationale="fixture: caller-supplied relation",
         )
 
@@ -141,6 +158,7 @@ class SemanticGroundingEvaluator:
     def __init__(self, judge: SemanticJudge, *, name: str | None = None) -> None:
         self._judge = judge
         self.name: str = name if name is not None else str(getattr(judge, "name", "semantic-0.1"))
+        self.version: str = str(getattr(judge, "version", ""))
 
     def evaluate(
         self,
@@ -154,7 +172,13 @@ class SemanticGroundingEvaluator:
         statuses: dict[ClaimId, ClaimStatus] = {}
         contradictions: list[Contradiction] = []
         for claim in claims:
-            evaluation = self._judge.judge(claim, pack)
+            try:
+                evaluation = self._judge.judge(claim, pack)
+            except SemanticJudgeError:
+                # A judge that fails or abstains on one claim leaves it not_evaluated; the error
+                # is never converted into support, and one bad claim does not abort the answer.
+                statuses[claim.claim_id] = ClaimStatus.NOT_EVALUATED
+                continue
             statuses[claim.claim_id] = evaluation.status
             named_conflict = (
                 evaluation.judgement is SemanticJudgement.CONTRADICTED
@@ -173,4 +197,38 @@ class SemanticGroundingEvaluator:
             statuses=MappingProxyType(statuses),
             contradictions=tuple(contradictions),
             evaluator_name=self.name,
+            evaluator_version=self.version,
         )
+
+
+@dataclass(frozen=True, slots=True)
+class SemanticCapability:
+    """An honest report of what semantic evaluation is actually available.
+
+    It states plainly whether a *real* evaluator ships, so no caller mistakes the fixture — which
+    only replays relations a caller supplied — for semantic understanding. `available_judges` names
+    the judges that exist and, by their own labels, that they are fixtures.
+    """
+
+    real_evaluator_available: bool
+    available_judges: tuple[str, ...]
+    note: str
+
+
+def describe_semantic_capability() -> SemanticCapability:
+    """Report the semantic-evaluation capability honestly: only a fixture judge exists.
+
+    The `SemanticJudge` boundary is real and typed, but its only implementation replays
+    caller-supplied relations. No dependency-free, offline, CPU-feasible real semantic evaluator
+    ships in this repository, so `real_evaluator_available` is `False` — a documented limitation,
+    not a capability to be simulated.
+    """
+    return SemanticCapability(
+        real_evaluator_available=False,
+        available_judges=(FixtureSemanticJudge.name,),
+        note=(
+            "The semantic grounding boundary exists and is tested, but its only judge is "
+            "FixtureSemanticJudge, which replays caller-supplied relations and is not semantic "
+            "understanding. No real local semantic evaluator is implemented."
+        ),
+    )

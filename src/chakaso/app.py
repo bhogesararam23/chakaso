@@ -39,6 +39,7 @@ from chakaso.claims.extract import ClaimExtractor, SentenceClaimExtractor
 from chakaso.config import Config, LoadedConfig
 from chakaso.conversation import Conversation, ConversationManager, Reply, new_conversation_id
 from chakaso.core.errors import ChakasoError
+from chakaso.grounding import describe_semantic_capability
 from chakaso.models import GenerationParams, LanguageModel, ModelMetadata, create_model
 from chakaso.models.registry import ModelRegistry
 from chakaso.planning import DeterministicQueryPlanner, QueryMode, QueryPlan
@@ -204,6 +205,8 @@ class Capabilities:
     retrieval_top_k: int
     storage_backend: str
     storage_path: str
+    semantic_real_evaluator_available: bool
+    semantic_available_judges: tuple[str, ...]
 
     def to_dict(self) -> dict[str, object]:
         return {
@@ -218,6 +221,10 @@ class Capabilities:
                 "top_k": self.retrieval_top_k,
             },
             "storage": {"backend": self.storage_backend, "path": self.storage_path},
+            "semantic_evaluation": {
+                "real_evaluator_available": self.semantic_real_evaluator_available,
+                "available_judges": list(self.semantic_available_judges),
+            },
         }
 
 
@@ -236,6 +243,7 @@ def describe_capabilities(
     config = loaded.config
     resolved_model = model if model is not None else create_model(config, registry=registry)
     metadata = resolved_model.metadata
+    semantic = describe_semantic_capability()
     return Capabilities(
         model_id=metadata.model_id,
         model_display_name=metadata.display_name,
@@ -245,6 +253,8 @@ def describe_capabilities(
         retrieval_top_k=config.retrieval.top_k,
         storage_backend=config.storage.backend,
         storage_path=config.storage.path,
+        semantic_real_evaluator_available=semantic.real_evaluator_available,
+        semantic_available_judges=semantic.available_judges,
     )
 
 

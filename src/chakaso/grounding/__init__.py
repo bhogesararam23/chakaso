@@ -21,10 +21,13 @@ from chakaso.grounding.model import (
 )
 from chakaso.grounding.semantic import (
     FixtureSemanticJudge,
+    SemanticCapability,
     SemanticEvaluation,
     SemanticGroundingEvaluator,
     SemanticJudge,
+    SemanticJudgeError,
     SemanticJudgement,
+    describe_semantic_capability,
 )
 
 __all__ = [
@@ -33,11 +36,14 @@ __all__ = [
     "GroundingEvaluator",
     "GroundingResult",
     "ManualGroundingEvaluator",
+    "SemanticCapability",
     "SemanticEvaluation",
     "SemanticGroundingEvaluator",
     "SemanticJudge",
+    "SemanticJudgeError",
     "SemanticJudgement",
     "SourceAuthority",
     "StructuralGroundingEvaluator",
+    "describe_semantic_capability",
     "most_recent_wins",
 ]

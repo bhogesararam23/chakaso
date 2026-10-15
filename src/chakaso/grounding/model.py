@@ -94,6 +94,7 @@ class GroundingResult:
     statuses: Mapping[ClaimId, ClaimStatus] = field(default_factory=lambda: MappingProxyType({}))
     contradictions: tuple[Contradiction, ...] = ()
     evaluator_name: str = "structural"
+    evaluator_version: str = ""
 
     def status_of(self, claim: Claim | ClaimId) -> ClaimStatus:
         """The status assigned to a claim, or ``NOT_EVALUATED`` if it was not assessed."""
