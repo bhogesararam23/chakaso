@@ -10,6 +10,28 @@ capability is implemented or still planned.
 
 ## Unreleased
 
+### 2026-10-15 — Public documentation reconciled with what the code actually does
+
+**Changed**
+
+- `README.md` no longer describes the shipped system as lexical-only retrieval with an
+  in-memory-only answer store. It now states what exists and is tested: a dense retriever and a
+  hybrid reciprocal-rank-fusion retriever behind the same boundary (over a **non-semantic** fixture
+  embedding, ADR-0023/ADR-0024 — labelled Experimental), the retrieval-aware runtime and
+  `chakaso.app` composition root that ground `chakaso chat` (ADR-0022/ADR-0025/ADR-0026), and the
+  durable SQLite answer store selected by configuration (ADR-0021). `Dense embeddings, vector index
+  and reranking` was split into what is implemented (the dense/hybrid boundary and exact index) and
+  what remains Planned (a real semantic embedding, an approximate index, reranking).
+- `docs/correction.md` and `docs/getting-started.md` corrected their stale persistence and
+  retrieval claims; `docs/agent/CURRENT_STATE.md`'s ADR range was fixed to ADR-0001–ADR-0028.
+
+**Notes**
+
+- No behaviour changed; this is a documentation-truth pass. Every command and output shown in the
+  README was run against the repository before being written down, and the E-001 strategy comparison
+  was reverified (dense/hybrid regress MRR from 1.000 to 0.929 over the synthetic fixtures — a −0.071
+  delta, reported as a measured development result, not a model-quality claim).
+
 ### 2026-10-15 — Answer inspection states that recorded references are not retained evidence
 
 **Added**

@@ -124,15 +124,17 @@ defending the earlier answer, and nothing in it corrects for recency or source o
 So most of the contract is real: comparison, classification, per-claim and answer-level decision,
 and recording are **Implemented**. Answers are now first-class — `chakaso.answers` records an
 immutable `AnswerRecord` (model identity, evidence, claims, evaluation, and a `correction_of` link)
-through an append-only in-memory store (ADR-0017, ADR-0018), and `reassess_stored_answer` makes
+through an append-only store (ADR-0017, ADR-0018) that is in-memory by default and, since
+ADR-0021, durably SQLite-backed when configured (a correction history that survives a process
+restart); `reassess_stored_answer` makes
 reassessment an application operation over a stored, identifier-addressed prior answer, pairing a
 decision with a `CorrectionRecord` linked to the answer it supersedes. A correction development
 benchmark (`chakaso.benchmark.correction`) checks the rule against labelled cases, and
 `chakaso benchmark correction` runs it.
 
-What is still **Planned** is the rest of the loop: the automatic trigger (nothing decides on its
-own that a turn needs reassessment), the *revised answer* itself (producing the new wording needs a
-language model that does not exist, so the record carries a decision and a structural summary, not
-a rewritten sentence), and durable persistence (the answer store and its `correction_of` lineage are
-in-memory; the runtime writes nothing to disk). A caller invokes reassessment on evidence it
-supplies; the system does not yet do it to itself.
+What is still **Planned** is the rest of the loop: the *autonomous* trigger (nothing decides on its
+own that a turn needs reassessment — a follow-up must name a stored answer, and the reassessment is
+composed explicitly rather than fired by a decision the system does not make), and the *revised
+answer* itself (producing the new wording needs a language model that does not exist, so the record
+carries a decision and a structural summary, not a rewritten sentence). A caller invokes reassessment
+on evidence it supplies; the system does not yet decide to do it to itself.

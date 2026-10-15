@@ -20,9 +20,11 @@ it produces anything. The reply is evidence that the conversation boundary works
 context projection, the model call, validation, evidence and citation recording —
 not an answer.
 
-Retrieval exists but is **local and lexical**: it reads the files you name, normalizes
-and chunks them, and ranks them for a query with BM25 — shared words only, no embeddings
-and no meaning. Below it, claim/citation/grounding evaluation, a correction decision rule with
+Retrieval exists but is **local**: it reads the files you name, normalizes and chunks
+them, and ranks them for a query. `chakaso retrieve` ranks lexically (BM25 — shared words,
+no embeddings, no meaning); `chakaso chat --strategy` can additionally rank with a dense or
+hybrid retriever, but their only embedding is a deterministic **non-semantic** fixture
+(ADR-0023/ADR-0024), so no strategy here retrieves by meaning. Below it, claim/citation/grounding evaluation, a correction decision rule with
 reassessment, an answer store (in-memory and, since ADR-0021, a durable SQLite backend that
 survives a process restart) and reproducible experiment records exist as tested code —
 but there is still no language model, no web fetching on any default path (the fetcher is opt-in),
