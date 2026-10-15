@@ -744,6 +744,37 @@ def test_benchmark_retrieval_accepts_a_strategy(capsys: pytest.CaptureFixture[st
     assert "recall_at_k" in payload["metrics"]
 
 
+def test_benchmark_semantic_reports_a_development_instrument(
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    assert main(["benchmark", "semantic"]) == 0
+
+    out = capsys.readouterr().out
+    assert "Semantic-evaluation development report" in out
+    # The honesty label is part of the output, not an afterthought.
+    assert "NOT semantic understanding" in out
+    assert "fixture-semantic-0.1" in out
+    assert "probe-support-all" in out
+
+
+def test_benchmark_semantic_json_is_a_labeled_development_report(
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    assert main(["benchmark", "semantic", "--json"]) == 0
+
+    payload = json.loads(capsys.readouterr().out)
+    assert isinstance(payload, list)
+    assert len(payload) == 3
+    for run in payload:
+        assert run["benchmark"]["kind"] == "development"
+        assert "accuracy" in run["metrics"]
+
+
+def test_benchmark_without_a_subject_mentions_semantic(capsys: pytest.CaptureFixture[str]) -> None:
+    assert main(["benchmark"]) == 1
+    assert "semantic" in capsys.readouterr().err
+
+
 # ---------------------------------------------------------------------------
 # capabilities
 # ---------------------------------------------------------------------------

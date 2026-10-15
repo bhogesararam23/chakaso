@@ -10,6 +10,28 @@ capability is implemented or still planned.
 
 ## Unreleased
 
+### 2026-10-15 — Semantic-evaluation development dataset and deterministic scorer
+
+**Added**
+
+- `chakaso.evaluation.semantic_benchmark`: a versioned, hand-labelled synthetic dataset of
+  claim/evidence cases — direct support, contradiction, partial support, irrelevance, negation,
+  numbers/units, entity mismatch, conflicting evidence, ambiguity, multi-sentence evidence and
+  citation/evidence mismatch — each with a human-authored expected relation and a content fingerprint.
+- A deterministic scorer that runs any `SemanticJudge` over the dataset and reports accuracy,
+  per-class precision/recall, a confusion matrix, and how unresolved and evaluator-error cases are
+  handled, as text or JSON. Two named probes (support-all, always-uncertain) exist so the scorer can
+  be shown to distinguish an over-claiming judge from an abstaining one.
+- `chakaso benchmark semantic [--json]` runs the instrument end to end from the command line.
+
+**Notes**
+
+- The instrument measures the **scoring harness, not semantic understanding.** The only judge is the
+  caller-supplied `FixtureSemanticJudge`, which is handed the expected relations and therefore scores
+  perfectly; that perfect score is explicitly labelled structure-replay, never a capability claim (the
+  honesty rule in §2.1 and ADR-0027). No general language-understanding number is reported, and the
+  dataset is a fixed seam for measuring a real evaluator when one exists.
+
 ### 2026-10-15 — Semantic-evaluation contract hardened; no real evaluator simulated
 
 **Changed**

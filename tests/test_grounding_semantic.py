@@ -236,3 +236,18 @@ def test_capability_detection_is_honest_that_no_real_evaluator_exists() -> None:
     assert capability.real_evaluator_available is False
     assert capability.available_judges == ("fixture-semantic-0.1",)
     assert "not semantic" in capability.note or "FixtureSemanticJudge" in capability.note
+
+
+def test_an_unresolved_judgement_is_never_recorded_as_a_contradiction() -> None:
+    # 6.5 correction-integrity: a claim the evaluator leaves uncertain must not be handed to
+    # correction as a confirmed contradiction — only a CONTRADICTED verdict can name a conflict.
+    target = claim(0)
+    evaluator = SemanticGroundingEvaluator(
+        FixtureSemanticJudge({target.claim_id: SemanticJudgement.UNCERTAIN})
+    )
+
+    result = evaluator.evaluate("ans", [target], PACK)
+
+    assert result.status_of(target) is ClaimStatus.UNCERTAIN
+    assert result.contradicted == ()
+    assert result.contradictions == ()

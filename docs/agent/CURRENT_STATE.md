@@ -39,10 +39,10 @@ A private planning note is never evidence that something is implemented.
 | Retrieval-aware runtime | `src/chakaso/runtime/` | `RetrievalAwareConversation` composes planner → retrieval (lexical/dense/hybrid) → model → claims → citation validation → grounding → `AnswerRecord` → store as a thin coordinator, not a monolith (ADR-0025): retrieval optional, turn atomicity preserved, the planner decision and retrieval strategy recorded as provenance/metadata, and a structured, citation-safe evidence context rendered for the model. Runs the deterministic double; no model, no semantic claim |
 | Conversation shell | `chakaso chat` | Interactive (`--message` for one-shot). Grounds turns through the retrieval-aware runtime over any `--file` documents, records each answer to the configured store, and states in its own output that the engine is a development double, names the active strategy, and says whether answers persist. `--no-retrieval` runs it ungrounded |
 | Retrieval CLI | `chakaso retrieve` | Ingests named local files, runs lexical retrieval, prints ranked evidence with provenance. Local and offline |
-| Benchmark CLI | `chakaso benchmark` | Runs the retrieval, correction, or strategy-comparison development benchmark over its synthetic fixtures and prints a text or deterministic JSON report that labels itself a development instrument (`strategies` measures lexical/dense/hybrid and reports measured deltas). Local and offline |
+| Benchmark CLI | `chakaso benchmark` | Runs the retrieval, correction, strategy-comparison, or semantic-evaluation development benchmark over its synthetic fixtures and prints a text or deterministic JSON report that labels itself a development instrument (`strategies` measures lexical/dense/hybrid and reports measured deltas; `semantic` scores the only available judges — a fixture and two probes — over the labelled semantic dataset, measuring the harness, never semantic capability). Local and offline |
 | Web fetcher | `src/chakaso/retrieval/acquire.py`, `policy.py`, `netguard.py` | Opt-in, bounded HTTP fetch under a `FetchPolicy`; scheme/size/redirect/timeout/destination rules. Off every default path (ADR-0012) |
 | Web ingestion & cache | `src/chakaso/retrieval/html.py`, `web.py`, `cache.py` | Narrow HTML reader turns fetched bytes into the same evidence records as a local file; an opt-in in-memory cache avoids refetching |
-| Evaluation | `src/chakaso/evaluation/` | Pure metric functions (recall@k, precision@k, MRR, duplicate + unresolved-reference counts, latency observation), and `evaluate_answer`, which combines citation and grounding results into separate answer-evaluation dimensions (`evidence_coverage`, `is_grounded`). No merged quality score and no model-quality number |
+| Evaluation | `src/chakaso/evaluation/` | Pure metric functions (recall@k, precision@k, MRR, duplicate + unresolved-reference counts, latency observation), and `evaluate_answer`, which combines citation and grounding results into separate answer-evaluation dimensions (`evidence_coverage`, `is_grounded`). No merged quality score and no model-quality number. `semantic_benchmark` adds a versioned, hand-labelled synthetic dataset and a deterministic scorer (accuracy, per-class precision/recall, confusion, unresolved + error handling) — a development instrument that measures the harness; the only judge is a fixture and its perfect score is structure-replay, not semantic capability (ADR-0027) |
 | Benchmark | `src/chakaso/benchmark/` | Versioned case schema, strict JSONL/manifest loader, synthetic development fixtures, a retrieval runner and reports; a correction benchmark (cases, dataset versioning, a runner over `reassess`, per-case + aggregate metrics, text/JSON reports, pinned fingerprint). Development instruments, not scientific benchmarks |
 | Claims | `src/chakaso/claims/` | Immutable `Claim` with a content-derived `ClaimId` and a `ClaimStatus` that records what the supplied evidence supports — never truth. A replaceable `ClaimExtractor` boundary (structured + a documented sentence heuristic) and claim/evidence links (ADR-0014). No trained extractor |
 | Citation validation | `src/chakaso/citation/` | Structural citation checks against a supplied pack (valid / unknown / irrelevant / uncited) plus citation precision/recall. Decides presence and expected-match, never that a source proves a claim |
@@ -205,8 +205,15 @@ A private planning note is never evidence that something is implemented.
   identifier-addressed — no natural-language reference resolver is pretended.
 - A semantic grounding *boundary* exists (`SemanticJudge` / `SemanticGroundingEvaluator`,
   ADR-0019) and composes into answer evaluation and reassess without changing their signatures, so
-  grounding stays a separate dimension from citation. Its only implementation is a caller-supplied
-  `FixtureSemanticJudge`; it names no winner in a conflict and there is no real semantic judge.
+  grounding stays a separate dimension from citation. Its verdict now carries the evaluator's name
+  **and version** (so a change of judge is visible in provenance), and an evaluator that fails or
+  abstains raises `SemanticJudgeError`, which the adapter records as *not evaluated* — never as
+  support (ADR-0027). Its only implementation remains a caller-supplied `FixtureSemanticJudge`; it
+  names no winner in a conflict and there is no real semantic judge, as `describe_semantic_capability()`
+  and `chakaso capabilities` report. A versioned synthetic semantic-evaluation dataset and a
+  deterministic scorer exist (`chakaso.evaluation.semantic_benchmark`, `chakaso benchmark semantic`)
+  as a development instrument measuring the harness — the fixture's perfect score is structure-replay,
+  never semantic capability.
 - A correction development benchmark runs (`chakaso.benchmark.correction`): synthetic cases whose
   expected decision (retain / correct / qualify / needs_review / abstain) the written rule is
   checked against, scored per case and in aggregate, reported as deterministic text/JSON that labels

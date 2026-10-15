@@ -86,6 +86,22 @@ multi-source, distractor, conflict, outdated, missing evidence, false premise, a
 injection text) and nothing else. It is not a scientific benchmark and its numbers are not
 claims about answer quality.
 
+### Semantic-evaluation development instrument
+
+A versioned, hand-labelled synthetic set of claim/evidence cases exists (`chakaso.evaluation.semantic_benchmark`,
+`chakaso benchmark semantic`). Each case names a linguistic situation a judge must distinguish — direct
+support, contradiction, partial support, irrelevance, negation, numbers/units, entity mismatch,
+conflicting evidence, ambiguity, multi-sentence evidence, citation/evidence mismatch — and carries a
+human-authored expected relation. The deterministic scorer reports accuracy, per-class
+precision/recall, a confusion matrix, and how unresolved and evaluator-error cases are handled.
+
+It measures the **scoring harness**, never semantic understanding. The only judge available is a
+caller-supplied fixture, which is handed the expected relations and therefore scores perfectly — a
+fact about the fixture, not a capability. Two named probes (support-all, always-uncertain) exist only
+to show the scorer tells an over-claiming judge from an abstaining one. No real semantic evaluator
+ships (ADR-0019/ADR-0027), so no number here is presented as general language-understanding
+performance, and the dataset is a fixed seam for measuring one when it exists.
+
 ### Grounded-answer benchmark
 
 A fixed set of questions with authoritative evidence. Each example records:
@@ -199,7 +215,8 @@ was not measured, it is not written down.
 | Citation metrics | Implemented (`chakaso.citation`; structural precision/recall and counts, never semantic support) |
 | Claim representation and extraction boundary | Implemented (`chakaso.claims`; deterministic/structured extraction stands in for a model, status is evaluation not truth, ADR-0014) |
 | Grounding evaluation (structural) | Implemented (`chakaso.grounding`; supported / unsupported / not_evaluated, ADR-0015; contradicted / uncertain only via a supplied judgement) |
-| Semantic grounding evaluator boundary | Implemented (boundary + adapter, `chakaso.grounding`, ADR-0019) — **Experimental**: the only judge is a caller-supplied fixture, not a real semantic evaluator |
+| Semantic grounding evaluator boundary | Implemented (boundary + adapter, `chakaso.grounding`, ADR-0019/ADR-0027) — **Experimental**: the only judge is a caller-supplied fixture, not a real semantic evaluator; the contract carries evaluator name+version and an explicit error outcome, and `describe_semantic_capability()` reports no real evaluator |
+| Semantic-evaluation dataset & scorer | Implemented (`chakaso.evaluation.semantic_benchmark`; `chakaso benchmark semantic`) — a development instrument measuring the harness over synthetic labels; the fixture's perfect score is structure-replay, not semantic capability |
 | Answer evaluation (separate dimensions, `evidence_coverage`, `is_grounded`) | Implemented (`chakaso.evaluation.evaluate_answer`) |
 | Answer record and append-only store | Implemented (in-memory **and** a durable SQLite backend, `chakaso.answers`, ADR-0017/0018/0021); the durable store is proven to survive a process restart |
 | Experiment records & regression baseline | Implemented (`chakaso.experiments`, ADR-0020); reproducible result fingerprints, deterministic compatible-version comparison; no model-quality claim |

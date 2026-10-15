@@ -57,6 +57,14 @@ from chakaso.benchmark import (
 from chakaso.config import ConfigError, LoadedConfig, RetrievalConfig, load_config
 from chakaso.conversation import Reply
 from chakaso.core.errors import ChakasoError
+from chakaso.evaluation.semantic_benchmark import (
+    ProbeSupportAllJudge,
+    ProbeUncertainJudge,
+    development_semantic_dataset,
+    format_semantic_report,
+    materialize_case,
+    score_semantic_judge,
+)
 from chakaso.experiments import (
     BenchmarkKind,
     RetrievalStrategyReport,
@@ -64,6 +72,7 @@ from chakaso.experiments import (
     compare_retrieval_strategies,
     run_experiment,
 )
+from chakaso.grounding import FixtureSemanticJudge
 from chakaso.models import UnknownModelError
 from chakaso.planning import QueryMode
 from chakaso.retrieval import (
@@ -298,6 +307,24 @@ def _build_parsers() -> tuple[argparse.ArgumentParser, argparse.ArgumentParser]:
         help="how many chunks to retrieve per case for every strategy (default: %(default)s)",
     )
     strategies_benchmark.add_argument(
+        "--json",
+        action="store_true",
+        help="emit the deterministic machine-readable report instead of the text one",
+    )
+
+    semantic_benchmark = benchmark_subparsers.add_parser(
+        "semantic",
+        help="score a semantic judge over the synthetic semantic-evaluation dataset",
+        description=(
+            "Run the semantic-evaluation development instrument: a versioned, hand-labelled synthetic "
+            "set of claim/evidence cases scored against the only judges available today — a fixture and "
+            "two named probes — reporting accuracy, per-class precision/recall, a confusion matrix, "
+            "unresolved and error handling. It measures the SCORING HARNESS, not semantic understanding: "
+            "no real evaluator exists (ADR-0019/ADR-0027), so no number here is general language ability. "
+            "Local, offline, deterministic."
+        ),
+    )
+    semantic_benchmark.add_argument(
         "--json",
         action="store_true",
         help="emit the deterministic machine-readable report instead of the text one",
@@ -791,8 +818,10 @@ def _run_benchmark(args: argparse.Namespace) -> int:
         return _run_correction_benchmark(args)
     if args.benchmark_command == "strategies":
         return _run_strategy_benchmark(args)
+    if args.benchmark_command == "semantic":
+        return _run_semantic_benchmark(args)
     print(
-        f"{PROGRAM}: choose a benchmark subject: 'retrieval', 'correction' or 'strategies'",
+        f"{PROGRAM}: choose a benchmark subject: 'retrieval', 'correction', 'strategies' or 'semantic'",
         file=sys.stderr,
     )
     return 1
@@ -879,6 +908,44 @@ def _run_correction_benchmark(args: argparse.Namespace) -> int:
         return 1
 
     print(correction_report_json(run) if args.json else format_correction_report(run))
+    return 0
+
+
+def _run_semantic_benchmark(args: argparse.Namespace) -> int:
+    """Score the available judges over the semantic-evaluation development dataset.
+
+    It runs the fixture (given the expected relations — this validates the scorer's arithmetic and
+    proves nothing about understanding) and two named probes (support-all, always-uncertain) that
+    show the scorer surfaces a judge that over-claims versus one that abstains. No real evaluator
+    exists; every number is labelled as a development measurement of the harness.
+    """
+    try:
+        cases = development_semantic_dataset()
+        fixture = FixtureSemanticJudge(
+            {materialize_case(case)[0].claim_id: case.expected for case in cases}
+        )
+        runs = [
+            score_semantic_judge(fixture, cases=cases),
+            score_semantic_judge(ProbeSupportAllJudge(), cases=cases),
+            score_semantic_judge(ProbeUncertainJudge(), cases=cases),
+        ]
+    except (ValueError, ChakasoError) as exc:
+        print(f"{PROGRAM}: {exc}", file=sys.stderr)
+        return 1
+
+    if args.json:
+        print(
+            json.dumps(
+                [run.to_dict() for run in runs], sort_keys=True, indent=2, ensure_ascii=False
+            )
+        )
+    else:
+        rendered = "\n\n".join(format_semantic_report(run) for run in runs)
+        print(rendered)
+        print(
+            "\nThe fixture's perfect score measures the scorer, not a capability: it was handed the "
+            "expected relations. The probes show the scorer distinguishes over-claiming from abstention."
+        )
     return 0
 
 
