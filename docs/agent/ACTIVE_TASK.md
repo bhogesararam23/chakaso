@@ -1,50 +1,47 @@
 # Active task
 
-## Current unit: P17 — a credible semantic-evaluation boundary
+## Current unit: P18 — evidence and source usability, with adversarial security tests
 
-**Goal.** Turn the fixture-only `SemanticJudge` into an honest path toward semantic evaluation
-without claiming it already exists: sharpen the semantic-evaluation contract so it preserves the
-claim, the relevant evidence references, the judgement, the evaluator identity/version, a structured
-reason, the supported/contradicted/unresolved distinction, and an explicit indeterminate outcome; keep
-structural grounding and semantic evaluation as separate dimensions that never overwrite each other;
-deliver a versioned, clearly-labelled synthetic semantic-evaluation dataset; and connect a semantic
-judgement to correction decisions only through explicit composition. If a genuinely local, CPU-feasible
-semantic evaluator can be built and tested honestly, add it behind the boundary with optional
-dependencies, explicit identity, no implicit downloads and clear failure when weights/hardware are
-missing; if it cannot, deliver the tested interface, capability detection, configuration and
-integration tests and document precisely what is missing. The fixture judge must remain available for
-deterministic tests and must never be relabelled as a real judge.
+**Goal.** Make the retrieval workflow practical end to end from the CLI — explicit local ingestion,
+inspection of indexed sources, retrieval over a selected subset, evidence-pack inspection, and clear
+handling of empty corpora and no-match results — without pretending durability the in-memory corpus
+does not have, and without a second source store competing with the answer store. Harden the surface
+against hostile content: retrieved text stays data, never an instruction; ingestion escapes no
+explicit directory and respects size/format limits; add adversarial prompt-injection tests over the
+new command surface. Keep web fetching opt-in and off every default path.
 
-**Why this is next.** P16 connected the tested runtime to an actual command (`chakaso chat`) through a
-typed composition root, so the system is now usable end to end offline — but every turn is still
-grounded only structurally. The single largest honesty gap in the project (K-001 aside) is that nothing
-judges whether a cited source actually *bears on* a claim: a citation resolves to structure, not
-meaning. The next real unit is therefore the semantic-evaluation boundary, which is what a real
-retrieval-grounded answer needs before its grounding claims mean anything.
+**Why this is next.** The runtime is now wired to `chakaso chat` and the semantic-evaluation boundary
+is hardened and measurable (P16/P17). The next usability gap is the *input* side: making it simple to
+curate, inspect and trust the evidence a grounded answer rests on, and proving the new surface resists
+untrusted content.
 
-## What the previous unit completed (P16 — connect `chakaso chat` to the retrieval-aware runtime)
+## What the previous unit completed (P17 — a credible semantic-evaluation boundary)
 
-Implemented, tested, documented and green on Python 3.11–3.13. It wires what already existed; it
-invents no capability and produces no real answer.
+Implemented, tested, documented and green on Python 3.11–3.13. It hardened the boundary and built the
+measurement; it shipped no real evaluator, because none is dependency-feasible offline (§2.1, ADR-0001).
 
-- [x] `chakaso.app` — a thin, injectable application composition root: resolved `Config` → model
-      (registry), the *configured* answer store (never a silent downgrade), retrieval services over a
-      corpus, the planner at the configured strategy/limits, and the manager (ADR-0026).
-- [x] A typed `[retrieval]` configuration section (`enabled`, `strategy`, `top_k`, `candidate_k`,
-      `rrf_k`, `max_ingest_bytes`) validated by the existing specs/dataclass-parity mechanism.
-- [x] `chakaso chat` now drives the runtime over any `--file` documents and records every answer to
-      the configured store, with an honest notice naming the engine, the active strategy, the corpus
-      state and the persistence mode; `--no-retrieval`, `--strategy`, `--top-k` are real overrides.
-- [x] Tests proving a configuration change changes runtime behaviour (store used, strategy, top-k,
-      enabled/disabled), durable recording, sqlite-without-path refusal, and the offline no-network
-      import guard extended to `chakaso.app`.
+- [x] `SemanticEvaluation` and the grounding result carry evaluator **name + version**, so a change of
+      judge is visible in provenance; `describe_semantic_capability()` reports honestly that no real
+      semantic evaluator exists and the only judge is `FixtureSemanticJudge`.
+- [x] A dedicated `SemanticJudgeError` is recorded per claim as *not evaluated* — never support — and one
+      failing claim does not abort the answer; structural grounding stays usable with no evaluator wired.
+- [x] A versioned, hand-labelled synthetic semantic-evaluation dataset and a deterministic scorer
+      (accuracy, per-class precision/recall, confusion, unresolved + error handling) as a development
+      instrument — its fixture score is labelled structure-replay, not capability — via `chakaso
+      benchmark semantic` (ADR-0027).
+- [x] Correction-integrity tests: an evaluator exception is never a support judgment; an unresolved
+      judgment is never a confirmed contradiction; structural grounding works alone.
+
+**What P17 did not do (and will not pretend to):** it did not add a real semantic evaluator. A genuine
+local, CPU-feasible, dependency-free one remains an explicit, documented gap; it plugs into the same
+`SemanticJudge` boundary later as an optional adapter.
 
 ## What this unit is not
 
-- Not a trained model, not a semantic claim: any evaluator that ships must declare its identity and
-  limits and the fixture judge stays a fixture.
-- Not an automatic rewrite of an answer from a semantic judgement, and not a merged answer-quality
-  score; structural and semantic results stay separate dimensions.
+- Not a durable source index or a second database — the corpus stays in-memory unless a real need is
+  shown; do not invent persistence to look complete.
+- Not a web-frontend, crawler, or a URL chooser; the fetcher stays opt-in and off every default path.
+- Not a real semantic evaluator or model (P17's boundary stands).
 
 ## Ordering after this unit
 
@@ -55,14 +52,12 @@ invents no capability and produces no real answer.
 
 ## Known gaps that bound this unit
 
-- K-001: nothing here has been run against a real workload; a semantic-evaluation dataset is synthetic
-  and its numbers describe structure/mechanism, not general language understanding.
-- K-002: `docs/architecture.md` still names Planned components; the semantic-boundary unit must keep
-  its status labels honest (an interface is not an implemented capability).
+- K-001: offline and synthetic; a real workload has still not been run.
+- K-008: the fetcher's destination screen is partial; any acquisition work must confirm no default path
+  reaches the network and record the limitation rather than fix it silently.
 
 ## What previous units knowingly left undone
 
-- The runtime is wired to `chakaso chat` (P16), but no reassessment is triggered automatically; the
-  correction path is still an explicit application operation over a stored answer.
-- Nothing records across turns how often a model invents an evidence reference (K-006), and the
-  planner uses an anaphoric-cue heuristic, not a discourse resolver.
+- No automatic, triggered correction; the correction path is still an explicit application operation.
+- Nothing records across turns how often a model invents an evidence reference (K-006); the planner
+  uses an anaphoric-cue heuristic, not a discourse resolver.
