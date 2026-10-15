@@ -4,9 +4,11 @@
 
 Several things, all local and offline: `chakaso chat`, a conversation shell that grounds each turn
 through the retrieval-aware runtime; `chakaso retrieve`, which ingests named local documents and runs
-lexical retrieval over them; `chakaso capabilities`, which reports what configuration selects; and
-`chakaso answers list|show|lineage`, which inspects persisted answers and their correction lineage;
-`chakaso benchmark retrieval` and `chakaso benchmark correction`, which
+lexical retrieval over them (and `--source` restricts a query to named sources); `chakaso sources
+list|show` and `chakaso evidence show`, which inventory and inspect the in-memory corpus of sources
+and chunks built from those documents; `chakaso capabilities`, which reports what configuration
+selects; and `chakaso answers list|show|lineage`, which inspects persisted answers and their
+correction lineage; `chakaso benchmark retrieval` and `chakaso benchmark correction`, which
 run the development benchmarks and print their reports; `chakaso experiment run <subject>`, which
 produces a reproducible experiment result; `chakaso storage check` / `chakaso storage migrate`, which
 inspect or initialize a durable answer store; and `chakaso config show` / `chakaso --version`.
@@ -197,6 +199,39 @@ model to turn retrieved chunks into prose — and an empty result says so plainl
 than inventing evidence. Only plain text and Markdown (`.txt`, `.md`, `.markdown`) are
 read; any other format is refused rather than mangled into text.
 
+To restrict retrieval to particular sources, pass their identifiers with `--source` (repeat the
+flag). An identifier that is malformed, or that names a source not among the `--file` documents, is
+refused with a clear error rather than silently filtering to an empty result:
+
+```bash
+python -m chakaso retrieve --query "deadlines" --file notes/spec.md --source src_3f2a91c4d5e6b708
+```
+
+## Inspecting sources and evidence
+
+To see what the corpus actually holds before trusting an answer over it, list and inspect the
+sources built from the documents you pass with `--file`:
+
+```bash
+# inventory the sources and how many chunks each produced
+python -m chakaso sources list --file notes/spec.md --file notes/plan.md
+python -m chakaso sources list --file notes/spec.md --json
+
+# show one source and the chunks ingested from it (--text also prints each body)
+python -m chakaso sources show <src_...> --file notes/spec.md --text
+
+# show a single evidence chunk and the source it came from
+python -m chakaso evidence show <chk_...> --file notes/spec.md
+```
+
+The corpus is **in-memory and rebuilt for the invocation**, exactly as `retrieve` and `chat` build
+it: there is no durable source index, so a source or chunk appears only while its document is passed
+with `--file`. Each command says so when asked about something that is not present, rather than
+implying a persistent store exists. Identifiers are validated before lookup and are never normalised
+into a different object; `--json` gives a valid machine-readable view whose text fields keep the exact
+stored bytes, while the human-readable output renders source text (which is untrusted) inert so a
+hostile document cannot emit terminal-control sequences. These commands are read-only and offline.
+
 ## Running the development benchmarks and an experiment
 
 ```bash
@@ -309,7 +344,7 @@ exist.
 ```text
 src/chakaso/           package source
   config/              typed configuration, loading and provenance
-  core/                identifiers, hashing, error base
+  core/                identifiers, hashing, terminal-safe text, error base
   models/              language-model boundary, capabilities, registry
   evidence/            source records, evidence chunks, packs, citation resolution
   retrieval/           normalization, chunking, ingestion, corpus, lexical index and retrieval

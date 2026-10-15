@@ -1,40 +1,45 @@
 # Active task
 
-## Current unit: P18 — evidence and source usability, with adversarial security tests
+## Current unit: P19 — answer-provenance enrichment
 
-**Goal.** Make the retrieval workflow practical end to end from the CLI — explicit local ingestion,
-inspection of indexed sources, retrieval over a selected subset, evidence-pack inspection, and clear
-handling of empty corpora and no-match results — without pretending durability the in-memory corpus
-does not have, and without a second source store competing with the answer store. Harden the surface
-against hostile content: retrieved text stays data, never an instruction; ingestion escapes no
-explicit directory and respects size/format limits; add adversarial prompt-injection tests over the
-new command surface. Keep web fetching opt-in and off every default path.
+**Goal.** Make a persisted answer self-explanatory about *how* it was produced, without copying
+large evidence bodies or persisting anything volatile. Inspect `AnswerRecord` first; add only fields
+that genuinely explain a turn and are stable across restart — the citation-validation outcome and the
+structural-grounding outcome already computed during a turn are the leading candidates. A provenance
+reference must stay meaningful after a process restart; where it points at data that is no longer
+available (an in-memory corpus, a recomputed evaluation), the record must say so rather than imply
+the evidence can still be reconstructed. Extend the store/serialization codec and its conformance
+tests, keep the in-memory and SQLite backends equivalent, and update the CLI `answers show` view.
 
-**Why this is next.** The runtime is now wired to `chakaso chat` and the semantic-evaluation boundary
-is hardened and measurable (P16/P17). The next usability gap is the *input* side: making it simple to
-curate, inspect and trust the evidence a grounded answer rests on, and proving the new surface resists
-untrusted content.
+**Why this is next.** P18 made the evidence *input* side inspectable from the CLI and hardened the
+display surface against hostile content. The matching gap on the *output* side is that a stored
+answer records the planner decision and retrieval strategy (P16) but not the validation/grounding
+verdicts a turn actually reached, so "why was this answer what it was" is only partly auditable from
+the durable record alone.
 
-## What the previous unit completed (P17 — a credible semantic-evaluation boundary)
+## What the previous unit completed (P18 — evidence and source usability, with adversarial security)
 
-Implemented, tested, documented and green on Python 3.11–3.13. It hardened the boundary and built the
-measurement; it shipped no real evaluator, because none is dependency-feasible offline (§2.1, ADR-0001).
+Implemented, tested, documented and green on Python 3.11–3.13.
 
-- [x] `SemanticEvaluation` and the grounding result carry evaluator **name + version**, so a change of
-      judge is visible in provenance; `describe_semantic_capability()` reports honestly that no real
-      semantic evaluator exists and the only judge is `FixtureSemanticJudge`.
-- [x] A dedicated `SemanticJudgeError` is recorded per claim as *not evaluated* — never support — and one
-      failing claim does not abort the answer; structural grounding stays usable with no evaluator wired.
-- [x] A versioned, hand-labelled synthetic semantic-evaluation dataset and a deterministic scorer
-      (accuracy, per-class precision/recall, confusion, unresolved + error handling) as a development
-      instrument — its fixture score is labelled structure-replay, not capability — via `chakaso
-      benchmark semantic` (ADR-0027).
-- [x] Correction-integrity tests: an evaluator exception is never a support judgment; an unresolved
-      judgment is never a confirmed contradiction; structural grounding works alone.
+- [x] A dependency-free terminal-safety primitive, `chakaso.core.safe_for_terminal`, that renders
+      control characters (ESC, C0/C1, DEL) and the bidirectional embedding/isolate controls in
+      untrusted text as *visible* escapes; adopted on the CLI's human-readable paths, with `--json`
+      left to the serializer.
+- [x] Source and evidence inspection from the CLI over the in-memory corpus — `chakaso sources
+      list|show` and `chakaso evidence show` — calling the existing `Corpus`/`ingest_file`/record
+      APIs, with valid `--json`, useful exit codes, and honest statements that **no durable source
+      index exists** (a source appears only while its `--file` document is passed).
+- [x] Source-scoped retrieval, `chakaso retrieve … --source <src_…>`, via the retrieval service's
+      existing `source_ids` filter; identifiers are validated before lookup and an unknown-but-valid
+      one is refused, never silently filtered to an empty result.
+- [x] Adversarial regression tests: a document embedding an ESC sequence and a bidirectional override
+      reaches the terminal as inert visible escapes while its substance is preserved, and `--json`
+      keeps the exact bytes — proving the application's structural separation, not model robustness.
 
-**What P17 did not do (and will not pretend to):** it did not add a real semantic evaluator. A genuine
-local, CPU-feasible, dependency-free one remains an explicit, documented gap; it plugs into the same
-`SemanticJudge` boundary later as an optional adapter.
+**What P18 did not do (and will not pretend to):** it did not add a durable source registry, or
+cross-process source removal/replacement. There is no consumer for them under the current in-memory
+architecture, and inventing a second store would violate the no-empty-scaffolding rule. It added no
+real model and no real semantic judge; the retrieved-content-stays-data property remains structural.
 
 ## What this unit is not
 

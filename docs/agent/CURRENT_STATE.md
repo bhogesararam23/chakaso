@@ -18,7 +18,7 @@ A private planning note is never evidence that something is implemented.
 | Contribution guide | `CONTRIBUTING.md` | |
 | Agent contract | `AGENTS.md`, `docs/agent/` | |
 | Python package | `src/chakaso/` | Installs; typed; `py.typed` ships |
-| CLI | `src/chakaso/cli.py` | `--version`, `info`, `capabilities`, `config show`, `chat`, `retrieve`, `benchmark retrieval|correction|strategies`, `experiment run`, `storage check|migrate`, `answers list|show|lineage`; `chat` builds its graph through `chakaso.app` and drives the runtime |
+| CLI | `src/chakaso/cli.py` | `--version`, `info`, `capabilities`, `config show`, `chat`, `retrieve` (with `--source` to scope a query), `sources list|show`, `evidence show`, `benchmark retrieval|correction|strategies|semantic`, `experiment run`, `storage check|migrate`, `answers list|show|lineage`; `chat` builds its graph through `chakaso.app` and drives the runtime; `sources`/`evidence` inspect the in-memory corpus built from `--file` documents and are explicit that no durable source index exists. Untrusted document text is rendered inert on the human-readable paths via `chakaso.core.safe_for_terminal` |
 | Application composition | `src/chakaso/app.py` | `build_application(loaded, …)` is the single place a resolved `Config` becomes the runtime's dependencies: model via the registry, the configured answer store (`memory` or durable `sqlite`, never a silent downgrade), retrieval services over a corpus, the planner at the configured strategy/limits, and the manager. Every dependency is injectable for tests (ADR-0026) |
 | Configuration | `src/chakaso/config/`, `configs/default.toml` | Typed schema in sections (`model`, `storage`, `retrieval`), explicit loading, per-value provenance; storage defaults to the in-memory backend so nothing is written; `retrieval` selects the strategy (`lexical`/`dense`/`hybrid`), `top_k`, hybrid fusion knobs and an ingest size bound, and whether grounding is on at all |
 | Core primitives | `src/chakaso/core/` | Content-derived identifiers, SHA-256 hashing, terminal-safe rendering of untrusted text (`safe_for_terminal`), error base |
@@ -146,7 +146,17 @@ A private planning note is never evidence that something is implemented.
 - `python -m chakaso retrieve --query ... --file ...` runs the whole local pipeline from
   the command line: it ingests the named files, retrieves, and prints ranked evidence with
   its provenance. It reads only the files given, touches no network and generates no
-  answer; an empty retrieval says so.
+  answer; an empty retrieval says so. `--source src_…` (repeatable) restricts the query to
+  named sources; an identifier that is malformed or not among the ingested documents is
+  refused with a clear error rather than filtering silently to nothing.
+- `python -m chakaso sources list|show` and `python -m chakaso evidence show` inspect the
+  in-memory corpus built from the `--file` documents a caller passes: source inventory with
+  kind, reference and chunk count; one source and its chunks (`sources show --text` prints
+  the bodies); and one chunk with its source. There is **no durable source index** — a source
+  or chunk appears only while its document is given, and each command says so rather than
+  implying a persistent store. Identifiers are validated before lookup, never normalised into a
+  different object. `--json` keeps the exact stored bytes; the human-readable output renders
+  untrusted document text inert so a hostile file cannot emit terminal-control sequences.
 - `python -m chakaso benchmark` runs the retrieval development benchmark end to end from the
   command line and prints its report (text, or `--json` for a deterministic machine-readable
   report). It scores retrieval over the synthetic fixtures, labels itself a development
@@ -258,7 +268,7 @@ says anything else.
 | Area | Coverage |
 | --- | --- |
 | Package installation | Version shape, distribution metadata agreement, console script entry point, `py.typed` |
-| CLI | Version, help, unknown command, `info`, `config show` including failure paths, `capabilities` (model/strategy/storage report, JSON, unknown-adapter failure), the retrieval-aware `chat` (grounding over `--file`, `--no-retrieval`, `--strategy`/`--top-k` overrides, durable-store recording, missing-file and bad-top-k failure), `answers list|show|lineage` (memory and absent-file inspection say there is nothing to read, a chat-written durable record is listed/shown/walked, malformed and unknown identifiers fail), and `storage check`/`migrate` (path resolution, absent file, healthy report, non-store and newer-schema refusal) |
+| CLI | Version, help, unknown command, `info`, `config show` including failure paths, `capabilities` (model/strategy/storage report, JSON, unknown-adapter failure), the retrieval-aware `chat` (grounding over `--file`, `--no-retrieval`, `--strategy`/`--top-k` overrides, durable-store recording, missing-file and bad-top-k failure), `retrieve` (ranked output, `--top-k`, missing-file and unsupported-format failure, `--source` scoping and refusal of an absent/malformed source), `sources list|show` and `evidence show` (inventory, `--json`, empty-corpus honesty, `--text`, malformed and unknown identifiers, hostile document text rendered inert while `--json` keeps exact bytes), `answers list|show|lineage` (memory and absent-file inspection say there is nothing to read, a chat-written durable record is listed/shown/walked, malformed and unknown identifiers fail), and `storage check`/`migrate` (path resolution, absent file, healthy report, non-store and newer-schema refusal) |
 | Configuration | Defaults, file layering and precedence, provenance, unknown keys, wrong types, boolean-vs-integer, ranges, name pattern, missing file, directory, invalid TOML, array values, immutability, schema/dataclass agreement, shipped file vs built-in defaults, and the `storage` section (defaults write nothing, backend/journal-mode patterns rejected) |
 | Identifiers and hashing | Digest agreement with `hashlib`, UTF-8 handling, truncation bounds, part-separator ambiguity, derivation determinism, deduplication, content-change distinction, position and text sensitivity, malformed identifier rejection, ordering and hashing |
 | Model boundary | The inherited contract suite (metadata, provenance of results, repeatability at zero temperature, empty-request rejection, length ceiling, unsupported-capability failures, declared capabilities being implemented), plus capability reconciliation, parameter validation, registry failure paths and the double's documented behaviour |
@@ -370,16 +380,18 @@ over stored answers, an answer store wired atomically into a turn — in-memory 
 durable SQLite backend that survives a restart — a deterministic query planner that decides per turn
 whether and how to retrieve (ADR-0022), a fixture-only semantic grounding boundary, and reproducible
 experiment records with a deterministic regression baseline, and a retrieval-aware runtime composing
-planner → retrieval → model → record → store (ADR-0025) are all built and tested. The next real units,
-in order:
+planner → retrieval → model → record → store (ADR-0025) are all built and tested. The measured
+strategy comparison (E-001) and the end-to-end/restart integration and security demonstration are done.
+Source and evidence inspection from the CLI over the in-memory corpus, source-scoped retrieval, and
+adversarial terminal-safety of untrusted content are also built and tested. The next real units, in
+order:
 
-1. **Benchmark and experiment expansion** — compare lexical / dense / hybrid and top-k settings over
-   the synthetic fixtures through the existing experiment framework, reporting only measured,
-   honestly-labelled development numbers (dense/hybrid run over the fixture embedding).
-2. **End-to-end and restart integration demonstration** — a deterministic offline test running a query
-   through the whole runtime to a durable store, then proving the answer history survives a
-   close/reopen, with deliberate "test-the-tests" corruption checks on atomicity, provenance and
-   persistence, and a security review of the new runtime.
+1. **Answer-provenance enrichment** — record, on a persisted answer, the citation-validation and
+   structural-grounding outcomes a turn actually reached (and where a provenance reference points at
+   data that will not survive a restart), so a durable answer is more self-explanatory without copying
+   large evidence bodies or persisting a recomputed evaluation.
+2. **A triggered follow-up** that decides *when* to reassess, wired into the runtime behind explicit
+   composition — not a fake autonomous loop.
 
 A **real semantic judge** (the `SemanticJudge` boundary is fixture-only today) and an **automatic,
 triggered correction** follow the now-completed wiring of the runtime into **`chakaso chat`** behind

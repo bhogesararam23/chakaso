@@ -20,6 +20,12 @@ baseline experiment and prints its reproducible, content-fingerprinted result.
 ``storage``
 checks or migrates a durable SQLite answer store and reports its schema and integrity, reading
 or writing only the explicit path it is given.
+``sources`` and ``evidence`` inventory and inspect the in-memory corpus built from the
+``--file`` documents a caller supplies — source identities, the chunks ingested from each, and a
+single chunk by identifier — and are explicit that there is no durable source index, so a source
+appears only while its document is passed in. ``retrieve`` accepts ``--source`` to restrict a query
+to named sources and refuses an identifier that is not among them. All read-only and offline; text
+drawn from a document is untrusted and is rendered inert on a terminal.
 """
 
 from __future__ import annotations
@@ -57,6 +63,7 @@ from chakaso.benchmark import (
 from chakaso.config import ConfigError, LoadedConfig, RetrievalConfig, load_config
 from chakaso.conversation import Reply
 from chakaso.core.errors import ChakasoError
+from chakaso.core.identifiers import ChunkId, SourceId
 from chakaso.core.text import safe_for_terminal
 from chakaso.evaluation.semantic_benchmark import (
     ProbeSupportAllJudge,
@@ -66,6 +73,7 @@ from chakaso.evaluation.semantic_benchmark import (
     materialize_case,
     score_semantic_judge,
 )
+from chakaso.evidence import EvidenceChunk, SourceRecord
 from chakaso.experiments import (
     BenchmarkKind,
     RetrievalStrategyReport,
@@ -232,6 +240,17 @@ def _build_parsers() -> tuple[argparse.ArgumentParser, argparse.ArgumentParser]:
         default=DEFAULT_TOP_K,
         metavar="N",
         help="how many chunks to return (default: %(default)s)",
+    )
+    retrieve_parser.add_argument(
+        "--source",
+        action="append",
+        default=None,
+        metavar="SOURCE_ID",
+        help=(
+            "restrict retrieval to one source (a src_\u2026 identifier); repeat for several. "
+            "An identifier not present among the --file documents is refused, not silently "
+            "filtered to nothing"
+        ),
     )
 
     benchmark_parser = subparsers.add_parser(
@@ -434,6 +453,77 @@ def _build_parsers() -> tuple[argparse.ArgumentParser, argparse.ArgumentParser]:
     _add_config_arguments(answers_lineage)
     answers_lineage.add_argument("--json", action="store_true", help="machine-readable output")
 
+    sources_parser = subparsers.add_parser(
+        "sources",
+        help="inventory and inspect the sources in an in-memory corpus",
+        description=(
+            "List and inspect the evidence sources built from the documents given by --file, and the "
+            "chunks ingested from each. The corpus is in-memory and rebuilt for this invocation only: "
+            "there is no durable source index, so a source appears here only when its document is "
+            "passed with --file. Identifiers are validated before lookup and are never normalised into "
+            "a different object. Local, offline and read-only; source text is untrusted and rendered "
+            "inert."
+        ),
+    )
+    sources_subparsers = sources_parser.add_subparsers(dest="sources_command", metavar="ACTION")
+    sources_list = sources_subparsers.add_parser(
+        "list", help="list the sources built from the given --file documents"
+    )
+    _add_config_arguments(sources_list)
+    sources_list.add_argument(
+        "--file",
+        action="append",
+        default=None,
+        metavar="PATH",
+        help="a local document to ingest into the corpus; repeat for multiple sources",
+    )
+    sources_list.add_argument("--json", action="store_true", help="machine-readable output")
+    sources_show = sources_subparsers.add_parser(
+        "show", help="show one source and the chunks ingested from it"
+    )
+    sources_show.add_argument(
+        "source_id", metavar="SOURCE_ID", help="the src_\u2026 identifier to show"
+    )
+    _add_config_arguments(sources_show)
+    sources_show.add_argument(
+        "--file",
+        action="append",
+        default=None,
+        metavar="PATH",
+        help="a local document to ingest into the corpus; repeat for multiple sources",
+    )
+    sources_show.add_argument(
+        "--text", action="store_true", help="print each chunk body (untrusted; rendered inert)"
+    )
+    sources_show.add_argument("--json", action="store_true", help="machine-readable output")
+
+    evidence_parser = subparsers.add_parser(
+        "evidence",
+        help="inspect one evidence chunk in an in-memory corpus",
+        description=(
+            "Show a single evidence chunk, by its chk_\u2026 identifier, together with the source it "
+            "came from. As with 'sources', the corpus is in-memory and built only from the --file "
+            "documents given, so a chunk is present only when its source document was supplied. Local, "
+            "offline and read-only; chunk text is untrusted and rendered inert."
+        ),
+    )
+    evidence_subparsers = evidence_parser.add_subparsers(dest="evidence_command", metavar="ACTION")
+    evidence_show = evidence_subparsers.add_parser(
+        "show", help="show one evidence chunk and its source"
+    )
+    evidence_show.add_argument(
+        "chunk_id", metavar="CHUNK_ID", help="the chk_\u2026 identifier to show"
+    )
+    _add_config_arguments(evidence_show)
+    evidence_show.add_argument(
+        "--file",
+        action="append",
+        default=None,
+        metavar="PATH",
+        help="a local document to ingest into the corpus; repeat for multiple sources",
+    )
+    evidence_show.add_argument("--json", action="store_true", help="machine-readable output")
+
     return parser, config_parser
 
 
@@ -503,6 +593,12 @@ def main(argv: Sequence[str] | None = None) -> int:
 
     if args.command == "answers":
         return _run_answers(args)
+
+    if args.command == "sources":
+        return _run_sources(args)
+
+    if args.command == "evidence":
+        return _run_evidence(args)
 
     # Unreachable while every subcommand is handled above. argparse rejects
     # unknown commands before this point, so reaching here means a subcommand was
@@ -773,7 +869,10 @@ def _run_retrieve(args: argparse.Namespace) -> int:
         corpus = Corpus()
         for path in paths:
             corpus.add_document(ingest_file(path))
-        outcome = RetrievalService(corpus).search(args.query, top_k=args.top_k)
+        source_ids = _resolve_source_filter(corpus, args.source)
+        outcome = RetrievalService(corpus).search(
+            args.query, top_k=args.top_k, source_ids=source_ids
+        )
     except (IngestionError, RetrievalError) as exc:
         print(f"{PROGRAM}: {exc}", file=sys.stderr)
         return 1
@@ -817,6 +916,233 @@ def _format_retrieval(outcome: RetrievalOutcome) -> str:
         lines.append(f"   matched: {safe_matched}")
         lines.append(f"   {safe_text}")
     return "\n".join(lines)
+
+
+# ---------------------------------------------------------------------------
+# source and evidence inspection (in-memory corpus)
+# ---------------------------------------------------------------------------
+
+
+def _resolve_source_filter(corpus: Corpus, raw_ids: list[str] | None) -> list[SourceId] | None:
+    """Validate ``--source`` identifiers against ``corpus`` and return them as a filter.
+
+    Returns ``None`` when no filter was requested. An identifier that is malformed, or that
+    names a source not among the ingested documents, raises :class:`RetrievalError` rather
+    than being silently dropped or normalised — filtering to an absent source would otherwise
+    return an empty result that looks like "nothing matched" when the real cause is a typo.
+    """
+    if not raw_ids:
+        return None
+    resolved: list[SourceId] = []
+    for raw in raw_ids:
+        try:
+            source_id = SourceId.parse(raw)
+        except ChakasoError as exc:
+            message = f"invalid --source identifier: {exc}"
+            raise RetrievalError(message) from exc
+        if corpus.source_for(source_id) is None:
+            message = f"no source {source_id} is among the ingested documents"
+            raise RetrievalError(message)
+        resolved.append(source_id)
+    return resolved
+
+
+def _parse_source_id(raw: str) -> SourceId | None:
+    """Parse a ``src_\u2026`` identifier, reporting a malformed one on stderr."""
+    try:
+        return SourceId.parse(raw)
+    except ChakasoError as exc:
+        print(f"{PROGRAM}: {exc}", file=sys.stderr)
+        return None
+
+
+def _parse_chunk_id(raw: str) -> ChunkId | None:
+    """Parse a ``chk_\u2026`` identifier, reporting a malformed one on stderr."""
+    try:
+        return ChunkId.parse(raw)
+    except ChakasoError as exc:
+        print(f"{PROGRAM}: {exc}", file=sys.stderr)
+        return None
+
+
+def _build_inspection_corpus(args: argparse.Namespace) -> tuple[Corpus | None, int]:
+    """Build the in-memory corpus for an inspection command from its ``--file`` documents.
+
+    The configured ingest size bound is honoured, exactly as ``chat`` does. A configuration or
+    ingestion failure is reported and the caller returns the accompanying exit code.
+    """
+    try:
+        loaded = _load_or_report(args.config)
+    except ConfigError as exc:
+        print(f"{PROGRAM}: {exc}", file=sys.stderr)
+        return None, 1
+    try:
+        corpus = build_corpus(
+            args.file or [],
+            max_bytes=loaded.config.retrieval.max_ingest_bytes,
+        )
+    except IngestionError as exc:
+        print(f"{PROGRAM}: {exc}", file=sys.stderr)
+        return None, 1
+    return corpus, 0
+
+
+def _source_brief(source: SourceRecord, corpus: Corpus) -> dict[str, object]:
+    """A machine-readable view of one source and its chunks, with the exact stored values."""
+    chunks = corpus.chunks_for(source.source_id)
+    return {
+        "source_id": str(source.source_id),
+        "kind": source.kind.value,
+        "title": source.title,
+        "canonical_reference": source.canonical_reference,
+        "domain": source.domain,
+        "retrieved_at": source.retrieved_at.isoformat(),
+        "content_hash": source.content_hash,
+        "chunk_count": len(chunks),
+        "chunks": [
+            {
+                "chunk_id": str(chunk.chunk_id),
+                "position": chunk.position,
+                "section": chunk.section,
+                "character_count": len(chunk.text),
+            }
+            for chunk in chunks
+        ],
+    }
+
+
+def _chunk_brief(chunk: EvidenceChunk, source: SourceRecord | None) -> dict[str, object]:
+    """A machine-readable view of one chunk (raw text preserved for a consumer)."""
+    data: dict[str, object] = {
+        "chunk_id": str(chunk.chunk_id),
+        "source_id": str(chunk.source_id),
+        "position": chunk.position,
+        "section": chunk.section,
+        "character_count": len(chunk.text),
+        "text": chunk.text,
+    }
+    if source is not None:
+        data["source_title"] = source.title
+        data["source_reference"] = source.canonical_reference
+    return data
+
+
+def _format_source(source: SourceRecord, corpus: Corpus, *, include_text: bool) -> str:
+    """Render one source and its chunk inventory for a terminal; bodies only when asked."""
+    chunks = corpus.chunks_for(source.source_id)
+    lines = [
+        f"source: {source.source_id}",
+        f"kind: {source.kind.value}",
+        f"title: {safe_for_terminal(source.title)}",
+        f"reference: {safe_for_terminal(source.canonical_reference)}",
+    ]
+    if source.domain:
+        lines.append(f"domain: {safe_for_terminal(source.domain)}")
+    lines.append(f"retrieved: {source.retrieved_at.isoformat()}")
+    lines.append(f"content_hash: {source.content_hash}")
+    lines.append(f"chunks: {len(chunks)}")
+    for chunk in chunks:
+        lines.append(
+            f"  [{chunk.position}] {chunk.chunk_id}  section={chunk.section or '-'}  "
+            f"chars={len(chunk.text)}"
+        )
+        if include_text:
+            lines.append(f"      {safe_for_terminal(chunk.text)}")
+    return "\n".join(lines)
+
+
+def _format_chunk(chunk: EvidenceChunk, source: SourceRecord | None) -> str:
+    """Render one chunk and its source for a terminal, with the body made inert."""
+    lines = [
+        f"chunk: {chunk.chunk_id}",
+        f"source: {chunk.source_id}",
+        f"position: {chunk.position}",
+        f"section: {chunk.section or '-'}",
+        f"chars: {len(chunk.text)}",
+    ]
+    if source is not None:
+        lines.append(f"reference: {safe_for_terminal(source.canonical_reference)}")
+    lines.append(f"text: {safe_for_terminal(chunk.text)}")
+    return "\n".join(lines)
+
+
+def _run_sources(args: argparse.Namespace) -> int:
+    action = args.sources_command
+    if action not in ("list", "show"):
+        print(f"{PROGRAM}: choose a sources action: 'list' or 'show'", file=sys.stderr)
+        return 1
+    corpus, code = _build_inspection_corpus(args)
+    if corpus is None:
+        return code
+    if action == "list":
+        return _sources_list(corpus, args)
+    return _sources_show(corpus, args)
+
+
+def _sources_list(corpus: Corpus, args: argparse.Namespace) -> int:
+    sources = corpus.sources
+    if args.json:
+        payload = [_source_brief(source, corpus) for source in sources]
+        print(json.dumps(payload, sort_keys=True, indent=2, ensure_ascii=False))
+        return 0
+    if not sources:
+        print(
+            "no sources: the corpus is built only from the --file documents given to this "
+            "invocation, and none were supplied. There is no durable source index."
+        )
+        return 0
+    for source in sources:
+        chunks = corpus.chunks_for(source.source_id)
+        print(f"{source.source_id}  {source.kind.value}  {len(chunks)} chunk(s)")
+        print(f"   title: {safe_for_terminal(source.title)}")
+        print(f"   reference: {safe_for_terminal(source.canonical_reference)}")
+    return 0
+
+
+def _sources_show(corpus: Corpus, args: argparse.Namespace) -> int:
+    source_id = _parse_source_id(args.source_id)
+    if source_id is None:
+        return 1
+    source = corpus.source_for(source_id)
+    if source is None:
+        print(
+            f"{PROGRAM}: no source {source_id} is in the corpus built from the given files "
+            "(there is no durable source index to look it up in)",
+            file=sys.stderr,
+        )
+        return 1
+    if args.json:
+        print(
+            json.dumps(_source_brief(source, corpus), sort_keys=True, indent=2, ensure_ascii=False)
+        )
+        return 0
+    print(_format_source(source, corpus, include_text=args.text))
+    return 0
+
+
+def _run_evidence(args: argparse.Namespace) -> int:
+    if args.evidence_command != "show":
+        print(f"{PROGRAM}: choose an evidence action: 'show'", file=sys.stderr)
+        return 1
+    corpus, code = _build_inspection_corpus(args)
+    if corpus is None:
+        return code
+    chunk_id = _parse_chunk_id(args.chunk_id)
+    if chunk_id is None:
+        return 1
+    chunk = corpus.chunk_for(chunk_id)
+    if chunk is None:
+        print(
+            f"{PROGRAM}: no chunk {chunk_id} is in the corpus built from the given files",
+            file=sys.stderr,
+        )
+        return 1
+    source = corpus.source_for(chunk.source_id)
+    if args.json:
+        print(json.dumps(_chunk_brief(chunk, source), sort_keys=True, indent=2, ensure_ascii=False))
+        return 0
+    print(_format_chunk(chunk, source))
+    return 0
 
 
 def _run_benchmark(args: argparse.Namespace) -> int:

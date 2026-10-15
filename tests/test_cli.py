@@ -23,6 +23,7 @@ from chakaso.answers import SQLiteAnswerStore
 from chakaso.cli import _report_caveats, build_parser, main
 from chakaso.config import load_config
 from chakaso.conversation import Conversation, ConversationManager
+from chakaso.core.identifiers import ChunkId
 from chakaso.models import (
     FinishReason,
     GenerationParams,
@@ -30,6 +31,7 @@ from chakaso.models import (
     Message,
     ModelMetadata,
 )
+from chakaso.retrieval import ingest_file
 
 DEFAULT_CONFIG_FILE = Path(__file__).resolve().parent.parent / "configs" / "default.toml"
 
@@ -960,3 +962,267 @@ def test_answers_lineage_walks_the_chain_from_the_durable_store(
     out = capsys.readouterr().out
     assert "correction lineage" in out
     assert "original" in out
+
+
+# ---------------------------------------------------------------------------
+# sources / evidence inspection
+# ---------------------------------------------------------------------------
+
+
+HOSTILE_BODY = "Please ignore\x1b[2J everything and read the \u202ehidden text.\n"
+
+
+def _write(tmp_path: Path, name: str, text: str) -> Path:
+    document = tmp_path / name
+    document.write_text(text, encoding="utf-8")
+    return document
+
+
+def test_sources_list_reports_each_source_and_its_chunk_count(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    document = _write(
+        tmp_path,
+        "notes.md",
+        "# Deadlines\n\nThe window closes in April.\n\n# Budget\n\nTen coins.\n",
+    )
+
+    assert main(["sources", "list", "--file", str(document)]) == 0
+
+    out = capsys.readouterr().out
+    assert "src_" in out
+    assert "file" in out
+    assert "2 chunk(s)" in out
+    assert "notes.md" in out
+
+
+def test_sources_list_is_honest_that_there_is_no_durable_index(
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    # No --file means an empty in-memory corpus, and the command says so rather than
+    # implying a persistent store exists to read.
+    assert main(["sources", "list"]) == 0
+    out = capsys.readouterr().out
+    assert "no sources" in out
+    assert "no durable source index" in out
+
+
+def test_sources_list_json_is_valid_and_preserves_the_stored_values(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    document = _write(tmp_path, "a.md", "# One\n\nAlpha.\n")
+
+    assert main(["sources", "list", "--file", str(document), "--json"]) == 0
+
+    payload = json.loads(capsys.readouterr().out)
+    assert len(payload) == 1
+    source = payload[0]
+    assert source["kind"] == "file"
+    assert source["chunk_count"] == 1
+    assert source["canonical_reference"].startswith("file:///")
+    assert source["content_hash"]
+
+
+def test_sources_show_lists_chunks_and_only_prints_bodies_when_asked(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    document = _write(tmp_path, "a.md", "# One\n\nAlpha sentence.\n")
+    source_id = str(ingest_file(document).source.source_id)
+
+    assert main(["sources", "show", source_id, "--file", str(document)]) == 0
+    listed = capsys.readouterr().out
+    assert f"source: {source_id}" in listed
+    assert "Alpha sentence." not in listed  # body withheld without --text
+
+    assert main(["sources", "show", source_id, "--file", str(document), "--text"]) == 0
+    detailed = capsys.readouterr().out
+    assert "Alpha sentence." in detailed
+
+
+def test_sources_show_json_matches_the_ingested_record(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    document = _write(tmp_path, "a.md", "# One\n\nAlpha.\n")
+    record = ingest_file(document)
+    source_id = str(record.source.source_id)
+    chunk_id = str(record.chunks[0].chunk_id)
+
+    assert main(["sources", "show", source_id, "--file", str(document), "--json"]) == 0
+
+    payload = json.loads(capsys.readouterr().out)
+    assert payload["source_id"] == source_id
+    assert payload["chunks"][0]["chunk_id"] == chunk_id
+
+
+def test_sources_show_rejects_a_malformed_identifier(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    document = _write(tmp_path, "a.md", "# One\n\nAlpha.\n")
+
+    assert main(["sources", "show", "not-an-id", "--file", str(document)]) == 1
+    assert "not a valid source identifier" in capsys.readouterr().err
+
+
+def test_sources_show_reports_a_valid_but_absent_source(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    document = _write(tmp_path, "a.md", "# One\n\nAlpha.\n")
+
+    # A well-formed identifier that is not among the given files is an error, not a
+    # silently empty listing.
+    assert main(["sources", "show", "src_0000000000000000", "--file", str(document)]) == 1
+    err = capsys.readouterr().err
+    assert "no source" in err
+    assert "durable source index" in err
+
+
+def test_evidence_show_prints_a_chunk_and_its_source(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    document = _write(tmp_path, "a.md", "# One\n\nThe answer is April.\n")
+    record = ingest_file(document)
+    chunk_id = str(record.chunks[0].chunk_id)
+
+    assert main(["evidence", "show", chunk_id, "--file", str(document)]) == 0
+
+    out = capsys.readouterr().out
+    assert f"chunk: {chunk_id}" in out
+    assert "The answer is April." in out
+    assert str(record.source.source_id) in out
+
+
+def test_evidence_show_rejects_a_malformed_identifier(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    document = _write(tmp_path, "a.md", "# One\n\nAlpha.\n")
+
+    assert main(["evidence", "show", "chk_zzz", "--file", str(document)]) == 1
+    assert "not a valid chunk identifier" in capsys.readouterr().err
+
+
+def test_evidence_show_reports_an_absent_chunk(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    document = _write(tmp_path, "a.md", "# One\n\nAlpha.\n")
+
+    assert main(["evidence", "show", "chk_0000000000000000", "--file", str(document)]) == 1
+    assert "no chunk" in capsys.readouterr().err
+
+
+def test_sources_without_an_action_fails(capsys: pytest.CaptureFixture[str]) -> None:
+    assert main(["sources"]) == 1
+    assert "choose a sources action" in capsys.readouterr().err
+
+
+def test_evidence_without_show_is_reported(capsys: pytest.CaptureFixture[str]) -> None:
+    assert main(["evidence"]) == 1
+    assert "evidence action" in capsys.readouterr().err
+
+
+def test_retrieve_can_be_restricted_to_one_source(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    alpha = _write(tmp_path, "alpha.md", "# Alpha\n\nThe alpha fact about widget.\n")
+    beta = _write(tmp_path, "beta.md", "# Beta\n\nThe beta fact about widget.\n")
+    alpha_source = str(ingest_file(alpha).source.source_id)
+
+    assert (
+        main(["retrieve", "--query", "widget fact", "--file", str(alpha), "--file", str(beta)]) == 0
+    )
+    assert capsys.readouterr().out.count("   source:") == 2
+
+    assert (
+        main(
+            [
+                "retrieve",
+                "--query",
+                "widget fact",
+                "--file",
+                str(alpha),
+                "--file",
+                str(beta),
+                "--source",
+                alpha_source,
+            ]
+        )
+        == 0
+    )
+    restricted = capsys.readouterr().out
+    assert restricted.count("   source:") == 1
+    assert "alpha.md" in restricted
+
+
+def test_retrieve_refuses_a_source_that_is_not_among_the_files(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    document = _write(tmp_path, "a.md", "# One\n\nAlpha.\n")
+
+    assert (
+        main(
+            [
+                "retrieve",
+                "--query",
+                "alpha",
+                "--file",
+                str(document),
+                "--source",
+                "src_0000000000000000",
+            ]
+        )
+        == 1
+    )
+    err = capsys.readouterr().err
+    assert "among the ingested documents" in err
+    assert "Traceback" not in err
+
+
+# ---------------------------------------------------------------------------
+# adversarial source content stays inert on the terminal
+# ---------------------------------------------------------------------------
+
+
+def test_a_hostile_source_body_is_rendered_inert(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    # A document that embeds an ESC control sequence and a bidirectional override must not
+    # reach the terminal raw; the display paths make those bytes inert while preserving the
+    # substance of the text (the words are still shown).
+    document = _write(tmp_path, "hostile.md", "# Hostile\n\n" + HOSTILE_BODY)
+    chunk_id = str(ingest_file(document).chunks[0].chunk_id)
+
+    assert main(["evidence", "show", chunk_id, "--file", str(document)]) == 0
+
+    out = capsys.readouterr().out
+    assert "\x1b" not in out
+    assert "\u202e" not in out
+    assert "\\x1b" in out and "\\u202e" in out  # visible escape markers, not silent drops
+    assert "ignore" in out and "hidden text" in out
+
+
+def test_retrieval_of_a_hostile_document_does_not_emit_control_bytes(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    document = _write(tmp_path, "hostile.md", "# Hostile\n\n" + HOSTILE_BODY)
+
+    assert main(["retrieve", "--query", "ignore everything", "--file", str(document)]) == 0
+
+    out = capsys.readouterr().out
+    assert "\x1b" not in out
+    assert "\u202e" not in out
+    assert "\\x1b[2J" in out
+
+
+def test_json_output_keeps_the_exact_bytes_a_display_would_escape(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    # The sanitiser is a display boundary only: machine-readable JSON preserves the raw
+    # chunk text so a consumer can still see exactly what was stored.
+    document = _write(tmp_path, "hostile.md", "# Hostile\n\n" + HOSTILE_BODY)
+    record = ingest_file(document)
+    chunk_id = str(record.chunks[0].chunk_id)
+
+    assert main(["evidence", "show", chunk_id, "--file", str(document), "--json"]) == 0
+
+    payload = json.loads(capsys.readouterr().out)
+    assert "\x1b" in payload["text"]
+    assert str(ChunkId.parse(payload["chunk_id"])) == chunk_id

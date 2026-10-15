@@ -117,6 +117,38 @@ present is a no-op — identifiers are content-derived, so duplicate documents s
 not grow the corpus. Enumeration is deterministic and independent of insertion order:
 sources by identifier, chunks by (source identifier, position).
 
+### Corpus lifecycle and CLI inspection
+
+**Implemented (in-memory, per invocation).** The corpus is rebuilt in memory for each
+run from the documents a caller explicitly supplies; there is **no durable source index**
+and no second store competing with the answer store. That is a deliberate boundary, not a
+gap papered over: a database with no real consumer would be maintained against a guess
+about what needs storing. Adding a source is idempotent, and because identity is content-
+derived, re-ingesting the same bytes cannot fork a duplicate, while a content change yields
+a *new* identifier rather than silently redefining an old one — so a replaced document's stale
+chunks are never searchable under the old source. Removal and replacement across process
+restarts are therefore not a user-facing need of the current architecture, and the CLI does
+not pretend to offer them.
+
+What the current model *does* support honestly is inspection and source-scoped retrieval,
+exposed through commands that call the same `Corpus`, `ingest_file` and `RetrievalService`
+apis the library exposes and add no behaviour of their own:
+
+- `chakaso sources list --file …` — inventory the sources built from the given documents,
+  their kind, canonical reference and chunk count; `--json` for a machine-readable view.
+- `chakaso sources show <src_…> --file … [--text]` — inspect one source and the chunks
+  ingested from it (bodies only with `--text`).
+- `chakaso evidence show <chk_…> --file …` — inspect one chunk and its source.
+- `chakaso retrieve … --source <src_…>` — restrict a query to named sources.
+
+Identifiers are validated before lookup (`SourceId`/`ChunkId`) and never normalised into a
+different object; an unknown-but-valid identifier is a clear error, not a silent empty result.
+Text drawn from a document is untrusted: the human-readable output renders it through
+`chakaso.core.safe_for_terminal` (see *Security: retrieved content is untrusted* below) so a
+hostile file cannot emit terminal-control sequences, while `--json` keeps the exact bytes for a
+consumer. Each command is explicit that a source appears only while its document is passed with
+`--file`.
+
 ## Lexical retrieval
 
 **Implemented (lexical only).** `chakaso.retrieval.build_lexical_index` builds an
@@ -327,6 +359,9 @@ evidence textually and structurally.
 | Citation resolution, including rejection of unknown identifiers | Implemented |
 | Local ingestion of explicit text and Markdown documents | Implemented |
 | In-memory corpus (membership, enumeration, provenance guard) | Implemented |
+| Source and evidence inspection from the CLI (in-memory, per invocation; no durable index) | Implemented (`chakaso sources list|show`, `chakaso evidence show`) |
+| Source-scoped retrieval from the CLI (`retrieve --source`, identifiers validated before lookup) | Implemented |
+| Durable source registry / cross-process source removal-replacement | Not justified — the corpus stays in-memory until a real consumer exists |
 | Fetch policy and fetcher (opt-in, bounded; literal-address SSRF screen) | Implemented |
 | HTML text extraction and web ingestion (narrow reader, not a browser) | Implemented |
 | In-memory acquisition cache (opt-in, `CachingFetcher`) | Implemented |

@@ -10,6 +10,32 @@ capability is implemented or still planned.
 
 ## Unreleased
 
+### 2026-10-15 — Source and evidence inspection from the CLI, and source-scoped retrieval
+
+**Added**
+
+- `chakaso sources list|show` and `chakaso evidence show` — inventory and inspect the in-memory
+  corpus built from the documents passed with `--file`: source identities with kind, canonical
+  reference and chunk count; one source and the chunks ingested from it (`sources show --text`
+  prints the bodies); and a single chunk with its source. Each has a valid `--json` view, useful
+  exit codes, and is covered by tests. They call the existing `Corpus`, `ingest_file` and
+  `SourceRecord`/`EvidenceChunk` APIs and add no behaviour of their own.
+- `chakaso retrieve … --source <src_…>` (repeatable) restricts a query to named sources through the
+  retrieval service's existing `source_ids` filter. Identifiers are validated before lookup
+  (`SourceId`/`ChunkId`); an unknown-but-valid identifier is a clear error rather than a silent
+  empty result, and it is never normalised into a different object.
+
+**Notes**
+
+- This is the honest completion of the evidence-usability surface (P18): the corpus stays in-memory
+  and is rebuilt per invocation, and every command states that **no durable source index exists**
+  rather than pretending otherwise. A durable source registry, and cross-process source
+  removal/replacement, are deliberately **not** added — there is no consumer for them under the
+  current architecture, and inventing one would violate the no-empty-scaffolding rule. Human-
+  readable output renders untrusted document text inert (`chakaso.core.safe_for_terminal`); `--json`
+  keeps the exact bytes. Adversarial tests prove a hostile document's control characters reach a
+  terminal as visible escapes, not as live sequences, while the structured data is unchanged.
+
 ### 2026-10-15 — Untrusted text is made inert before it reaches a terminal
 
 **Added**
