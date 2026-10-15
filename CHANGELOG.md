@@ -10,6 +10,22 @@ capability is implemented or still planned.
 
 ## Unreleased
 
+### 2026-10-15 — Model-feasibility assessment recorded (research, no experiment run)
+
+**Research**
+
+- `docs/research/model-feasibility.md` inspects the available machine directly (Python 3.13.5, 18 logical
+  CPUs, ~15.4 GB RAM with ~1.4 GB free at inspection, Intel Arc — no CUDA, no ML library installed) and
+  assesses two directions for putting a real model behind the `LanguageModel` boundary: a runnable small
+  pretrained model (Option A) versus a minimal from-scratch training experiment (Option B). It separates
+  verified observations from explicitly labelled estimates and assumptions, and **runs no experiment, adds
+  no dependency and reports no measured result**.
+- Recommendation (weak, pending a dependency ADR): defer Option A until a real grounded-answer evaluation
+  exists; the smallest honest next step is a scoped, out-of-CI from-scratch experiment that produces the
+  project's first genuinely measured number, gated behind a documented decision to admit an *optional*
+  numerical dependency. Logged in `docs/research/research-log.md` and it narrows (does not answer) the
+  "which local model" open question. K-001 stands.
+
 ### 2026-10-15 — A follow-up that names a stored answer can trigger an explicit reassessment (P21)
 
 **Added**

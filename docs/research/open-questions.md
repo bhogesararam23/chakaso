@@ -127,6 +127,14 @@ whether the shell needs to be *useful* or merely *present*. A model chosen for
 usefulness and a model chosen for iteration speed are different models, and picking
 one to serve both would serve neither.
 
+**Narrowed, not answered, by** [`model-feasibility.md`](model-feasibility.md): under the
+inspected constraints (no CUDA, ~15.4 GB RAM with little free, no ML dependency in a
+dependency-free environment) the binding gate is not architecture but the decision to admit
+an *optional* numerical dependency (its own ADR) and a memory budget. The assessment defers the
+pretrained adapter (Option A) until a real grounded-answer evaluation exists, and points to a
+scoped from-scratch training experiment (Option B) as the smallest honest next step. The specific
+model and framework remain open.
+
 ---
 
 ## Not blocking: design

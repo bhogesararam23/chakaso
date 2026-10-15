@@ -232,3 +232,33 @@ to count as progress on this fixture, it must exceed a −0.071 MRR delta, not m
 
 **Conclusion.** The strategy-comparison instrument works and reports honestly, including a regression;
 no strategy is claimed superior. K-001 stands.
+
+---
+
+## 2026-10-15 — Reassessment becomes reachable, and a model-feasibility check
+
+**Observation.** P21 closed the last deterministic gap on the correction side without inventing an
+autonomous one: a follow-up that *explicitly names* a stored answer (a valid `ans_…` reference) now
+composes into a reassessment through the runtime, while the intent trigger stays separate from execution
+and an ambiguous or unknown target is refused rather than guessed (ADR-0029). No revised prose is
+produced — there is still no model — and the original answer and its provenance are never rewritten.
+
+**Observation.** The machine available for model work was inspected directly, and its binding constraints
+are environmental, not architectural: **no CUDA GPU (Intel Arc only), ~15.4 GB total RAM with ~1.4 GB
+free at inspection, and no ML dependency installed in a deliberately dependency-free environment.** This
+is an observation about one host at one moment, not a measurement of any model.
+
+**Interpretation.** Both a runnable pretrained model and a from-scratch training experiment fit the
+`LanguageModel` boundary cleanly; the gate on either is admitting a numerical dependency as an *optional,
+non-default* extra (its own ADR) — not a change to any interface. Under the observed constraints a
+1–3B pretrained run is memory-bound and its external weights strain reproducibility and licence,
+whereas a tiny from-scratch run is self-owned, memory-comfortable, and would produce the project's first
+*genuine measured number* (a held-out curve) — the thing K-001 says is still absent.
+
+**Limitation.** No experiment was run and no model was trained, downloaded or installed for this note; it
+contains no measured result. Every non-inspected figure there is labelled an estimate or an assumption.
+
+**Conclusion (weak, pending the dependency ADR).** Defer the pretrained-model adapter until a real
+grounded-answer evaluation exists to consume it; the smallest honest next step is a scoped, out-of-CI
+from-scratch training experiment recording a held-out metric, gated behind a dependency-feasibility ADR.
+The full analysis is in [`model-feasibility.md`](model-feasibility.md). K-001 stands.
