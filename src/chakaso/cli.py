@@ -39,7 +39,13 @@ from dataclasses import replace
 from pathlib import Path
 
 from chakaso import __version__
-from chakaso.answers import AnswerError, AnswerId, AnswerRecord, SQLiteAnswerStore
+from chakaso.answers import (
+    AnswerError,
+    AnswerId,
+    AnswerRecord,
+    EvaluationProvenance,
+    SQLiteAnswerStore,
+)
 from chakaso.app import (
     Application,
     ApplicationError,
@@ -1485,6 +1491,80 @@ def _run_answers(args: argparse.Namespace) -> int:
         return 1
 
 
+def _provenance_dict(provenance: EvaluationProvenance | None) -> dict[str, object] | None:
+    """A machine-readable view of a turn's historical evaluation, or ``None`` if not recorded.
+
+    It is explicitly labelled ``recorded_as: historical`` so a consumer cannot mistake it for a
+    live recomputation: these are the outcomes the turn itself reached, frozen at write time. The
+    counts are kept in separate dimensions (citation structure, grounding, text-reference
+    resolution) and never collapsed into one score.
+    """
+    if provenance is None:
+        return None
+    return {
+        "recorded_as": "historical",
+        "grounding_evaluator": provenance.grounding_evaluator,
+        "grounding_evaluator_version": provenance.grounding_evaluator_version,
+        "claims": provenance.claims,
+        "citations": {
+            "made": provenance.citations_made,
+            "valid": provenance.citations_valid,
+            "unknown": provenance.citations_unknown,
+            "irrelevant": provenance.citations_irrelevant,
+            "required_claims": provenance.required_claims,
+            "uncited_claims": provenance.uncited_claims,
+        },
+        "grounding": {
+            "supported": [str(cid) for cid in provenance.supported_claims],
+            "unsupported": [str(cid) for cid in provenance.unsupported_claims],
+            "contradicted": [str(cid) for cid in provenance.contradicted_claims],
+            "uncertain": [str(cid) for cid in provenance.uncertain_claims],
+            "not_evaluated": [str(cid) for cid in provenance.not_evaluated_claims],
+        },
+        "evidence_coverage": provenance.evidence_coverage,
+        "is_grounded": provenance.is_grounded,
+        "unresolved_reference_ids": list(provenance.unresolved_reference_ids),
+        "malformed_reference_ids": list(provenance.malformed_reference_ids),
+    }
+
+
+def _format_provenance(provenance: EvaluationProvenance | None) -> list[str]:
+    """Render the historical evaluation for a terminal, labelling it as recorded, not recomputed."""
+    if provenance is None:
+        return ["evaluation (historical): not recorded — this answer predates provenance capture"]
+
+    evaluator = provenance.grounding_evaluator
+    if provenance.grounding_evaluator_version:
+        evaluator = f"{evaluator} v{provenance.grounding_evaluator_version}"
+    grounding = provenance
+    lines = [
+        "evaluation (recorded at the turn — historical, not recomputed on read):",
+        f"  evaluator: {safe_for_terminal(evaluator)}",
+        f"  claims: {provenance.claims}",
+        f"  citations: valid={provenance.citations_valid}/{provenance.citations_made} "
+        f"unknown={provenance.citations_unknown} irrelevant={provenance.citations_irrelevant} "
+        f"uncited={provenance.uncited_claims}/{provenance.required_claims} required",
+        (
+            f"  grounding: supported={len(grounding.supported_claims)} "
+            f"unsupported={len(grounding.unsupported_claims)} "
+            f"contradicted={len(grounding.contradicted_claims)} "
+            f"uncertain={len(grounding.uncertain_claims)} "
+            f"not_evaluated={len(grounding.not_evaluated_claims)}"
+        ),
+        f"  evidence_coverage (structural, not truth): {provenance.evidence_coverage:.3f}",
+        f"  grounded (every claim cited supplied evidence): {provenance.is_grounded}",
+    ]
+    if provenance.unresolved_reference_ids:
+        rendered = ", ".join(
+            safe_for_terminal(item) for item in provenance.unresolved_reference_ids
+        )
+        lines.append(f"  unresolved references (cited but not supplied): {rendered}")
+    if provenance.malformed_reference_ids:
+        rendered = ", ".join(safe_for_terminal(item) for item in provenance.malformed_reference_ids)
+        lines.append(f"  malformed references (bad identifier form): {rendered}")
+    return lines
+
+
 def _answer_brief(record: AnswerRecord) -> dict[str, object]:
     """A stable, machine-readable summary of one recorded answer (structure, not quality)."""
     return {
@@ -1499,6 +1579,7 @@ def _answer_brief(record: AnswerRecord) -> dict[str, object]:
         "cited_source_ids": [str(item) for item in record.cited_source_ids],
         "claim_count": record.claim_count,
         "correction_of": str(record.correction_of) if record.correction_of is not None else None,
+        "evaluation_provenance": _provenance_dict(record.evaluation_provenance),
     }
 
 
@@ -1588,7 +1669,8 @@ def _format_answer(record: AnswerRecord) -> str:
     lines.append(f"claims: {record.claim_count}")
     if record.correction_of is not None:
         lines.append(f"corrects: {record.correction_of}")
-    lines.append(f"text: {record.text}")
+    lines.extend(_format_provenance(record.evaluation_provenance))
+    lines.append(f"text: {safe_for_terminal(record.text)}")
     return "\n".join(lines)
 
 

@@ -19,8 +19,9 @@ from pathlib import Path
 import pytest
 
 from chakaso import __version__
-from chakaso.answers import SQLiteAnswerStore
-from chakaso.cli import _report_caveats, build_parser, main
+from chakaso.answers import EvaluationProvenance, GroundedClaim, SQLiteAnswerStore
+from chakaso.claims.model import Claim, ClaimStatus
+from chakaso.cli import _format_provenance, _report_caveats, build_parser, main
 from chakaso.config import load_config
 from chakaso.conversation import Conversation, ConversationManager
 from chakaso.core.identifiers import ChunkId
@@ -1226,3 +1227,102 @@ def test_json_output_keeps_the_exact_bytes_a_display_would_escape(
     payload = json.loads(capsys.readouterr().out)
     assert "\x1b" in payload["text"]
     assert str(ChunkId.parse(payload["chunk_id"])) == chunk_id
+
+
+# ---------------------------------------------------------------------------
+# answer inspection surfaces the historical provenance (P19)
+# ---------------------------------------------------------------------------
+
+
+def test_answers_show_reports_the_historical_evaluation_provenance(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    config, _db = _durable_chat(tmp_path)
+    capsys.readouterr()
+    with SQLiteAnswerStore(_db_of(config), journal_mode=None, initialize=False) as store:
+        answer_id = str(store.list()[0].answer_id)
+
+    assert main(["answers", "show", answer_id, "--config", str(config)]) == 0
+
+    out = capsys.readouterr().out
+    # The inspection distinguishes the recorded outcome from a recomputation, names the evaluator,
+    # and keeps the structural dimensions separate rather than showing one quality number.
+    assert "recorded at the turn — historical, not recomputed" in out
+    assert "evaluator: structural" in out
+    assert "evidence_coverage (structural, not truth)" in out
+
+
+def test_answers_show_json_includes_evaluation_provenance(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    config, _db = _durable_chat(tmp_path)
+    capsys.readouterr()
+    with SQLiteAnswerStore(_db_of(config), journal_mode=None, initialize=False) as store:
+        answer_id = str(store.list()[0].answer_id)
+
+    assert main(["answers", "show", answer_id, "--config", str(config), "--json"]) == 0
+
+    payload = json.loads(capsys.readouterr().out)
+    prov = payload["evaluation_provenance"]
+    assert prov["recorded_as"] == "historical"
+    assert prov["grounding_evaluator"].startswith("structural")
+    assert set(prov["grounding"]) == {
+        "supported",
+        "unsupported",
+        "contradicted",
+        "uncertain",
+        "not_evaluated",
+    }
+    assert set(prov["citations"]) == {
+        "made",
+        "valid",
+        "unknown",
+        "irrelevant",
+        "required_claims",
+        "uncited_claims",
+    }
+
+
+def test_answers_list_json_carries_the_provenance_per_record(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    config, _db = _durable_chat(tmp_path)
+    capsys.readouterr()
+
+    assert main(["answers", "list", "--config", str(config), "--json"]) == 0
+
+    payload = json.loads(capsys.readouterr().out)
+    assert payload[0]["evaluation_provenance"]["recorded_as"] == "historical"
+
+
+def test_persisted_provenance_is_rendered_inert_on_the_terminal() -> None:
+    # A regression for control characters inside newly persisted provenance: an unknown evaluator
+    # identity or a hostile answer text reaching the human-readable inspection must not emit live
+    # terminal-control sequences. The historical fact is preserved as a visible escape.
+    provenance = EvaluationProvenance(
+        claims=1,
+        citations_made=0,
+        citations_valid=0,
+        citations_unknown=0,
+        citations_irrelevant=0,
+        required_claims=0,
+        uncited_claims=0,
+        grounded_claims=(
+            GroundedClaim(Claim("ans_s", 0, "A fact.").claim_id, ClaimStatus.NOT_EVALUATED),
+        ),
+        grounding_evaluator="evil\x1b[2Jjudge",
+        grounding_evaluator_version="1\u202e0",
+        unresolved_reference_ids=(),
+        malformed_reference_ids=(),
+    )
+
+    rendered = "\n".join(_format_provenance(provenance))
+
+    assert "\x1b" not in rendered
+    assert "\u202e" not in rendered
+    assert "\\x1b[2Jjudge" in rendered
+
+
+def _db_of(config: Path) -> Path:
+    """Derive the durable store path from a temp config file written by _durable_chat."""
+    return config.parent / "answers.db"

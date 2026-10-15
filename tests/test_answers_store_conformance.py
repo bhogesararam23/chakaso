@@ -11,6 +11,7 @@ already relied on. Running the invariant suite over each backend (rather than on
 from __future__ import annotations
 
 from collections.abc import Iterator
+from dataclasses import replace
 from datetime import UTC, datetime
 from pathlib import Path
 
@@ -21,12 +22,34 @@ from chakaso.answers import (
     AnswerRecord,
     AnswerStore,
     AnswerStoreError,
+    EvaluationProvenance,
+    GroundedClaim,
     InMemoryAnswerStore,
     SQLiteAnswerStore,
     new_answer_id,
 )
+from chakaso.claims.model import Claim, ClaimStatus
 
 NOW = datetime(2026, 10, 10, tzinfo=UTC)
+
+
+def _provenance() -> EvaluationProvenance:
+    return EvaluationProvenance(
+        claims=1,
+        citations_made=1,
+        citations_valid=1,
+        citations_unknown=0,
+        citations_irrelevant=0,
+        required_claims=1,
+        uncited_claims=0,
+        grounded_claims=(
+            GroundedClaim(Claim("ans_c", 0, "A fact.").claim_id, ClaimStatus.SUPPORTED),
+        ),
+        grounding_evaluator="structural-0.1",
+        grounding_evaluator_version="",
+        unresolved_reference_ids=("chk_" + "0" * 16,),
+        malformed_reference_ids=(),
+    )
 
 
 def make(*, conversation_id: str = "conv_1", correction_of: AnswerId | None = None) -> AnswerRecord:
@@ -56,6 +79,24 @@ def store(request: pytest.FixtureRequest, tmp_path: Path) -> Iterator[AnswerStor
 
 def test_every_backend_satisfies_the_protocol(store: AnswerStore) -> None:
     assert isinstance(store, AnswerStore)
+
+
+def test_evaluation_provenance_survives_save_and_read_identically_on_both_backends(
+    store: AnswerStore,
+) -> None:
+    # The historical snapshot is persisted substance, so both backends must recover it byte-equal
+    # — including the reference ids and per-claim statuses — or the two would diverge on audit.
+    record = replace(make(), evaluation_provenance=_provenance())
+
+    store.save(record)
+
+    loaded = store.get(record.answer_id)
+    assert loaded is not None
+    assert loaded.evaluation_provenance == record.evaluation_provenance
+    assert loaded.evaluation_provenance is not None
+    # The live evaluation remains unpersisted on both, so a reopen never freezes a recomputation.
+    assert loaded.evaluation is None
+    assert loaded.evaluation_provenance.unresolved_reference_ids == ("chk_" + "0" * 16,)
 
 
 def test_save_and_get_roundtrip_and_missing_is_none(store: AnswerStore) -> None:

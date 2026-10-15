@@ -28,6 +28,7 @@ from chakaso.answers.errors import (
     UnknownAnswerError,
 )
 from chakaso.answers.identity import ANSWER_ID_PREFIX, AnswerId, new_answer_id
+from chakaso.answers.provenance import EvaluationProvenance, GroundedClaim
 from chakaso.answers.record import AnswerRecord
 from chakaso.answers.sqlite import SQLiteAnswerStore
 from chakaso.answers.store import AnswerStore, InMemoryAnswerStore
@@ -40,6 +41,8 @@ __all__ = [
     "AnswerSerializationError",
     "AnswerStore",
     "AnswerStoreError",
+    "EvaluationProvenance",
+    "GroundedClaim",
     "InMemoryAnswerStore",
     "InvalidAnswerError",
     "SQLiteAnswerStore",

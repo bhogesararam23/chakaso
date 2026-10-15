@@ -3,7 +3,7 @@
 Real problems with the current state, including the ones that are only
 inconvenient. An empty file here would mean nobody has looked.
 
-Last reviewed: 2026-10-10.
+Last reviewed: 2026-10-15.
 
 ## Open
 
@@ -81,23 +81,31 @@ opt-in.
 **What would close it:** IP-pinned resolution in the transport, plus a politeness layer
 (robots, per-host spacing) before the fetcher is used against the live web.
 
-### K-006 — Nothing persists how often a model invents an evidence reference
+### K-006 — The invented-reference condition is persisted; the rate is not yet aggregated
 
-**Impact:** Medium. It is a gap in one of the project's own headline measurements.
+**Impact:** Lower than it was, and it is now a reporting gap rather than a data-loss gap.
 
-The conversation manager detects a reference to evidence that was not supplied,
-never resolves it to a source, and reports it in `Reply.citation_resolution`
-([ADR-0009](../decisions/ADR-0009-unresolved-references-are-recorded.md)). Nothing
-writes that down. The reply is the only place the condition exists, so the rate at
-which it happens — which `docs/evaluation.md` makes a headline metric — cannot be
-computed from anything the repository keeps.
+The conversation manager detects a reference to evidence that was not supplied, never resolves
+it to a source, and reports it in `Reply.citation_resolution`
+([ADR-0009](../decisions/ADR-0009-unresolved-references-are-recorded.md)). Since
+[ADR-0028](../decisions/ADR-0028-answer-evaluation-provenance.md) every recorded answer also
+persists those unresolved and malformed references in its `evaluation_provenance`, so the
+condition is no longer something that exists only in a reply that is already gone — it is a
+durable fact on each answer.
 
-**Why a field on conversation state is not the fix.** A durable count of unresolved
-references is evaluation data, not conversational data. Adding a field that nothing
-reads would put the shape of an unbuilt component into a type that other components
-already depend on, which is the retrofit the project has been avoiding.
+**What still does not exist.** There is no aggregation step that turns the per-answer
+`evaluation_provenance` across a durable history into the *rate* `docs/evaluation.md` names as a
+headline measurement, and the facts are only persisted when a caller selects the durable store
+(the default in-memory backend keeps nothing across processes). So the number is computable from
+what the repository now keeps, but nothing computes it yet.
 
-**What would close it:** the evaluation layer, item 6 of the current plan.
+**Why an aggregation is not written speculatively.** A rate over a handful of development-double
+replies — which do not invent references, because the double emits fixed text — would be a
+measurement of nothing. The honest next step is to compute it over a real workload or a model
+that actually generates references, which is K-001.
+
+**What would close it:** a report over durable answer history that counts `has_unresolved_references`
+against total answers, run against a real generating model.
 
 ## Resolved
 

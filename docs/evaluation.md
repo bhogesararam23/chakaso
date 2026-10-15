@@ -69,6 +69,17 @@ in `chakaso.evaluation`):
 - `contradicted` and `uncertain` appear only when a caller supplies a judgement, because
   noticing disagreement needs an understanding this code does not have.
 
+**The turn's structural outcome is now a durable fact, not just a live view.** Alongside the
+recomputable `AnswerEvaluation`, every recorded answer persists an immutable
+`evaluation_provenance` snapshot (ADR-0028): the citation-structure counts, the per-claim
+structural-grounding statuses, the evaluator name and version that decided them, and the evidence
+references in the answer text that did not resolve. This is history, not a re-judgement: a later
+evaluator recomputes the live view without rewriting what the original turn recorded, and a
+reassessment is a separate event. Because the unresolved/malformed references are now persisted on
+each answer, the **rate at which a model invents an evidence reference** — the measurement K-006
+said nothing kept — becomes computable from the durable history once a durable store is selected
+(ADR-0009: the reference is recorded, not fatal).
+
 No answer-quality result is reported from these: they evaluate the structure over evidence a
 caller supplies, and the model that would produce real answers does not exist. There is no
 single merged "quality score" — citation precision, evidence coverage and grounding status are
@@ -219,6 +230,7 @@ was not measured, it is not written down.
 | Semantic-evaluation dataset & scorer | Implemented (`chakaso.evaluation.semantic_benchmark`; `chakaso benchmark semantic`) — a development instrument measuring the harness over synthetic labels; the fixture's perfect score is structure-replay, not semantic capability |
 | Answer evaluation (separate dimensions, `evidence_coverage`, `is_grounded`) | Implemented (`chakaso.evaluation.evaluate_answer`) |
 | Answer record and append-only store | Implemented (in-memory **and** a durable SQLite backend, `chakaso.answers`, ADR-0017/0018/0021); the durable store is proven to survive a process restart |
+| Persisted historical evaluation provenance (citation/grounding/reference outcomes + evaluator identity the turn reached; live view stays recomputed) | Implemented (`chakaso.answers.provenance`, ADR-0028); persisted inside the answer document, backward-compatible decode, corrupt provenance rejected, dimensions kept separate, structural `is_grounded` never a truth verdict |
 | Experiment records & regression baseline | Implemented (`chakaso.experiments`, ADR-0020); reproducible result fingerprints, deterministic compatible-version comparison; no model-quality claim |
 | Retrieval-strategy comparison (lexical vs dense vs hybrid over the fixtures) | Implemented (`chakaso.experiments.compare_retrieval_strategies`); measured deltas only, labelled development — dense/hybrid run over the non-semantic fixture embedding (E-001 showed no gain, a small MRR regression) |
 | Red-team suite | Planned |

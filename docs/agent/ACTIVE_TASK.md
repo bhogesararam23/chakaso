@@ -1,51 +1,49 @@
 # Active task
 
-## Current unit: P19 — answer-provenance enrichment
+## Current unit: P20 — provenance-reference integrity in answer inspection
 
-**Goal.** Make a persisted answer self-explanatory about *how* it was produced, without copying
-large evidence bodies or persisting anything volatile. Inspect `AnswerRecord` first; add only fields
-that genuinely explain a turn and are stable across restart — the citation-validation outcome and the
-structural-grounding outcome already computed during a turn are the leading candidates. A provenance
-reference must stay meaningful after a process restart; where it points at data that is no longer
-available (an in-memory corpus, a recomputed evaluation), the record must say so rather than imply
-the evidence can still be reconstructed. Extend the store/serialization codec and its conformance
-tests, keep the in-memory and SQLite backends equivalent, and update the CLI `answers show` view.
+**Goal.** An answer's `evaluation_provenance` and its `evidence_source_ids` / cited-source
+references name evidence that lived in the **ephemeral in-memory corpus**, not in the durable
+store. Reading a stored answer after a restart must make that distinction explicit: the record can
+show *which* evidence it relied on and *how* it judged it, but it must not imply the underlying
+text can still be re-read from anywhere the durable store holds. Extend answer inspection to label
+references as "recorded; the cited content is not retained durably" where that is true, and keep
+`--json` machine-readable and the human view terminal-safe. Prefer stating the limitation precisely
+over fabricating an evidence snapshot; do not copy evidence bodies into the answer store without a
+demonstrated need (weighed against privacy and size).
 
-**Why this is next.** P18 made the evidence *input* side inspectable from the CLI and hardened the
-display surface against hostile content. The matching gap on the *output* side is that a stored
-answer records the planner decision and retrieval strategy (P16) but not the validation/grounding
-verdicts a turn actually reached, so "why was this answer what it was" is only partly auditable from
-the durable record alone.
+**Why this is next.** P19 made the turn's *evaluation outcome* durable and auditable. The honest
+boundary now is that provenance *references* evidence that is not itself durable. Making that
+boundary visible — rather than letting `answers show` imply the evidence is one click away — is a
+correctness-and-honesty gap, not new surface area.
 
-## What the previous unit completed (P18 — evidence and source usability, with adversarial security)
+## What the previous unit completed (P19 — answer-provenance enrichment)
 
-Implemented, tested, documented and green on Python 3.11–3.13.
+Implemented, tested, documented and green on Python 3.11–3.13 (ADR-0028).
 
-- [x] A dependency-free terminal-safety primitive, `chakaso.core.safe_for_terminal`, that renders
-      control characters (ESC, C0/C1, DEL) and the bidirectional embedding/isolate controls in
-      untrusted text as *visible* escapes; adopted on the CLI's human-readable paths, with `--json`
-      left to the serializer.
-- [x] Source and evidence inspection from the CLI over the in-memory corpus — `chakaso sources
-      list|show` and `chakaso evidence show` — calling the existing `Corpus`/`ingest_file`/record
-      APIs, with valid `--json`, useful exit codes, and honest statements that **no durable source
-      index exists** (a source appears only while its `--file` document is passed).
-- [x] Source-scoped retrieval, `chakaso retrieve … --source <src_…>`, via the retrieval service's
-      existing `source_ids` filter; identifiers are validated before lookup and an unknown-but-valid
-      one is refused, never silently filtered to an empty result.
-- [x] Adversarial regression tests: a document embedding an ESC sequence and a bidirectional override
-      reaches the terminal as inert visible escapes while its substance is preserved, and `--json`
-      keeps the exact bytes — proving the application's structural separation, not model robustness.
+- [x] A typed, immutable, serializable `EvaluationProvenance` snapshot (`chakaso.answers.provenance`)
+      persisting the citation-structure counts, the per-claim structural-grounding statuses, the
+      evaluator name+version, and the unresolved/malformed answer-text references the turn reached.
+- [x] Persisted on `AnswerRecord` as `evaluation_provenance` inside the JSON document — no SQLite
+      schema change, backward-compatible decode to `None`, strict rejection of malformed provenance.
+- [x] The live `AnswerEvaluation` stays recomputed and unpersisted (ADR-0021 preserved): a historical
+      fact and a recomputable view are now two distinct fields, and reassessment never rewrites the
+      original outcome (proven by an end-to-end restart + reassessment-distinctness test).
+- [x] `chakaso answers show|list` report the snapshot, labelled *recorded at the turn, not recomputed*,
+      dimensions kept separate, `is_grounded`/`evidence_coverage` stated as structural only; `--json`
+      exact, human view terminal-safe against control characters in persisted provenance.
+- [x] Both backends preserve equivalent record semantics (conformance + cross-process restart).
 
-**What P18 did not do (and will not pretend to):** it did not add a durable source registry, or
-cross-process source removal/replacement. There is no consumer for them under the current in-memory
-architecture, and inventing a second store would violate the no-empty-scaffolding rule. It added no
-real model and no real semantic judge; the retrieved-content-stays-data property remains structural.
+**What P19 did not do (and will not pretend to):** it computes no aggregate invented-reference rate
+(K-006 advanced, not closed — there is no generating model to invent references and no real workload,
+K-001); it stores no evidence bodies; it added no evaluator, model or dependency; the double gains no
+fabricated capability (the default record names the honest `structural-0.1`).
 
 ## What this unit is not
 
-- Not a durable source index or a second database — the corpus stays in-memory unless a real need is
-  shown; do not invent persistence to look complete.
-- Not a web-frontend, crawler, or a URL chooser; the fetcher stays opt-in and off every default path.
+- Not an immutable evidence snapshot or a second store — references name evidence the durable store
+  does not hold; say so rather than duplicating content without a demonstrated need.
+- Not an aggregate research metric — the invented-reference *rate* needs a real generating model.
 - Not a real semantic evaluator or model (P17's boundary stands).
 
 ## Ordering after this unit
@@ -58,11 +56,12 @@ real model and no real semantic judge; the retrieved-content-stays-data property
 ## Known gaps that bound this unit
 
 - K-001: offline and synthetic; a real workload has still not been run.
+- K-006: the invented-reference condition is persisted per answer, but nothing aggregates it into a
+  rate, and it is only durable when the SQLite backend is selected.
 - K-008: the fetcher's destination screen is partial; any acquisition work must confirm no default path
   reaches the network and record the limitation rather than fix it silently.
 
 ## What previous units knowingly left undone
 
 - No automatic, triggered correction; the correction path is still an explicit application operation.
-- Nothing records across turns how often a model invents an evidence reference (K-006); the planner
-  uses an anaphoric-cue heuristic, not a discourse resolver.
+- The planner uses an anaphoric-cue heuristic, not a discourse resolver.

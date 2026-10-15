@@ -43,7 +43,7 @@ from collections.abc import Callable, Mapping
 from dataclasses import dataclass
 from datetime import UTC, datetime
 
-from chakaso.answers import AnswerRecord, AnswerStore, new_answer_id
+from chakaso.answers import AnswerRecord, AnswerStore, EvaluationProvenance, new_answer_id
 from chakaso.claims.extract import ClaimExtractor
 from chakaso.conversation.errors import (
     ConversationManagerError,
@@ -295,6 +295,11 @@ class ConversationManager:
         provenance: dict[str, str] = {"model_display_name": metadata.display_name}
         if extra_provenance:
             provenance.update(extra_provenance)
+        # The live evaluation is a recomputable view (never persisted); the provenance snapshot
+        # freezes what *this* turn's evaluation decided, against the evidence supplied now, so the
+        # outcome survives a restart and stays distinguishable from a later recomputation or a
+        # reassessment (ADR-0028).
+        evaluation = evaluate_answer(str(answer_id), claims, supplied)
         return AnswerRecord(
             answer_id=answer_id,
             conversation_id=conversation.conversation_id,
@@ -306,7 +311,8 @@ class ConversationManager:
             evidence_source_ids=tuple(supplied.sources),
             cited_source_ids=resolution.cited_source_ids,
             retrieval_metadata=supplied.retrieval_config,
-            evaluation=evaluate_answer(str(answer_id), claims, supplied),
+            evaluation=evaluation,
+            evaluation_provenance=EvaluationProvenance.from_turn(evaluation, resolution),
             turn_index=len(conversation.turns) - 1,
             provenance=provenance,
         )

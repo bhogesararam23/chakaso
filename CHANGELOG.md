@@ -10,6 +10,47 @@ capability is implemented or still planned.
 
 ## Unreleased
 
+### 2026-10-15 — A persisted answer records the evaluation its turn actually reached
+
+**Added**
+
+- `chakaso.answers.provenance.EvaluationProvenance`: a typed, immutable, serializable snapshot of
+  the evaluation a completed turn produced — the citation-structure counts (valid / unknown /
+  irrelevant / uncited-of-required), the per-claim **structural-grounding** status the turn assigned
+  and which claims were left not-evaluated, the **evaluator name and version** that decided them,
+  and the evidence **references in the answer text that did not resolve** (unresolved and malformed).
+  It is persisted on every `AnswerRecord` as `evaluation_provenance`, and captured by the
+  conversation manager from the evaluation and citation resolution the turn already computed — so no
+  new evaluator runs and the development double gains no fabricated capability (the evaluator a
+  default record names is the honest `structural-0.1`).
+- `chakaso answers show|list` now report that historical snapshot, explicitly labelled *recorded at
+  the turn — not recomputed on read*, with the dimensions kept separate and `is_grounded` /
+  `evidence_coverage` stated as structural, never a truth verdict. `--json` carries the exact stored
+  values; the human-readable view renders any untrusted string (an evaluator name, an answer text,
+  a reference id) terminal-safe.
+
+**Changed**
+
+- The answer codec persists the new field **inside the JSON document**, so the SQLite table and
+  `PRAGMA user_version` are unchanged and no schema migration is required. A document written before
+  this feature simply lacks the key and decodes to `None` (an honest "no provenance was captured",
+  never an empty snapshot that reads as "evaluated and found lacking"); a present-but-malformed
+  snapshot is rejected as corruption, consistent with the strict-read storage rule.
+
+**Notes**
+
+- The **live** `AnswerEvaluation` stays recomputed and unpersisted, exactly as ADR-0021 required —
+  ADR-0028 preserves that principle rather than reversing it. A historical fact (what the turn
+  decided, by whom) and a recomputable view (what a current evaluator decides now) are now two
+  distinct fields, so reassessment and a later evaluator never silently rewrite the original
+  outcome; a reassessment is a separate append-only event. Recorded in
+  [ADR-0028](docs/decisions/ADR-0028-answer-evaluation-provenance.md).
+- This advances **K-006**: the invented-reference condition is now persisted per answer, so the
+  rate becomes computable from durable history — though nothing aggregates it yet, and only when the
+  durable store is selected. No measured rate is reported, because there is no generating model to
+  invent references (the double emits fixed text). Both backends preserve equivalent record
+  semantics, proven by conformance and cross-process restart tests.
+
 ### 2026-10-15 — Source and evidence inspection from the CLI, and source-scoped retrieval
 
 **Added**

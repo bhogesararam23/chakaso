@@ -12,6 +12,14 @@ earlier answer, if any, it supersedes.
 Immutable, append-only, and validated on construction. A record that cites evidence it was not
 given, or that claims to correct itself, cannot be built: those are exactly the impossible states
 that would later make the correction history untrustworthy.
+
+Two evaluation-shaped fields coexist and mean different things (ADR-0028). ``evaluation`` is the
+*live* view — computed on demand by a present-day evaluator and deliberately never persisted
+(ADR-0021). ``evaluation_provenance`` is the *historical* snapshot — the citation, grounding and
+reference outcomes the turn itself reached, together with the evaluator that produced them — and it
+*is* persisted, so "what was decided then, by whom" survives the process even though the live view
+is a recomputation. Keeping them separate is the difference between a record that can be audited
+and one that silently rewrites its own history every time it is read.
 """
 
 from __future__ import annotations
@@ -23,6 +31,7 @@ from types import MappingProxyType
 
 from chakaso.answers.errors import InvalidAnswerError
 from chakaso.answers.identity import AnswerId
+from chakaso.answers.provenance import EvaluationProvenance
 from chakaso.claims.model import Claim
 from chakaso.core.identifiers import ChunkId, SourceId
 from chakaso.evaluation import AnswerEvaluation
@@ -61,6 +70,7 @@ class AnswerRecord:
     cited_chunk_ids: tuple[ChunkId, ...] = ()
     retrieval_metadata: Mapping[str, str] = field(default_factory=lambda: _EMPTY_METADATA)
     evaluation: AnswerEvaluation | None = None
+    evaluation_provenance: EvaluationProvenance | None = None
     turn_index: int | None = None
     correction_of: AnswerId | None = None
     provenance: Mapping[str, str] = field(default_factory=lambda: _EMPTY_METADATA)

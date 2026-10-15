@@ -15,6 +15,7 @@ from datetime import UTC, datetime
 import pytest
 
 from chakaso.answers import AnswerId, AnswerRecord, AnswerSerializationError, new_answer_id
+from chakaso.answers.provenance import EvaluationProvenance, GroundedClaim
 from chakaso.answers.serialize import decode_document, decode_json, encode_document, encode_json
 from chakaso.claims.model import Claim, ClaimStatus
 from chakaso.evaluation import evaluate_answer
@@ -118,3 +119,92 @@ def test_a_boolean_is_not_mistaken_for_a_turn_index() -> None:
     loaded = decode_document(document)
 
     assert loaded.turn_index is None
+
+
+# ---------------------------------------------------------------------------
+# evaluation provenance (ADR-0028)
+# ---------------------------------------------------------------------------
+
+
+def _provenance() -> EvaluationProvenance:
+    return EvaluationProvenance(
+        claims=2,
+        citations_made=2,
+        citations_valid=1,
+        citations_unknown=1,
+        citations_irrelevant=0,
+        required_claims=1,
+        uncited_claims=0,
+        grounded_claims=(
+            GroundedClaim(Claim("ans_p", 0, "Alpha is a fact.").claim_id, ClaimStatus.SUPPORTED),
+            GroundedClaim(Claim("ans_p", 1, "Beta.").claim_id, ClaimStatus.UNSUPPORTED),
+        ),
+        grounding_evaluator="structural-0.1",
+        grounding_evaluator_version="",
+        unresolved_reference_ids=("chk_" + "0" * 16,),
+        malformed_reference_ids=("src_0123",),
+    )
+
+
+def test_evaluation_provenance_round_trips_exactly() -> None:
+    record = replace(_record(), evaluation_provenance=_provenance())
+
+    loaded = decode_json(encode_json(record))
+
+    assert loaded.evaluation_provenance == record.evaluation_provenance
+    assert loaded == record
+
+
+def test_evaluation_is_still_not_persisted_alongside_persisted_provenance() -> None:
+    # The two evaluation-shaped fields differ precisely here: the live view is dropped on save,
+    # the historical snapshot survives (ADR-0028).
+    record = replace(
+        _record(),
+        evaluation=evaluate_answer(str(_record().answer_id), _record().claims, PACK),
+        evaluation_provenance=_provenance(),
+    )
+
+    loaded = decode_json(encode_json(record))
+
+    assert loaded.evaluation is None
+    assert loaded.evaluation_provenance is not None
+
+
+def test_a_record_without_provenance_decodes_to_none_for_backward_compatibility() -> None:
+    # A document written before provenance capture simply lacks the key; decoding it must yield
+    # None, not an empty snapshot that would read as "the turn was evaluated and found lacking".
+    document = encode_document(_record())
+    assert document["evaluation_provenance"] is None
+    del document["evaluation_provenance"]  # simulate a pre-provenance stored row
+
+    loaded = decode_document(document)
+
+    assert loaded.evaluation_provenance is None
+
+
+def test_malformed_provenance_counts_are_rejected() -> None:
+    record = replace(_record(), evaluation_provenance=_provenance())
+    document = encode_document(record)
+    # valid+unknown+irrelevant no longer sums to citations made — a corrupt snapshot.
+    document["evaluation_provenance"]["citations_valid"] = 9  # type: ignore[index]
+
+    with pytest.raises(AnswerSerializationError, match="inconsistent"):
+        decode_document(document)
+
+
+def test_a_non_object_provenance_is_rejected() -> None:
+    document = encode_document(replace(_record(), evaluation_provenance=_provenance()))
+    document["evaluation_provenance"] = "corrupted"  # type: ignore[assignment]
+
+    with pytest.raises(AnswerSerializationError, match="must be an object"):
+        decode_document(document)
+
+
+def test_an_unknown_evaluator_identity_stays_visible_after_round_trip() -> None:
+    provenance = replace(_provenance(), grounding_evaluator="some-third-party-judge-7")
+    record = replace(_record(), evaluation_provenance=provenance)
+
+    loaded = decode_json(encode_json(record))
+
+    assert loaded.evaluation_provenance is not None
+    assert loaded.evaluation_provenance.grounding_evaluator == "some-third-party-judge-7"

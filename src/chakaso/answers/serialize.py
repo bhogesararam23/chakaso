@@ -12,6 +12,14 @@ it into durable history would capture a possibly-stale judgement of an ephemeral
 rather than the fact that endures. The answer, its claims and its references are the record; the
 evaluation is recomputed against the current evaluator when needed.
 
+What **is** persisted alongside them is ``evaluation_provenance`` (ADR-0028): the immutable
+*facts* of the evaluation the completed turn itself reached — citation-structure counts, the
+per-claim grounding statuses, the evaluator's name and version, and the evidence references in the
+answer text that did not resolve. Those are history, not a recomputable view: they say what was
+decided then, by whom, and they must not change when a later evaluator or new evidence arrives.
+The distinction the codec encodes is exactly the one ADR-0028 draws — a recomputable live view is
+never frozen; a historical outcome is never silently recomputed.
+
 Decoding is strict (the storage ADR): a malformed or inconsistent stored document raises rather
 than producing a corrupted ``AnswerRecord``, because silently repairing research history is
 exactly what this project refuses to do.
@@ -25,8 +33,9 @@ from datetime import datetime
 
 from chakaso.answers.errors import AnswerSerializationError
 from chakaso.answers.identity import AnswerId
+from chakaso.answers.provenance import EvaluationProvenance, GroundedClaim
 from chakaso.answers.record import AnswerRecord
-from chakaso.claims.model import Claim, ClaimStatus
+from chakaso.claims.model import Claim, ClaimId, ClaimStatus
 from chakaso.core.identifiers import ChunkId, SourceId
 
 __all__ = ["decode_document", "decode_json", "encode_document", "encode_json"]
@@ -46,6 +55,7 @@ def encode_document(record: AnswerRecord) -> dict[str, object]:
         "cited_source_ids": [str(source_id) for source_id in record.cited_source_ids],
         "cited_chunk_ids": [str(chunk_id) for chunk_id in record.cited_chunk_ids],
         "retrieval_metadata": dict(record.retrieval_metadata),
+        "evaluation_provenance": _encode_provenance(record.evaluation_provenance),
         "turn_index": record.turn_index,
         "correction_of": None if record.correction_of is None else str(record.correction_of),
         "provenance": dict(record.provenance),
@@ -82,6 +92,7 @@ def decode_document(document: Mapping[str, object]) -> AnswerRecord:
                 ChunkId(value) for value in _as_str_list(document.get("cited_chunk_ids", []))
             ),
             retrieval_metadata=_as_str_mapping(document.get("retrieval_metadata", {})),
+            evaluation_provenance=_decode_provenance(document.get("evaluation_provenance")),
             turn_index=_optional_int(document.get("turn_index")),
             correction_of=None if correction_raw is None else AnswerId(str(correction_raw)),
             provenance=_as_str_mapping(document.get("provenance", {})),
@@ -126,6 +137,79 @@ def _encode_claim(claim: Claim) -> dict[str, object]:
         "cited_evidence_ids": [str(chunk_id) for chunk_id in claim.cited_evidence_ids],
         "status": claim.status.value,
     }
+
+
+def _encode_provenance(provenance: EvaluationProvenance | None) -> dict[str, object] | None:
+    """Render the historical evaluation snapshot, or ``None`` when a record has none.
+
+    The live ``evaluation`` is never persisted (ADR-0021); this *is*, because it is a record of
+    what the completed turn decided, not a recomputable view. Every field is a plain scalar or
+    list so the document stays JSON-native and deterministic.
+    """
+    if provenance is None:
+        return None
+    return {
+        "claims": provenance.claims,
+        "citations_made": provenance.citations_made,
+        "citations_valid": provenance.citations_valid,
+        "citations_unknown": provenance.citations_unknown,
+        "citations_irrelevant": provenance.citations_irrelevant,
+        "required_claims": provenance.required_claims,
+        "uncited_claims": provenance.uncited_claims,
+        "grounded_claims": [
+            {"claim_id": str(item.claim_id), "status": item.status.value}
+            for item in provenance.grounded_claims
+        ],
+        "grounding_evaluator": provenance.grounding_evaluator,
+        "grounding_evaluator_version": provenance.grounding_evaluator_version,
+        "unresolved_reference_ids": list(provenance.unresolved_reference_ids),
+        "malformed_reference_ids": list(provenance.malformed_reference_ids),
+    }
+
+
+def _decode_provenance(value: object) -> EvaluationProvenance | None:
+    """Rebuild a persisted snapshot, or ``None`` when a stored document carries none.
+
+    Absence is the backward-compatible case: a record written before provenance existed simply has
+    no ``evaluation_provenance`` key, and decoding it must not invent one — the honest value for
+    "this answer was recorded before we captured provenance" is ``None``, not an empty snapshot
+    that looks like the turn was evaluated and found wanting. A key that *is* present must be a
+    well-formed object; anything else is corruption and raises.
+    """
+    if value is None:
+        return None
+    if not isinstance(value, dict):
+        message = "stored evaluation_provenance must be an object"
+        raise AnswerSerializationError(message)
+    mapping: Mapping[str, object] = value
+    grounded = tuple(
+        _decode_grounded_claim(item) for item in _as_list(mapping.get("grounded_claims", []))
+    )
+    return EvaluationProvenance(
+        claims=_require_int(mapping, "claims"),
+        citations_made=_require_int(mapping, "citations_made"),
+        citations_valid=_require_int(mapping, "citations_valid"),
+        citations_unknown=_require_int(mapping, "citations_unknown"),
+        citations_irrelevant=_require_int(mapping, "citations_irrelevant"),
+        required_claims=_require_int(mapping, "required_claims"),
+        uncited_claims=_require_int(mapping, "uncited_claims"),
+        grounded_claims=grounded,
+        grounding_evaluator=_require(mapping, "grounding_evaluator"),
+        grounding_evaluator_version=_require(mapping, "grounding_evaluator_version"),
+        unresolved_reference_ids=tuple(_as_str_list(mapping.get("unresolved_reference_ids", []))),
+        malformed_reference_ids=tuple(_as_str_list(mapping.get("malformed_reference_ids", []))),
+    )
+
+
+def _decode_grounded_claim(item: object) -> GroundedClaim:
+    if not isinstance(item, dict):
+        message = "each grounded claim must be an object"
+        raise AnswerSerializationError(message)
+    mapping: Mapping[str, object] = item
+    return GroundedClaim(
+        claim_id=ClaimId(_require(mapping, "claim_id")),
+        status=ClaimStatus(_require(mapping, "status")),
+    )
 
 
 def _decode_claim(item: object) -> Claim:

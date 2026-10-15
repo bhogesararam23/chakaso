@@ -311,7 +311,14 @@ python -m chakaso answers lineage <ans_...> --config configs/default.toml
 
 This reads the configured SQLite store only (`initialize=False`, so it never creates or mutates a
 database) and prints the answer's provenance — model identity, retrieval strategy, evidence and cited
-sources, and any `correction_of` link — so a grounded turn is auditable after the fact.
+sources, and any `correction_of` link — so a grounded turn is auditable after the fact. `answers
+show` also reports the turn's **historical evaluation provenance** (ADR-0028): the citation counts,
+the per-claim structural-grounding statuses, the evaluator name and version that decided them, and
+any evidence references in the answer that did not resolve. It is labelled *recorded at the turn,
+not recomputed on read* — the durable record keeps what the original turn decided while the live
+evaluation view remains recomputed and is never frozen into history. Structural grounding is exactly
+that: `is_grounded` and `evidence_coverage` report citation structure, never that the evidence proves
+the answer.
 
 ## Configuration
 
