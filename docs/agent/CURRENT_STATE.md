@@ -252,7 +252,9 @@ A private planning note is never evidence that something is implemented.
   unresolved/malformed references in the answer text — explicitly labelled *recorded at the turn,
   not recomputed on read*; `--json` carries the exact stored values while the human view renders any
   untrusted string terminal-safe. It keeps the dimensions separate and states that `is_grounded` and
-  `evidence_coverage` are structural, never a truth verdict.
+  `evidence_coverage` are structural, never a truth verdict. It also states that an answer's evidence
+  references are **identifiers only** — the durable store does not retain the cited content, which
+  lived in the ephemeral in-memory corpus and is not re-readable from the store.
 - CI runs all of the above on three Python versions, with no secrets and no network
   access to a model provider.
 - Untrusted text (retrieved evidence, source titles/references, model replies) is rendered

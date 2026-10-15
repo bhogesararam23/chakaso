@@ -1295,6 +1295,25 @@ def test_answers_list_json_carries_the_provenance_per_record(
     assert payload[0]["evaluation_provenance"]["recorded_as"] == "historical"
 
 
+def test_answers_show_states_that_evidence_content_is_not_retained(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    # A recorded reference is not the evidence itself: the durable store holds identifiers, not the
+    # corpus text. Inspection must say so plainly rather than imply the cited content is re-readable.
+    config, _db = _durable_chat(tmp_path)
+    capsys.readouterr()
+    with SQLiteAnswerStore(_db_of(config), journal_mode=None, initialize=False) as store:
+        answer_id = str(store.list()[0].answer_id)
+
+    assert main(["answers", "show", answer_id, "--config", str(config)]) == 0
+    assert "does not retain the referenced content" in capsys.readouterr().out
+
+    assert main(["answers", "show", answer_id, "--config", str(config), "--json"]) == 0
+    payload = json.loads(capsys.readouterr().out)
+    assert payload["evidence_retention"]["store_retains_evidence_content"] is False
+    assert payload["evidence_retention"]["note"]
+
+
 def test_persisted_provenance_is_rendered_inert_on_the_terminal() -> None:
     # A regression for control characters inside newly persisted provenance: an unknown evaluator
     # identity or a hostile answer text reaching the human-readable inspection must not emit live

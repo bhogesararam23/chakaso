@@ -105,6 +105,16 @@ __all__ = ["build_parser", "main"]
 
 PROGRAM = "chakaso"
 
+#: The honest disclosure that an answer's evidence references are identifiers only. The durable
+#: store keeps what the turn decided and which evidence it relied on, but not the evidence text
+#: itself — that lived in the ephemeral in-memory corpus. Stated so a reader never mistakes a
+#: recorded reference for content the store can re-read (ADR-0028, docs/retrieval.md).
+EVIDENCE_RETENTION_NOTE = (
+    "evidence and citation references are recorded as identifiers; the durable answer store does "
+    "not retain the referenced content, which lived in the in-memory corpus and is not re-readable "
+    "from here"
+)
+
 #: Interactive commands that end the session. Prefixed with a colon so that they
 #: cannot be confused with something a user wants to ask.
 _QUIT_COMMANDS = frozenset({":quit", ":exit"})
@@ -1618,6 +1628,10 @@ def _answers_show(store: SQLiteAnswerStore, args: argparse.Namespace) -> int:
             **_answer_brief(record),
             "text": record.text,
             "provenance": dict(record.provenance),
+            "evidence_retention": {
+                "store_retains_evidence_content": False,
+                "note": EVIDENCE_RETENTION_NOTE,
+            },
         }
         print(json.dumps(detail, sort_keys=True, indent=2, ensure_ascii=False))
         return 0
@@ -1670,6 +1684,7 @@ def _format_answer(record: AnswerRecord) -> str:
     if record.correction_of is not None:
         lines.append(f"corrects: {record.correction_of}")
     lines.extend(_format_provenance(record.evaluation_provenance))
+    lines.append(f"note: {EVIDENCE_RETENTION_NOTE}")
     lines.append(f"text: {safe_for_terminal(record.text)}")
     return "\n".join(lines)
 

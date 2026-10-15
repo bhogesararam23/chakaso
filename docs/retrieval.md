@@ -149,6 +149,15 @@ hostile file cannot emit terminal-control sequences, while `--json` keeps the ex
 consumer. Each command is explicit that a source appears only while its document is passed with
 `--file`.
 
+A persisted answer from the durable answer store references sources and chunks **by identifier
+only**. The answer store keeps the record of what a turn decided and which evidence it named
+(ADR-0028), but not the evidence text itself — that lived in the ephemeral in-memory corpus. Reading
+a stored answer after a restart therefore shows the references and their provenance, and states
+plainly that the cited content is not retained in, or re-readable from, the answer store. An
+immutable evidence snapshot inside the answer store is deliberately **not** taken: it would duplicate
+every cited body (a size and privacy cost) with no demonstrated consumer, which the no-empty-
+scaffolding rule forbids.
+
 ## Lexical retrieval
 
 **Implemented (lexical only).** `chakaso.retrieval.build_lexical_index` builds an

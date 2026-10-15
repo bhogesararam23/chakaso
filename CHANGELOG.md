@@ -10,6 +10,24 @@ capability is implemented or still planned.
 
 ## Unreleased
 
+### 2026-10-15 — Answer inspection states that recorded references are not retained evidence
+
+**Added**
+
+- `chakaso answers show` now discloses, in the human-readable view and as an
+  `evidence_retention` object in `--json`, that an answer's evidence and citation references are
+  **identifiers only**: the durable store keeps what the turn decided and which evidence it named,
+  not the evidence text, which lived in the ephemeral in-memory corpus and is not re-readable from
+  the store. A recorded reference is not the source content, and the output says so plainly
+  (ADR-0028, `docs/retrieval.md`).
+
+**Notes**
+
+- This is a disclosure of an existing boundary, not new persistence: no evidence bodies are copied
+  into the answer store (weighed against size and privacy, and unjustified without a real consumer),
+  and no capability is claimed. It closes the honest-representation gap so inspection cannot mislead
+  a reader into thinking a cited document is recoverable from the answer database.
+
 ### 2026-10-15 — A persisted answer records the evaluation its turn actually reached
 
 **Added**
