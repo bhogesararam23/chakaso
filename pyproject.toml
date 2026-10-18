@@ -43,6 +43,14 @@ dev = [
     "ruff>=0.9,<1",
     "mypy>=1.11,<2",
 ]
+# ADR-0030: the minimal offline numerical stack for a from-scratch training experiment, kept out of
+# the base install and the core CI matrix. `numpy<2.5` is deliberate — NumPy 2.5 dropped the Python
+# 3.11 floor this project supports — so `pip install -e ".[train]"` still resolves on 3.11, 3.12 and
+# 3.13. Training code lives in `chakaso.training` (the module ADR-0005 reserved for it) and imports
+# numpy only there; `import chakaso` must never require it.
+train = [
+    "numpy>=1.26,<2.5",
+]
 
 [project.scripts]
 chakaso = "chakaso.cli:main"
