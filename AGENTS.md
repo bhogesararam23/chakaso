@@ -36,8 +36,13 @@ are in [`docs/README.md`](docs/README.md). A change that implements something
 updates that status in the same commit.
 
 **Do not invent numbers, datasets, citations or experiments.** If it was not
-measured, it is not written down. There are currently no measured results of any
-kind in this repository, and it should stay obvious that this is true.
+measured, it is not written down. The only measured results in this repository are
+executed comparisons over small synthetic development fixtures (for example the
+retrieval-strategy measurement recorded as E-001 in
+[`docs/research/research-log.md`](docs/research/research-log.md)); they check the
+shape of a mechanism and an instrument, never meaning. There is no measurement of a
+real workload and no result from any trained language model, because no model has
+been trained — it should stay obvious that this is true.
 
 **The runtime must not require a commercial inference or search API.**
 [ADR-0001](docs/decisions/ADR-0001-local-first-runtime.md). External providers may
