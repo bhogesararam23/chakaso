@@ -18,6 +18,14 @@ has actually run, nothing here is a claim that the approach works.
 from __future__ import annotations
 
 from chakaso.training.corpus import CORPUS, Corpus, corpus_text
+from chakaso.training.data import (
+    Example,
+    Split,
+    character_windows,
+    dataset_fingerprint,
+    fit_vocabulary,
+    split_corpus,
+)
 from chakaso.training.tokenizer import UNK_ID, CharVocabulary
 
 __all__ = [
@@ -25,5 +33,11 @@ __all__ = [
     "UNK_ID",
     "CharVocabulary",
     "Corpus",
+    "Example",
+    "Split",
+    "character_windows",
     "corpus_text",
+    "dataset_fingerprint",
+    "fit_vocabulary",
+    "split_corpus",
 ]
