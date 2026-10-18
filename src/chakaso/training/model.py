@@ -228,11 +228,15 @@ class CharCausalMLP:
         d_window = d_pre_hidden @ params.hidden_weight.T
 
         # Scatter the concatenated-window gradient back into the embedding rows it came from, summed
-        # over every position that used a given identifier.
+        # over every position that used a given identifier. np.add.at is required, not `+=` on a fancy
+        # index: identifiers repeat within a batch, and buffered fancy `+=` would apply a repeated row
+        # only once and silently undercount the gradient — the finite-difference test catches exactly
+        # this class of error.
         d_embedding = np.zeros_like(params.embedding)
         for j in range(self.context_size):
             ids = cache.contexts[:, j]
-            d_embedding[ids] += d_window[:, j * self.embed_dim : (j + 1) * self.embed_dim]
+            d_slice = d_window[:, j * self.embed_dim : (j + 1) * self.embed_dim]
+            np.add.at(d_embedding, ids, d_slice)
 
         return Params(
             embedding=d_embedding,
