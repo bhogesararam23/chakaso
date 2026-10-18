@@ -146,7 +146,7 @@ extra, with the model's gradients derived by hand and verified by finite-differe
 - Manual backprop is more code to write and test than a framework call would be, and it caps how large
   a model is reasonable to train this way. That cap is acceptable — the first experiment is meant to be
   tiny, and scaling is explicitly deferred until reproducibility exists
-  ([`../../docs/roadmap.md`](../../roadmap.md)).
+  ([`../roadmap.md`](../roadmap.md)).
 - `numpy` is a compiled dependency: an exotic platform without a wheel would have to build from source.
   Windows AMD64, manylinux and macOS all ship wheels, so this is a documented edge, not a live one.
 - Choosing hand-written gradients now means a future real model (or Option A) may prefer a framework.
