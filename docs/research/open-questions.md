@@ -132,8 +132,14 @@ inspected constraints (no CUDA, ~15.4 GB RAM with little free, no ML dependency 
 dependency-free environment) the binding gate is not architecture but the decision to admit
 an *optional* numerical dependency (its own ADR) and a memory budget. The assessment defers the
 pretrained adapter (Option A) until a real grounded-answer evaluation exists, and points to a
-scoped from-scratch training experiment (Option B) as the smallest honest next step. The specific
-model and framework remain open.
+scoped from-scratch training experiment (Option B) as the smallest honest next step.
+
+**Narrowed further by** [ADR-0030](../decisions/ADR-0030-minimal-optional-training-dependency.md):
+that gate is now decided — a from-scratch experiment will use **NumPy as an optional `[train]`
+extra**, with hand-derived, finite-difference-verified gradients, keeping the base install
+dependency-free and the core CI matrix unchanged. This fixes the *numerical substrate* of the
+first training path; it does **not** select a model, a size, or a framework for anything larger.
+The specific model (char-level toy now; a real or pretrained model later) remains open.
 
 ---
 

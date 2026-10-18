@@ -1,25 +1,46 @@
 # Active task
 
-## Current unit: P23 — the dependency decision that gates any real model (ADR before code)
+## Current unit: P24 — the smallest scientifically honest from-scratch training experiment
 
-**Goal.** Before a single line of model, tokenizer or training code exists, make the one decision the
-P22 feasibility assessment surfaced as the true gate: name the minimal **offline numerical stack** the
-project is willing to admit as an *optional, non-default* dependency (a `[train]` / `[models]` extra that
-never enters the base install or the CI matrix), and record it as an ADR. That ADR is the pre-condition
-for every subsequent model unit — a runnable adapter or a from-scratch training experiment — per the
-roadmap's rule that a consequential dependency decision precedes its code (ADR-0001).
+**Goal.** ADR-0030 accepted the numerical dependency (`numpy` in an optional `[train]` extra). Build the
+minimal trainable language-model experiment it now gates, as an out-of-CI `experiments/<id>/` artifact
+(`docs/internal/experiments/README.md` format), producing the project's **first genuinely measured
+number** — held-out validation loss over training steps against a trivial baseline. The purpose is to
+demonstrate a real learning loop and record it honestly, *not* to build a useful chatbot.
 
-**Why this is next.** P22's assessment (`docs/research/model-feasibility.md`) found that both directions —
-a small pretrained local model and a tiny from-scratch training run — fit the `LanguageModel` boundary
-cleanly and are bounded not by architecture but by the willingness to carry a numerical runtime and a
-memory budget. No model work can be honest until that dependency choice is written down. This unit
-remains research plus a decision record: it writes no model code and downloads nothing.
+**Scope of this unit (each is a coherent commit when it is meaningful on its own).** Reusable mechanics
+live in `chakaso.training` (the module ADR-0005 reserved for training code): a documented corpus with a
+licence note, a deterministic train/validation split with leakage prevention (the split is taken before
+any vocabulary is fit), a clearly-specified character tokenizer, a tiny causal model with an explicit
+architecture, a training objective, a real optimizer step whose gradient is verified by finite
+differences, checkpoint save/load, a held-out evaluation, a uniform/unigram baseline, and a reproducible
+run config with a fixed seed. Tests are `numpy`-gated (`importorskip`) so the core CI matrix never
+installs it; the numerical path is exercised by a separate optional CI job. The experiment record is
+written *before* the run (status `running`) and completed with only measured values.
 
-**What this unit is not.** Not the model adapter, the tokenizer or the training loop themselves; not a
-dependency install; not any measured result. It ends with an ADR and a stated smallest-experiment, gated
-behind that ADR.
+**What this unit is not.** Not a `LanguageModel` adapter over the artifact (that is the following unit,
+gated on this one producing an artifact and the evidence supporting it); not a pretrained model; not any
+claim of language capability. If the run cannot execute in the environment, record the exact blocker and
+the unexecuted steps rather than inventing a number.
 
-## What the previous unit completed (P22 — a real-model feasibility assessment)
+## What the previous unit completed (P23 — the dependency decision, ADR before code)
+
+Delivered as a decision record; no model code was written and no dependency was installed.
+
+- [x] [ADR-0030](../decisions/ADR-0030-minimal-optional-training-dependency.md) names the minimal offline
+      numerical stack: **`numpy`, isolated in a new optional `[train]` extra** (`numpy>=1.26,<2.5`; the
+      `<2.5` cap keeps the Python 3.11 floor working), with **hand-derived gradients verified by finite
+      differences** rather than a framework's black-box autograd. It evaluates the candidate stacks on
+      the Python floor, Windows, offline reproducibility, CPU-only operation, memory, footprint,
+      licensing, determinism/seed control, verifiability, and CI isolation, and cites PyPI metadata for
+      the packaging facts.
+- [x] A decision that **the base install stays dependency-free and the core CI matrix is unchanged** —
+      training tests skip unless the extra is installed, and the numerical path is covered by a separate
+      optional CI job. A heavyweight autograd framework (PyTorch) is **rejected for now** with explicit
+      revisit conditions (a concrete larger-model workload, or the manual-gradient route becoming a
+      correctness risk). Training code is placed in `chakaso.training`, the module ADR-0005 reserved.
+
+## Unit before that (P22 — a real-model feasibility assessment)
 
 Delivered as a research note; no experiment was run and no dependency was added.
 
@@ -31,8 +52,8 @@ Delivered as a research note; no experiment was run and no dependency was added.
 - [x] A recommendation that separates verified facts from labelled estimates and assumptions: defer
       Option A until a real grounded-answer evaluation exists; the smallest honest next step is a scoped,
       out-of-CI from-scratch experiment producing the project's first genuinely measured number — and it
-      is gated behind this P23 dependency ADR. Logged in the research log; it narrows the "which local
-      model" open question without answering it.
+      was gated behind this P23 dependency ADR, now accepted. Logged in the research log; it narrowed the
+      "which local model" open question without answering it.
 
 ## Unit before that (P21 — a triggered, explicitly-composed reassessment)
 
@@ -62,12 +83,14 @@ gained no capability.
 
 ## Ordering after this unit
 
-1. A minimal from-scratch training experiment as an out-of-CI `experiments/<id>/` artifact, gated behind
-   the P23 ADR: a char-level model, fixed seed and config, a held-out set, reporting the project's first
-   measured number (validation loss over steps) with the explicit limitation that it is a learning-loop
-   demonstration, not a claim of language capability.
-2. A `LanguageModel` adapter over the trained artifact; only after that, a genuinely runnable pretrained
-   adapter (Option A) and a real `SemanticJudge`, each gated on its own dependency-feasibility decision.
+1. A `LanguageModel` adapter over the trained artifact — *only if* the experiment produces an artifact
+   and the evidence supports integrating it (it may honestly not be ready; then record the blocker). It
+   loads the actual weights, uses the exact tokenizer/vocabulary version, validates checkpoint metadata,
+   satisfies the model contract, is deterministic at zero temperature, declares itself *not* the
+   development double, and fails explicitly when weights, config or the `[train]` extra are unavailable
+   — never silently falling back to the double, and never imported into application logic (ADR-0002).
+2. Only after that, a genuinely runnable pretrained adapter (Option A) and a real `SemanticJudge`, each
+   gated on its own dependency-feasibility decision.
 
 ## Known gaps that bound this unit
 

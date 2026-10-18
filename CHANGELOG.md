@@ -10,6 +10,37 @@ capability is implemented or still planned.
 
 ## Unreleased
 
+### 2026-10-19 — The training-dependency decision is made (ADR-0030, P23 — decision, no code)
+
+**Decision / research**
+
+- [ADR-0030](docs/decisions/ADR-0030-minimal-optional-training-dependency.md) records the decision P22
+  identified as the gate on any real model: admit **NumPy as a single, optional `[train]` extra**
+  (`numpy>=1.26,<2.5` — the upper bound keeps the Python 3.11 floor installable) and derive the tiny
+  model's gradients **by hand, verified with finite-difference tests**, rather than adopting a heavy
+  autograd framework. The base install stays dependency-free; the extra never enters the core CI matrix,
+  and training tests `importorskip("numpy")` so they are exercised remotely only by a separate optional
+  CI job. Training code is placed in `chakaso.training`, the module ADR-0005 reserved for it.
+- It evaluates the candidate stacks against the project's constraints (Python floor, Windows, offline
+  reproducibility, CPU-only, memory, footprint, licensing, determinism/seed control, verifiability, CI
+  isolation), cites PyPI packaging metadata for the facts it relies on, rejects PyTorch **for now** with
+  explicit revisit conditions, and keeps a pure-Python route as a documented fallback. **No dependency was
+  installed and no code was written** — this is the ADR-before-code gate the roadmap requires. It advances
+  the project toward its first genuinely measured training result without claiming any result yet; K-001
+  stands.
+
+### 2026-10-19 — Repository documentation reconciled against the actual head (P23 pre-work)
+
+**Documentation**
+
+- Corrected stale and contradictory status text before extending the system: `AGENTS.md` no longer claims
+  "no measured results of any kind" (it now distinguishes the executed synthetic E-001 measurement from the
+  still-absent real-workload and trained-model results); `docs/roadmap.md` re-assesses P1–P7 against
+  objective exit criteria rather than file presence; `docs/agent/CURRENT_STATE.md` fixes its aged test
+  count and points its next-step at the true current milestone; `docs/internal/experiments/README.md` is
+  aligned with the fact that E-001 ran while no experiment *record* or hypothesis test exists. No behaviour
+  changed.
+
 ### 2026-10-15 — Model-feasibility assessment recorded (research, no experiment run)
 
 **Research**

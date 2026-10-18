@@ -1,9 +1,9 @@
 # Current state
 
-Last updated: 2026-10-19, at the commit reconciling the roadmap, the agent contract and
-this file's stale counts to the actual head. The most recent capability change was the
-explicit, identifier-triggered reassessment composed into the runtime (ADR-0029, P21);
-the active task (P23) is a dependency decision and writes no code.
+Last updated: 2026-10-19, at the commit accepting ADR-0030 — the dependency decision that was the
+whole of P23. The most recent *capability* change remains the explicit, identifier-triggered
+reassessment composed into the runtime (ADR-0029, P21); ADR-0030 records a decision and writes no code,
+so what exists is unchanged. The next real unit is the from-scratch training experiment it gates.
 
 This file is the authority on what exists. If it disagrees with any other
 document, this file is right and the other document is a defect.
@@ -17,7 +17,7 @@ A private planning note is never evidence that something is implemented.
 | Repository conventions | `.gitignore`, `.gitattributes`, `.editorconfig` | Private docx pack excluded by `.gitignore` and guarded by a test |
 | License | `LICENSE` | Apache-2.0; rationale in ADR-0004 |
 | Public documentation | `README.md`, `docs/*.md`, `docs/research/` | Specifications with mandatory status labels |
-| Decision records | `docs/decisions/` | ADR-0001 to ADR-0029 |
+| Decision records | `docs/decisions/` | ADR-0001 to ADR-0030 |
 | Contribution guide | `CONTRIBUTING.md` | |
 | Agent contract | `AGENTS.md`, `docs/agent/` | |
 | Python package | `src/chakaso/` | Installs; typed; `py.typed` ships |
@@ -379,6 +379,7 @@ index, but over a non-semantic fixture embedding, so it proves the shape, not an
 | ADR-0027 | The semantic-evaluation contract carries evaluator version and an explicit error outcome; no real evaluator is simulated |
 | ADR-0028 | An answer persists the historical evaluation it reached; the live view stays recomputed |
 | ADR-0029 | Reassessment is triggered by an explicit identifier and composed at the application root |
+| ADR-0030 | A minimal, optional numerical dependency (numpy in a `[train]` extra) gates any from-scratch training |
 
 Two process facts are recorded outside the ADR series because they are repository
 history rather than architecture:
@@ -410,19 +411,18 @@ adversarial terminal-safety of untrusted content, answer-provenance enrichment (
 triggered, explicitly-composed reassessment (ADR-0029) are all also built and tested — the two items
 this section previously listed as "next" are now shipped.
 
-The next real unit is **P23**, and it matches [`ACTIVE_TASK.md`](ACTIVE_TASK.md) and the
-[roadmap](../roadmap.md)'s first model-training sprint: a **dependency decision, recorded as an ADR
-before any model code**. Its whole job is to name the minimal offline numerical stack the project is
-willing to admit as an *optional, non-default* extra (a `[train]`-style extra that never enters the
-base install or the core CI matrix). P22's feasibility assessment established that both a runnable
-pretrained model and a tiny from-scratch run fit the `LanguageModel` boundary cleanly and are bounded
-not by architecture but by that admitted dependency plus a memory budget; nothing model-shaped can be
-built honestly until the choice is written down. It downloads nothing and runs nothing.
+**P23 is now complete:** the dependency decision was written down as
+[ADR-0030](../decisions/ADR-0030-minimal-optional-training-dependency.md) — accept `numpy` as a single
+optional `[train]` extra with hand-derived, finite-difference-verified gradients, keep it out of the
+base install and the core CI matrix, and defer a heavyweight autograd framework until a larger model
+justifies it. It installed nothing and ran nothing; the decision simply gates the code that follows.
 
-Only after that ADR is accepted does the roadmap's next unit follow: a scoped, out-of-CI from-scratch
-training experiment (char-level model, fixed seed and config, held-out split) producing the project's
-first genuinely *measured* number — validation loss over steps against a uniform/unigram baseline —
-explicitly labelled a learning-loop demonstration and not a claim of language capability. A `LanguageModel`
-adapter over the trained artifact, then a real pretrained adapter (Option A) and a real `SemanticJudge`,
-each follow and each is gated on its own dependency-feasibility decision. All of it stays behind the
+The next real unit is the [roadmap](../roadmap.md)'s first model-training step, now unblocked by
+ADR-0030: a scoped, out-of-CI **from-scratch training experiment** (char-level model, fixed seed and
+config, held-out split) producing the project's first genuinely *measured* number — validation loss over
+steps against a uniform/unigram baseline — recorded in the `experiments/<id>/` format and explicitly
+labelled a learning-loop demonstration, not a claim of language capability. Its reusable mechanics live
+in `chakaso.training` (the module ADR-0005 reserved). A `LanguageModel` adapter over the trained artifact
+then follows (Phase D), and only after that a real pretrained adapter (Option A) and a real
+`SemanticJudge`, each gated on its own dependency-feasibility decision. All of it stays behind the
 existing boundaries. See [`ACTIVE_TASK.md`](ACTIVE_TASK.md) for the definition of done.

@@ -138,9 +138,10 @@ next sprint addresses.
 
 ## First model-training sprint
 
-The active milestone. The dependency decision (P23) comes first and is recorded as
-ADR-0030 (added in Phase B); the numerical stack is chosen *before* any model code
-exists, per ADR-0001. Then, gated behind that ADR:
+The active milestone. The dependency decision (P23) comes first and is recorded in
+[ADR-0030](decisions/ADR-0030-minimal-optional-training-dependency.md); the numerical stack (`numpy`,
+in an optional `[train]` extra) is chosen *before* any model code exists, per ADR-0001. Then, gated
+behind that ADR:
 
 1. Collect a small corpus whose licence permits use.
 2. Build a tokenizer and inspect its segmentations by hand.

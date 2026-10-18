@@ -262,3 +262,35 @@ contains no measured result. Every non-inspected figure there is labelled an est
 grounded-answer evaluation exists to consume it; the smallest honest next step is a scoped, out-of-CI
 from-scratch training experiment recording a held-out metric, gated behind a dependency-feasibility ADR.
 The full analysis is in [`model-feasibility.md`](model-feasibility.md). K-001 stands.
+
+---
+
+## 2026-10-19 — The dependency decision is made (ADR-0030): numpy, optional, hand-verified gradients
+
+**Observation.** Package metadata was read from PyPI's authoritative JSON API. The newest NumPy
+(`2.5.4`) declares `Requires-Python >=3.12`, so it *drops* the project's 3.11 floor; the newest NumPy
+release still shipping a `cp311` wheel is `2.4.6`. NumPy's licence resolves to BSD-3-Clause plus bundled
+permissive components (0BSD/MIT/Zlib/CC0); PyTorch's is a much larger mixed set and its CPU wheel is
+orders of magnitude heavier. This is a packaging-fact observation, **not a measured model result**.
+
+**Decision recorded.** [ADR-0030](../decisions/ADR-0030-minimal-optional-training-dependency.md) admits
+**NumPy as a single, optional `[train]` extra** (`numpy>=1.26,<2.5`, the cap chosen specifically to keep
+Python 3.11 installable) with the model's gradients **derived by hand and verified by finite differences**
+— not a framework's autograd. The base install stays dependency-free and the core CI matrix is unchanged;
+training tests `importorskip("numpy")` and are exercised remotely only by a separate optional CI job.
+Training code is placed in `chakaso.training`, the module [ADR-0005](../decisions/ADR-0005-src-layout.md)
+reserved for it. No dependency was installed and no code was written for this decision; it is the gate the
+roadmap requires before model code.
+
+**Interpretation.** The choice trades a framework's convenience for *verifiability*: for a few-thousand-
+parameter char model, a hand-derived gradient checked against finite differences makes "the loss actually
+connects to the trainable parameters" a tested property of this project's own code rather than something
+inherited on trust. That is exactly the instrument the first measured result needs to be believable. The
+decision narrows the [Which local model should the shell use?](open-questions.md#which-local-model-should-the-shell-use)
+open question further — it fixes the numerical substrate for the from-scratch path — without selecting a
+model, and it keeps a heavyweight framework as a documented *revisit* option, not a dismissed one.
+
+**Limitation.** This decided a dependency from published metadata and prior inspection; it ran nothing and
+therefore measured nothing about training speed, memory or output quality. The bound and the wheel
+availability are packaging facts verified on this date; performance and memory claims still belong only to
+an experiment that actually runs. K-001 stands: the next unit is that experiment.
