@@ -1,6 +1,9 @@
 # Current state
 
-Last updated: 2026-10-15, at the commit composing an explicit, identifier-triggered reassessment into the runtime (ADR-0029, P21).
+Last updated: 2026-10-19, at the commit reconciling the roadmap, the agent contract and
+this file's stale counts to the actual head. The most recent capability change was the
+explicit, identifier-triggered reassessment composed into the runtime (ADR-0029, P21);
+the active task (P23) is a dependency decision and writes no code.
 
 This file is the authority on what exists. If it disagrees with any other
 document, this file is right and the other document is a defect.
@@ -50,7 +53,7 @@ A private planning note is never evidence that something is implemented.
 | Answers & persistence | `src/chakaso/answers/` | `AnswerId` is a per-event typed identifier, not a content hash (ADR-0017). An immutable `AnswerRecord` ties turn + model + evidence + claims + evaluation + a `correction_of` link by reference, and now persists a typed, immutable `evaluation_provenance` snapshot — the citation/grounding/reference outcomes and evaluator name+version the turn itself reached (ADR-0028) — while the live `AnswerEvaluation` stays recomputed and unpersisted. `AnswerStore` boundary with two append-only, integrity-checked backends: in-memory `InMemoryAnswerStore` (the default) and a durable `SQLiteAnswerStore` built on the standard library (ADR-0018, ADR-0021). The durable store is proven by a test to survive a process restart, and is opt-in, so nothing writes to disk unless it is selected |
 | Correction foundation | `src/chakaso/correction/` | The reassessment decision rule (retain / qualify / correct / abstain / needs_review, ADR-0016), `reassess` over the grounding boundary, an append-only `CorrectionRecord`, structural correction metrics, a follow-up helper (`reassess_followup`), an application-level `reassess_stored_answer` / `reassess_and_record` over a stored answer, and a deterministic `DeterministicReassessmentTrigger` that reads a follow-up for an explicit `ans_…` reference (intent only — it never reassesses anything itself, ADR-0029). Decides and records; produces no revised prose (there is no model) and is not an autonomous loop — a follow-up must name a stored answer, and the composition is explicit |
 | Experiments | `src/chakaso/experiments/` | `Experiment` (hypothesis + benchmark + configuration) and a content-fingerprinted, environment-separated `ExperimentResult`; `run_experiment` drives a development benchmark (the retrieval runner honours a configured `retriever` strategy); `compare_results` is a deterministic regression baseline that refuses incompatible versions, and `compare_retrieval_strategies` measures lexical vs dense vs hybrid over the same fixtures (ADR-0020). No tracker, no database, no model |
-| Tests | `tests/` | ~996 tests at the commit recorded above: package, CLI (incl. `retrieve`, `benchmark` and `experiment`, and the retrieval-aware `chat` wiring — corpus grounding, `--no-retrieval`, strategy/top-k overrides, durable-store recording), configuration (incl. the `retrieval` section: defaults, strategy pattern, numeric limits, boolean `enabled`, provenance), application composition (`chakaso.app`: the configured store is used and never silently downgraded, strategy/top-k/enabled change real runtime behaviour, SQLite-backed answers survive a reopen, sqlite-without-path is refused, corpus building bounds file size, close is idempotent), identifiers and hashing, source identity, model boundary, evidence, normalization, chunking, ingestion, corpus, lexical retrieval, dense retrieval (embedding double, exact index, retriever), hybrid retrieval (reciprocal-rank fusion, per-component provenance), retrieval orchestration, end-to-end pipeline, fetch policy and netguard, HTML/web ingestion, cache, evaluation metrics and answer evaluation, benchmark identity/cases/loader/fixtures/runner/report and the correction benchmark, claims/extract/links, citation validation, grounding and the semantic boundary, correction decision/reassess/record/metrics/follow-up/service, answer identity/record/store/serialization and the durable SQLite store (restart, rollback, schema, integrity) with a two-backend conformance suite and conversation integration, experiments (model/runner/compare), security/determinism/reproducibility regressions (the no-network import guard covers `chakaso.app`), conversation state and manager, query planning (mode/normalization/plan invariants/deterministic rules), retrieval-aware runtime (plan→retrieve→record, atomicity, provenance), retrieval-strategy comparison (measured, deterministic lexical/dense/hybrid), end-to-end grounded-turn + restart integration and untrusted-content security checks, the explicit reassessment trigger (deterministic intent detection over valid / none / ambiguous / malformed references) and the composed `Application.reassess_followup` (valid, unknown-target, ordinary-follow-up and ambiguous routes; append-only integrity where the original answer is never mutated; SQLite restart conformance) and its reachability from `chakaso chat`, repository hygiene. The count ages; `python -m pytest` does not. |
+| Tests | `tests/` | 1106 tests at the current head: package, CLI (incl. `retrieve`, `benchmark` and `experiment`, and the retrieval-aware `chat` wiring — corpus grounding, `--no-retrieval`, strategy/top-k overrides, durable-store recording), configuration (incl. the `retrieval` section: defaults, strategy pattern, numeric limits, boolean `enabled`, provenance), application composition (`chakaso.app`: the configured store is used and never silently downgraded, strategy/top-k/enabled change real runtime behaviour, SQLite-backed answers survive a reopen, sqlite-without-path is refused, corpus building bounds file size, close is idempotent), identifiers and hashing, source identity, model boundary, evidence, normalization, chunking, ingestion, corpus, lexical retrieval, dense retrieval (embedding double, exact index, retriever), hybrid retrieval (reciprocal-rank fusion, per-component provenance), retrieval orchestration, end-to-end pipeline, fetch policy and netguard, HTML/web ingestion, cache, evaluation metrics and answer evaluation, benchmark identity/cases/loader/fixtures/runner/report and the correction benchmark, claims/extract/links, citation validation, grounding and the semantic boundary, correction decision/reassess/record/metrics/follow-up/service, answer identity/record/store/serialization and the durable SQLite store (restart, rollback, schema, integrity) with a two-backend conformance suite and conversation integration, experiments (model/runner/compare), security/determinism/reproducibility regressions (the no-network import guard covers `chakaso.app`), conversation state and manager, query planning (mode/normalization/plan invariants/deterministic rules), retrieval-aware runtime (plan→retrieve→record, atomicity, provenance), retrieval-strategy comparison (measured, deterministic lexical/dense/hybrid), end-to-end grounded-turn + restart integration and untrusted-content security checks, the explicit reassessment trigger (deterministic intent detection over valid / none / ambiguous / malformed references) and the composed `Application.reassess_followup` (valid, unknown-target, ordinary-follow-up and ambiguous routes; append-only integrity where the original answer is never mutated; SQLite restart conformance) and its reachability from `chakaso chat`, repository hygiene. The count ages; `python -m pytest` does not. |
 | CI | `.github/workflows/ci.yml` | Green on Python 3.11, 3.12, 3.13 |
 | An automatic correction loop that decides on its own when to reassess | **does not exist** | Since ADR-0029 a follow-up that *explicitly names* a stored answer composes into a reassessment through the runtime (a deterministic trigger + the existing boundary), but nothing decides unbidden that a turn needs revising, a vague reference is never resolved by a guess, there is no real semantic embedding, and the only model is the development double |
 
@@ -402,21 +405,24 @@ whether and how to retrieve (ADR-0022), a fixture-only semantic grounding bounda
 experiment records with a deterministic regression baseline, and a retrieval-aware runtime composing
 planner → retrieval → model → record → store (ADR-0025) are all built and tested. The measured
 strategy comparison (E-001) and the end-to-end/restart integration and security demonstration are done.
-Source and evidence inspection from the CLI over the in-memory corpus, source-scoped retrieval, and
-adversarial terminal-safety of untrusted content are also built and tested. The next real units, in
-order:
+Source and evidence inspection from the CLI over the in-memory corpus, source-scoped retrieval,
+adversarial terminal-safety of untrusted content, answer-provenance enrichment (ADR-0028) and a
+triggered, explicitly-composed reassessment (ADR-0029) are all also built and tested — the two items
+this section previously listed as "next" are now shipped.
 
-1. **Answer-provenance enrichment** — record, on a persisted answer, the citation-validation and
-   structural-grounding outcomes a turn actually reached (and where a provenance reference points at
-   data that will not survive a restart), so a durable answer is more self-explanatory without copying
-   large evidence bodies or persisting a recomputed evaluation.
-2. **A triggered follow-up** that decides *when* to reassess, wired into the runtime behind explicit
-   composition — not a fake autonomous loop.
+The next real unit is **P23**, and it matches [`ACTIVE_TASK.md`](ACTIVE_TASK.md) and the
+[roadmap](../roadmap.md)'s first model-training sprint: a **dependency decision, recorded as an ADR
+before any model code**. Its whole job is to name the minimal offline numerical stack the project is
+willing to admit as an *optional, non-default* extra (a `[train]`-style extra that never enters the
+base install or the core CI matrix). P22's feasibility assessment established that both a runnable
+pretrained model and a tiny from-scratch run fit the `LanguageModel` boundary cleanly and are bounded
+not by architecture but by that admitted dependency plus a memory budget; nothing model-shaped can be
+built honestly until the choice is written down. It downloads nothing and runs nothing.
 
-A **real semantic judge** (the `SemanticJudge` boundary is fixture-only today) and an **automatic,
-triggered correction** follow the now-completed wiring of the runtime into **`chakaso chat`** behind
-typed retrieval configuration (ADR-0026). The full retrieval flow is executable, tested and driven by
-an interactive command, but dense/hybrid run over a non-semantic fixture embedding (ADR-0023/ADR-0024)
-and the only model is the development double — a real embedding model, and a real language model, are
-what would make the answers mean something. All of it stays behind the existing boundaries. See
-[`ACTIVE_TASK.md`](ACTIVE_TASK.md) for the definition of done.
+Only after that ADR is accepted does the roadmap's next unit follow: a scoped, out-of-CI from-scratch
+training experiment (char-level model, fixed seed and config, held-out split) producing the project's
+first genuinely *measured* number — validation loss over steps against a uniform/unigram baseline —
+explicitly labelled a learning-loop demonstration and not a claim of language capability. A `LanguageModel`
+adapter over the trained artifact, then a real pretrained adapter (Option A) and a real `SemanticJudge`,
+each follow and each is gated on its own dependency-feasibility decision. All of it stays behind the
+existing boundaries. See [`ACTIVE_TASK.md`](ACTIVE_TASK.md) for the definition of done.
