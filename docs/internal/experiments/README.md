@@ -1,10 +1,12 @@
 # Experiments
 
-**No research experiment has been run.** The project has development benchmarks
-(retrieval and correction) that produce deterministic metrics over small synthetic
-fixtures, and a reproducible experiment layer (`chakaso.experiments`) — but those are
-regression instruments, not results: there is still no language model, no real dataset and
-no tokenizer, and no experiment testing a research hypothesis has a record committed here.
+**No experiment record has been committed here, and no hypothesis H1–H7 has been tested.** The project
+has development benchmarks (retrieval and correction) that produce deterministic metrics over small
+synthetic fixtures, a reproducible experiment layer (`chakaso.experiments`), and one executed
+mechanism/instrument measurement recorded in the research log (E-001, a retrieval-strategy comparison
+over the synthetic fixtures). None of those is a research-experiment *record*: there is still no language
+model, no real dataset and no tokenizer, and no experiment that tests a research hypothesis has a record
+committed here.
 
 This directory defines the record format so that the first real experiment is
 recorded properly rather than being described in a commit message.
