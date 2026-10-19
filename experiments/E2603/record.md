@@ -76,8 +76,10 @@ python -m chakaso benchmark grounded --provider reference --split heldout --json
 python -m chakaso benchmark grounded --provider none      --split all --json
 ```
 
-The JSON report is deterministic (sorted keys); rerunning the same command yields identical bytes
-apart from no environment fields being emitted. The workload fingerprint is printed in each report.
+The JSON report is deterministic (sorted keys); rerunning the same command on the same machine yields
+identical bytes. The report's `configuration` records reproducibility metadata — interpreter version,
+implementation, platform and package version — alongside the dataset id/version/content fingerprint,
+provider label and whether it was an oracle; the workload fingerprint is printed in every report.
 
 ## Metrics
 

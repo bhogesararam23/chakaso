@@ -18,6 +18,7 @@ from chakaso.benchmark.grounded_runner import (
     NonAnsweringProvider,
     ReferenceAnswerProvider,
     StageFailure,
+    environment_metadata,
 )
 from chakaso.benchmark.grounded_workload import load_development_grounded_workload
 from chakaso.benchmark.identity import CaseId, DatasetId
@@ -213,3 +214,13 @@ class TestSplitFilterAndDeterminism:
         assert first.dataset_content_fingerprint == second.dataset_content_fingerprint
         assert first.retrieval_metrics == second.retrieval_metrics
         assert first.answer_metrics == second.answer_metrics
+
+
+class TestEnvironmentMetadata:
+    def test_records_interpreter_platform_and_version(self) -> None:
+        metadata = environment_metadata()
+        for key in ("python_version", "python_implementation", "platform", "chakaso_version"):
+            assert metadata[key], f"{key} must be recorded for reproducibility"
+
+    def test_is_reproducible_within_a_machine(self) -> None:
+        assert environment_metadata() == environment_metadata()

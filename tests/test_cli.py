@@ -877,6 +877,16 @@ def test_benchmark_grounded_json_separates_dimensions(
     assert "quality_score" not in json.dumps(payload)
 
 
+def test_benchmark_grounded_json_records_reproducibility_metadata(
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    assert main(["benchmark", "grounded", "--json"]) == 0
+    config = json.loads(capsys.readouterr().out)["configuration"]
+    # Workstream F: a report names the interpreter, platform and package version behind its numbers.
+    for key in ("python_version", "python_implementation", "platform", "chakaso_version"):
+        assert config[key]
+
+
 def test_benchmark_grounded_heldout_split_runs_only_heldout(
     capsys: pytest.CaptureFixture[str],
 ) -> None:

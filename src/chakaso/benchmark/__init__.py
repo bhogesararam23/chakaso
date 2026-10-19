@@ -89,6 +89,7 @@ from chakaso.benchmark.grounded_runner import (
     NonAnsweringProvider,
     ReferenceAnswerProvider,
     StageFailure,
+    environment_metadata,
 )
 from chakaso.benchmark.grounded_workload import (
     GROUNDED_SOURCES,
@@ -183,6 +184,7 @@ __all__ = [
     "development_benchmark",
     "development_correction_benchmark",
     "development_grounded_workload",
+    "environment_metadata",
     "format_correction_report",
     "format_grounded_report",
     "format_report",

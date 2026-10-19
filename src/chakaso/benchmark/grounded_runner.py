@@ -28,6 +28,8 @@ would see only the question and the pack and ignore the gold evidence.
 
 from __future__ import annotations
 
+import platform
+import sys
 from collections.abc import Mapping
 from dataclasses import dataclass, field
 from enum import StrEnum
@@ -69,7 +71,27 @@ __all__ = [
     "NonAnsweringProvider",
     "ReferenceAnswerProvider",
     "StageFailure",
+    "environment_metadata",
 ]
+
+
+def environment_metadata() -> dict[str, str]:
+    """Reproducibility metadata about the machine and build a run executed on.
+
+    Recorded into a run's metadata so a report names the interpreter, platform and package version
+    behind its numbers (the reporting standard in `docs/evaluation.md`). This is *environment*, not a
+    measured quantity: it is intentionally recorded and, unlike the metrics, will differ across
+    machines — a rerun on a different platform yields the same metrics and a different environment
+    block.
+    """
+    from chakaso import __version__ as chakaso_version
+
+    return {
+        "chakaso_version": chakaso_version,
+        "platform": platform.platform(),
+        "python_implementation": platform.python_implementation(),
+        "python_version": sys.version.split()[0],
+    }
 
 
 class StageFailure(StrEnum):

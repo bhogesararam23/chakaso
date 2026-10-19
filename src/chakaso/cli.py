@@ -66,6 +66,7 @@ from chakaso.benchmark import (
     RetrievalBenchmarkRunner,
     correction_report_json,
     development_correction_benchmark,
+    environment_metadata,
     format_correction_report,
     format_grounded_report,
     format_report,
@@ -1453,7 +1454,11 @@ def _run_grounded_benchmark(args: argparse.Namespace) -> int:
     try:
         corpus, dataset = load_development_grounded_workload()
         run = GroundedEvaluationRunner(
-            corpus, provider=provider, top_k=args.top_k, split_filter=splits[args.split]
+            corpus,
+            provider=provider,
+            top_k=args.top_k,
+            split_filter=splits[args.split],
+            metadata=environment_metadata(),
         ).run(dataset)
     except (ValueError, ChakasoError) as exc:
         print(f"{PROGRAM}: {exc}", file=sys.stderr)
