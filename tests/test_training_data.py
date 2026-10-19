@@ -14,6 +14,7 @@ from chakaso.training.data import (
     dataset_fingerprint,
     fit_vocabulary,
     split_corpus,
+    split_three_way,
 )
 from chakaso.training.tokenizer import UNK_ID
 
@@ -143,3 +144,48 @@ def test_a_zero_context_size_is_refused() -> None:
 
 def _units_of(text: str) -> tuple[str, ...]:
     return tuple(line for line in text.splitlines() if line)
+
+
+def test_three_way_split_is_deterministic_and_disjoint() -> None:
+    first = split_three_way(_TEXT, validation_fraction=0.2, test_fraction=0.2, seed=5)
+    second = split_three_way(_TEXT, validation_fraction=0.2, test_fraction=0.2, seed=5)
+
+    assert first.train_units == second.train_units
+    assert first.validation_units == second.validation_units
+    assert first.test_units == second.test_units
+    # No unit appears on more than one side.
+    assert set(first.train_units).isdisjoint(first.validation_units)
+    assert set(first.train_units).isdisjoint(first.test_units)
+    assert set(first.validation_units).isdisjoint(first.test_units)
+
+
+def test_three_way_split_preserves_every_unit_exactly_once() -> None:
+    split = split_three_way(_TEXT, validation_fraction=0.2, test_fraction=0.2, seed=3)
+    total = len(split.train_units) + len(split.validation_units) + len(split.test_units)
+
+    assert total == len(_units_of(_TEXT))
+    # A unit appears on exactly one side, so combined it reconstructs the unit set with no duplicates.
+    all_units = split.train_units + split.validation_units + split.test_units
+    assert len(set(all_units)) == len(all_units)
+
+
+def test_three_way_vocabulary_excludes_test_only_characters() -> None:
+    unique_line = "\u00a7qqz"  # § q z shared nowhere else
+    text = "alpha bravo\ncharlie delta\necho foxtrot\ngolf hotel\n" + unique_line + "\n"
+    # Whatever the seed, the fit-from-train-only rule guarantees a test/validation-only char is unknown.
+    for seed in range(16):
+        split = split_three_way(text, validation_fraction=0.2, test_fraction=0.2, seed=seed)
+        vocabulary = fit_vocabulary(split)
+        for char in set(split.test_text) - set(split.train_text):
+            assert vocabulary.id_of(char) == UNK_ID
+
+
+def test_three_way_rejects_bad_fractions_and_sizes() -> None:
+    with pytest.raises(ValueError, match="strictly between 0 and 1"):
+        split_three_way(_TEXT, validation_fraction=0.0, test_fraction=0.2, seed=0)
+    with pytest.raises(ValueError, match="must be < 1"):
+        split_three_way(_TEXT, validation_fraction=0.6, test_fraction=0.6, seed=0)
+    with pytest.raises(ValueError, match="at least three"):
+        split_three_way("one\ntwo\n", validation_fraction=0.2, test_fraction=0.2, seed=0)
+    with pytest.raises(ValueError, match="integer"):
+        split_three_way(_TEXT, validation_fraction=0.2, test_fraction=0.2, seed=True)  # type: ignore[arg-type]

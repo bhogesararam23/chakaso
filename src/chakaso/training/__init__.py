@@ -23,10 +23,12 @@ from chakaso.training.corpus import CORPUS, Corpus, corpus_text
 from chakaso.training.data import (
     Example,
     Split,
+    ThreeWaySplit,
     character_windows,
     dataset_fingerprint,
     fit_vocabulary,
     split_corpus,
+    split_three_way,
 )
 from chakaso.training.tokenizer import UNK_ID, CharVocabulary
 
@@ -37,6 +39,7 @@ __all__ = [
     "Corpus",
     "Example",
     "Split",
+    "ThreeWaySplit",
     "TrainingConfig",
     "UnigramBaseline",
     "character_windows",
@@ -44,5 +47,6 @@ __all__ = [
     "dataset_fingerprint",
     "fit_vocabulary",
     "split_corpus",
+    "split_three_way",
     "uniform_next_token_loss",
 ]
