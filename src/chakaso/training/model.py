@@ -166,6 +166,23 @@ class CharCausalMLP:
         _, loss = self._forward_with_cache(params, contexts, targets)
         return loss
 
+    def probabilities(self, params: Params, contexts: I64) -> F64:
+        """Return the next-token distribution for each row of ``contexts``.
+
+        The forward pass up to the softmax, without needing targets — used for accuracy and, later, for
+        generation. Each row sums to one.
+        """
+        self._validate_contexts(contexts)
+        window = np.concatenate(
+            [params.embedding[contexts[:, j]] for j in range(self.context_size)], axis=1
+        )
+        hidden = np.tanh(window @ params.hidden_weight + params.hidden_bias)
+        logits = hidden @ params.output_weight + params.output_bias
+        shifted = logits - logits.max(axis=1, keepdims=True)
+        exp_shifted = np.exp(shifted)
+        probabilities: F64 = exp_shifted / exp_shifted.sum(axis=1, keepdims=True)
+        return probabilities
+
     def _forward_with_cache(
         self, params: Params, contexts: I64, targets: I64
     ) -> tuple[_ForwardCache, float]:
@@ -247,18 +264,21 @@ class CharCausalMLP:
         )
 
     def _validate_batch(self, contexts: I64, targets: I64) -> None:
-        if contexts.ndim != 2 or contexts.shape[1] != self.context_size:
-            message = f"contexts must have shape (n, {self.context_size}), got {contexts.shape}"
-            raise ValueError(message)
+        self._validate_contexts(contexts)
         if targets.ndim != 1 or targets.shape[0] != contexts.shape[0]:
             message = f"targets must be a vector of length {contexts.shape[0]}"
+            raise ValueError(message)
+        if targets.min() < 0 or targets.max() >= self.vocab_size:
+            message = "a target identifier is outside the vocabulary range"
+            raise ValueError(message)
+
+    def _validate_contexts(self, contexts: I64) -> None:
+        if contexts.ndim != 2 or contexts.shape[1] != self.context_size:
+            message = f"contexts must have shape (n, {self.context_size}), got {contexts.shape}"
             raise ValueError(message)
         if contexts.shape[0] == 0:
             message = "a batch must contain at least one example"
             raise ValueError(message)
         if contexts.min() < 0 or contexts.max() >= self.vocab_size:
             message = "a context identifier is outside the vocabulary range"
-            raise ValueError(message)
-        if targets.min() < 0 or targets.max() >= self.vocab_size:
-            message = "a target identifier is outside the vocabulary range"
             raise ValueError(message)
