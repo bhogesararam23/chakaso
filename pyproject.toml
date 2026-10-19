@@ -165,7 +165,7 @@ pretty = true
 # via `mypy src --exclude '_never_match_'` (or by maintainers in an environment that has the extra).
 # This is a scoping decision about an optional dependency, not a weakening of any real check: every
 # dependency-free module remains under full strict type checking.
-exclude = ['chakaso/training']
+exclude = ['chakaso/training', 'chakaso/models/trainedchar']
 
 # When numpy is present this is a real typed library; when it is absent mypy must not fail to resolve
 # its types, so treat an unresolvable numpy as untyped rather than an error.

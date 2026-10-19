@@ -21,7 +21,7 @@ REPO_ROOT = Path(__file__).resolve().parent.parent
 # Concrete language-model adapters. ADR-0002 says application code depends on the
 # boundary, never on one of these, and that configuration selects an adapter in
 # exactly one place.
-CONCRETE_MODEL_MODULES = frozenset({"chakaso.models.deterministic"})
+CONCRETE_MODEL_MODULES = frozenset({"chakaso.models.deterministic", "chakaso.models.trainedchar"})
 
 # The modules allowed to name a concrete adapter: the registry, which is the single
 # composition point, and the package facade, which is where the built-in adapters
