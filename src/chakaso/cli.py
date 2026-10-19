@@ -58,13 +58,20 @@ from chakaso.app import (
 )
 from chakaso.benchmark import (
     BenchmarkError,
+    CaseSplit,
     CorrectionBenchmarkRunner,
+    GroundedEvaluationRunner,
+    NonAnsweringProvider,
+    ReferenceAnswerProvider,
     RetrievalBenchmarkRunner,
     correction_report_json,
     development_correction_benchmark,
     format_correction_report,
+    format_grounded_report,
     format_report,
+    grounded_report_json,
     load_development_benchmark,
+    load_development_grounded_workload,
     report_json,
 )
 from chakaso.config import ConfigError, LoadedConfig, RetrievalConfig, load_config
@@ -362,6 +369,44 @@ def _build_parsers() -> tuple[argparse.ArgumentParser, argparse.ArgumentParser]:
         ),
     )
     semantic_benchmark.add_argument(
+        "--json",
+        action="store_true",
+        help="emit the deterministic machine-readable report instead of the text one",
+    )
+
+    grounded_benchmark = benchmark_subparsers.add_parser(
+        "grounded",
+        help="run the grounded-answer evaluation workload and print its report",
+        description=(
+            "Run the grounded-answer evaluation workload (chakaso.benchmark, ADR-0031) over its "
+            "self-authored, human-inspectable, held-out cases: retrieve, answer through a chosen "
+            "provider, and score retrieval, citation, grounding, abstention and prohibited-claim "
+            "dimensions separately. The 'reference' provider is an oracle that measures the harness, "
+            "not a model; 'none' is a non-answering provider (no model answers); 'retrieval-only' "
+            "scores retrieval alone. No number here is a claim about answer capability on real "
+            "language (K-001). Local, offline, deterministic."
+        ),
+    )
+    grounded_benchmark.add_argument(
+        "--provider",
+        choices=["reference", "none", "retrieval-only"],
+        default="reference",
+        help="answer provider to score through (default: %(default)s; 'reference' is an oracle)",
+    )
+    grounded_benchmark.add_argument(
+        "--top-k",
+        type=int,
+        default=DEFAULT_TOP_K,
+        metavar="N",
+        help="how many chunks to retrieve per case (default: %(default)s)",
+    )
+    grounded_benchmark.add_argument(
+        "--split",
+        choices=["all", "development", "heldout"],
+        default="heldout",
+        help="which cases to run (default: %(default)s — the held-out side reports a clean number)",
+    )
+    grounded_benchmark.add_argument(
         "--json",
         action="store_true",
         help="emit the deterministic machine-readable report instead of the text one",
@@ -1252,8 +1297,11 @@ def _run_benchmark(args: argparse.Namespace) -> int:
         return _run_strategy_benchmark(args)
     if args.benchmark_command == "semantic":
         return _run_semantic_benchmark(args)
+    if args.benchmark_command == "grounded":
+        return _run_grounded_benchmark(args)
     print(
-        f"{PROGRAM}: choose a benchmark subject: 'retrieval', 'correction', 'strategies' or 'semantic'",
+        f"{PROGRAM}: choose a benchmark subject: 'retrieval', 'correction', 'strategies', 'semantic' "
+        f"or 'grounded'",
         file=sys.stderr,
     )
     return 1
@@ -1378,6 +1426,43 @@ def _run_semantic_benchmark(args: argparse.Namespace) -> int:
             "\nThe fixture's perfect score measures the scorer, not a capability: it was handed the "
             "expected relations. The probes show the scorer distinguishes over-claiming from abstention."
         )
+    return 0
+
+
+def _run_grounded_benchmark(args: argparse.Namespace) -> int:
+    """Run the grounded-answer evaluation workload and print its report.
+
+    Thin wiring: the workload, the runner and the report all live in ``chakaso.benchmark``. The
+    ``--provider`` flag picks what the run measures: ``reference`` (an oracle that validates the
+    harness), ``none`` (a non-answering provider — no model answers today), or ``retrieval-only``.
+    The report always states the provider and whether it was an oracle; no number here is a
+    capability claim. Local, offline, deterministic.
+    """
+    provider: ReferenceAnswerProvider | NonAnsweringProvider | None
+    if args.provider == "reference":
+        provider = ReferenceAnswerProvider()
+    elif args.provider == "none":
+        provider = NonAnsweringProvider()
+    else:
+        provider = None
+    splits: dict[str, CaseSplit | None] = {
+        "all": None,
+        "development": CaseSplit.DEVELOPMENT,
+        "heldout": CaseSplit.HELDOUT,
+    }
+    try:
+        corpus, dataset = load_development_grounded_workload()
+        run = GroundedEvaluationRunner(
+            corpus, provider=provider, top_k=args.top_k, split_filter=splits[args.split]
+        ).run(dataset)
+    except (ValueError, ChakasoError) as exc:
+        print(f"{PROGRAM}: {exc}", file=sys.stderr)
+        return 1
+
+    if args.json:
+        print(grounded_report_json(run))
+    else:
+        print(format_grounded_report(run))
     return 0
 
 

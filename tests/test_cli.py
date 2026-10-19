@@ -853,6 +853,76 @@ def test_benchmark_without_a_subject_mentions_semantic(capsys: pytest.CaptureFix
 
 
 # ---------------------------------------------------------------------------
+# benchmark grounded (P27)
+# ---------------------------------------------------------------------------
+
+
+def test_benchmark_grounded_reports_a_development_instrument(
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    assert main(["benchmark", "grounded"]) == 0
+    out = capsys.readouterr().out
+    assert "Grounded-answer evaluation" in out
+    assert "oracle" in out  # the default provider is labelled an oracle, not a model
+
+
+def test_benchmark_grounded_json_separates_dimensions(
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    assert main(["benchmark", "grounded", "--json"]) == 0
+    payload = json.loads(capsys.readouterr().out)
+    assert payload["evaluation"]["kind"] == "development-grounded-answer"
+    assert payload["configuration"]["provider_is_oracle"] is True
+    assert "retrieval_metrics" in payload and "answer_metrics" in payload
+    assert "quality_score" not in json.dumps(payload)
+
+
+def test_benchmark_grounded_heldout_split_runs_only_heldout(
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    assert main(["benchmark", "grounded", "--split", "heldout", "--json"]) == 0
+    payload = json.loads(capsys.readouterr().out)
+    assert payload["configuration"]["split_filter"] == "heldout"
+    assert all(case["split"] == "heldout" for case in payload["cases"])
+
+
+def test_benchmark_grounded_none_provider_abstains_everywhere(
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    assert main(["benchmark", "grounded", "--provider", "none", "--split", "all", "--json"]) == 0
+    payload = json.loads(capsys.readouterr().out)
+    assert payload["configuration"]["provider_is_oracle"] is False
+    # A non-answering provider answers nothing, and over-abstains the answerable cases.
+    assert payload["answer_metrics"]["answered_cases"] == 0
+    assert payload["answer_metrics"]["appropriate_abstention_rate"] < 1.0
+
+
+def test_benchmark_grounded_retrieval_only_has_no_answer_metrics(
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    assert main(["benchmark", "grounded", "--provider", "retrieval-only", "--json"]) == 0
+    payload = json.loads(capsys.readouterr().out)
+    assert payload["configuration"]["provider"] == "retrieval-only"
+    assert payload["retrieval_metrics"]["scored_cases"] >= 1
+    assert payload["answer_metrics"]["answered_cases"] == 0
+
+
+def test_benchmark_grounded_output_is_deterministic(
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    main(["benchmark", "grounded", "--json"])
+    first = capsys.readouterr().out
+    main(["benchmark", "grounded", "--json"])
+    second = capsys.readouterr().out
+    assert first == second
+
+
+def test_benchmark_without_a_subject_mentions_grounded(capsys: pytest.CaptureFixture[str]) -> None:
+    assert main(["benchmark"]) == 1
+    assert "grounded" in capsys.readouterr().err
+
+
+# ---------------------------------------------------------------------------
 # capabilities
 # ---------------------------------------------------------------------------
 
