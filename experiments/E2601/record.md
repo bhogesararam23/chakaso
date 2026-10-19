@@ -9,7 +9,10 @@
 - Git commit: `a50dfa70e808308d5010c16bf781ae3db28fe17c` (the experiment driver; all layers identical
   unless noted)
 - Config hash: dataset digest `8fcd73edf5583474`; vocabulary fingerprint `048217843a73e089`;
-  checkpoint fingerprint `e62eebdcd0bba531ad00edaa3ae8e3cb525d44d9a5edb26e9b32242f2838ebe6`
+  checkpoint fingerprint `20e4d07662bad0b4327753a652bb1f3bbbe95344a92e26169e374a9a89227603`
+  (checkpoint schema `chakaso-checkpoint/2`, which embeds the vocabulary characters so a checkpoint can
+  decode on its own; the measured losses below are unaffected by that format change — only the
+  checkpoint's own content identity moved)
 
 ## Motivation
 
@@ -140,7 +143,7 @@ Full recorded curve (step: train / held-out):
 ```
 
 The checkpoint at the final step has content fingerprint
-`e62eebdcd0bba531ad00edaa3ae8e3cb525d44d9a5edb26e9b32242f2838ebe6`. Following the artifact policy, the
+`20e4d07662bad0b4327753a652bb1f3bbbe95344a92e26169e374a9a89227603`. Following the artifact policy, the
 checkpoint bytes are **not** committed (the tiny model is fully reproducible from the seed and config);
 the fingerprint and the reproduction command are the durable identity.
 

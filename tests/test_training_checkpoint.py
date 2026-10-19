@@ -22,20 +22,32 @@ from chakaso.training.errors import (  # noqa: E402
     IncompatibleCheckpointError,
 )
 from chakaso.training.model import CharCausalMLP  # noqa: E402
+from chakaso.training.tokenizer import CharVocabulary  # noqa: E402
 
 
-def _checkpoint() -> Checkpoint:
-    config = TrainingConfig(
+def _vocab() -> CharVocabulary:
+    # A real, self-consistent vocabulary: 5 characters + the reserved unknown id = size 6, and a
+    # fingerprint the checkpoint loader will validate against.
+    return CharVocabulary(("abcde",))
+
+
+def _config() -> TrainingConfig:
+    return TrainingConfig(
         context_size=3, embed_dim=4, hidden_dim=5, learning_rate=0.05, seed=7, steps=2, eval_every=1
     )
-    model = CharCausalMLP(vocab_size=6, context_size=3, embed_dim=4, hidden_dim=5)
-    params = model.initialize(numpy.random.default_rng(7))
+
+
+def _checkpoint(seed: int = 7) -> Checkpoint:
+    vocab = _vocab()
+    model = CharCausalMLP(vocab_size=vocab.size, context_size=3, embed_dim=4, hidden_dim=5)
+    params = model.initialize(numpy.random.default_rng(seed))
     return Checkpoint(
         params=params,
-        config=config,
-        vocab_size=6,
-        vocab_fingerprint="deadbeefdeadbeef",
+        config=_config(),
+        vocab_size=vocab.size,
+        vocab_fingerprint=vocab.fingerprint,
         dataset_digest="0123456789abcdef",
+        vocab_chars=vocab.chars,
     )
 
 
@@ -66,7 +78,12 @@ def test_a_saved_checkpoint_loads_back_bit_for_bit(tmp_path: Path) -> None:
     assert loaded.config == original.config
     assert loaded.vocab_size == original.vocab_size
     assert loaded.vocab_fingerprint == original.vocab_fingerprint
+    assert loaded.vocab_chars == original.vocab_chars
     assert loaded.dataset_digest == original.dataset_digest
+    # The rebuilt vocabulary encodes/decodes the known characters identically to the original.
+    rebuilt = loaded.vocabulary()
+    assert rebuilt.decode(rebuilt.encode("abcde")) == "abcde"
+    assert rebuilt.chars == original.vocab_chars
 
 
 def test_the_fingerprint_is_stable_and_changes_with_a_parameter() -> None:
@@ -79,19 +96,30 @@ def test_the_fingerprint_is_stable_and_changes_with_a_parameter() -> None:
     )
 
     # A different parameter draw produces a different fingerprint.
-    other = Checkpoint.from_document(_different())
+    other = _checkpoint(seed=999)
     assert first.fingerprint() != other.fingerprint()
 
 
-def _different() -> dict[str, Any]:
-    config = TrainingConfig(
-        context_size=3, embed_dim=4, hidden_dim=5, learning_rate=0.05, seed=7, steps=2, eval_every=1
-    )
-    model = CharCausalMLP(vocab_size=6, context_size=3, embed_dim=4, hidden_dim=5)
-    params = model.initialize(numpy.random.default_rng(999))  # a different draw
-    return Checkpoint(
-        params=params, config=config, vocab_size=6, vocab_fingerprint="x", dataset_digest="y"
-    ).to_document()
+def test_a_fingerprint_validated_vocabulary_is_accepted() -> None:
+    # The checkpoint's stored characters must hash to its stored fingerprint; a real one round-trips.
+    loaded = Checkpoint.from_document(_checkpoint().to_document())
+    assert loaded.vocabulary().fingerprint == loaded.vocab_fingerprint
+
+
+def test_vocabulary_characters_that_do_not_match_the_fingerprint_are_incompatible() -> None:
+    document = _checkpoint().to_document()
+    # Replace the characters with a different set but keep the (now-wrong) fingerprint; the checksum is
+    # re-stamped so the only remaining fault is the vocabulary/fingerprint disagreement.
+    document["vocab_chars"] = ["x", "y", "z", "w", "v"]
+    with pytest.raises(IncompatibleCheckpointError, match="do not hash to"):
+        Checkpoint.from_document(_restamp(document))
+
+
+def test_vocabulary_size_disagreeing_with_the_characters_is_incompatible() -> None:
+    document = _checkpoint().to_document()
+    document["vocab_chars"] = ["a", "b", "c"]  # 3 chars, but vocab_size still says 6
+    with pytest.raises(IncompatibleCheckpointError, match="vocab_size"):
+        Checkpoint.from_document(_restamp(document))
 
 
 def test_altering_an_array_without_fixing_the_checksum_is_corruption(tmp_path: Path) -> None:

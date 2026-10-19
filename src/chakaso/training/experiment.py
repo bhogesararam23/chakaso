@@ -93,6 +93,7 @@ def run_char_experiment(
         vocab_size=vocabulary.size,
         vocab_fingerprint=vocabulary.fingerprint,
         dataset_digest=trained.dataset_digest,
+        vocab_chars=vocabulary.chars,
     )
 
     return ExperimentOutcome(

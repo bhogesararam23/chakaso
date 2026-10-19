@@ -26,12 +26,13 @@ from numpy import typing as npt
 from chakaso.training.config import TrainingConfig
 from chakaso.training.errors import CorruptedCheckpointError, IncompatibleCheckpointError
 from chakaso.training.model import Params
+from chakaso.training.tokenizer import CharVocabulary
 
 __all__ = ["Checkpoint", "checkpoint_filename"]
 
 F64 = npt.NDArray[np.float64]
 
-_SCHEMA_VERSION = "chakaso-checkpoint/1"
+_SCHEMA_VERSION = "chakaso-checkpoint/2"
 _ARRAY_NAMES = ("embedding", "hidden_weight", "hidden_bias", "output_weight", "output_bias")
 
 
@@ -42,13 +43,24 @@ def checkpoint_filename(experiment_id: str) -> str:
 
 @dataclass(frozen=True, slots=True)
 class Checkpoint:
-    """A trained model plus the identity of everything needed to load it correctly."""
+    """A trained model plus everything needed to load and *use* it.
+
+    The vocabulary characters are stored, not only their fingerprint, so a checkpoint can rebuild the
+    exact identifier space and decode output — a fingerprint alone identifies a vocabulary but cannot
+    turn identifiers back into text, which an inference path requires. On load the stored characters are
+    checked against the stored fingerprint, so the vocabulary cannot silently disagree with the weights.
+    """
 
     params: Params
     config: TrainingConfig
     vocab_size: int
     vocab_fingerprint: str
     dataset_digest: str
+    vocab_chars: tuple[str, ...]
+
+    def vocabulary(self) -> CharVocabulary:
+        """Rebuild the exact character vocabulary the model was trained with."""
+        return CharVocabulary(("".join(self.vocab_chars),))
 
     def _content(self) -> dict[str, Any]:
         return {
@@ -56,6 +68,7 @@ class Checkpoint:
             "config": self.config.as_dict(),
             "vocab_size": self.vocab_size,
             "vocab_fingerprint": self.vocab_fingerprint,
+            "vocab_chars": list(self.vocab_chars),
             "dataset_digest": self.dataset_digest,
             "arrays": {name: _named(self.params, name).tolist() for name in _ARRAY_NAMES},
         }
@@ -110,9 +123,24 @@ class Checkpoint:
             vocab_fingerprint = str(content["vocab_fingerprint"])
             dataset_digest = str(content["dataset_digest"])
             raw_arrays = content["arrays"]
+            vocab_chars = tuple(str(c) for c in content["vocab_chars"])
         except (KeyError, TypeError, ValueError) as exc:
             message = f"checkpoint is missing or mis-typed a required field: {exc}"
             raise IncompatibleCheckpointError(message) from exc
+
+        # The stored characters must be exactly the vocabulary the weights were trained in: same size,
+        # and a fingerprint that recomputes to the stored one. A mismatch is a foreign or tampered
+        # vocabulary, not a corruption of the bytes (the checksum already passed).
+        if len(vocab_chars) + 1 != vocab_size:
+            message = (
+                f"vocabulary has {len(vocab_chars)} characters but declares vocab_size "
+                f"{vocab_size} (expected one fewer, the reserved unknown id)"
+            )
+            raise IncompatibleCheckpointError(message)
+        rebuilt = CharVocabulary(("".join(vocab_chars),))
+        if rebuilt.fingerprint != vocab_fingerprint:
+            message = "the stored vocabulary characters do not hash to the stored vocab_fingerprint"
+            raise IncompatibleCheckpointError(message)
 
         expected = {
             "embedding": (vocab_size, config.embed_dim),
@@ -148,6 +176,7 @@ class Checkpoint:
             vocab_size=vocab_size,
             vocab_fingerprint=vocab_fingerprint,
             dataset_digest=dataset_digest,
+            vocab_chars=vocab_chars,
         )
 
     def save(self, path: Path) -> None:
