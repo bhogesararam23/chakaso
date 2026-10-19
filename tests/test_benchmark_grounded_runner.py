@@ -138,6 +138,14 @@ class TestReferenceOracle:
         assert ghost.abstention_observed is True
         assert ghost.abstention_correct is True
 
+    def test_coverage_means_over_answered_cases_only(self) -> None:
+        # The single answered case is fully grounded; the abstention (coverage 0 by definition)
+        # must not dilute the mean. This pins the denominator fix.
+        corpus, dataset = _answer_and_abstain_dataset()
+        run = GroundedEvaluationRunner(corpus, provider=ReferenceAnswerProvider()).run(dataset)
+        assert run.answer_metrics.answered_cases == 1
+        assert run.answer_metrics.mean_evidence_coverage == pytest.approx(1.0)
+
 
 class TestNonAnsweringProvider:
     def test_over_abstention_is_penalized(self) -> None:

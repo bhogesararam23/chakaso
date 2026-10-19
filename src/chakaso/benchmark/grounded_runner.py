@@ -480,9 +480,14 @@ def _aggregate_answer(outcomes: tuple[GroundedCaseOutcome, ...]) -> GroundedAnsw
     decisions = tuple(o for o in scored if o.abstention_correct is not None)
     appropriate = sum(1 for o in decisions if o.abstention_correct)
     grounded = sum(1 for o in answered if o.is_grounded)
+    # Evidence coverage is a per-case mean over *answered* cases only: an abstention has no claims,
+    # so folding its definitionally-zero coverage into the mean would conflate "declined to answer"
+    # with "answered with poorly-grounded claims" — the conflation the separate dimensions exist to
+    # avoid. Abstention quality is scored by the appropriate-abstention rate, not here.
+    coverage_values = tuple(o.evidence_coverage or 0.0 for o in answered)
     return GroundedAnswerMetrics(
         answered_cases=len(answered),
-        mean_evidence_coverage=mean(tuple(o.evidence_coverage or 0.0 for o in scored)),
+        mean_evidence_coverage=mean(coverage_values),
         citation_validity=citation_validity_rate(
             valid=valid, unknown=unknown, irrelevant=irrelevant
         ),
