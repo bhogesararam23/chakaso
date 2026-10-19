@@ -10,6 +10,31 @@ capability is implemented or still planned.
 
 ## Unreleased
 
+### 2026-10-19 — Retrieval can now tell "no evidence" from "k candidates" (P28, E2604)
+
+**Added / measured**
+
+- **Implemented** `chakaso.retrieval.sufficiency` (ADR-0032): a deterministic, offline, numpy-free
+  **evidence-sufficiency decision** at an additive seam over retrieval — `Retriever`/`RetrievalService`
+  keep returning top-k; a policy decides whether the pack is *adequate*. The one policy, discriminating-term
+  overlap, calls a pack sufficient only if a retrieved chunk shares a **non-function-word** query term that
+  is rare in the corpus — the signal that actually separated E2603's failures (junk matches on `the`/`to`/
+  `library`) from real ones.
+- The grounded evaluation runner, reports and `chakaso benchmark grounded --sufficiency` now score sufficiency
+  as a **separate dimension** (accuracy, false-abstentions, missed-abstentions), reported per case and never
+  merged with retrieval or answer metrics.
+- **E2604 result** ([`experiments/E2604/record.md`](experiments/E2604/record.md)): on the self-authored
+  workload the policy is **100% accurate** — all three unanswerable false-retrieval cases judged insufficient,
+  **zero** answerable cases wrongly abstained (recall preserved) — while retrieval's `false_retrievals`/
+  `forbidden_hits` metrics and the runtime are intentionally unchanged (the decision is measured, not yet wired).
+
+**Status and honesty**
+
+- This narrows K-010, it does not close it: the runtime does not yet act on the decision (P32), the policy
+  depends on a narrow corpus-specific `max_document_fraction` band (~0.23–0.31 on 13 documents) that P29 must
+  stress-test rather than generalise, and forbidden-evidence hits are a ranking problem it does not address. It
+  is not a calibrated confidence, and with no model answering, K-001 stands.
+
 ### 2026-10-19 — A grounded-answer evaluation workload exists and is measured (P27, E2603)
 
 **Added / measured**

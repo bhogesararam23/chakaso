@@ -183,9 +183,30 @@ evaluation workload whose units are grounded-answer cases, not retrieval fixture
 
 E2603's honest result is that the harness works and that **lexical retrieval over-returns**: it produced
 a false retrieval on every abstention case and hit forbidden evidence on three. That measured failure,
-not appetite, sets the next sprint — a retrieval evidence-sufficiency decision (P28, tracked as K-010).
-The *real-world* evaluation corpus (item 13's open half) and a model that actually answers both remain
-out of reach and unclaimed.
+not appetite, set the next sprint — a retrieval evidence-sufficiency decision (P28, tracked as K-010),
+now delivered.
+
+## Retrieval evidence sufficiency (P28)
+
+E2604 measured the response to E2603's negatives. [ADR-0032](decisions/ADR-0032-retrieval-evidence-sufficiency.md)
+adds a deterministic, additive sufficiency decision at the retrieval boundary (`chakaso.retrieval.sufficiency`):
+the retriever still returns top-k, and a policy reports whether the pack is adequate, judged by whether a
+retrieved chunk shares a rare, non-function-word query term — the signal that actually separated the
+failures (junk matched `the`/`to`/`library`; real evidence matched `closed`/`licensed`/`borrower`).
+
+1. Failure analysis, case by case, before choosing a rule. — **Done** (a pure document-frequency threshold
+   was tried and *failed* — `to`/`on`/`and` are df=1 at 13 docs — so the design required a content word).
+2. Additive policy + result type + boundary, retrieval contract unchanged. — **Done** (`EvidenceSufficiency`,
+   `DiscriminatingTermSufficiencyPolicy`), with a test that it never mutates the pack.
+3. Measured as a separate evaluation dimension. — **Done**: E2604 sufficiency accuracy **1.0** on the
+   workload, **0** false abstentions (recall preserved), **0** missed (all abstentions caught), retrieval's
+   own metrics unchanged.
+4. Honest limits. — **Done**: a narrow corpus-specific band (~0.23–0.31), a broken single-doc case, no
+   runtime effect yet, not a calibrated confidence.
+
+The sprint that follows is set by E2604's caveat, not by appetite: **P29** calibrates the policy under a
+strict development/held-out protocol and stress-tests it on a harder, extended self-authored workload —
+or records honestly that this corpus is too small to calibrate. Runtime consumption of the decision is P32.
 
 ## Domain-selection gate
 

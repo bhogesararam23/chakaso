@@ -1,27 +1,52 @@
 # Active task
 
-## Current unit: P28 — a retrieval evidence-sufficiency decision (justified by E2603)
+## Current unit: P29 — calibrate and stress-test the sufficiency policy, or record that the corpus is too small
 
-**Goal.** P27 built the grounded-answer evaluation workload and E2603 ran it. The single largest
-correctness problem that measurement demonstrated is not in the answer layer but the retrieval layer:
-lexical `RetrievalService.search` returns its full top-k *even when nothing supports an answer*, so
-all three abstention cases produced a **false retrieval** and three cases surfaced a passage they had
-marked **forbidden**. A grounded system cannot abstain correctly if retrieval always hands it
-evidence. This unit designs and, where the evidence supports it, implements a narrow, tested fix: a
-retrieval evidence-sufficiency signal — a documented score floor or relevance test that lets a
-retrieving turn distinguish "I found nothing relevant" from "I found k things" — driven *only* by
-those specific E2603 failure cases and covered by regression tests that show the failure first.
+**Goal.** P28 shipped a deterministic evidence-sufficiency decision (ADR-0032) and E2604 measured it at
+100% accuracy on the self-authored workload — but with a documented, fragile caveat: it separates answer
+from abstention correctly only for `max_document_fraction ≈ 0.23–0.31` on a 13-document corpus, and a
+single-document corpus breaks it outright. That is a threshold *tuned to the evaluation set*, which is
+exactly the selection-honesty the project forbids. P29 makes the claim honest: attempt a disciplined
+calibration (choose the parameter on **development** cases only, freeze it, then report on **held-out**
+cases never used for selection) and stress the policy with a modest, legally-usable extension of the
+workload — hard negatives, near-miss phrasings, partial-evidence and different-vocabulary cases. If the
+corpus is too small to support a defensible threshold, **say so and record it as the finding**; a narrow
+band that only holds on the set it was tuned on is a negative result, not a calibration.
 
-**Scope.** A change to the retrieval boundary or the `RetrievalService`/runtime composition, with an
-ADR or an update to `docs/retrieval.md`/`docs/evaluation.md` in the same commit, plus the workload
-re-run (E2603's successor or a reassessment) confirming the false-retrieval count moved. It must not
-weaken recall on the answerable cases to win on abstention; both dimensions are reported separately.
+**Scope.** A calibration routine in `chakaso.benchmark` (development-only selection, frozen parameter,
+held-out reporting) with tests that *prove* held-out labels cannot leak into selection; a justified,
+provenance-bearing extension of the self-authored workload (its content fingerprint changes, so bump the
+dataset version, not edit v1 in place); and a re-run (E2605) reporting the trade-off — recall, false
+abstentions, missed abstentions — on both splits, with the full threshold sweep shown, not just the best
+cell. Extend only where a case exercises a *distinct* property; no count-padding.
 
-**What this unit is not.** Not a new benchmark, not a model, not a retrained anything. If a clean
-sufficiency rule cannot be shown to help without hurting recall, the finding is recorded and the
-change deferred rather than forced.
+**What this unit is not.** Not a model, not an external corpus, not a real-workload claim. If calibration
+shows the policy does not generalise even to a slightly harder self-authored set, that is recorded plainly
+and the policy stays a documented heuristic, not wired into the runtime.
 
-## What the previous unit completed (P27 — the grounded-answer evaluation workload)
+## What the previous unit completed (P28 — the retrieval evidence-sufficiency decision)
+
+Designed (ADR-0032), built, tested, measured and recorded (E2604). Runtime consumption deliberately deferred
+to P32 — the decision is measured before it is wired.
+
+- [x] `chakaso.retrieval.sufficiency` — a deterministic, offline, numpy-free **evidence-sufficiency**
+      decision layered **additively** over retrieval (the retriever still returns top-k; `Retriever` and
+      `RetrievalService` are unchanged). `EvidenceSufficiency` (outcome + the discriminating terms +
+      counts, so a verdict is inspectable), the `EvidenceSufficiencyPolicy` boundary, and
+      `DiscriminatingTermSufficiencyPolicy` (a pack is sufficient iff a retrieved chunk shares a
+      **non-function-word** query term that is rare in the corpus). The function-word exclusion was a
+      *corrected* hypothesis: pure document-frequency flagged `to`/`on`/`and` (df=1 on a 13-doc corpus) as
+      discriminating and leaked every abstention — the E2603 investigation caught it and the design changed.
+- [x] `GroundedEvaluationRunner` scores sufficiency as a **separate dimension** (accuracy, false- and
+      missed-abstentions) per case, opt-in so the E2603 baseline path is byte-identical; reports and
+      `chakaso benchmark grounded --sufficiency` expose it (off by default, `configuration.sufficiency`).
+- [x] **E2604 measured result:** sufficiency **accuracy 1.0** on the workload (14 assessed) — all three
+      unanswerable cases judged insufficient, **zero** answerable cases wrongly abstained (recall
+      preserved), retrieval's own recall@k/MRR/forbidden-hits/false-retrievals unchanged (additive).
+      Honest limits recorded: a narrow corpus-specific working band, a broken single-doc case, no runtime
+      effect, no model. [`../../experiments/E2604/record.md`](../../experiments/E2604/record.md).
+
+## What the unit before that completed (P27 — the grounded-answer evaluation workload)
 
 Designed, built, tested, run and recorded (ADR-0031; E2603).
 

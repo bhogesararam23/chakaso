@@ -407,3 +407,43 @@ first measured baseline. The most valuable outcome is a concrete, evidence-drive
 headline: retrieval lacks an evidence-sufficiency signal (recorded as
 [K-010](../agent/KNOWN_ISSUES.md)), which is now the active unit (P28). The frontier of the project — a
 real workload met by a model that answers — is unmoved.
+
+## 2026-10-19 — P28/E2604: an evidence-sufficiency decision, measured against the E2603 baseline
+
+**Observation.** E2603's failure analysis, case by case, showed the false retrievals were not a score
+mystery: unanswerable questions retrieved passages that shared only function words (`a`, `to`, `on`, `and`,
+`library`), while every answerable case's real evidence carried a rare content term. The first hypothesis —
+a document-frequency threshold alone — was tested and **failed**: on a 13-document corpus even `to`/`on`/`and`
+have df=1, so a pure df rule flagged the abstention cases as sufficient. The correction (require a
+non-function-word term) is what made the signal mean what it claimed.
+
+**Experiment E2604 — can a deterministic sufficiency policy separate "no evidence" from "k candidates"
+without costing recall?** Protocol (ADR-0032): `DiscriminatingTermSufficiencyPolicy` (non-function-word,
+low-document-frequency term overlap; `max_document_fraction=0.25`) added as an *additive seam* — retrieval
+still returns top-k; only a decision is layered on. Baseline is E2603 with the policy off (byte-identical
+code path). Reference oracle answers; no model. Record:
+[`../../experiments/E2604/record.md`](../../experiments/E2604/record.md).
+
+**Result (measured).** Split=all: sufficiency **accuracy 1.0** (14 assessed), **false abstentions 0**,
+**missed abstentions 0** — all three E2603 unanswerable cases now judged insufficient, no answerable case
+wrongly abstained. Retrieval recall@k (0.8182), MRR (0.8636), forbidden hits (3) and false retrievals (3)
+are **unchanged**, because the policy does not touch retrieval. Held-out: sufficiency accuracy 1.0, recall@k
+1.0. A parameter sweep found the policy is correct only for `max_document_fraction ≈ 0.23–0.31`: below it
+the df=3 answerable `book` case is wrongly abstained; above it the df=4 noise term `library` leaks the
+abstentions.
+
+**Interpretation.** The decision layer works and is honest about its own basis (it names the terms behind
+each verdict), and it is a genuine, measured improvement to whether the system can tell it should abstain —
+*without* the cheap win of abstaining on everything (zero false abstentions is the required other half of
+the trade-off). The additive design means retrieval still over-returns, so this is a decision Chakaso can now
+make, not yet behaviour it acts on (P32).
+
+**Limitation.** The narrow, corpus-specific working band is the central caveat: a threshold that only holds
+for one 13-document vocabulary is **not a calibrated confidence**, and there is no evidence a band exists for
+a larger or differently-worded corpus. A single-document corpus breaks it outright (asserted by test).
+No model; no real corpus; K-001 stands. No statistical claim (deterministic, tiny).
+
+**Conclusion (narrow but real).** P28 delivers a deterministic, inspectable evidence-sufficiency signal that
+measures perfectly on the workload it was designed against, and honestly flags that "measures perfectly here"
+is a weak claim. The next unit (P29) is to test whether it survives calibration and a harder, extended
+workload — or to record, truthfully, that this corpus is too small to calibrate it at all.

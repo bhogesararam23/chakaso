@@ -1,6 +1,6 @@
 # Experiments
 
-**Three experiment records are committed: E2601, E2602 and E2603.** E2601
+**Four experiment records are committed: E2601, E2602, E2603 and E2604.** E2601
 ([`../../../experiments/E2601/record.md`](../../../experiments/E2601/record.md)) is the project's first
 measured result — a from-scratch character model whose held-out next-token loss beats uniform and unigram
 baselines; E2602
@@ -10,11 +10,14 @@ baselines on every seed); E2603
 ([`../../../experiments/E2603/record.md`](../../../experiments/E2603/record.md)) is the first
 **grounded-answer evaluation** baseline, run over the self-authored P27 workload (`chakaso benchmark
 grounded`) with a reference oracle — measuring the harness and retrieval, and honestly reporting real
-retrieval failures (forbidden hits, false retrievals), not any model capability. No *hypothesis* (H1–H7)
-has been tested yet; none of the three establishes a research claim about grounding, citation or
-correction. The project also has development benchmarks (retrieval and correction) and a reproducible
-experiment layer (`chakaso.experiments`) — those are regression instruments over synthetic fixtures,
-distinct from a committed experiment record.
+retrieval failures (forbidden hits, false retrievals), not any model capability; E2604
+([`../../../experiments/E2604/record.md`](../../../experiments/E2604/record.md)) evaluates the P28
+evidence-sufficiency decision (ADR-0032) against the E2603 baseline — 100% accurate on the workload (all
+unanswerable cases caught, zero answerable cases wrongly abstained) with a documented narrow,
+corpus-specific threshold band. No *hypothesis* (H1–H7) has been tested yet; none of the four establishes
+a research claim about grounding, citation or correction on real language. The project also has development
+benchmarks (retrieval and correction) and a reproducible experiment layer (`chakaso.experiments`) — those
+are regression instruments over synthetic fixtures, distinct from a committed experiment record.
 
 This directory defines the record format so that an experiment is recorded properly rather than being
 described in a commit message.

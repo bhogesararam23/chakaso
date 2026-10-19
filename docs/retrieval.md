@@ -356,6 +356,29 @@ content can change application policy. This is a design constraint on the
 generation step as well: the prompt template must separate instructions from
 evidence textually and structurally.
 
+## Evidence sufficiency
+
+Retrieval ranks candidates; it does not decide whether any of them is *adequate evidence*. E2603
+measured the gap: lexical retrieval returned a non-empty pack for every unanswerable question, because
+BM25 hands back anything sharing even a function word with the query. `chakaso.retrieval.sufficiency`
+(ADR-0032) adds that missing decision at a **separate, additive seam** — the retriever and
+`RetrievalService.search` keep their exact behaviour and still return top-k; a deterministic policy reads
+the returned chunks and the corpus and reports `sufficient` or `insufficient`.
+
+The one implemented policy is **discriminating-term overlap**: a pack is sufficient when at least one
+retrieved chunk shares a query term that is (a) not a closed-class function word and (b) has a low corpus
+document frequency — a term whose presence actually discriminates, rather than an incidental `the`/`to`/
+`library` overlap. This uses the same frequency signal BM25's IDF already encodes, is deterministic,
+offline, numpy-free and strategy-agnostic (it reads chunks and corpus statistics, not a score), and names
+the terms behind each decision so the outcome is inspectable.
+
+It is **not a calibrated confidence** and not a raw score threshold (raw BM25 magnitudes are not
+comparable across queries or strategies). On the small self-authored workload it separates answer from
+abstention correctly only over a narrow `max_document_fraction` band — a documented, corpus-specific
+limitation the project treats as the thing to stress-test, not to generalise (see E2604 and the P29
+calibration work). The runtime does not yet consume the decision (wiring it into the answer path is P32);
+today the signal is measured through `chakaso benchmark grounded --sufficiency` and recorded per case.
+
 ## Status
 
 | Component | Status |
@@ -378,13 +401,14 @@ evidence textually and structurally.
 | Chunking | Implemented |
 | Lexical retrieval (BM25 index, deterministic ranking, explanations) | Implemented |
 | Retrieval orchestration (query → ranked EvidencePack) | Implemented |
+| Evidence sufficiency decision (deterministic, additive seam over retrieval) | Implemented (`chakaso.retrieval.sufficiency`, ADR-0032) — a discriminating-term policy, offline and inspectable; **not** a calibrated confidence, runtime consumption deferred to P32 (measured via `chakaso benchmark grounded --sufficiency`) |
 | Dense retrieval: `EmbeddingModel` boundary, exact dense index, `DenseRetriever` behind `Retriever` | Implemented (`chakaso.retrieval.embeddings`/`dense`, ADR-0023) — the only embedding is a deterministic, **non-semantic** development double; results are tagged with their producing strategy |
 | Hybrid retrieval: reciprocal-rank fusion of the lexical and dense retrievers, with per-component provenance | Implemented (`chakaso.retrieval.hybrid`, ADR-0024) — over the fixture dense embedding it re-ranks token overlap, not meaning |
 | A real semantic embedding model, and an approximate (FAISS-like) vector index | Planned |
 | Reranking | Planned |
 | Claim-level support checking | Planned |
 | Retrieval metric functions (recall@k, precision@k, MRR, duplicate + citation counts) | Implemented (`chakaso.evaluation`) |
-| Retrieval metrics on a benchmark, and NDCG | Planned (no dataset yet) |
+| Retrieval metrics on a benchmark | Implemented on development benchmarks (retrieval fixtures, and the self-authored grounded-answer workload — E2603/E2604 measure recall@k, MRR, forbidden hits, false retrievals over synthetic/self-authored data); NDCG remains Planned |
 
 The records, the pack and resolution are implemented and tested without any
 network access: a record is built from content a caller already has. A lexical retriever
@@ -392,5 +416,8 @@ and an in-memory corpus now exist. A bounded, opt-in fetcher
 *can* reach the web, but it is off every default path, so a default run neither fetches nor touches
 the network — retrieval operates on content a caller ingests from disk or supplies.
 
-No retrieval metric has been measured. Any number appearing in this repository's
-documentation would be invented; there are none.
+Retrieval metrics *have* been measured — the retrieval-strategy comparison (E-001) and the
+grounded-answer workload (E2603, E2604) — but only over synthetic or self-authored fixture corpora, never
+a real-world corpus. Those numbers describe the retriever and the harness on hand-built data; they are
+not evidence of retrieval quality on real documents (K-001). No number here is invented; every one names
+the dataset and configuration that produced it.

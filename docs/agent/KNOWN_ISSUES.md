@@ -40,7 +40,8 @@ architecture has been validated.
 
 ### K-010 — Lexical retrieval returns its top-k even when nothing is relevant
 
-**Impact:** Medium, and it is now a *measured* problem, not a hypothetical one.
+**Impact:** Medium, measured by E2603; **partially addressed by P28 (ADR-0032, E2604)** — a decision now
+exists, but retrieval itself is unchanged and the runtime does not yet consume it.
 
 Discovered by E2603 (the grounded-answer workload run): `RetrievalService.search` always returns up to
 `top_k` BM25-ranked chunks, including for questions whose answer is absent from the corpus. Over the
@@ -53,10 +54,22 @@ abstention depends on is never produced.
 evidence; abstention cases were checked for "did retrieval return nothing," but the fixture set was
 small and the failure did not aggregate visibly. The P27 workload made it measurable per category.
 
-**What would close it:** a retrieval evidence-sufficiency decision — a documented score floor or
-relevance test at the `RetrievalService`/runtime boundary that distinguishes "found nothing relevant"
-from "found k things", justified by the exact E2603 cases and covered by regression tests, without
-degrading recall on the answerable cases. This is the current active unit (P28).
+**What P28 changed.** `chakaso.retrieval.sufficiency` adds a deterministic, additive evidence-sufficiency
+decision (a discriminating-term policy, ADR-0032). E2604 measured it at **100% accuracy on the workload —
+all three unanswerable cases judged insufficient, zero answerable cases wrongly abstained** — while
+leaving retrieval's candidate emission, its `false_retrievals`/`forbidden_hits` metrics, and the runtime
+behaviour untouched (the signal is opt-in via `--sufficiency` and consumed only by the evaluation harness
+today).
+
+**What still does not close it.** (1) The runtime does not yet *act* on the decision — wiring the answer
+path to abstain on insufficient evidence is P32. (2) The policy's correct operating band is narrow and
+corpus-specific (`max_document_fraction ≈ 0.23–0.31` on 13 documents); whether a working threshold exists
+at all on a real corpus is untested — that is P29. (3) `forbidden_hits` is a ranking/precision problem the
+sufficiency decision does not address.
+
+**What would close it fully:** the P32 runtime consumption plus a P29 demonstration that the policy
+survives calibration on data it was not tuned on, with recall preserved and abstention measured on both
+sides.
 
 ### K-002 — Documentation describes components that do not exist
 
