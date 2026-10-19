@@ -124,3 +124,4 @@ creates.
 | [ADR-0029](ADR-0029-explicit-reassessment-trigger.md) | Reassessment is triggered by an explicit identifier and composed at the application root | Accepted |
 | [ADR-0030](ADR-0030-minimal-optional-training-dependency.md) | A minimal, optional numerical dependency (numpy in a `[train]` extra) gates any from-scratch training | Accepted |
 | [ADR-0031](ADR-0031-grounded-answer-evaluation-workload.md) | The grounded-answer evaluation workload is self-authored, provenance-bearing data | Accepted |
+| [ADR-0032](ADR-0032-retrieval-evidence-sufficiency.md) | Evidence sufficiency is a deterministic, corpus-statistical decision at the retrieval boundary | Accepted |
