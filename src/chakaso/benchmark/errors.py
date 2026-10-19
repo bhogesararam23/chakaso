@@ -12,7 +12,9 @@ __all__ = [
     "InvalidCaseError",
     "InvalidIdentifierError",
     "MalformedCaseEntryError",
+    "MissingProvenanceError",
     "UnknownCaseError",
+    "WorkloadValidationError",
 ]
 
 
@@ -80,4 +82,25 @@ class BenchmarkFileError(BenchmarkError):
     Covers the manifest and the JSONL case file: a directory with no manifest, a manifest
     missing a required field, or a case file that cannot be read is a configuration fault a
     developer must see, not an empty benchmark that runs and reports nothing.
+    """
+
+
+class MissingProvenanceError(BenchmarkError):
+    """A grounded-workload source has no documented provenance or licence.
+
+    The whole point of a legally-usable evaluation workload is that every passage can be
+    traced to who authored it and under what terms it may be redistributed (ADR-0031). A
+    passage that arrived without provenance is not a case with a missing nicety — it is
+    evidence the project cannot prove it is allowed to ship, so it is refused rather than
+    defaulted.
+    """
+
+
+class WorkloadValidationError(BenchmarkError):
+    """A grounded-answer workload fails an integrity check as a whole.
+
+    Raised for dataset-level faults a single case cannot see on its own: an evidence label
+    a case names that no source in the pool provides, a case id reused across the
+    development and held-out splits, or the same source supporting cases on both sides of
+    the split (a leakage that would let a selection-set passage inflate a held-out number).
     """
