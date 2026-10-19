@@ -37,6 +37,13 @@ temperature = 0.0
 # deliberately conservative placeholder rather than a measured optimum.
 max_context_turns = 40
 
+# Path to a trained model checkpoint, used only by the optional "trained_char"
+# adapter (P25, ADR-0030) — which requires the [train] extra and is never selected by
+# default. Empty here so the shipped configuration loads no weights and the base
+# install stays dependency-free; the trained_char adapter refuses an empty or missing
+# path rather than falling back to the double.
+checkpoint_path = ""
+
 [storage]
 # Which answer-store backend a retrieval-aware runtime would use (ADR-0021). This is
 # the single place the persistence mechanism is chosen, exactly as [model].adapter is

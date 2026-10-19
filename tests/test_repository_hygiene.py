@@ -21,7 +21,7 @@ REPO_ROOT = Path(__file__).resolve().parent.parent
 # Concrete language-model adapters. ADR-0002 says application code depends on the
 # boundary, never on one of these, and that configuration selects an adapter in
 # exactly one place.
-CONCRETE_MODEL_MODULES = frozenset({"chakaso.models.deterministic"})
+CONCRETE_MODEL_MODULES = frozenset({"chakaso.models.deterministic", "chakaso.models.trainedchar"})
 
 # The modules allowed to name a concrete adapter: the registry, which is the single
 # composition point, and the package facade, which is where the built-in adapters
@@ -280,6 +280,47 @@ def test_no_dependency_is_a_commercial_model_or_search_provider() -> None:
     assert not forbidden, (
         "A commercial inference or search provider is declared as a dependency. "
         f"ADR-0001 forbids this: {forbidden}"
+    )
+
+
+def test_the_base_install_declares_no_runtime_dependency() -> None:
+    # ADR-0001 keeps the runtime working with no third-party install, and ADR-0030 keeps the
+    # numerical stack optional on top of that. If a dependency ever lands in `dependencies` or in
+    # `dev` (which the core CI installs), the base install and CI silently stop being dependency-free.
+    pyproject = tomllib.loads((REPO_ROOT / "pyproject.toml").read_text(encoding="utf-8"))
+    project = pyproject["project"]
+
+    assert project.get("dependencies", []) == [], (
+        "the base install must declare no runtime dependency"
+    )
+
+    dev = [
+        re.split(r"[<>=!\[; ]", item, maxsplit=1)[0].strip().lower()
+        for item in project["optional-dependencies"]["dev"]
+    ]
+    assert "numpy" not in dev, (
+        "numpy belongs only in the optional [train] extra, never in dev or core CI"
+    )
+
+
+def test_the_training_extra_is_numpy_and_bounded_for_the_python_floor() -> None:
+    # ADR-0030 admits exactly one numerical dependency, and bounds it so the declared Python floor
+    # (3.11) still installs it — NumPy 2.5 dropped 3.11. This test is the enforced form of that
+    # promise, so a future widening of the bound that breaks the floor is a visible decision, not a
+    # silent CI failure on the oldest interpreter.
+    pyproject = tomllib.loads((REPO_ROOT / "pyproject.toml").read_text(encoding="utf-8"))
+    extras = pyproject["project"]["optional-dependencies"]
+
+    assert "train" in extras, "the [train] extra named by ADR-0030 is missing"
+    requirements = [item.strip().lower() for item in extras["train"]]
+    assert len(requirements) == 1, f"the [train] extra must carry exactly numpy: {requirements}"
+    assert requirements[0].startswith("numpy"), requirements
+    # The upper bound must stay below 2.5 to keep Python 3.11 installable.
+    match = re.search(r"<\s*(\d+)\.(\d+)", requirements[0])
+    assert match is not None, f"the [train] numpy bound must cap the major.minor: {requirements[0]}"
+    major, minor = int(match.group(1)), int(match.group(2))
+    assert (major, minor) <= (2, 5), (
+        f"numpy bound {requirements[0]!r} must not admit a 3.11-breaking release"
     )
 
 

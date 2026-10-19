@@ -132,6 +132,16 @@ SPECS: tuple[FieldSpec, ...] = (
         maximum=10_000,
     ),
     FieldSpec(
+        key="model.checkpoint_path",
+        kind=str,
+        # Path to a trained model checkpoint, used only by the optional trained-char
+        # adapter (P25, ADR-0030). Empty by default so nothing is loaded and the base
+        # configuration never requires the [train] extra; the adapter fails explicitly
+        # when it is selected without a path rather than silently falling back.
+        default="",
+        description="Checkpoint path for a trained model adapter; unused by the double",
+    ),
+    FieldSpec(
         key="storage.backend",
         kind=str,
         # The answer store is selected here, in one place, exactly as the model adapter
@@ -238,6 +248,7 @@ class ModelConfig:
     max_new_tokens: int
     temperature: float
     max_context_turns: int
+    checkpoint_path: str
 
 
 @dataclass(frozen=True, slots=True)
@@ -356,6 +367,7 @@ def build_config(values: dict[str, FieldValue]) -> Config:
             max_new_tokens=cast(int, values["model.max_new_tokens"]),
             temperature=cast(float, values["model.temperature"]),
             max_context_turns=cast(int, values["model.max_context_turns"]),
+            checkpoint_path=cast(str, values["model.checkpoint_path"]),
         ),
         storage=StorageConfig(
             backend=cast(str, values["storage.backend"]),

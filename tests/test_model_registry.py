@@ -14,6 +14,7 @@ import pytest
 from chakaso.config import load_config
 from chakaso.models import (
     DETERMINISTIC_MODEL_ID,
+    TRAINED_CHAR_MODEL_ID,
     DeterministicModel,
     LanguageModel,
     ModelRegistry,
@@ -27,7 +28,9 @@ DEFAULT_CONFIG_FILE = REPO_ROOT / "configs" / "default.toml"
 
 
 def test_default_registry_contains_the_deterministic_double() -> None:
-    assert default_registry().names() == (DETERMINISTIC_MODEL_ID,)
+    # The double plus the optional trained-char adapter, registered by name. Reading the registry must
+    # not import the trained-char module (which needs the optional [train] extra) — only building it does.
+    assert default_registry().names() == (DETERMINISTIC_MODEL_ID, TRAINED_CHAR_MODEL_ID)
 
 
 def test_default_registry_returns_a_fresh_instance_each_time() -> None:
@@ -105,8 +108,9 @@ def test_registry_reports_membership_and_size() -> None:
     registry = default_registry()
 
     assert DETERMINISTIC_MODEL_ID in registry
+    assert TRAINED_CHAR_MODEL_ID in registry
     assert "absent" not in registry
-    assert len(registry) == 1
+    assert len(registry) == 2
 
 
 def test_registry_accepts_initial_factories() -> None:

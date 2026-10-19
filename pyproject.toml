@@ -43,6 +43,14 @@ dev = [
     "ruff>=0.9,<1",
     "mypy>=1.11,<2",
 ]
+# ADR-0030: the minimal offline numerical stack for a from-scratch training experiment, kept out of
+# the base install and the core CI matrix. `numpy<2.5` is deliberate — NumPy 2.5 dropped the Python
+# 3.11 floor this project supports — so `pip install -e ".[train]"` still resolves on 3.11, 3.12 and
+# 3.13. Training code lives in `chakaso.training` (the module ADR-0005 reserved for it) and imports
+# numpy only there; `import chakaso` must never require it.
+train = [
+    "numpy>=1.26,<2.5",
+]
 
 [project.scripts]
 chakaso = "chakaso.cli:main"
@@ -148,3 +156,19 @@ warn_unused_ignores = true
 warn_redundant_casts = true
 show_error_codes = true
 pretty = true
+
+# numpy is an optional [train] dependency (ADR-0030), and the dependency-free core CI matrix installs
+# only .[dev] — so numpy is absent when the default `mypy src` runs. The training layer's type aliases
+# resolve through numpy (npt.NDArray[np.float64]), which cannot be checked without it. Excluding
+# chakaso.training keeps the documented `mypy src` command green on a dependency-free machine without
+# editing CI workflow files; the numerical path is fully type-checked where numpy actually is installed,
+# via `mypy src --exclude '_never_match_'` (or by maintainers in an environment that has the extra).
+# This is a scoping decision about an optional dependency, not a weakening of any real check: every
+# dependency-free module remains under full strict type checking.
+exclude = ['chakaso/training', 'chakaso/models/trainedchar']
+
+# When numpy is present this is a real typed library; when it is absent mypy must not fail to resolve
+# its types, so treat an unresolvable numpy as untyped rather than an error.
+[[tool.mypy.overrides]]
+module = ["numpy", "numpy.*"]
+ignore_missing_imports = true

@@ -41,9 +41,15 @@ application-level reassessment over a stored answer, and an append-only answer s
 in-memory by default and durably **SQLite-backed when configured** — a history that survives a
 process restart. There is also a fixture-only semantic grounding boundary, a correction development
 benchmark, and reproducible experiment records with a deterministic regression baseline.
-There is still no language model, no tokenizer, no training code, and no automatic correction loop;
-the only numbers that exist are development metrics the retrieval and correction benchmarks compute
-over small synthetic fixtures — not model-quality or real-workload results.
+There is still **no language model in the product**, no subword tokenizer, and no automatic correction
+loop. The runtime's only model is the development double. But the project has now **trained and measured
+a model of its own**: experiment [E2601](experiments/E2601/record.md) trains a 984-parameter character
+model from random initialization (`chakaso.training`, gated by
+[ADR-0030](docs/decisions/ADR-0030-minimal-optional-training-dependency.md)) and shows its held-out
+next-character loss falls below both uniform and unigram baselines — the project's first genuinely
+measured result. It is a learning-loop demonstration on a tiny synthetic corpus, not a useful language
+model, and it is not wired into the runtime; the retrieval and correction numbers remain development
+metrics over synthetic fixtures, not model-quality or real-workload results.
 
 The status vocabulary used across this documentation is:
 
@@ -76,9 +82,11 @@ The status vocabulary used across this documentation is:
 | Reproducible experiments and a regression baseline | Implemented (development, ADR-0020); no model-quality result |
 | Dense retrieval (embedding boundary + exact index) and hybrid reciprocal-rank fusion | Experimental (ADR-0023/ADR-0024) — the only embedding is a deterministic, non-semantic fixture double, so these re-rank token overlap, not meaning |
 | A real semantic embedding model, an approximate (FAISS-like) vector index, and reranking | Planned |
-| Tokenizer training | Planned |
-| Tiny from-scratch Transformer | Planned |
-| Any trained Chakaso weights | Does not exist |
+| Character tokenizer, leak-free split, tiny causal model, Adam, checkpoint, training loop, baselines, held-out evaluation (`chakaso.training`) | Experimental (ADR-0030; runs under the optional `[train]` extra, out of core CI per K-009; not used by the default runtime, though its checkpoints can be loaded by the optional `trained_char` adapter) |
+| Experiment E2601: a from-scratch character model trained from random init and measured against baselines | Implemented (Experimental; measured held-out loss beats uniform + unigram; toy scale, single seed, overfits after step 50) |
+| Subword/BPE tokenizer, a Transformer, a real corpus, mini-batching and any scaling | Planned |
+| A trained Chakaso model wired behind the `LanguageModel` boundary (a `trained_char` inference adapter) | Experimental (P25): loads an E2601-class checkpoint, satisfies the model contract, generates greedily; behind the optional `[train]` extra, never the default, and the model is a tiny toy that produces incoherent text |
+| Committed or released model weights | Does not exist (the E2601 checkpoint is reproducible from the seed and recorded by fingerprint, not committed) |
 | Real evaluation harness and model benchmarks | Planned (retrieval and correction development benchmarks exist; no real-workload or model-quality measurement) |
 
 Nothing in this list is aspirational language. If a row says Planned, there is no
@@ -199,11 +207,10 @@ chakaso/
 └── pyproject.toml
 ```
 
-Experiment records will live at `experiments/<experiment-id>/record.md`. The
-directory appears with the first experiment; there is no experiment yet, so the
-format is defined in
-[`docs/internal/experiments/README.md`](docs/internal/experiments/README.md) and
-nothing else exists.
+Experiment records live at `experiments/<experiment-id>/record.md`, with any configuration alongside
+them and never large artifacts. The first, [`experiments/E2601/record.md`](experiments/E2601/record.md),
+is committed — the project's first measured training result. The record format is defined in
+[`docs/internal/experiments/README.md`](docs/internal/experiments/README.md).
 
 The package uses a `src/` layout so that tests exercise the installed package
 rather than whatever happens to be in the working directory

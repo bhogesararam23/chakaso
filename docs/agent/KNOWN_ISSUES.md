@@ -3,7 +3,7 @@
 Real problems with the current state, including the ones that are only
 inconvenient. An empty file here would mean nobody has looked.
 
-Last reviewed: 2026-10-15.
+Last reviewed: 2026-10-19.
 
 ## Open
 
@@ -12,15 +12,21 @@ Last reviewed: 2026-10-15.
 **Impact:** High, and it is the honest summary of the project's position.
 
 The architecture is a specification. It has never handled a live web page, a real
-question, or a model. Decisions recorded in ADRs 0001–0007 rest on reasoning, not
+question, or a useful model. Decisions recorded in ADRs 0001–0007 rest on reasoning, not
 on measurement, and some of them may turn out to be wrong when they meet data.
 The contract in ADR-0003 in particular assumes that models can be made to reference
 opaque evidence identifiers reliably; that assumption is untested.
 
-**What would close it:** a run against a real corpus or a real model. A local retrieval
-implementation, a synthetic development benchmark and the evaluation / correction foundations now
-exist and are exercised in tests; none of them is a real workload, and no model produces an
-answer, so the underlying gap stands.
+**Narrowed, not closed, on 2026-10-19.** E2601 trained a real model from random initialization and
+measured it against baselines, so the *training loop* is no longer unexecuted — but that model is a
+tiny synthetic-corpus character experiment, not a useful language model, and nothing has met a real
+question or a real corpus. The stronger form of the gap stands: no real workload, no grounded answer,
+no measured model quality.
+
+**What would close it:** a run against a real corpus or a useful model that produces and grounds an
+answer. A local retrieval implementation, a synthetic development benchmark, the evaluation / correction
+foundations, and now a measured from-scratch training loop all exist and are exercised in tests or in a
+committed experiment; none of them is a real workload with a real answer, so the underlying gap remains.
 
 **Not a defect to fix now.** It is recorded so that no document reads as though the
 architecture has been validated.
@@ -80,6 +86,30 @@ opt-in.
 
 **What would close it:** IP-pinned resolution in the transport, plus a politeness layer
 (robots, per-host spacing) before the fetcher is used against the live web.
+
+### K-009 — The training tests do not run in remote CI
+
+**Impact:** Medium, and it is a coverage gap rather than a correctness one.
+
+`chakaso.training` depends on `numpy`, which is an optional `[train]` extra (ADR-0030). The core CI
+matrix installs only `.[dev]`, so the numerical tests `pytest.importorskip("numpy")` and **skip** there;
+`mypy src` also skips `chakaso.training` in that matrix (its type aliases resolve through numpy). The
+tests and the strict type-check of the training package therefore run only where the extra is installed
+(locally, and by any maintainer who runs `.[dev,train]`) — not on every push in CI.
+
+**Why it is not closed in the obvious way.** The clean fix is a dedicated CI job that installs
+`.[dev,train]` and runs the full suite and `mypy src`; the code for it exists but **cannot be pushed**
+because the session's GitHub credentials are an OAuth app without the `workflow` scope, and GitHub
+refuses to let it create or update `.github/workflows/*`. ADR-0030's testing strategy anticipates that
+job; delivering it needs a token with the `workflow` scope (or a human applying the one-job change).
+
+**Mitigation in place now:** the dependency-free parts of the training layer (corpus, tokenizer, split,
+config, baselines) run in the core matrix as ordinary tests; only the numpy-requiring modules skip. The
+numerics are verified locally and the whole training package is clean under strict `mypy` with numpy
+present.
+
+**What would close it:** a CI workflow change (one extra job installing `.[dev,train]`) made with a
+credential that has the `workflow` scope.
 
 ### K-006 — The invented-reference condition is persisted; the rate is not yet aggregated
 

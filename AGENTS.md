@@ -36,8 +36,15 @@ are in [`docs/README.md`](docs/README.md). A change that implements something
 updates that status in the same commit.
 
 **Do not invent numbers, datasets, citations or experiments.** If it was not
-measured, it is not written down. There are currently no measured results of any
-kind in this repository, and it should stay obvious that this is true.
+measured, it is not written down. The only measured results in this repository are
+executed comparisons over small synthetic development fixtures — the retrieval-strategy
+measurement E-001, and E2601, the first trained model (a tiny character LM whose held-out
+next-token loss beats uniform/unigram baselines, recorded in
+[`experiments/E2601/record.md`](experiments/E2601/record.md)). Both check the shape of a
+mechanism or a learning loop on a hand-built toy, never meaning on a real workload. There
+is no measurement of a real workload and no result from any *useful* language model —
+the trained artifact is an experiment, not a deployed model — and it should stay obvious
+that this is true.
 
 **The runtime must not require a commercial inference or search API.**
 [ADR-0001](docs/decisions/ADR-0001-local-first-runtime.md). External providers may

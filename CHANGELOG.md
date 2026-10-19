@@ -10,6 +10,126 @@ capability is implemented or still planned.
 
 ## Unreleased
 
+### 2026-10-19 — The training result is reproduced across seeds under a controlled protocol (E2602, P26)
+
+**Added / measured**
+
+- `chakaso.training.data.split_three_way` — a deterministic, disjoint train/**validation**/**test**
+  separation (each line unit wholly on one side; every unit preserved exactly once), so a
+  model-selection rule can read validation without contaminating the reported test number. The vocabulary
+  stays fit on training text only; `fit_vocabulary` is now structural (works for the two- and three-way
+  shapes via a read-only `train_text` protocol).
+- `chakaso.training.controlled.run_controlled_experiment` — a fixed protocol (same model/optimizer as
+  E2601, pre-declared seeds (7, 21, 1337, 2024, 42)) with **early stopping**: select the first step
+  achieving a new minimum *validation* loss and report the test loss there; aggregate mean + sample
+  standard deviation across seeds against the same uniform/unigram baselines.
+- **E2602 result** ([`experiments/E2602/record.md`](experiments/E2602/record.md)): mean held-out **test**
+  cross-entropy **1.7978 ± 0.1767 nats**, below both baselines on every seed (unigram mean 2.9808, uniform
+  ~3.3); the un-early-stopped step-300 test loss (mean 2.7804) is worse on every seed — E2601's
+  overfitting is systematic, not one lucky partition.
+
+**Status and honesty**
+
+- The result is a **language-modelling toy with an error bar**, not a capability claim: five seeds cut
+  sampling noise, not the corpus's unreality, and the validation/test sets are small (77–93 positions). No
+  wall-clock/memory measured. It advances the roadmap's training sprint and narrows K-001's training-loop
+  half further (a *reproducible, multi-seed* result), but K-001 stands and no hypothesis (H1–H7) is
+  tested. The evidence now points toward breadth (a real evaluation corpus) rather than more of the same.
+
+### 2026-10-19 — A trained model is integrated behind the boundary (P25) and checkpoints carry their vocabulary
+
+**Added**
+
+- `chakaso.models.trainedchar.TrainedCharacterModel` — a second `LanguageModel` adapter (selected by
+  `model.adapter = "trained_char"` with a `model.checkpoint_path`) that loads an E2601-class trained
+  character checkpoint, rebuilds the vocabulary bound to those weights, and generates greedily one
+  character at a time within `max_new_tokens`. It declares `development_double = False` and implements
+  the `TOKENIZE` capability, and it fails explicitly — never silently falling back to the double — when
+  the path, the `[train]` dependency, or the checkpoint is missing or invalid.
+- The registry imports this adapter **lazily**, so `import chakaso.models` and a plain install stay
+  dependency-free; only selecting `trained_char` needs `numpy`. `configs/default.toml` and the typed
+  schema gain `model.checkpoint_path` (empty by default), so nothing loads weights unless asked.
+- `chakaso.training.checkpoint` now embeds the vocabulary characters (schema `chakaso-checkpoint/2`),
+  validating on load that they recompute to the stored fingerprint — a checkpoint that could only be
+  checked, not decoded, was unfit for inference. This changes no measured value: E2601's held-out losses
+  are byte-identical after re-running; only its checkpoint content fingerprint moved (the record updated).
+
+**Status and honesty**
+
+- The integrated model is still a **tiny toy** — its generated text is incoherent, and the adapter is
+  never the default. Its value is a real training-and-inference path behind the boundary, not usefulness;
+  the adapter's own display name and this documentation say so. The adapter satisfies the same shared
+  `LanguageModel` contract as every implementation (tested over a real trained checkpoint). No useful
+  language model exists; K-001's stronger form (a real workload) stands, and K-009 still records that
+  the numpy-gated training/adapter tests do not run in remote CI (the token lacks the `workflow` scope).
+
+### 2026-10-19 — The first model is trained and measured (experiment E2601, P24)
+
+**Added / measured**
+
+- `chakaso.training` — the from-scratch training pipeline the module ADR-0005 reserved, now real: a
+  self-authored Apache-2.0 corpus (`chakaso-toy-char-v1`); a deterministic character vocabulary (ids by
+  codepoint order, a reserved unknown id, a content fingerprint); a **leak-free** line-unit split that
+  fits the vocabulary on training text only; a validated `TrainingConfig`; a tiny causal character model
+  (embedding → `tanh` hidden → softmax) with **hand-derived gradients verified against central finite
+  differences for every scalar**; an in-project Adam optimizer; a full-batch training loop that records a
+  held-out curve; a content-checksummed JSON checkpoint that refuses corruption and an incompatible
+  schema/shape; uniform and unigram baselines; held-out evaluation (loss / perplexity / bits-per-char /
+  accuracy); and an experiment driver. The dependency-free layers run in core CI; the numpy layers are
+  gated on the optional `[train]` extra (ADR-0030).
+- **E2601 — the project's first genuinely measured result** ([`experiments/E2601/record.md`](experiments/E2601/record.md)):
+  training the 984-parameter character model from random initialization lowers **held-out** next-character
+  cross-entropy from 3.3118 nats (random init) to **1.6650 nats at its best (step 50)** and **2.4946 nats
+  at the end (step 300)** — below both the uniform baseline (3.3322) and the unigram baseline (3.0531);
+  final bits/char 3.5989, perplexity 12.12, next-character accuracy 0.6026. Environment: Windows 11,
+  CPython 3.13.5, numpy 2.4.6, CPU-only, seed 7; reproducible from the seed and config.
+
+**Status and honesty**
+
+- This is a **learning-loop demonstration**, not a useful language model: a 344-token synthetic corpus,
+  one seed, 78 held-out positions (a high-variance point), and the model **genuinely overfits** after
+  step 50 — the held-out curve turns up and the record reports that as a measured finding, not a hidden
+  one. The trained artifact is **not** the default model — the runtime's default remains the development
+  double — though the P25 `trained_char` adapter (later the same day) can now load such a checkpoint
+  behind the boundary, still optional and still a toy. No wall-clock or peak-memory number is claimed
+  (none was measured to stated precision).
+- `chakaso.training` is a numpy-dependent, optional-extra module; importing `chakaso` or `chakaso.training`
+  still does **not** require numpy. The `[train]` CI job ADR-0030 anticipated could **not** be pushed (the
+  session's GitHub token lacks the `workflow` scope), so the numerical tests run locally / where the extra
+  is installed but not in remote CI — recorded as **K-009**. K-001 is narrowed for the training loop but
+  stands in its stronger form: no real workload, no useful model.
+
+### 2026-10-19 — The training-dependency decision is made (ADR-0030, P23 — decision, no code)
+
+**Decision / research**
+
+- [ADR-0030](docs/decisions/ADR-0030-minimal-optional-training-dependency.md) records the decision P22
+  identified as the gate on any real model: admit **NumPy as a single, optional `[train]` extra**
+  (`numpy>=1.26,<2.5` — the upper bound keeps the Python 3.11 floor installable) and derive the tiny
+  model's gradients **by hand, verified with finite-difference tests**, rather than adopting a heavy
+  autograd framework. The base install stays dependency-free; the extra never enters the core CI matrix,
+  and training tests `importorskip("numpy")` so they are exercised remotely only by a separate optional
+  CI job. Training code is placed in `chakaso.training`, the module ADR-0005 reserved for it.
+- It evaluates the candidate stacks against the project's constraints (Python floor, Windows, offline
+  reproducibility, CPU-only, memory, footprint, licensing, determinism/seed control, verifiability, CI
+  isolation), cites PyPI packaging metadata for the facts it relies on, rejects PyTorch **for now** with
+  explicit revisit conditions, and keeps a pure-Python route as a documented fallback. **No dependency was
+  installed and no code was written** — this is the ADR-before-code gate the roadmap requires. It advances
+  the project toward its first genuinely measured training result without claiming any result yet; K-001
+  stands.
+
+### 2026-10-19 — Repository documentation reconciled against the actual head (P23 pre-work)
+
+**Documentation**
+
+- Corrected stale and contradictory status text before extending the system: `AGENTS.md` no longer claims
+  "no measured results of any kind" (it now distinguishes the executed synthetic E-001 measurement from the
+  still-absent real-workload and trained-model results); `docs/roadmap.md` re-assesses P1–P7 against
+  objective exit criteria rather than file presence; `docs/agent/CURRENT_STATE.md` fixes its aged test
+  count and points its next-step at the true current milestone; `docs/internal/experiments/README.md` is
+  aligned with the fact that E-001 ran while no experiment *record* or hypothesis test exists. No behaviour
+  changed.
+
 ### 2026-10-15 — Model-feasibility assessment recorded (research, no experiment run)
 
 **Research**
