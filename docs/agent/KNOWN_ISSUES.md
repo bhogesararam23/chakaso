@@ -135,6 +135,15 @@ config, baselines) run in the core matrix as ordinary tests; only the numpy-requ
 numerics are verified locally and the whole training package is clean under strict `mypy` with numpy
 present.
 
+**Re-verified this session (2026-10-19, P27).** The current session's credentials were checked directly:
+the active GitHub token's scopes are `gist, read:org, repo` — no `workflow` scope — so pushing a `[train]`
+job to `.github/workflows/ci.yml` is refused by GitHub, and the gap is not something this session can
+close (adding it would mean bypassing a branch-protection mechanism, which is forbidden). Locally, with
+the `[train]` extra installed, the full suite runs **1322 passed, 0 skipped** (the 8 numpy-gated
+training/adapter modules execute instead of skipping) and `mypy src` is clean over all modules including
+`chakaso.training`. The core dependency-free matrix (1250 passed, 8 skipped) is what CI enforces on every
+push.
+
 **What would close it:** a CI workflow change (one extra job installing `.[dev,train]`) made with a
 credential that has the `workflow` scope.
 
