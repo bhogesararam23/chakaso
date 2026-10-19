@@ -69,9 +69,13 @@ Add a **retrieval-boundary evidence-sufficiency policy** in `chakaso.retrieval.s
 - `DiscriminatingTermSufficiencyPolicy` is the one implemented policy. Given a query and the retrieved
   chunks, it recomputes document frequency deterministically from the corpus's chunks (the same corpus
   retrieval searched) and reports *sufficient* iff at least one retrieved chunk contains a query term
-  whose document frequency is ≤ `max_document_fraction` of the corpus (default **0.1**), excluding terms
-  that appear in no document (they cannot support anything). It is pure, deterministic, numpy-free and
-  offline.
+  that is (a) **not a closed-class function word** and (b) has document frequency between 1 and
+  `max_document_fraction` of the corpus (default **0.25**), excluding terms that appear in no document
+  (they cannot support anything). Requiring the term to be a content word is not an optional refinement:
+  implementation showed that on a 13-document corpus even `to`, `on` and `and` occur in a single
+  document, so document frequency **alone** flags them as "discriminating" and every abstention query
+  leaks; the function-word exclusion (a short, inspectable closed-class list) is what makes the signal
+  mean what it claims. The policy is pure, deterministic, numpy-free and offline.
 - `max_document_fraction` is a **configuration parameter, explicitly documented as a development
   heuristic tuned to this corpus and NOT a calibrated, transferable threshold.** A corpus of a different
   size or term distribution will need it re-derived; P29 attempts that honestly (or records that the
@@ -98,9 +102,14 @@ Add a **retrieval-boundary evidence-sufficiency policy** in `chakaso.retrieval.s
 
 ## Trade-offs
 
-- `max_document_fraction` is a knob on a tiny corpus; the choice 0.1 (discriminating iff a term is in ≤
-  ~1 of 13 documents here) fits the shipped workload but is not defensible on a real corpus without P29.
-  Accepted, and stated in the module, the report and this record.
+- `max_document_fraction` is a knob on a tiny corpus; the choice 0.25 (discriminating iff a content term
+  is in ≤ ~3 of 13 documents here) fits the shipped workload but is not defensible on a real corpus
+  without P29. Worse, implementation measured that on this corpus the policy separates abstention from
+  answer correctly only over a **narrow band (~0.23–0.31)**: below it the answerable `book` case is
+  wrongly abstained (recall loss), above it the noise term `library` (df 4) becomes "discriminating" and
+  the false-premise/planet abstentions leak. A working threshold exists here only because the corpus is
+  small and its vocabulary sparse; nothing guarantees one exists for another corpus. This fragility is
+  recorded, not hidden, and is the central thing P29 must test rather than assert away.
 - A term appearing in exactly one document is not always the "answer" term (morphology, synonyms — the
   lexical limitation that made `renewal` fail to match `renewed`). The policy does not solve recall; a
   query whose real evidence is phrased differently can still be judged insufficient. This is disclosed,

@@ -84,14 +84,24 @@ from chakaso.retrieval.normalize import normalize_document
 from chakaso.retrieval.policy import MAX_ALLOWED_SCHEMES, FetchPolicy
 from chakaso.retrieval.service import DEFAULT_TOP_K, RetrievalOutcome, RetrievalService
 from chakaso.retrieval.strategy import HybridProvenance, RetrievalStrategy
+from chakaso.retrieval.sufficiency import (
+    DEFAULT_MAX_DOCUMENT_FRACTION,
+    STOP_WORDS,
+    DiscriminatingTermSufficiencyPolicy,
+    EvidenceSufficiency,
+    EvidenceSufficiencyPolicy,
+    SufficiencyOutcome,
+)
 from chakaso.retrieval.web import ingest_acquired
 
 __all__ = [
     "DEFAULT_B",
     "DEFAULT_K1",
     "DEFAULT_MAX_BYTES",
+    "DEFAULT_MAX_DOCUMENT_FRACTION",
     "DEFAULT_TOP_K",
     "MAX_ALLOWED_SCHEMES",
+    "STOP_WORDS",
     "SUPPORTED_FORMATS",
     "AcquiredSource",
     "AcquisitionCache",
@@ -106,12 +116,15 @@ __all__ = [
     "CorpusError",
     "DenseIndex",
     "DenseRetriever",
+    "DiscriminatingTermSufficiencyPolicy",
     "DocumentTooLargeError",
     "DocumentUnavailableError",
     "EmbedModelError",
     "EmbeddingMetadata",
     "EmbeddingModel",
     "EmbeddingVector",
+    "EvidenceSufficiency",
+    "EvidenceSufficiencyPolicy",
     "FetchPolicy",
     "FetchTimeoutError",
     "Fetcher",
@@ -137,6 +150,7 @@ __all__ = [
     "Retriever",
     "Section",
     "SimilarityMetric",
+    "SufficiencyOutcome",
     "Transport",
     "TransportResponse",
     "UnsupportedContentTypeError",
