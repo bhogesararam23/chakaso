@@ -17,6 +17,7 @@ has actually run, nothing here is a claim that the approach works.
 
 from __future__ import annotations
 
+from chakaso.training.config import TrainingConfig
 from chakaso.training.corpus import CORPUS, Corpus, corpus_text
 from chakaso.training.data import (
     Example,
@@ -35,6 +36,7 @@ __all__ = [
     "Corpus",
     "Example",
     "Split",
+    "TrainingConfig",
     "character_windows",
     "corpus_text",
     "dataset_fingerprint",
