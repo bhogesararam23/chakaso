@@ -1,15 +1,14 @@
 # Experiments
 
-**No experiment record has been committed here, and no hypothesis H1–H7 has been tested.** The project
-has development benchmarks (retrieval and correction) that produce deterministic metrics over small
-synthetic fixtures, a reproducible experiment layer (`chakaso.experiments`), and one executed
-mechanism/instrument measurement recorded in the research log (E-001, a retrieval-strategy comparison
-over the synthetic fixtures). None of those is a research-experiment *record*: there is still no language
-model, no real dataset and no tokenizer, and no experiment that tests a research hypothesis has a record
-committed here.
+**One experiment record is committed: E2601** ([`../../../experiments/E2601/record.md`](../../../experiments/E2601/record.md)),
+the project's first measured result — a from-scratch character model whose held-out next-token loss beats
+uniform and unigram baselines. No *hypothesis* (H1–H7) has been tested yet; E2601 establishes the learning
+loop, not any research claim about grounding, citation or correction. The project also has development
+benchmarks (retrieval and correction) and a reproducible experiment layer (`chakaso.experiments`) — those
+are regression instruments over synthetic fixtures, distinct from a committed experiment record.
 
-This directory defines the record format so that the first real experiment is
-recorded properly rather than being described in a commit message.
+This directory defines the record format so that an experiment is recorded properly rather than being
+described in a commit message.
 
 ## Where records live
 

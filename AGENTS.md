@@ -37,12 +37,14 @@ updates that status in the same commit.
 
 **Do not invent numbers, datasets, citations or experiments.** If it was not
 measured, it is not written down. The only measured results in this repository are
-executed comparisons over small synthetic development fixtures (for example the
-retrieval-strategy measurement recorded as E-001 in
-[`docs/research/research-log.md`](docs/research/research-log.md)); they check the
-shape of a mechanism and an instrument, never meaning. There is no measurement of a
-real workload and no result from any trained language model, because no model has
-been trained — it should stay obvious that this is true.
+executed comparisons over small synthetic development fixtures — the retrieval-strategy
+measurement E-001, and E2601, the first trained model (a tiny character LM whose held-out
+next-token loss beats uniform/unigram baselines, recorded in
+[`experiments/E2601/record.md`](experiments/E2601/record.md)). Both check the shape of a
+mechanism or a learning loop on a hand-built toy, never meaning on a real workload. There
+is no measurement of a real workload and no result from any *useful* language model —
+the trained artifact is an experiment, not a deployed model — and it should stay obvious
+that this is true.
 
 **The runtime must not require a commercial inference or search API.**
 [ADR-0001](docs/decisions/ADR-0001-local-first-runtime.md). External providers may

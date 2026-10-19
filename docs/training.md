@@ -1,8 +1,12 @@
 # Training and model development
 
 Chakaso intends to train its own language model from randomly initialised
-parameters. This document describes that plan, and is explicit about the fact that
-none of it has been executed.
+parameters. This document describes that plan, and is explicit about what has and
+has not been executed. As of 2026-10-19 the training pipeline exists
+(`chakaso.training`, gated by [ADR-0030](decisions/ADR-0030-minimal-optional-training-dependency.md))
+and experiment [E2601](../experiments/E2601/record.md) trained and **measured** a from-scratch
+character model that beats trivial baselines on held-out loss; no useful model and no Transformer has
+been produced, and that distinction is what the rest of this document keeps honest.
 
 ## Strategy
 
@@ -32,16 +36,19 @@ the project's central claim false.
 | Stage | Goal | Output | Status |
 | --- | --- | --- | --- |
 | M0 | Train nothing; validate the system architecture | Web-grounded prototype | In progress |
-| M1 | Train a tokenizer on a controlled corpus | Versioned tokenizer | Planned |
-| M2 | Train a tiny Transformer from random initialisation | Chakaso-0 checkpoint | Planned |
+| M1 | Train a tokenizer on a controlled corpus | Versioned tokenizer | Partial — a deterministic character vocabulary is built and used in E2601; a learned subword/BPE tokenizer is Planned |
+| M2 | Train a tiny Transformer from random initialisation | Chakaso-0 checkpoint | Planned — E2601 trained a tiny *non-Transformer* character MLP from random init as a precursor; the Transformer itself has not been built |
 | M3 | Pretrain a small useful base model | Chakaso Base | Planned |
 | M4 | Instruction tune | Chakaso Instruct | Planned |
 | M5 | Teach grounding and correction behaviour | Chakaso Grounded | Planned |
 | M6 | Preference optimization, if justified | Aligned variant | Research |
 | M7 | Domain adaptation after niche selection | Domain model | Research |
 
-No stage past M0 has produced anything. There are no weights in this repository
-and no checkpoint has ever been written.
+No stage past M0 has produced a *useful* model. E2601 wrote a checkpoint and trained a 984-parameter
+character model from random initialization — the project's first measured training result, and a precursor
+to M2 rather than Chakaso-0. That checkpoint is reproducible from the seed and config and is recorded by
+fingerprint, **not** committed to the repository; there are no released weights, and no Transformer has
+been trained. A language model is still not wired behind the runtime's `LanguageModel` boundary.
 
 ## Sizing policy
 

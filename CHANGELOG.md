@@ -10,6 +10,41 @@ capability is implemented or still planned.
 
 ## Unreleased
 
+### 2026-10-19 — The first model is trained and measured (experiment E2601, P24)
+
+**Added / measured**
+
+- `chakaso.training` — the from-scratch training pipeline the module ADR-0005 reserved, now real: a
+  self-authored Apache-2.0 corpus (`chakaso-toy-char-v1`); a deterministic character vocabulary (ids by
+  codepoint order, a reserved unknown id, a content fingerprint); a **leak-free** line-unit split that
+  fits the vocabulary on training text only; a validated `TrainingConfig`; a tiny causal character model
+  (embedding → `tanh` hidden → softmax) with **hand-derived gradients verified against central finite
+  differences for every scalar**; an in-project Adam optimizer; a full-batch training loop that records a
+  held-out curve; a content-checksummed JSON checkpoint that refuses corruption and an incompatible
+  schema/shape; uniform and unigram baselines; held-out evaluation (loss / perplexity / bits-per-char /
+  accuracy); and an experiment driver. The dependency-free layers run in core CI; the numpy layers are
+  gated on the optional `[train]` extra (ADR-0030).
+- **E2601 — the project's first genuinely measured result** ([`experiments/E2601/record.md`](experiments/E2601/record.md)):
+  training the 984-parameter character model from random initialization lowers **held-out** next-character
+  cross-entropy from 3.3118 nats (random init) to **1.6650 nats at its best (step 50)** and **2.4946 nats
+  at the end (step 300)** — below both the uniform baseline (3.3322) and the unigram baseline (3.0531);
+  final bits/char 3.5989, perplexity 12.12, next-character accuracy 0.6026. Environment: Windows 11,
+  CPython 3.13.5, numpy 2.4.6, CPU-only, seed 7; reproducible from the seed and config.
+
+**Status and honesty**
+
+- This is a **learning-loop demonstration**, not a useful language model: a 344-token synthetic corpus,
+  one seed, 78 held-out positions (a high-variance point), and the model **genuinely overfits** after
+  step 50 — the held-out curve turns up and the record reports that as a measured finding, not a hidden
+  one. The trained artifact is **not** wired behind the `LanguageModel` boundary; the runtime's only model
+  remains the development double. No wall-clock or peak-memory number is claimed (none was measured to
+  stated precision).
+- `chakaso.training` is a numpy-dependent, optional-extra module; importing `chakaso` or `chakaso.training`
+  still does **not** require numpy. The `[train]` CI job ADR-0030 anticipated could **not** be pushed (the
+  session's GitHub token lacks the `workflow` scope), so the numerical tests run locally / where the extra
+  is installed but not in remote CI — recorded as **K-009**. K-001 is narrowed for the training loop but
+  stands in its stronger form: no real workload, no useful model.
+
 ### 2026-10-19 — The training-dependency decision is made (ADR-0030, P23 — decision, no code)
 
 **Decision / research**

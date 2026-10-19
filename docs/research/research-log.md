@@ -294,3 +294,43 @@ model, and it keeps a heavyweight framework as a documented *revisit* option, no
 therefore measured nothing about training speed, memory or output quality. The bound and the wheel
 availability are packaging facts verified on this date; performance and memory claims still belong only to
 an experiment that actually runs. K-001 stands: the next unit is that experiment.
+
+---
+
+## 2026-10-19 — E2601: the first model actually trained and measured (a from-scratch character LM)
+
+**Experiment E2601 — can a randomly initialised character model, trained by a real optimizer, lower its
+held-out next-character cross-entropy below a trivial baseline?** Configuration (pinned in
+`chakaso.training.experiment.DEFAULT_CONFIG`): context 4, embed 8, hidden 12, Adam, learning rate 0.02,
+seed 7, 300 full-batch steps, evaluated every 25; corpus `chakaso-toy-char-v1` v1.0.0 (self-authored,
+Apache-2.0), leak-free split with the vocabulary fit on training text only; 344 train / 78 held-out
+positions over a 28-symbol vocabulary; 984 parameters. Environment: Windows 11, CPython 3.13.5, numpy
+2.4.6, CPU-only (no CUDA). Reproducible from the seed and config. Full record:
+[`../../experiments/E2601/record.md`](../../experiments/E2601/record.md).
+
+**Result (measured, not assumed).** Baselines on the held-out tokens: uniform 3.3322 nats, unigram
+3.0531 nats. Held-out cross-entropy: 3.3118 at random initialization (step 0), falling to a minimum of
+**1.6650 nats at step 50**, then rising back to **2.4946 nats at step 300** (final bits/char 3.5989,
+perplexity 12.12, next-character accuracy 0.6026). The trained model beats **both** baselines at its best
+and at the final step. The full training-loss / held-out-loss curve is recorded in the experiment file.
+
+**Interpretation.** This is the project's first genuinely measured learning result: the training machinery
+(from-random init, hand-derived-and-finite-difference-verified gradients, a real Adam update) actually
+reduces held-out error below the frequency-only floor, so the model learns character-order structure, not
+just token statistics. The held-out curve is non-monotonic — it reaches its minimum at step 50 and rises
+while training loss keeps falling: textbook overfitting of a 344-token corpus by a 984-parameter model.
+That is a measured finding, reported as one.
+
+**Limitation.** One seed, one tiny synthetic corpus, 78 held-out positions — a high-variance point
+estimate, not a general result. No wall-clock/peak-memory figure is claimed (none was measured to stated
+precision). The trained artifact is an *experiment*, not a language model in the product: it is not wired
+behind the `LanguageModel` boundary, generates nothing usable, and has nothing to do with grounding,
+citation or correction. The remote CI does not execute the training tests (numpy is an optional extra and
+the CI workflow cannot be modified with the current credentials — see K-009); they are gated and run
+locally/where the extra is installed.
+
+**Conclusion (moderate).** Chakaso can now train and honestly measure a model from random initialization.
+K-001 is narrowed for the *training loop* — there is now a real, measured model — but the headline gap
+stands in its stronger form: no real *workload* and no useful language model have been demonstrated. The
+next experiment the evidence justifies is a controlled held-out comparison (early stopping / capacity,
+multiple seeds) to turn this point result into one with an error bar.

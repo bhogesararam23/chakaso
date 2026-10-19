@@ -1,29 +1,52 @@
 # Active task
 
-## Current unit: P24 — the smallest scientifically honest from-scratch training experiment
+## Current unit: P25 — integrate a trained artifact behind the `LanguageModel` boundary (if the evidence supports it)
 
-**Goal.** ADR-0030 accepted the numerical dependency (`numpy` in an optional `[train]` extra). Build the
-minimal trainable language-model experiment it now gates, as an out-of-CI `experiments/<id>/` artifact
-(`docs/internal/experiments/README.md` format), producing the project's **first genuinely measured
-number** — held-out validation loss over training steps against a trivial baseline. The purpose is to
-demonstrate a real learning loop and record it honestly, *not* to build a useful chatbot.
+**Goal.** E2601 produced a real, measured trained artifact (a character model) behind `chakaso.training`.
+Decide whether it can be surfaced as a `LanguageModel` adapter without distorting the interface (ADR-0002),
+and if the evidence supports it, build a small **local** adapter that: loads the experiment's actual
+checkpoint; uses the exact tokenizer/vocabulary version bound to those weights; validates checkpoint
+metadata and refuses corruption/incompatibility; implements `metadata`/`generate`; is deterministic at
+zero temperature; respects the configured generation limit; declares its own `model_id` and
+`development_double=False`; fails explicitly when weights, config or the `[train]` extra are missing, and
+**never** silently falls back to the double; and is selected only in the registry/composition point, never
+imported into application logic. Add contract, serialization, tokenizer/model-compatibility, malformed-
+checkpoint, dependency-missing and reproducibility tests.
 
-**Scope of this unit (each is a coherent commit when it is meaningful on its own).** Reusable mechanics
-live in `chakaso.training` (the module ADR-0005 reserved for training code): a documented corpus with a
-licence note, a deterministic train/validation split with leakage prevention (the split is taken before
-any vocabulary is fit), a clearly-specified character tokenizer, a tiny causal model with an explicit
-architecture, a training objective, a real optimizer step whose gradient is verified by finite
-differences, checkpoint save/load, a held-out evaluation, a uniform/unigram baseline, and a reproducible
-run config with a fixed seed. Tests are `numpy`-gated (`importorskip`) so the core CI matrix never
-installs it; the numerical path is exercised by a separate optional CI job. The experiment record is
-written *before* the run (status `running`) and completed with only measured values.
+**Honesty constraints.** A tiny character model produces incoherent text — document exactly that; its
+value is demonstrating a real training-and-inference path, not usefulness. Inference must stay behind the
+optional `[train]`/numerical dependency so the base install stays dependency-free and the runtime keeps
+working without it. **If the experiment shows the artifact is not ready to integrate, do not force an
+adapter** — record the blocker and complete the experiment's remaining justified work instead.
 
-**What this unit is not.** Not a `LanguageModel` adapter over the artifact (that is the following unit,
-gated on this one producing an artifact and the evidence supporting it); not a pretrained model; not any
-claim of language capability. If the run cannot execute in the environment, record the exact blocker and
-the unexecuted steps rather than inventing a number.
+**What this unit is not.** Not a pretrained model (Option A), not a real `SemanticJudge`, not a claim the
+product has a useful language model. Each of those is a later unit gated on its own dependency-feasibility
+decision.
 
-## What the previous unit completed (P23 — the dependency decision, ADR before code)
+## What the previous unit completed (P24 — the from-scratch training experiment, E2601)
+
+Implemented, tested, run, and documented as the project's first measured result
+([`../../experiments/E2601/record.md`](../../experiments/E2601/record.md)).
+
+- [x] `chakaso.training` built end to end (the module ADR-0005 reserved): a self-authored Apache-2.0
+      corpus, a deterministic character vocabulary (codepoint-ordered ids, reserved unknown id, content
+      fingerprint), a **leak-free** line-unit split with the vocabulary fit on training text only, a
+      validated `TrainingConfig`, a tiny causal character model with **hand-derived gradients verified
+      against central finite differences for every scalar** (this caught and fixed a real numpy
+      fancy-index scatter bug), an in-project Adam optimizer, a full-batch training loop that records a
+      held-out curve, a content-checksummed JSON checkpoint that refuses corruption and incompatibility,
+      uniform/unigram baselines, held-out evaluation, and an `E2601` experiment driver.
+- [x] **E2601 measured result:** from random initialization, held-out next-character cross-entropy falls
+      from 3.3118 nats (step 0) to **1.6650** (best, step 50) and ends at **2.4946** (step 300) — below
+      **both** the unigram (3.0531) and uniform (3.3322) baselines; final bits/char 3.5989, perplexity
+      12.12, next-char accuracy 0.6026; 984 parameters, seed 7, Windows/CPython 3.13.5/numpy 2.4.6, CPU
+      only. The measured **overfitting** after step 50 is reported, not hidden.
+- [x] The dependency-free layers (corpus/tokenizer/split/config/baselines) run in the core CI matrix;
+      the numpy layers are `importorskip`-gated and pass with `[train]` installed. **A dedicated `[train]`
+      CI job was NOT delivered** — the session's GitHub token lacks the `workflow` scope, so the
+      workflow file cannot be pushed; recorded as K-009 rather than claimed as done.
+
+## What the unit before that completed (P23 — the dependency decision, ADR before code)
 
 Delivered as a decision record; no model code was written and no dependency was installed.
 
@@ -35,8 +58,8 @@ Delivered as a decision record; no model code was written and no dependency was 
       licensing, determinism/seed control, verifiability, and CI isolation, and cites PyPI metadata for
       the packaging facts.
 - [x] A decision that **the base install stays dependency-free and the core CI matrix is unchanged** —
-      training tests skip unless the extra is installed, and the numerical path is covered by a separate
-      optional CI job. A heavyweight autograd framework (PyTorch) is **rejected for now** with explicit
+      training tests skip unless the extra is installed. A heavyweight autograd framework (PyTorch) is
+      **rejected for now** with explicit
       revisit conditions (a concrete larger-model workload, or the manual-gradient route becoming a
       correctness risk). Training code is placed in `chakaso.training`, the module ADR-0005 reserved.
 
@@ -83,19 +106,20 @@ gained no capability.
 
 ## Ordering after this unit
 
-1. A `LanguageModel` adapter over the trained artifact — *only if* the experiment produces an artifact
-   and the evidence supports integrating it (it may honestly not be ready; then record the blocker). It
-   loads the actual weights, uses the exact tokenizer/vocabulary version, validates checkpoint metadata,
-   satisfies the model contract, is deterministic at zero temperature, declares itself *not* the
-   development double, and fails explicitly when weights, config or the `[train]` extra are unavailable
-   — never silently falling back to the double, and never imported into application logic (ADR-0002).
-2. Only after that, a genuinely runnable pretrained adapter (Option A) and a real `SemanticJudge`, each
-   gated on its own dependency-feasibility decision.
+1. A controlled follow-up experiment to E2601, justified by its measured overfitting: early stopping /
+   capacity selection on held-out loss under a fixed protocol (not a cherry-pick), and held-out loss
+   across a few seeds so the result carries an error bar rather than a point.
+2. Only after a trustworthy training/inference path exists, a genuinely useful pretrained adapter (Option
+   A) and a real `SemanticJudge`, each gated on its own dependency-feasibility decision — and a real
+   grounded-answer evaluation workload (K-001's stronger form) that none of the toy work yet touches.
 
 ## Known gaps that bound this unit
 
-- K-001: offline and synthetic; a real workload and any real model have still not been run — the
-  frontier of the whole project, and exactly what P22 assessed rather than assumed.
+- K-001: offline and synthetic; a *useful* model on a real workload has still not been run. E2601 trained
+  and measured a real (but toy) model, narrowing the training-loop half of this gap, but the project has
+  still met no real corpus or real question — the frontier of the whole project.
+- K-009: the numpy-gated training tests do not run in remote CI, because the session's GitHub token
+  lacks the `workflow` scope and the `[train]` CI job cannot be pushed. Verified locally instead.
 - K-006: the invented-reference condition is persisted per answer, but nothing aggregates it into a
   rate, and it is only durable when the SQLite backend is selected.
 - K-008: the fetcher's destination screen is partial; any acquisition work must confirm no default path

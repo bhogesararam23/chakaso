@@ -38,12 +38,15 @@ measurement over time.
 
 ## Current state
 
-**No experiment testing any of H1–H7 has been run.** One experiment has been executed —
-E-001 in [`research-log.md`](research-log.md) compares lexical, dense and hybrid retrieval over the
-synthetic development fixtures — but it exercises the *mechanism and the measuring instrument*, not a
-hypothesis: the dense component is an explicitly non-semantic fixture embedding, so E-001 neither
-supports nor refutes H7 (it showed no gain and a small MRR regression). There is still no model, no
-tokenizer, no dataset and no real embedding. The retrieval, correction and strategy-comparison numbers
-are development instruments over hand-built fixtures (`chakaso.benchmark`, run with
-`chakaso benchmark`), not measurements of a hypothesis or of model quality. Everything else in this
-directory today is design reasoning and open questions, and it is labelled as such.
+**No experiment testing any of H1–H7 has been run.** Two experiments have been executed, and neither is
+a hypothesis test: **E-001** compares lexical, dense and hybrid retrieval over the synthetic development
+fixtures (it exercises the mechanism and the instrument, not a hypothesis — the dense component is a
+non-semantic fixture embedding, so it neither supports nor refutes H7), and **E2601**
+([`../../experiments/E2601/record.md`](../../experiments/E2601/record.md)) trained a character model from
+random initialization and measured its held-out next-token loss beating uniform/unigram baselines —
+Chakaso's first genuinely measured result, and a learning-loop demonstration, not a language capability.
+There is now a trained (toy) model, a tokenizer, and a training loop, but still no real embedding, no real
+corpus, no subword tokenizer and no useful model. The retrieval, correction and strategy-comparison
+numbers are development instruments over hand-built fixtures (`chakaso.benchmark`, run with
+`chakaso benchmark`); the training numbers are a single-seed, high-variance result over a 344-token toy.
+Everything else in this directory is design reasoning and open questions, and it is labelled as such.
