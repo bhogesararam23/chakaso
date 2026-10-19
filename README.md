@@ -82,10 +82,10 @@ The status vocabulary used across this documentation is:
 | Reproducible experiments and a regression baseline | Implemented (development, ADR-0020); no model-quality result |
 | Dense retrieval (embedding boundary + exact index) and hybrid reciprocal-rank fusion | Experimental (ADR-0023/ADR-0024) — the only embedding is a deterministic, non-semantic fixture double, so these re-rank token overlap, not meaning |
 | A real semantic embedding model, an approximate (FAISS-like) vector index, and reranking | Planned |
-| Character tokenizer, leak-free split, tiny causal model, Adam, checkpoint, training loop, baselines, held-out evaluation (`chakaso.training`) | Experimental (ADR-0030; runs under the optional `[train]` extra, out of core CI per K-009; not wired into the runtime) |
+| Character tokenizer, leak-free split, tiny causal model, Adam, checkpoint, training loop, baselines, held-out evaluation (`chakaso.training`) | Experimental (ADR-0030; runs under the optional `[train]` extra, out of core CI per K-009; not used by the default runtime, though its checkpoints can be loaded by the optional `trained_char` adapter) |
 | Experiment E2601: a from-scratch character model trained from random init and measured against baselines | Implemented (Experimental; measured held-out loss beats uniform + unigram; toy scale, single seed, overfits after step 50) |
 | Subword/BPE tokenizer, a Transformer, a real corpus, mini-batching and any scaling | Planned |
-| A trained Chakaso model wired behind the `LanguageModel` boundary (an inference adapter) | Does not exist yet — the next milestone (P25) |
+| A trained Chakaso model wired behind the `LanguageModel` boundary (a `trained_char` inference adapter) | Experimental (P25): loads an E2601-class checkpoint, satisfies the model contract, generates greedily; behind the optional `[train]` extra, never the default, and the model is a tiny toy that produces incoherent text |
 | Committed or released model weights | Does not exist (the E2601 checkpoint is reproducible from the seed and recorded by fingerprint, not committed) |
 | Real evaluation harness and model benchmarks | Planned (retrieval and correction development benchmarks exist; no real-workload or model-quality measurement) |
 

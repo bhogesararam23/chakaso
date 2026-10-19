@@ -1,29 +1,43 @@
 # Active task
 
-## Current unit: P25 — integrate a trained artifact behind the `LanguageModel` boundary (if the evidence supports it)
+## Current unit: P26 — a controlled follow-up to E2601 (early stopping, fixed protocol, several seeds)
 
-**Goal.** E2601 produced a real, measured trained artifact (a character model) behind `chakaso.training`.
-Decide whether it can be surfaced as a `LanguageModel` adapter without distorting the interface (ADR-0002),
-and if the evidence supports it, build a small **local** adapter that: loads the experiment's actual
-checkpoint; uses the exact tokenizer/vocabulary version bound to those weights; validates checkpoint
-metadata and refuses corruption/incompatibility; implements `metadata`/`generate`; is deterministic at
-zero temperature; respects the configured generation limit; declares its own `model_id` and
-`development_double=False`; fails explicitly when weights, config or the `[train]` extra are missing, and
-**never** silently falls back to the double; and is selected only in the registry/composition point, never
-imported into application logic. Add contract, serialization, tokenizer/model-compatibility, malformed-
-checkpoint, dependency-missing and reproducibility tests.
+**Goal.** E2601's measured held-out curve is non-monotonic — it bottoms at step 50 (1.6650 nats) then
+rises to 2.4946 at step 300, i.e. the 984-parameter model overfits the 344-token corpus. The next
+experiment the *evidence* justifies is not a bigger model but a controlled protocol around the one that
+exists: select the training budget (early stopping on held-out loss, or a small fixed capacity sweep)
+under a pre-declared rule — never cherry-picking on the test split — and report held-out loss across
+several seeds so the first result gains an error bar instead of a single high-variance point. Record it
+as `experiments/E2602/record.md` in the experiment format, with only measured values.
 
-**Honesty constraints.** A tiny character model produces incoherent text — document exactly that; its
-value is demonstrating a real training-and-inference path, not usefulness. Inference must stay behind the
-optional `[train]`/numerical dependency so the base install stays dependency-free and the runtime keeps
-working without it. **If the experiment shows the artifact is not ready to integrate, do not force an
-adapter** — record the blocker and complete the experiment's remaining justified work instead.
+**Scope.** Reuse `chakaso.training` (no new numerical machinery unless a real gap appears): a small
+multi-seed driver, a documented model-selection rule fixed before looking at held-out numbers, and the
+measured mean/spread of held-out loss against the same uniform/unigram baselines. Tests stay numpy-gated.
+If the environment cannot run the sweep, record the exact blocker and the unexecuted steps rather than
+inventing a number.
 
-**What this unit is not.** Not a pretrained model (Option A), not a real `SemanticJudge`, not a claim the
-product has a useful language model. Each of those is a later unit gated on its own dependency-feasibility
-decision.
+**What this unit is not.** Not a Transformer, not a subword tokenizer, not a pretrained adapter, not a
+real evaluation workload. Those each need their own justification and (for a dependency) ADR.
 
-## What the previous unit completed (P24 — the from-scratch training experiment, E2601)
+## What the previous unit completed (P25 — a trained artifact behind the `LanguageModel` boundary)
+
+Implemented, tested, and honest about its limits; it integrates E2601's artifact without distorting the
+interface.
+
+- [x] `chakaso.models.trainedchar.TrainedCharacterModel` — a `trained_char` adapter selected through
+      `model.adapter`/`model.checkpoint_path`: loads a checkpoint, rebuilds its bound vocabulary, generates
+      greedily within `max_new_tokens` (reports `LENGTH` honestly — no learned stop token), declares
+      `development_double=False` and implements `TOKENIZE`, and fails explicitly on an empty/missing/
+      corrupt checkpoint rather than falling back to the double.
+- [x] The checkpoint now embeds the vocabulary characters (schema/2, validated against the stored
+      fingerprint) so a checkpoint can decode on its own — the measured E2601 losses are unchanged.
+- [x] Lazy registry import keeps `import chakaso.models` and the base install numpy-free; the adapter
+      inherits the full shared `LanguageModel` contract over a real trained checkpoint (numpy-gated tests).
+- [x] Honest scope: the model is a tiny toy that produces incoherent text; the value is a real
+      training-and-inference path, not usefulness, and that is stated in the adapter, the docs and the
+      changelog.
+
+## What the unit before that completed (P24 — the from-scratch training experiment, E2601)
 
 Implemented, tested, run, and documented as the project's first measured result
 ([`../../experiments/E2601/record.md`](../../experiments/E2601/record.md)).

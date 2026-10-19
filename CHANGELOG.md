@@ -10,6 +10,33 @@ capability is implemented or still planned.
 
 ## Unreleased
 
+### 2026-10-19 — A trained model is integrated behind the boundary (P25) and checkpoints carry their vocabulary
+
+**Added**
+
+- `chakaso.models.trainedchar.TrainedCharacterModel` — a second `LanguageModel` adapter (selected by
+  `model.adapter = "trained_char"` with a `model.checkpoint_path`) that loads an E2601-class trained
+  character checkpoint, rebuilds the vocabulary bound to those weights, and generates greedily one
+  character at a time within `max_new_tokens`. It declares `development_double = False` and implements
+  the `TOKENIZE` capability, and it fails explicitly — never silently falling back to the double — when
+  the path, the `[train]` dependency, or the checkpoint is missing or invalid.
+- The registry imports this adapter **lazily**, so `import chakaso.models` and a plain install stay
+  dependency-free; only selecting `trained_char` needs `numpy`. `configs/default.toml` and the typed
+  schema gain `model.checkpoint_path` (empty by default), so nothing loads weights unless asked.
+- `chakaso.training.checkpoint` now embeds the vocabulary characters (schema `chakaso-checkpoint/2`),
+  validating on load that they recompute to the stored fingerprint — a checkpoint that could only be
+  checked, not decoded, was unfit for inference. This changes no measured value: E2601's held-out losses
+  are byte-identical after re-running; only its checkpoint content fingerprint moved (the record updated).
+
+**Status and honesty**
+
+- The integrated model is still a **tiny toy** — its generated text is incoherent, and the adapter is
+  never the default. Its value is a real training-and-inference path behind the boundary, not usefulness;
+  the adapter's own display name and this documentation say so. The adapter satisfies the same shared
+  `LanguageModel` contract as every implementation (tested over a real trained checkpoint). No useful
+  language model exists; K-001's stronger form (a real workload) stands, and K-009 still records that
+  the numpy-gated training/adapter tests do not run in remote CI (the token lacks the `workflow` scope).
+
 ### 2026-10-19 — The first model is trained and measured (experiment E2601, P24)
 
 **Added / measured**
@@ -36,9 +63,10 @@ capability is implemented or still planned.
 - This is a **learning-loop demonstration**, not a useful language model: a 344-token synthetic corpus,
   one seed, 78 held-out positions (a high-variance point), and the model **genuinely overfits** after
   step 50 — the held-out curve turns up and the record reports that as a measured finding, not a hidden
-  one. The trained artifact is **not** wired behind the `LanguageModel` boundary; the runtime's only model
-  remains the development double. No wall-clock or peak-memory number is claimed (none was measured to
-  stated precision).
+  one. The trained artifact is **not** the default model — the runtime's default remains the development
+  double — though the P25 `trained_char` adapter (later the same day) can now load such a checkpoint
+  behind the boundary, still optional and still a toy. No wall-clock or peak-memory number is claimed
+  (none was measured to stated precision).
 - `chakaso.training` is a numpy-dependent, optional-extra module; importing `chakaso` or `chakaso.training`
   still does **not** require numpy. The `[train]` CI job ADR-0030 anticipated could **not** be pushed (the
   session's GitHub token lacks the `workflow` scope), so the numerical tests run locally / where the extra
