@@ -1,25 +1,51 @@
 # Active task
 
-## Current unit: P27 — design a small, human-inspectable grounded-answer evaluation workload
+## Current unit: P28 — a retrieval evidence-sufficiency decision (justified by E2603)
 
-**Goal.** Phases A–D and E2601/E2602 have taken Chakaso from no-measurement to a *reproducible,
-multi-seed measured training loop* and a trained artifact behind the boundary. The evidence now points at
-the project's real open question (K-001's stronger form, and H1–H5): there is **no evaluation workload that
-a grounded answer could be measured against**. This unit designs — it does not yet build at scale — the
-smallest such workload: a documented schema, provenance and labelling protocol, and a split strategy for
-a small corpus of questions with acceptable/unacceptable evidence, human-inspectable and legally usable,
-that turns the existing structural evaluators into something a future model can actually be scored on.
+**Goal.** P27 built the grounded-answer evaluation workload and E2603 ran it. The single largest
+correctness problem that measurement demonstrated is not in the answer layer but the retrieval layer:
+lexical `RetrievalService.search` returns its full top-k *even when nothing supports an answer*, so
+all three abstention cases produced a **false retrieval** and three cases surfaced a passage they had
+marked **forbidden**. A grounded system cannot abstain correctly if retrieval always hands it
+evidence. This unit designs and, where the evidence supports it, implements a narrow, tested fix: a
+retrieval evidence-sufficiency signal — a documented score floor or relevance test that lets a
+retrieving turn distinguish "I found nothing relevant" from "I found k things" — driven *only* by
+those specific E2603 failure cases and covered by regression tests that show the failure first.
 
-**Scope.** A design note under `docs/` (extend `docs/evaluation.md` / a new section) plus, if a minimal
-set genuinely exists, a versioned schema and one worked, clearly-labelled example. It must not fabricate
-labels or present unreviewed model output as ground truth, and must not grow into a full benchmark before
-there is model behaviour worth measuring (the roadmap's release discipline).
+**Scope.** A change to the retrieval boundary or the `RetrievalService`/runtime composition, with an
+ADR or an update to `docs/retrieval.md`/`docs/evaluation.md` in the same commit, plus the workload
+re-run (E2603's successor or a reassessment) confirming the false-retrieval count moved. It must not
+weaken recall on the answerable cases to win on abstention; both dimensions are reported separately.
 
-**What this unit is not.** Not a trained/embedded judge, not a large dataset, not a leaderboard number.
-If no legitimate data source can be identified, record that as the finding and the blocker — do not
-invent a corpus.
+**What this unit is not.** Not a new benchmark, not a model, not a retrained anything. If a clean
+sufficiency rule cannot be shown to help without hurting recall, the finding is recorded and the
+change deferred rather than forced.
 
-## What the previous unit completed (P26 — E2602, the training result reproduced across seeds)
+## What the previous unit completed (P27 — the grounded-answer evaluation workload)
+
+Designed, built, tested, run and recorded (ADR-0031; E2603).
+
+- [x] `chakaso.benchmark.grounded_*` — a grounded-answer evaluation sub-module: a provenance-bearing
+      `GroundedCase`/`GroundedSource`/`GroundedProvenance` schema (question, expected disposition,
+      required facts, prohibited claims, gold/forbidden evidence by label, rationale, split), a
+      `GroundedDataset` that refuses dangling evidence, duplicate cases and development/held-out split
+      leakage, and a strict manifest+JSONL loader with the same validation.
+- [x] A **self-authored Apache-2.0** workload (`ga-kestrel-library`, 13 passages / 14 cases, 9 dev /
+      5 held-out, pinned content fingerprint `d2d2ee00d117b88a`) spanning direct, multi-source,
+      distractor, conflicting, ambiguous, missing-evidence and unsupported-premise situations. Every
+      required fact is asserted (by test) to be literally present in its gold evidence.
+- [x] `GroundedEvaluationRunner` composing the real `RetrievalService` and `evaluate_answer` over an
+      injected answer provider, classifying retrieval / generation / evaluation failures distinctly
+      (a failure is recorded, never scored as success); a **reference oracle** (an oracle, explicitly
+      not a model) and a non-answering provider; hand-checkable metric primitives over separate
+      dimensions (no merged score); deterministic text and JSON reports that name the provider and
+      whether it was an oracle; and `chakaso benchmark grounded` (`--provider`, `--split`, `--json`).
+- [x] **E2603 measured result:** reference-oracle run over the workload — retrieval recall@k 0.8182 /
+      MRR 0.8636 (held-out recall@k 1.0), zero stage failures, grounded-answer rate 0.8182, and honest
+      negatives kept visible: 3 forbidden hits and 3 false retrievals. Recorded as a harness/retrieval
+      measurement, never answer capability (no model answers; K-001 stands).
+
+## What the unit before that completed (P26 — E2602, the training result reproduced across seeds)
 
 Implemented, run, and recorded as a measured result
 ([`../../experiments/E2602/record.md`](../../experiments/E2602/record.md)).

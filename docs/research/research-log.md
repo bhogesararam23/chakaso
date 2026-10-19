@@ -369,3 +369,41 @@ loss below trivial baselines, reproducibly across seeds. The project now has a m
 training result behind the boundary — and the evidence points away from repeating it and toward *breadth*:
 a generation-quality measurement through the `trained_char` adapter, or the human-inspectable
 grounded-answer evaluation corpus H1–H7 actually need. K-001 stands.
+
+## 2026-10-19 — P27/E2603: a grounded-answer evaluation workload exists, and the first run finds retrieval over-returning
+
+**Observation.** Until P27 every measurement scored machinery or a toy model; nothing scored a *grounded
+answer* against a question with acceptable and unacceptable evidence. [ADR-0031](../decisions/ADR-0031-grounded-answer-evaluation-workload.md)
+built the first such workload: a self-authored, provenance-bearing, held-out set of grounded-answer cases
+(`ga-kestrel-library`, 13 passages / 14 cases) run by `chakaso benchmark grounded`, which composes the real
+retrieval and `evaluate_answer` boundaries and reports retrieval and answer dimensions separately.
+
+**Experiment E2603 — does the harness run the pipeline, and what does the first baseline reveal?** Protocol:
+lexical retrieval, `top_k=5`; two answer providers over the identical workload — a **reference oracle** (an
+oracle, not a model) that replays each case's required facts and cites only surfaced gold, and a **non-answering**
+provider that abstains. Windows, CPython 3.13.5, offline, numpy-free. Record:
+[`../../experiments/E2603/record.md`](../../experiments/E2603/record.md).
+
+**Result (measured).** Reference oracle over all 14 cases: retrieval recall@k **0.8182**, MRR 0.8636, hit
+rate 0.9091, **3 forbidden hits**, **3 false retrievals**; answer mean evidence coverage 0.8182, citation
+validity 1.0, grounded-answer rate 0.8182, appropriate-abstention rate 1.0; zero stage failures. Held-out
+split recall@k 1.0. Non-answering provider: retrieval identical, answered_cases 0, appropriate-abstention
+rate 0.2143 (it over-abstains every answerable case).
+
+**Interpretation.** The oracle arm validates the harness — a correct, well-cited, correctly-abstaining
+answer scores as expected, and the metric arithmetic is pinned by independent tests. The informative part
+is the negative result the separate dimensions refuse to hide: **lexical retrieval returns its full top-k
+even on the three questions that have no answer in the corpus**, so a retrieval-aware runtime is handed
+evidence it would have to abstain from, and it surfaces forbidden passages on three cases. A merged score
+would have buried this.
+
+**Limitation.** The workload is self-authored, tiny and author-written — easier than real text, and it
+cannot support any claim about answer capability. No model participates: the answer side is an oracle and a
+deliberate abstainer, so no number here is model quality (K-001, in its strong form, stands). No confidence
+interval (the run is deterministic).
+
+**Conclusion (narrow but real).** Chakaso now has a working grounded-answer evaluation capability and a
+first measured baseline. The most valuable outcome is a concrete, evidence-driven next step rather than a
+headline: retrieval lacks an evidence-sufficiency signal (recorded as
+[K-010](../agent/KNOWN_ISSUES.md)), which is now the active unit (P28). The frontier of the project — a
+real workload met by a model that answers — is unmoved.

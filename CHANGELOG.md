@@ -10,6 +10,34 @@ capability is implemented or still planned.
 
 ## Unreleased
 
+### 2026-10-19 — A grounded-answer evaluation workload exists and is measured (P27, E2603)
+
+**Added / measured**
+
+- **Implemented** a grounded-answer evaluation sub-module in `chakaso.benchmark` (ADR-0031): a
+  provenance-bearing case/source schema, a dataset that refuses dangling evidence, duplicate cases and
+  development/held-out split leakage, and a strict manifest+JSONL loader.
+- A **self-authored, Apache-2.0, human-inspectable** workload (`ga-kestrel-library`, 13 passages / 14
+  cases, pinned fingerprint `d2d2ee00d117b88a`) spanning direct, multi-source, distractor, conflicting,
+  ambiguous, missing-evidence and unsupported-premise questions — each with required facts, prohibited
+  claims, acceptable/unacceptable evidence, a rationale and a documented licence. Sources are authored
+  for the project, not scraped, so redistribution is provably permitted and the pipeline stays offline.
+- `GroundedEvaluationRunner` runs the real retrieval + `evaluate_answer` boundaries over an injected
+  answer provider, classifies retrieval / generation / evaluation failures separately, reports retrieval
+  and answer dimensions separately (no merged score), and emits deterministic text/JSON reports.
+  Reachable as `chakaso benchmark grounded --provider … --split … [--json]`.
+- **E2603 result** ([`experiments/E2603/record.md`](experiments/E2603/record.md)): with a *reference
+  oracle* (an oracle, not a model) over the workload — retrieval recall@k 0.8182 / MRR 0.8636 (held-out
+  recall@k 1.0), zero stage failures — and honest negative findings kept visible: 3 forbidden hits and 3
+  false retrievals, because lexical retrieval returns its top-k even on questions it should leave empty.
+
+**Status and honesty**
+
+- This is a **development instrument**, not a claim about answer capability. The reference provider is an
+  oracle that validates the harness; the runtime still has no model that produces a grounded answer, so
+  the strong form of K-001 stands. E2603's negatives set the next unit (a retrieval evidence-sufficiency
+  decision), and its per-case report prevents any aggregate from hiding a systematic failure.
+
 ### 2026-10-19 — The training result is reproduced across seeds under a controlled protocol (E2602, P26)
 
 **Added / measured**

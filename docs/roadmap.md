@@ -125,11 +125,15 @@ The founding work list, now assessed against what actually shipped:
     records citations, but no model generates an answer to cite into. Gated on P7/P8.
 11. Reassessment entry point. — **Done** (application-level reassessment over a stored
     answer; explicit identifier trigger, ADR-0029).
-12. Unit and integration tests for all of the above. — **Done** (see `tests/`, 1106 at
-    the current head).
+12. Unit and integration tests for all of the above. — **Done** (see `tests/`, 1258 at
+    the current head; 1250 in the dependency-free matrix, 8 numpy-gated).
 13. A hand-built evaluation set of modest size, with unacceptable-evidence fields. —
     **Done for development fixtures** (synthetic retrieval and correction benchmarks with
-    forbidden-evidence fields); a *real* evaluation set is P6's open half.
+    forbidden-evidence fields) and, since P27, for a **grounded-answer evaluation workload**
+    (`chakaso benchmark grounded`, ADR-0031): a self-authored, provenance-bearing, held-out set of
+    answer cases with required facts, prohibited claims and unacceptable-evidence fields, run and
+    measured by E2603. A *real-world* evaluation set (a corpus the project did not write) is P6's
+    open half and still stands.
 14. A CLI that holds a conversation. — **Done** (`chakaso chat`, grounded through the runtime).
 
 The founding sprint is complete except for the two items that depend on a real model
@@ -158,6 +162,30 @@ Scaling happens after reproducibility, not before. The first experiment demonstr
 produced the project's first genuinely measured number; it is not a step toward a useful chatbot, and the
 measured overfitting is itself the evidence that justifies the next, controlled experiment (early
 stopping / capacity, multiple seeds).
+
+## Grounded-answer evaluation workload (P27)
+
+The training sprint narrowed K-001's *training-loop* half but left the project's real open question
+untouched: is there anything a grounded answer could be measured against? P27 answered that with
+[ADR-0031](decisions/ADR-0031-grounded-answer-evaluation-workload.md) and built it — the first
+evaluation workload whose units are grounded-answer cases, not retrieval fixtures.
+
+1. A provenance-bearing, human-inspectable case/schema with unacceptable-evidence and prohibited-claim
+   fields. — **Done** (`chakaso.benchmark.grounded_cases`).
+2. A legally-usable, offline, self-authored source set (no third-party corpus assumed licensed). —
+   **Done** (`ga-kestrel-library`, Apache-2.0).
+3. Split integrity — no passage grounds both a development and a held-out case. — **Done**, enforced by
+   the dataset and the loader, and pinned by tests.
+4. An evaluation runner over the real retrieval + answer boundaries, separating retrieval, generation
+   and evaluation failures, reporting dimensions separately. — **Done** (`chakaso benchmark grounded`).
+5. A first measured baseline, with its negative findings recorded, not hidden. — **Done**
+   ([`../experiments/E2603/record.md`](../experiments/E2603/record.md)).
+
+E2603's honest result is that the harness works and that **lexical retrieval over-returns**: it produced
+a false retrieval on every abstention case and hit forbidden evidence on three. That measured failure,
+not appetite, sets the next sprint — a retrieval evidence-sufficiency decision (P28, tracked as K-010).
+The *real-world* evaluation corpus (item 13's open half) and a model that actually answers both remain
+out of reach and unclaimed.
 
 ## Domain-selection gate
 

@@ -23,6 +23,13 @@ tiny synthetic-corpus character experiment, not a useful language model, and not
 question or a real corpus. The stronger form of the gap stands: no real workload, no grounded answer,
 no measured model quality.
 
+**Narrowed again, still open, on 2026-10-19 (P27/E2603).** There is now a grounded-answer *evaluation
+workload* and a runner that scores the real retrieval + answer boundaries (`chakaso benchmark
+grounded`, ADR-0031), so the pipeline can finally be pointed at a question and measured. But the
+workload is self-authored and tiny, and E2603 scored it through an *oracle* and a non-answering
+provider — not a model that answers. No real corpus and no useful answering model exist, so the
+underlying gap is unchanged: nothing has been executed against a real workload by a model.
+
 **What would close it:** a run against a real corpus or a useful model that produces and grounds an
 answer. A local retrieval implementation, a synthetic development benchmark, the evaluation / correction
 foundations, and now a measured from-scratch training loop all exist and are exercised in tests or in a
@@ -30,6 +37,26 @@ committed experiment; none of them is a real workload with a real answer, so the
 
 **Not a defect to fix now.** It is recorded so that no document reads as though the
 architecture has been validated.
+
+### K-010 — Lexical retrieval returns its top-k even when nothing is relevant
+
+**Impact:** Medium, and it is now a *measured* problem, not a hypothetical one.
+
+Discovered by E2603 (the grounded-answer workload run): `RetrievalService.search` always returns up to
+`top_k` BM25-ranked chunks, including for questions whose answer is absent from the corpus. Over the
+held-out and full splits every abstention case produced a **false retrieval** (3 of 3), and 3 cases
+surfaced a passage they had explicitly marked **forbidden**. A retrieval-aware runtime cannot abstain
+correctly if the retriever hands it evidence unconditionally — the "no evidence" signal a grounded
+abstention depends on is never produced.
+
+**Why it was not caught before.** The retrieval development benchmark scored only cases that name gold
+evidence; abstention cases were checked for "did retrieval return nothing," but the fixture set was
+small and the failure did not aggregate visibly. The P27 workload made it measurable per category.
+
+**What would close it:** a retrieval evidence-sufficiency decision — a documented score floor or
+relevance test at the `RetrievalService`/runtime boundary that distinguishes "found nothing relevant"
+from "found k things", justified by the exact E2603 cases and covered by regression tests, without
+degrading recall on the answerable cases. This is the current active unit (P28).
 
 ### K-002 — Documentation describes components that do not exist
 

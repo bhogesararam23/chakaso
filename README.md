@@ -80,6 +80,7 @@ The status vocabulary used across this documentation is:
 | Correction decision rule, reassessment, append-only records and a correction development benchmark | Implemented (foundation: scores the rule over synthetic cases; a deterministic, identifier-triggered reassessment is composed into `chakaso chat` — an explicit reference, never an autonomous guess, ADR-0029; no revised prose, no automatic loop) |
 | Persistent answers and application-level reassessment | Implemented (append-only store, ADR-0017/0018; durable SQLite backend when configured survives a restart, ADR-0021; reassessment over a stored, identifier-addressed answer) |
 | Reproducible experiments and a regression baseline | Implemented (development, ADR-0020); no model-quality result |
+| Grounded-answer evaluation workload and runner (`chakaso benchmark grounded`) | Implemented (development, ADR-0031): a self-authored, provenance-bearing, held-out answer-evaluation workload scored over the real retrieval + `evaluate_answer` boundaries, with separate retrieval/answer metrics and per-stage failure handling. It measures the harness and retrieval, **not** answer capability — no model answers (E2603 is its baseline) |
 | Dense retrieval (embedding boundary + exact index) and hybrid reciprocal-rank fusion | Experimental (ADR-0023/ADR-0024) — the only embedding is a deterministic, non-semantic fixture double, so these re-rank token overlap, not meaning |
 | A real semantic embedding model, an approximate (FAISS-like) vector index, and reranking | Planned |
 | Character tokenizer, leak-free split, tiny causal model, Adam, checkpoint, training loop, baselines, held-out evaluation (`chakaso.training`) | Experimental (ADR-0030; runs under the optional `[train]` extra, out of core CI per K-009; not used by the default runtime, though its checkpoints can be loaded by the optional `trained_char` adapter) |
@@ -87,7 +88,7 @@ The status vocabulary used across this documentation is:
 | Subword/BPE tokenizer, a Transformer, a real corpus, mini-batching and any scaling | Planned |
 | A trained Chakaso model wired behind the `LanguageModel` boundary (a `trained_char` inference adapter) | Experimental (P25): loads an E2601-class checkpoint, satisfies the model contract, generates greedily; behind the optional `[train]` extra, never the default, and the model is a tiny toy that produces incoherent text |
 | Committed or released model weights | Does not exist (the E2601 checkpoint is reproducible from the seed and recorded by fingerprint, not committed) |
-| Real evaluation harness and model benchmarks | Planned (retrieval and correction development benchmarks exist; no real-workload or model-quality measurement) |
+| Real evaluation harness and model benchmarks | Planned (retrieval, correction and the P27 grounded-answer evaluation *workloads* exist as development instruments over synthetic/self-authored fixtures; no real-world-corpus evaluation and no model-quality measurement exist) |
 
 Nothing in this list is aspirational language. If a row says Planned, there is no
 code for it. "Implemented" means the code exists and is covered by tests; in several

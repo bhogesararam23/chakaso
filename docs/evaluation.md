@@ -115,17 +115,29 @@ performance, and the dataset is a fixed seam for measuring one when it exists.
 
 ### Grounded-answer benchmark
 
-A fixed set of questions with authoritative evidence. Each example records:
+A versioned, self-authored workload now implements the shape described below
+(`chakaso.benchmark.grounded_*`; `chakaso benchmark grounded`; ADR-0031). Each example records:
 
 - the question,
-- the expected answer, or the expected behaviour when the answer is not a single
-  statement,
-- evidence that is acceptable,
+- the expected disposition (answer / qualify / abstain), the required facts an acceptable answer
+  must carry, and the prohibited claims it must never make,
+- evidence that is acceptable (gold passages, named by label and resolved to the content-derived
+  `ChunkId`s retrieval actually produces),
 - evidence that is unacceptable (this is what catches citation laundering),
-- whether the correct behaviour is to answer, qualify, or abstain.
+- a provenance and licence record per source, and an evaluation rationale.
 
-The "unacceptable evidence" field is not optional. Without it, a system that cites
-a loosely related source scores the same as one that cites the right one.
+The "unacceptable evidence" and "provenance" fields are mandatory in the schema: a case with no
+documented source licence or an evidence label that names no passage is refused at load, and a
+passage that grounds a development case may not also ground a held-out one (split leakage). Sources
+are **self-authored** (Apache-2.0, the project owns the text) rather than scraped, because publicly
+accessible content is not automatically licensed for redistribution and the runtime is offline.
+
+It is a **development instrument**, not a scientific benchmark and not a claim about answer quality:
+the answer side is scored through an injected provider — a reference *oracle* that validates the
+harness, and a non-answering provider that reflects the truth that no model answers today. The
+measured baseline (E2603) reports real retrieval and structure metrics over the held-out and full
+splits and keeps its negative findings visible (forbidden hits, false retrievals on abstention cases)
+rather than merging them into one score.
 
 ### Correction benchmark
 
@@ -218,7 +230,7 @@ was not measured, it is not written down.
 | --- | --- |
 | Unit and contract tests | Implemented |
 | Repository hygiene tests | Implemented |
-| Grounded-answer benchmark | Planned |
+| Grounded-answer benchmark | Implemented (`chakaso.benchmark.grounded_*`; `chakaso benchmark grounded`) — a versioned, **self-authored, Apache-2.0, held-out** workload with provenance-enforcing schema, a runner over the real retrieval + `evaluate_answer` boundaries, separate retrieval/answer metrics and deterministic reports. A development instrument: it evaluates the pipeline and retrieval, **not** answer capability (no model answers — K-001). Measured baseline: E2603 |
 | Correction benchmark | Implemented (`chakaso.benchmark.correction`; scores the decision rule over synthetic labelled cases — not real-world correction quality) |
 | Retrieval development benchmark (schema, loader, fixtures, runner, reports) | Implemented (`chakaso.benchmark`) |
 | Metric functions (recall@k, precision@k, MRR, duplicate + unresolved-reference counts, latency observation) | Implemented (`chakaso.evaluation`) |
@@ -236,7 +248,7 @@ was not measured, it is not written down.
 | Red-team suite | Planned |
 | Standard model benchmarks | Planned |
 | Regression gates beyond unit tests | Partially implemented (pinned-fingerprint benchmark regressions and a deterministic experiment baseline comparison; statistical significance deliberately not built) |
-| Any measured result | Retrieval, correction and retrieval-strategy development metrics only (synthetic fixtures, E-001); no model-quality result, and no test of a semantic-retrieval hypothesis |
+| Any measured result | Retrieval, correction and retrieval-strategy development metrics over synthetic fixtures (E-001); the first trained-model results (E2601, E2602); and the grounded-answer evaluation baseline over the self-authored workload (E2603). None is a model-quality result, and none tests a semantic-retrieval or answer-capability hypothesis |
 
 No model-quality or general-performance number appears anywhere in this repository,
 because none has been measured. The retrieval and correction development benchmarks
