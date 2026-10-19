@@ -22,7 +22,7 @@ from chakaso.benchmark.grounded_runner import (
 )
 from chakaso.benchmark.grounded_workload import load_development_grounded_workload
 from chakaso.benchmark.identity import CaseId, DatasetId
-from chakaso.retrieval import Corpus, RetrievalService
+from chakaso.retrieval import Corpus, DiscriminatingTermSufficiencyPolicy, RetrievalService
 
 PROVENANCE = GroundedProvenance(
     origin="Authored for Chakaso.",
@@ -224,3 +224,44 @@ class TestEnvironmentMetadata:
 
     def test_is_reproducible_within_a_machine(self) -> None:
         assert environment_metadata() == environment_metadata()
+
+
+class TestSufficiencyIntegration:
+    def test_policy_measures_sufficiency_per_case_on_workload(self) -> None:
+        corpus, dataset = load_development_grounded_workload()
+        runner = GroundedEvaluationRunner(
+            corpus,
+            provider=ReferenceAnswerProvider(),
+            sufficiency_policy=DiscriminatingTermSufficiencyPolicy(corpus),
+        )
+        run = runner.run(dataset)
+        assert run.sufficiency_metrics.assessed_cases == len(dataset.cases)
+        # E2603's defect (missed abstentions) and the recall risk (false abstentions) are both zero.
+        assert run.sufficiency_metrics.missed_abstentions == 0
+        assert run.sufficiency_metrics.false_abstentions == 0
+        assert run.sufficiency_metrics.accuracy == pytest.approx(1.0)
+        assert all(o.sufficiency_decision is not None for o in run.outcomes)
+
+    def test_no_policy_leaves_sufficiency_unmeasured(self) -> None:
+        corpus, dataset = load_development_grounded_workload()
+        run = GroundedEvaluationRunner(corpus, provider=ReferenceAnswerProvider()).run(dataset)
+        assert run.sufficiency_metrics.assessed_cases == 0
+        assert all(o.sufficiency_decision is None for o in run.outcomes)
+
+    def test_answerable_case_judged_insufficient_is_a_measured_false_abstention(self) -> None:
+        # On a single-document corpus, ceiling = max_document_fraction * 1 is below df=1, so no term
+        # can be discriminating and the answerable case is judged insufficient. The metric must COUNT
+        # that as a false abstention (a recall loss) rather than hide it — the disclosed limit P29
+        # confronts. This asserts the counter is wired; it does not endorse the verdict.
+        corpus, dataset = _single_case_dataset()
+        run = GroundedEvaluationRunner(
+            corpus,
+            provider=ReferenceAnswerProvider(),
+            sufficiency_policy=DiscriminatingTermSufficiencyPolicy(
+                corpus, max_document_fraction=0.25
+            ),
+        ).run(dataset)
+        assert run.sufficiency_metrics.assessed_cases == 1
+        assert run.sufficiency_metrics.false_abstentions == 1
+        assert run.sufficiency_metrics.missed_abstentions == 0
+        assert run.sufficiency_metrics.accuracy == pytest.approx(0.0)

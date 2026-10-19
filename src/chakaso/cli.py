@@ -102,6 +102,7 @@ from chakaso.planning import QueryMode
 from chakaso.retrieval import (
     DEFAULT_TOP_K,
     Corpus,
+    DiscriminatingTermSufficiencyPolicy,
     IngestionError,
     RetrievalError,
     RetrievalOutcome,
@@ -406,6 +407,15 @@ def _build_parsers() -> tuple[argparse.ArgumentParser, argparse.ArgumentParser]:
         choices=["all", "development", "heldout"],
         default="heldout",
         help="which cases to run (default: %(default)s — the held-out side reports a clean number)",
+    )
+    grounded_benchmark.add_argument(
+        "--sufficiency",
+        action="store_true",
+        help=(
+            "also assess each case with the retrieval evidence-sufficiency policy (ADR-0032) and "
+            "report sufficiency accuracy, false- and missed-abstentions; off by default so the "
+            "E2603 baseline path is unchanged"
+        ),
     )
     grounded_benchmark.add_argument(
         "--json",
@@ -1453,12 +1463,16 @@ def _run_grounded_benchmark(args: argparse.Namespace) -> int:
     }
     try:
         corpus, dataset = load_development_grounded_workload()
+        sufficiency_policy = (
+            DiscriminatingTermSufficiencyPolicy(corpus) if args.sufficiency else None
+        )
         run = GroundedEvaluationRunner(
             corpus,
             provider=provider,
             top_k=args.top_k,
             split_filter=splits[args.split],
-            metadata=environment_metadata(),
+            metadata={**environment_metadata(), "sufficiency": "on" if args.sufficiency else "off"},
+            sufficiency_policy=sufficiency_policy,
         ).run(dataset)
     except (ValueError, ChakasoError) as exc:
         print(f"{PROGRAM}: {exc}", file=sys.stderr)

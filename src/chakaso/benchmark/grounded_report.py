@@ -70,6 +70,8 @@ def _outcome_dict(outcome: GroundedCaseOutcome) -> dict[str, object]:
         "abstention_expected": outcome.abstention_expected,
         "abstention_observed": outcome.abstention_observed,
         "abstention_correct": outcome.abstention_correct,
+        "sufficiency_decision": outcome.sufficiency_decision,
+        "sufficiency_correct": outcome.sufficiency_correct,
     }
 
 
@@ -117,6 +119,12 @@ def grounded_report_to_dict(run: GroundedRun) -> dict[str, object]:
             "evaluation": run.failures.evaluation,
             "total": run.failures.total,
         },
+        "sufficiency_metrics": {
+            "assessed_cases": run.sufficiency_metrics.assessed_cases,
+            "accuracy": run.sufficiency_metrics.accuracy,
+            "false_abstentions": run.sufficiency_metrics.false_abstentions,
+            "missed_abstentions": run.sufficiency_metrics.missed_abstentions,
+        },
         "per_category": {category: dict(values) for category, values in run.per_category.items()},
         "cases": [_outcome_dict(outcome) for outcome in run.outcomes],
     }
@@ -161,6 +169,8 @@ def format_grounded_report(run: GroundedRun) -> str:
         f"Failures: retrieval={run.failures.retrieval} generation={run.failures.generation} "
         f"evaluation={run.failures.evaluation}",
         "",
+        _format_sufficiency(run),
+        "",
         "Per case:",
     ]
     for outcome in run.outcomes:
@@ -168,14 +178,29 @@ def format_grounded_report(run: GroundedRun) -> str:
     return "\n".join(lines)
 
 
+def _format_sufficiency(run: GroundedRun) -> str:
+    metrics = run.sufficiency_metrics
+    if metrics.assessed_cases == 0:
+        return "Sufficiency: not assessed (no policy enabled — this is the E2603 baseline path)"
+    return (
+        f"Sufficiency: assessed={metrics.assessed_cases} accuracy={metrics.accuracy:.4f} "
+        f"false_abstentions={metrics.false_abstentions} missed_abstentions={metrics.missed_abstentions}"
+    )
+
+
 def _format_outcome(outcome: GroundedCaseOutcome) -> str:
     if outcome.failure is not StageFailure.NONE:
         return f"  {outcome.case_id} ({outcome.category.value}): {outcome.failure.value.upper()}"
     grounded = "n/a" if outcome.is_grounded is None else str(outcome.is_grounded)
     flag = " [FORBIDDEN HIT]" if outcome.forbidden_hit else ""
+    suff = (
+        ""
+        if outcome.sufficiency_decision is None
+        else f" sufficiency={outcome.sufficiency_decision}"
+    )
     return (
         f"  {outcome.case_id} ({outcome.category.value}): "
         f"recall@k={outcome.recall_at_k:.2f} grounded={grounded} "
         f"abstain(expected={outcome.abstention_expected},observed={outcome.abstention_observed})"
-        f"{flag}"
+        f"{suff}{flag}"
     )

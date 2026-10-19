@@ -887,6 +887,29 @@ def test_benchmark_grounded_json_records_reproducibility_metadata(
         assert config[key]
 
 
+def test_benchmark_grounded_sufficiency_off_by_default(
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    assert main(["benchmark", "grounded", "--split", "all", "--json"]) == 0
+    payload = json.loads(capsys.readouterr().out)
+    assert payload["configuration"]["sufficiency"] == "off"
+    assert payload["sufficiency_metrics"]["assessed_cases"] == 0  # E2603 baseline path unchanged
+
+
+def test_benchmark_grounded_sufficiency_on_measures_the_policy(
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    assert main(["benchmark", "grounded", "--split", "all", "--sufficiency", "--json"]) == 0
+    payload = json.loads(capsys.readouterr().out)
+    assert payload["configuration"]["sufficiency"] == "on"
+    metrics = payload["sufficiency_metrics"]
+    assert metrics["assessed_cases"] == 14
+    # The policy fixes E2603's 3 missed abstentions with no false abstentions on the workload.
+    assert metrics["missed_abstentions"] == 0
+    assert metrics["false_abstentions"] == 0
+    assert metrics["accuracy"] == pytest.approx(1.0)
+
+
 def test_benchmark_grounded_heldout_split_runs_only_heldout(
     capsys: pytest.CaptureFixture[str],
 ) -> None:

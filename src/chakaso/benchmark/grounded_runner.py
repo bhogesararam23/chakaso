@@ -59,6 +59,7 @@ from chakaso.evaluation import (
 )
 from chakaso.evidence import EvidencePack
 from chakaso.retrieval import DEFAULT_TOP_K, Corpus, RetrievalService
+from chakaso.retrieval.sufficiency import EvidenceSufficiencyPolicy, SufficiencyOutcome
 
 __all__ = [
     "FailureCounts",
@@ -68,6 +69,7 @@ __all__ = [
     "GroundedEvaluationRunner",
     "GroundedRetrievalMetrics",
     "GroundedRun",
+    "GroundedSufficiencyMetrics",
     "NonAnsweringProvider",
     "ReferenceAnswerProvider",
     "StageFailure",
@@ -224,6 +226,8 @@ class GroundedCaseOutcome:
     abstention_expected: bool = False
     abstention_observed: bool | None = None
     abstention_correct: bool | None = None
+    sufficiency_decision: str | None = None
+    sufficiency_correct: bool | None = None
 
     @property
     def has_gold(self) -> bool:
@@ -265,6 +269,20 @@ class GroundedAnswerMetrics:
 
 
 @dataclass(frozen=True, slots=True)
+class GroundedSufficiencyMetrics:
+    """Evidence-sufficiency aggregates, kept separate from retrieval and answer dimensions.
+
+    Reported only when a sufficiency policy ran (``assessed_cases > 0``); with no policy the run's
+    sufficiency is simply not measured, and the baseline (E2603) stays untouched.
+    """
+
+    assessed_cases: int
+    accuracy: float
+    false_abstentions: int  # answerable cases judged insufficient (a recall loss)
+    missed_abstentions: int  # unanswerable cases judged sufficient (the E2603 defect)
+
+
+@dataclass(frozen=True, slots=True)
 class FailureCounts:
     """How many cases failed at each stage."""
 
@@ -293,6 +311,7 @@ class GroundedRun:
     outcomes: tuple[GroundedCaseOutcome, ...]
     retrieval_metrics: GroundedRetrievalMetrics
     answer_metrics: GroundedAnswerMetrics
+    sufficiency_metrics: GroundedSufficiencyMetrics
     failures: FailureCounts
     per_category: Mapping[str, Mapping[str, float]]
     metadata: Mapping[str, str] = field(default_factory=lambda: MappingProxyType({}))
@@ -307,6 +326,7 @@ class GroundedEvaluationRunner:
         *,
         service: RetrievalService | None = None,
         provider: AnswerProvider | None = None,
+        sufficiency_policy: EvidenceSufficiencyPolicy | None = None,
         top_k: int = DEFAULT_TOP_K,
         retriever_name: str = "lexical",
         split_filter: CaseSplit | None = None,
@@ -314,6 +334,7 @@ class GroundedEvaluationRunner:
     ) -> None:
         self._service = service if service is not None else RetrievalService(corpus)
         self._provider = provider
+        self._sufficiency_policy = sufficiency_policy
         self._top_k = top_k
         self._retriever_name = retriever_name
         self._split_filter = split_filter
@@ -340,6 +361,7 @@ class GroundedEvaluationRunner:
             outcomes=outcomes,
             retrieval_metrics=_aggregate_retrieval(outcomes),
             answer_metrics=_aggregate_answer(outcomes),
+            sufficiency_metrics=_aggregate_sufficiency(outcomes),
             failures=_aggregate_failures(outcomes),
             per_category=_aggregate_by_category(outcomes),
             metadata=self._metadata,
@@ -373,6 +395,11 @@ class GroundedEvaluationRunner:
             "hit": any(chunk_id in relevant for chunk_id in retrieved),
             "forbidden_hit": any(chunk_id in forbidden_set for chunk_id in retrieved),
         }
+
+        if self._sufficiency_policy is not None:
+            decision = self._sufficiency_policy.assess(case.question, outcome.pack.chunks)
+            retrieval_kwargs["sufficiency_decision"] = decision.outcome.value
+            retrieval_kwargs["sufficiency_correct"] = decision.is_sufficient == case.answerable
 
         if self._provider is None:
             return self._outcome(case, failure=StageFailure.NONE, **retrieval_kwargs)
@@ -524,6 +551,33 @@ def _aggregate_answer(outcomes: tuple[GroundedCaseOutcome, ...]) -> GroundedAnsw
         ),
         appropriate_abstention_rate=rate(appropriate, len(decisions)),
         grounded_answer_rate=rate(grounded, len(answered)),
+    )
+
+
+def _aggregate_sufficiency(outcomes: tuple[GroundedCaseOutcome, ...]) -> GroundedSufficiencyMetrics:
+    assessed = tuple(o for o in outcomes if o.sufficiency_decision is not None)
+    if not assessed:
+        return GroundedSufficiencyMetrics(
+            assessed_cases=0, accuracy=0.0, false_abstentions=0, missed_abstentions=0
+        )
+    correct = sum(1 for o in assessed if o.sufficiency_correct)
+    false_abstentions = sum(
+        1
+        for o in assessed
+        if o.sufficiency_decision == SufficiencyOutcome.INSUFFICIENT.value
+        and o.abstention_expected is False
+    )
+    missed_abstentions = sum(
+        1
+        for o in assessed
+        if o.sufficiency_decision == SufficiencyOutcome.SUFFICIENT.value
+        and o.abstention_expected is True
+    )
+    return GroundedSufficiencyMetrics(
+        assessed_cases=len(assessed),
+        accuracy=rate(correct, len(assessed)),
+        false_abstentions=false_abstentions,
+        missed_abstentions=missed_abstentions,
     )
 
 
