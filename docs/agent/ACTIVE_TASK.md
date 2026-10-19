@@ -1,25 +1,41 @@
 # Active task
 
-## Current unit: P26 — a controlled follow-up to E2601 (early stopping, fixed protocol, several seeds)
+## Current unit: P27 — design a small, human-inspectable grounded-answer evaluation workload
 
-**Goal.** E2601's measured held-out curve is non-monotonic — it bottoms at step 50 (1.6650 nats) then
-rises to 2.4946 at step 300, i.e. the 984-parameter model overfits the 344-token corpus. The next
-experiment the *evidence* justifies is not a bigger model but a controlled protocol around the one that
-exists: select the training budget (early stopping on held-out loss, or a small fixed capacity sweep)
-under a pre-declared rule — never cherry-picking on the test split — and report held-out loss across
-several seeds so the first result gains an error bar instead of a single high-variance point. Record it
-as `experiments/E2602/record.md` in the experiment format, with only measured values.
+**Goal.** Phases A–D and E2601/E2602 have taken Chakaso from no-measurement to a *reproducible,
+multi-seed measured training loop* and a trained artifact behind the boundary. The evidence now points at
+the project's real open question (K-001's stronger form, and H1–H5): there is **no evaluation workload that
+a grounded answer could be measured against**. This unit designs — it does not yet build at scale — the
+smallest such workload: a documented schema, provenance and labelling protocol, and a split strategy for
+a small corpus of questions with acceptable/unacceptable evidence, human-inspectable and legally usable,
+that turns the existing structural evaluators into something a future model can actually be scored on.
 
-**Scope.** Reuse `chakaso.training` (no new numerical machinery unless a real gap appears): a small
-multi-seed driver, a documented model-selection rule fixed before looking at held-out numbers, and the
-measured mean/spread of held-out loss against the same uniform/unigram baselines. Tests stay numpy-gated.
-If the environment cannot run the sweep, record the exact blocker and the unexecuted steps rather than
-inventing a number.
+**Scope.** A design note under `docs/` (extend `docs/evaluation.md` / a new section) plus, if a minimal
+set genuinely exists, a versioned schema and one worked, clearly-labelled example. It must not fabricate
+labels or present unreviewed model output as ground truth, and must not grow into a full benchmark before
+there is model behaviour worth measuring (the roadmap's release discipline).
 
-**What this unit is not.** Not a Transformer, not a subword tokenizer, not a pretrained adapter, not a
-real evaluation workload. Those each need their own justification and (for a dependency) ADR.
+**What this unit is not.** Not a trained/embedded judge, not a large dataset, not a leaderboard number.
+If no legitimate data source can be identified, record that as the finding and the blocker — do not
+invent a corpus.
 
-## What the previous unit completed (P25 — a trained artifact behind the `LanguageModel` boundary)
+## What the previous unit completed (P26 — E2602, the training result reproduced across seeds)
+
+Implemented, run, and recorded as a measured result
+([`../../experiments/E2602/record.md`](../../experiments/E2602/record.md)).
+
+- [x] `data.split_three_way` + `ThreeWaySplit` — a deterministic, disjoint train/validation/test
+      separation (units wholly on one side, every unit exactly once) so early-stopping selection on
+      validation never touches the reported test number; `fit_vocabulary` made structural to serve both
+      split shapes. 5 numpy-free split tests.
+- [x] `chakaso.training.controlled.run_controlled_experiment` — a fixed early-stopping protocol over
+      pre-declared seeds, aggregating mean + sample stdev of held-out test loss against baselines.
+- [x] **E2602 measured result:** mean test loss at the validation-selected step **1.7978 ± 0.1767 nats**,
+      below both the unigram (mean 2.9808) and uniform (~3.3) baselines on **all five** seeds; the
+      un-early-stopped step-300 loss (mean 2.7804) is worse on every seed — E2601's overfitting is
+      systematic, not one lucky partition. Reported honestly as a small-corpus, high-variance toy result.
+
+## What the unit before that completed (P25 — a trained artifact behind the `LanguageModel` boundary)
 
 Implemented, tested, and honest about its limits; it integrates E2601's artifact without distorting the
 interface.

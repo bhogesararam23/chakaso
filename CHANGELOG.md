@@ -10,6 +10,32 @@ capability is implemented or still planned.
 
 ## Unreleased
 
+### 2026-10-19 — The training result is reproduced across seeds under a controlled protocol (E2602, P26)
+
+**Added / measured**
+
+- `chakaso.training.data.split_three_way` — a deterministic, disjoint train/**validation**/**test**
+  separation (each line unit wholly on one side; every unit preserved exactly once), so a
+  model-selection rule can read validation without contaminating the reported test number. The vocabulary
+  stays fit on training text only; `fit_vocabulary` is now structural (works for the two- and three-way
+  shapes via a read-only `train_text` protocol).
+- `chakaso.training.controlled.run_controlled_experiment` — a fixed protocol (same model/optimizer as
+  E2601, pre-declared seeds (7, 21, 1337, 2024, 42)) with **early stopping**: select the first step
+  achieving a new minimum *validation* loss and report the test loss there; aggregate mean + sample
+  standard deviation across seeds against the same uniform/unigram baselines.
+- **E2602 result** ([`experiments/E2602/record.md`](experiments/E2602/record.md)): mean held-out **test**
+  cross-entropy **1.7978 ± 0.1767 nats**, below both baselines on every seed (unigram mean 2.9808, uniform
+  ~3.3); the un-early-stopped step-300 test loss (mean 2.7804) is worse on every seed — E2601's
+  overfitting is systematic, not one lucky partition.
+
+**Status and honesty**
+
+- The result is a **language-modelling toy with an error bar**, not a capability claim: five seeds cut
+  sampling noise, not the corpus's unreality, and the validation/test sets are small (77–93 positions). No
+  wall-clock/memory measured. It advances the roadmap's training sprint and narrows K-001's training-loop
+  half further (a *reproducible, multi-seed* result), but K-001 stands and no hypothesis (H1–H7) is
+  tested. The evidence now points toward breadth (a real evaluation corpus) rather than more of the same.
+
 ### 2026-10-19 — A trained model is integrated behind the boundary (P25) and checkpoints carry their vocabulary
 
 **Added**

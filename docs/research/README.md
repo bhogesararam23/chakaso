@@ -41,12 +41,15 @@ measurement over time.
 **No experiment testing any of H1–H7 has been run.** Two experiments have been executed, and neither is
 a hypothesis test: **E-001** compares lexical, dense and hybrid retrieval over the synthetic development
 fixtures (it exercises the mechanism and the instrument, not a hypothesis — the dense component is a
-non-semantic fixture embedding, so it neither supports nor refutes H7), and **E2601**
+non-semantic fixture embedding, so it neither supports nor refutes H7); **E2601**
 ([`../../experiments/E2601/record.md`](../../experiments/E2601/record.md)) trained a character model from
-random initialization and measured its held-out next-token loss beating uniform/unigram baselines —
-Chakaso's first genuinely measured result, and a learning-loop demonstration, not a language capability.
-There is now a trained (toy) model, a tokenizer, and a training loop, but still no real embedding, no real
-corpus, no subword tokenizer and no useful model. The retrieval, correction and strategy-comparison
-numbers are development instruments over hand-built fixtures (`chakaso.benchmark`, run with
-`chakaso benchmark`); the training numbers are a single-seed, high-variance result over a 344-token toy.
-Everything else in this directory is design reasoning and open questions, and it is labelled as such.
+random initialization and measured its held-out next-token loss beating uniform/unigram baselines; and
+**E2602** ([`../../experiments/E2602/record.md`](../../experiments/E2602/record.md)) reproduced that across
+five seeds under a three-way-split early-stopping protocol (mean test loss 1.80 ± 0.18 nats, below both
+baselines on every seed). Together E2601/E2602 are Chakaso's first genuinely measured results — a
+learning-loop demonstration with an error bar, not a language capability. There is now a trained (toy)
+model, a tokenizer, a training loop and an inference adapter, but still no real embedding, no real corpus,
+no subword tokenizer and no useful model. The retrieval, correction and strategy-comparison numbers are
+development instruments over hand-built fixtures (`chakaso.benchmark`); the training numbers are
+single-corpus, high-variance even across seeds. Everything else in this directory is design reasoning and
+open questions, and it is labelled as such.

@@ -334,3 +334,38 @@ K-001 is narrowed for the *training loop* — there is now a real, measured mode
 stands in its stronger form: no real *workload* and no useful language model have been demonstrated. The
 next experiment the evidence justifies is a controlled held-out comparison (early stopping / capacity,
 multiple seeds) to turn this point result into one with an error bar.
+
+---
+
+## 2026-10-19 — E2602: the training loop holds up across seeds under a proper early-stopping protocol
+
+**Experiment E2602 — under early stopping selected on validation, what is the held-out (test) loss across
+seeds, and does E2601's overfitting reproduce?** Protocol (fixed before the result, in
+`chakaso.training.controlled`): three-way train/validation/test split (`split_three_way`, units
+disjoint and preserved, vocabulary fit on training text only); the same 984-parameter character model and
+Adam as E2601; 300 full-batch steps evaluated every 10; **stop at the first step achieving a new minimum
+*validation* loss and report the test loss there**; seeds pre-declared as (7, 21, 1337, 2024, 42);
+validation/test fractions 0.2 each. Environment as E2601 (Windows 11, CPython 3.13.5, numpy 2.4.6, CPU).
+Record: [`../../experiments/E2602/record.md`](../../experiments/E2602/record.md).
+
+**Result (measured, not assumed).** Mean held-out **test** cross-entropy at the validation-selected step:
+**1.7978 nats, sample stdev 0.1767** across the five seeds (per-seed 1.5784–2.0655). Mean test loss at the
+un-early-stopped step 300: **2.7804** — worse on every seed than the early-stopped value. Mean unigram
+baseline (test): **2.9808**; uniform ~3.26–3.33. The validation-selected step is early on every seed (30–50).
+
+**Interpretation.** E2601's single-seed result was not a lucky partition: under a protocol that selects
+only on validation and reports on an untouched test set, every seed lands below both baselines, with a
+spread (±0.18) much smaller than the margin over the unigram baseline (~1.18 nats). The overfitting E2601
+showed reproduces as a *systematic* effect — a fixed 300-step budget overshoots the held-out optimum on
+every seed — which is the evidence that early stopping, not more training, is the correct reading here.
+
+**Limitation.** Still one tiny synthetic corpus (~250-line training partitions, 77–93 test positions);
+five seeds reduce sampling noise but not the data's unreality, and with a 20% validation set the
+selection itself is noisy. No wall-clock/memory measured. This is a language-modelling toy result with an
+error bar; it says nothing about grounding, citation, correction or any real workload.
+
+**Conclusion (moderate, stronger than E2601).** The from-scratch training loop genuinely reduces held-out
+loss below trivial baselines, reproducibly across seeds. The project now has a measured, multi-seed
+training result behind the boundary — and the evidence points away from repeating it and toward *breadth*:
+a generation-quality measurement through the `trained_char` adapter, or the human-inspectable
+grounded-answer evaluation corpus H1–H7 actually need. K-001 stands.

@@ -1,11 +1,15 @@
 # Experiments
 
-**One experiment record is committed: E2601** ([`../../../experiments/E2601/record.md`](../../../experiments/E2601/record.md)),
-the project's first measured result — a from-scratch character model whose held-out next-token loss beats
-uniform and unigram baselines. No *hypothesis* (H1–H7) has been tested yet; E2601 establishes the learning
-loop, not any research claim about grounding, citation or correction. The project also has development
-benchmarks (retrieval and correction) and a reproducible experiment layer (`chakaso.experiments`) — those
-are regression instruments over synthetic fixtures, distinct from a committed experiment record.
+**Two experiment records are committed: E2601 and E2602.** E2601
+([`../../../experiments/E2601/record.md`](../../../experiments/E2601/record.md)) is the project's first
+measured result — a from-scratch character model whose held-out next-token loss beats uniform and unigram
+baselines; E2602
+([`../../../experiments/E2602/record.md`](../../../experiments/E2602/record.md)) reproduces it across five
+seeds under a proper three-way-split early-stopping protocol (mean test loss 1.80 ± 0.18 nats, below both
+baselines on every seed). No *hypothesis* (H1–H7) has been tested yet; both establish the learning loop,
+not any research claim about grounding, citation or correction. The project also has development benchmarks
+(retrieval and correction) and a reproducible experiment layer (`chakaso.experiments`) — those are
+regression instruments over synthetic fixtures, distinct from a committed experiment record.
 
 This directory defines the record format so that an experiment is recorded properly rather than being
 described in a commit message.
