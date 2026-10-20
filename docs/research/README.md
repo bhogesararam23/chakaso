@@ -9,6 +9,7 @@ specifications.
 | [`literature.md`](literature.md) | Sources that informed the initial design, and what each one supports |
 | [`hypotheses.md`](hypotheses.md) | Statements the project intends to test, with what would falsify them |
 | [`model-feasibility.md`](model-feasibility.md) | An evidence-bounded assessment of putting a real model behind the boundary (a runnable local model vs a from-scratch training experiment); no experiment run |
+| [`next-model-experiment.md`](next-model-experiment.md) | The measured re-inspection of machine, dependencies, compute cost and usable data behind the first model-centred experiment, and why the subword Transformer on repository text was chosen; no experiment result |
 | [`open-questions.md`](open-questions.md) | Questions with no committed answer |
 
 ## How entries are written
