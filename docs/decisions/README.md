@@ -125,3 +125,4 @@ creates.
 | [ADR-0030](ADR-0030-minimal-optional-training-dependency.md) | A minimal, optional numerical dependency (numpy in a `[train]` extra) gates any from-scratch training | Accepted |
 | [ADR-0031](ADR-0031-grounded-answer-evaluation-workload.md) | The grounded-answer evaluation workload is self-authored, provenance-bearing data | Accepted |
 | [ADR-0032](ADR-0032-retrieval-evidence-sufficiency.md) | Evidence sufficiency is a deterministic, corpus-statistical decision at the retrieval boundary | Accepted |
+| [ADR-0033](ADR-0033-model-centred-product-contract.md) | Chakaso is a language-model project; the Python API is its primary interface | Accepted |

@@ -31,8 +31,8 @@ evidence is structural, not tonal:
 | Measured model results | 2 of 4 committed experiments are about a model (E2601, E2602); the other 2 are retrieval/evaluation instruments (E2603, E2604) | `experiments/` |
 
 The project's own founding statement is that it "intends to train its own language model from random
-initialization" ([`../../AGENTS.md`](../../AGENTS.md),
-[`../architecture.md`](../architecture.md)). The distribution above does not match that statement: the
+initialization" ([`../../../AGENTS.md`](../../../AGENTS.md),
+[`../../architecture.md`](../../architecture.md)). The distribution above does not match that statement: the
 centre of mass of the engineering is in the layers that *serve* a model which does not exist.
 
 This is drift, not a mistake to revert. The infrastructure is real and tested; the mistake would be to
