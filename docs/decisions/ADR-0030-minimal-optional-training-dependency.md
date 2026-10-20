@@ -2,6 +2,12 @@
 
 - Status: Accepted
 - Date: 2026-10-19
+- Amended in part by: [ADR-0034](ADR-0034-optional-pytorch-model-extra.md) — on 2026-10-21 its revisit
+  conditions 1 and 2 were reported met by measurement, and the option this record rejected *for now*
+  (PyTorch) was admitted as a separate optional `[nn]` extra for the Transformer path. What this record
+  decides — `numpy` in `[train]`, hand-derived gradients verified by finite differences, for the
+  character-level experiment — stands and is unchanged. Its "Rejected alternatives" text is left as
+  written, because that was the decision at the time.
 - Relates to: [ADR-0001](ADR-0001-local-first-runtime.md), [ADR-0002](ADR-0002-language-model-boundary.md), [ADR-0004](ADR-0004-apache-2.0-license.md), [ADR-0005](ADR-0005-src-layout.md), [ADR-0020](ADR-0020-experiment-artifacts.md)
 
 ## Context

@@ -126,3 +126,4 @@ creates.
 | [ADR-0031](ADR-0031-grounded-answer-evaluation-workload.md) | The grounded-answer evaluation workload is self-authored, provenance-bearing data | Accepted |
 | [ADR-0032](ADR-0032-retrieval-evidence-sufficiency.md) | Evidence sufficiency is a deterministic, corpus-statistical decision at the retrieval boundary | Accepted |
 | [ADR-0033](ADR-0033-model-centred-product-contract.md) | Chakaso is a language-model project; the Python API is its primary interface | Accepted |
+| [ADR-0034](ADR-0034-optional-pytorch-model-extra.md) | PyTorch is admitted as an optional `[nn]` extra for the model path | Accepted |
