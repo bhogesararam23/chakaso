@@ -324,6 +324,94 @@ def test_the_training_extra_is_numpy_and_bounded_for_the_python_floor() -> None:
     )
 
 
+# ADR-0034 admits `torch` as an optional `[nn]` extra, and admits it *only* for the modules listed here.
+# The permission is a named list rather than a rule about import style because the risk is not an import
+# written badly — it is a default path (any CLI command, the runtime, retrieval) silently acquiring a
+# ~124 MB dependency and a ~3 s cold import. A structural check is the only thing that catches that before
+# it ships.
+TORCH_IMPORT_MODULES = frozenset(
+    {
+        "src/chakaso/training/transformer.py",
+        "src/chakaso/training/nn_training.py",
+        "src/chakaso/training/nn_checkpoint.py",
+        "src/chakaso/training/subword_experiment.py",
+        "src/chakaso/models/nntransformer.py",
+    }
+)
+
+
+def _imports_torch(path: Path) -> bool:
+    """Whether ``path`` imports ``torch`` anywhere, including inside a function body."""
+    tree = ast.parse(path.read_text(encoding="utf-8"), filename=str(path))
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Import):
+            names = [alias.name for alias in node.names]
+        elif isinstance(node, ast.ImportFrom) and node.module:
+            names = [node.module]
+        else:
+            continue
+        if any(name == "torch" or name.startswith("torch.") for name in names):
+            return True
+    return False
+
+
+def test_only_the_admitted_model_path_modules_import_torch() -> None:
+    offenders: list[str] = []
+    for path in sorted((REPO_ROOT / "src").rglob("*.py")):
+        relative = path.relative_to(REPO_ROOT).as_posix()
+        if relative in TORCH_IMPORT_MODULES:
+            continue
+        if _imports_torch(path):
+            offenders.append(relative)
+
+    assert not offenders, (
+        "A module imports torch outside the allowlist ADR-0034 admits. torch is an optional [nn] "
+        "dependency of the model path only: importing it anywhere else makes a ~124 MB wheel and a ~3 s "
+        f"cold import load-bearing on a default path: {offenders}"
+    )
+
+
+def test_the_torch_allowlist_does_not_go_stale() -> None:
+    # Permission for a module that never uses it is the same silent-loss-of-protection as an allowlist of
+    # files that no longer exist: the next real offender looks like it is covered.
+    unused = sorted(
+        relative
+        for relative in TORCH_IMPORT_MODULES
+        if (REPO_ROOT / relative).is_file() and not _imports_torch(REPO_ROOT / relative)
+    )
+
+    assert not unused, (
+        "These modules are allowed to import torch but do not; remove them from the ADR-0034 allowlist: "
+        f"{unused}"
+    )
+
+
+def test_torch_is_declared_only_in_the_optional_nn_extra() -> None:
+    # The tiers are the promise: base install dependency-free, [train] exactly numpy, torch only in [nn].
+    # If torch ever lands in dependencies or dev, the dependency-free CI matrix silently stops being
+    # dependency-free — which is what this test exists to prevent.
+    pyproject = tomllib.loads((REPO_ROOT / "pyproject.toml").read_text(encoding="utf-8"))
+    project = pyproject["project"]
+    extras = project["optional-dependencies"]
+
+    assert project.get("dependencies", []) == []
+    for tier in ("dev", "train"):
+        requirements = [
+            re.split(r"[<>=!\[; ]", item, maxsplit=1)[0].strip().lower() for item in extras[tier]
+        ]
+        assert "torch" not in requirements, f"torch must not be declared in [{tier}]"
+
+    assert "nn" in extras, "the [nn] extra named by ADR-0034 is missing"
+    requirements = [item.strip().lower() for item in extras["nn"]]
+    assert any(item.startswith("torch") for item in requirements), requirements
+    torch_spec = next(item for item in requirements if item.startswith("torch"))
+    assert ">=2.6" in torch_spec, (
+        f"{torch_spec!r}: the 2.6 floor is where torch.load defaults to weights_only=True, which the "
+        "checkpoint security rule depends on"
+    )
+    assert "<3" in torch_spec, f"{torch_spec!r} must bound the major version"
+
+
 def test_decision_records_are_numbered_contiguously() -> None:
     records = sorted((REPO_ROOT / "docs" / "decisions").glob("ADR-*.md"))
     numbers = []

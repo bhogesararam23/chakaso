@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "chakaso"
 dynamic = ["version"]
-description = "Local-first, retrieval-grounded conversational AI with explicit evidence, provenance and correction."
+description = "Language-model research: a from-scratch-trained model with its tokenizer, checkpoints and held-out evaluation, and an optional local-first retrieval-grounded conversation layer over it."
 readme = "README.md"
 requires-python = ">=3.11"
 license = "Apache-2.0"
@@ -13,6 +13,9 @@ license-files = ["LICENSE"]
 authors = [{ name = "Ram Bhogesara" }]
 keywords = [
     "language-models",
+    "language-model-training",
+    "tokenization",
+    "reproducibility",
     "retrieval-augmented-generation",
     "provenance",
     "citations",
@@ -50,6 +53,17 @@ dev = [
 # numpy only there; `import chakaso` must never require it.
 train = [
     "numpy>=1.26,<2.5",
+]
+# ADR-0034: the automatic-differentiation stack for the Transformer path, in its own extra so that
+# [train] keeps carrying exactly numpy (a hygiene test enforces that) and so the dependency-free tier of
+# the training layer stays importable in the core CI matrix. The >=2.6 floor is deliberate: torch.load
+# defaults to weights_only=True from 2.6, and the checkpoint format admits nothing that unpickles
+# arbitrary objects. <3 bounds the major because the serialization and TransformerEncoderLayer argument
+# surfaces have changed incompatibly before. Modules permitted to import torch are listed in ADR-0034 and
+# enforced by tests/test_repository_hygiene.py; on Linux the CPU wheels come from
+# --extra-index-url https://download.pytorch.org/whl/cpu, not from PyPI's default wheel.
+nn = [
+    "torch>=2.6,<3",
 ]
 
 [project.scripts]
