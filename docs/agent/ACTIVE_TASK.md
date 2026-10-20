@@ -1,28 +1,66 @@
 # Active task
 
-## Current unit: P29 — calibrate and stress-test the sufficiency policy, or record that the corpus is too small
+## Current unit: P30 — the model path's data layer
 
-**Goal.** P28 shipped a deterministic evidence-sufficiency decision (ADR-0032) and E2604 measured it at
-100% accuracy on the self-authored workload — but with a documented, fragile caveat: it separates answer
-from abstention correctly only for `max_document_fraction ≈ 0.23–0.31` on a 13-document corpus, and a
-single-document corpus breaks it outright. That is a threshold *tuned to the evaluation set*, which is
-exactly the selection-honesty the project forbids. P29 makes the claim honest: attempt a disciplined
-calibration (choose the parameter on **development** cases only, freeze it, then report on **held-out**
-cases never used for selection) and stress the policy with a modest, legally-usable extension of the
-workload — hard negatives, near-miss phrasings, partial-evidence and different-vocabulary cases. If the
-corpus is too small to support a defensible threshold, **say so and record it as the finding**; a narrow
-band that only holds on the set it was tuned on is a negative result, not a calibration.
+**Goal.** Give the model something real and reproducible to learn from, and give the project a tokenizer it
+trained itself. P30 builds the three dependency-free layers the Transformer experiment cannot start
+without: a **content-verified corpus manifest** (the repository's own tracked text as data, with per-file
+hashes, licence and a stable dataset fingerprint, refusing silent drift), a **learned byte-pair subword
+vocabulary** (trained on training-split text only, serializable, round-trip exact, with documented unknown
+and boundary behaviour), and **sequence packing** with correct context-window bounds and no
+train/validation/test leakage. ADR-0033 makes this the next unit precisely because it is model-path work:
+nothing in it is an application feature.
 
-**Scope.** A calibration routine in `chakaso.benchmark` (development-only selection, frozen parameter,
-held-out reporting) with tests that *prove* held-out labels cannot leak into selection; a justified,
-provenance-bearing extension of the self-authored workload (its content fingerprint changes, so bump the
-dataset version, not edit v1 in place); and a re-run (E2605) reporting the trade-off — recall, false
-abstentions, missed abstentions — on both splits, with the full threshold sweep shown, not just the best
-cell. Extend only where a case exercises a *distinct* property; no count-padding.
+**Scope.** `chakaso.training.manifest`, `chakaso.training.subword`, `chakaso.training.packing`, a
+document-level three-way split, and tests for every failure path named in
+[`ADR-0033`](../decisions/ADR-0033-model-centred-product-contract.md)'s data rules. These layers are pure
+standard library on purpose: they then run in the dependency-free CI matrix instead of inheriting K-009's
+gap, and a tokenizer's segmentation must be reviewable without a numerical framework.
 
-**What this unit is not.** Not a model, not an external corpus, not a real-workload claim. If calibration
-shows the policy does not generalise even to a slightly harder self-authored set, that is recorded plainly
-and the policy stays a documented heuristic, not wired into the runtime.
+**Definition of done.** Manifest rejects a changed, missing or extra file against its pinned hashes and
+fingerprints the corpus; split keeps every document wholly on one side and is deterministic under a seed;
+tokenizer is trained from training text only, is byte-exact on save/load round trip, refuses a
+fingerprint mismatch, and its encode/decode round trip is proven on controlled examples; packing produces
+fixed-length windows with a correct target offset and never crosses a document boundary unannounced;
+all four gates pass, with the new modules covered in the dependency-free matrix.
+
+**What this unit is not.** Not a model, not a training run, not a claim about capability. It produces the
+first measured *data* numbers (token counts, compression rate, split sizes) — the measured *model* number
+is E2605 in P31.
+
+**Deferred by this realignment, deliberately.** P29 (calibrating the retrieval evidence-sufficiency policy)
+and P32 (runtime consumption of that decision) remain exactly as P28 left them: valid, bounded, and now
+behind the model path. That is a decision, recorded in
+[ADR-0033](../decisions/ADR-0033-model-centred-product-contract.md), not an oversight — the sufficiency
+policy is measured and honest, and nothing in the model path depends on it.
+
+## Mission ledger — model-centred realignment
+
+Durable status for the realignment arc (nodes are the delivery graph; a node is complete only when its
+acceptance criteria are met and recorded here). Statuses: `pending`, `ready`, `in_progress`, `blocked`,
+`validated`, `committed`, `pushed`.
+
+| Node | Task | Depends on | Owns | Status | Evidence / commit | Tests |
+| --- | --- | --- | --- | --- | --- | --- |
+| A | Repository + architecture audit | — | `docs/internal/engineering/` | committed | `538a47d` | hygiene 14 passed |
+| B | Product contract decision | A | `docs/decisions/`, `AGENTS.md` | committed | `033edde` (ADR-0033), `760af7a` (AGENTS.md, `.gitignore`) | hygiene 14 passed |
+| C | Model + compute feasibility, measured | A | `docs/research/` | committed | `1c4172d` (measurements), `a75cccc` (ADR-0034) | executed probes |
+| D | Target architecture + dependency decision | B, C | `docs/decisions/`, `pyproject.toml` | in_progress | ADR-0034 committed; `[nn]` extra + isolation tests next | — |
+| E | Data and tokenization (P30) | D | `chakaso.training.{manifest,subword,packing,data}` | ready | — | planned: dependency-free |
+| F | Model architecture and initialization | D, E | `chakaso.training.transformer` | pending | — | torch-gated |
+| G | Training, optimization, checkpoints | F | `chakaso.training.nn_*` | pending | — | torch-gated |
+| H | Inference and Python API | G | `chakaso.models` | pending | — | contract suite + CLI-free |
+| I | Model evaluation and baselines | E, G | `chakaso.training.nn_evaluation` | pending | — | hand-computable metrics |
+| J | Experiment E2605, measured | E–I | `experiments/E2605/` | pending | — | executed run |
+| K | Subsystem reassessment + documentation | J | `README.md`, `docs/*`, `CHANGELOG.md` | pending | — | link + status checks |
+| L | Full regression, review, push | K | whole tree | pending | — | four gates, both matrices |
+
+**Blockers and standing constraints.** Remote CI cannot gain a `[train]`/`[nn]` job: this session's GitHub
+credential has scopes `gist, read:org, repo` and no `workflow` scope (K-009, re-verified 2026-10-21), so CI
+files stay untouched and the gap is recorded rather than claimed away. Peak process memory is not
+measurable from this shell (the Windows process-memory APIs and `tasklist` filtering return nothing), so no
+RSS number is stated anywhere. Starting `HEAD` for this arc was `eaee98d`; work is on `main`, which was
+ahead of `origin/main` by one commit before this arc began.
 
 ## What the previous unit completed (P28 — the retrieval evidence-sufficiency decision)
 
@@ -187,12 +225,21 @@ gained no capability.
 
 ## Ordering after this unit
 
-1. A controlled follow-up experiment to E2601, justified by its measured overfitting: early stopping /
-   capacity selection on held-out loss under a fixed protocol (not a cherry-pick), and held-out loss
-   across a few seeds so the result carries an error bar rather than a point.
-2. Only after a trustworthy training/inference path exists, a genuinely useful pretrained adapter (Option
-   A) and a real `SemanticJudge`, each gated on its own dependency-feasibility decision — and a real
-   grounded-answer evaluation workload (K-001's stronger form) that none of the toy work yet touches.
+1. **P31 — the model itself:** a typed `TransformerConfig`, a decoder-only causal Transformer, a mini-batch
+   training loop with validation-driven early stopping, a versioned `torch` checkpoint that refuses an
+   incompatible tokenizer/architecture/configuration, and `load_model` as the public Python entry point
+   (ADR-0033's rule 2, ADR-0034's isolation and security rules).
+2. **P31's measurement — E2605:** character model vs subword Transformer on the identical corpus, split and
+   budget, reported in bits per character against uniform and unigram baselines, with generation samples
+   for qualitative inspection and the overfitting reported where it appears.
+3. **Then, and only then,** the application-side items this realignment deferred: P32 (the runtime acting on
+   the sufficiency decision), a real `SemanticJudge`, and a grounded answer produced by a model rather than
+   an oracle. Each is gated on its own dependency-feasibility decision, and none of them substitutes for
+   the model path again.
+
+All of it stays behind the existing boundaries. K-001 — that nothing has met a real workload — still stands
+and is the reason E2605 is designed as a bounded comparison on documented self-authored text rather than a
+capability claim.
 
 ## Known gaps that bound this unit
 
@@ -200,7 +247,9 @@ gained no capability.
   and measured a real (but toy) model, narrowing the training-loop half of this gap, but the project has
   still met no real corpus or real question — the frontier of the whole project.
 - K-009: the numpy-gated training tests do not run in remote CI, because the session's GitHub token
-  lacks the `workflow` scope and the `[train]` CI job cannot be pushed. Verified locally instead.
+  lacks the `workflow` scope and the `[train]` CI job cannot be pushed. Verified locally instead. ADR-0034's
+  `[nn]` tests inherit the same gap by construction: they are `importorskip`-gated, run locally with the
+  extra installed, and no CI job for them is claimed.
 - K-006: the invented-reference condition is persisted per answer, but nothing aggregates it into a
   rate, and it is only durable when the SQLite backend is selected.
 - K-008: the fetcher's destination screen is partial; any acquisition work must confirm no default path
