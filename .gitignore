@@ -87,6 +87,10 @@ configs/local.toml
 # Local experiment outputs and caches
 /experiments/**/outputs/
 /experiments/**/runs/
+# Everything under /data/ is a prepared, reproducible artifact: corpus snapshots built from tracked
+# text, packed token streams, tokenizers and checkpoints. The manifest that pins them is committed;
+# the bytes are not (docs/internal/engineering/artifact-policy.md).
+/data/
 /data/raw/
 /data/processed/
 /data/cache/
