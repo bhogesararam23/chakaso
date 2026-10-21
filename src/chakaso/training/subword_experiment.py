@@ -143,12 +143,21 @@ class ExperimentPlan:
         if self.context_length < 2 or self.batch_size < 1:
             message = "context_length must be >= 2 and batch_size >= 1"
             raise ValueError(message)
-        if self.max_steps < self.eval_every or self.character_steps < self.character_eval_every:
-            message = "each model's step budget must reach at least one evaluation"
+        if self.max_steps < self.eval_every:
+            message = "the Transformer's step budget must reach at least one evaluation"
             raise ValueError(message)
         if self.character_batch_windows < 1 or self.character_context < 1:
             message = "the character baseline needs a positive window and batch"
             raise ValueError(message)
+
+    def character_evaluation_interval(self) -> int:
+        """The character baseline's validation interval, clamped to its own budget.
+
+        A short budget must still evaluate, or early stopping has nothing to select on; the clamped value
+        is what the report records, so a reader sees the interval that actually ran rather than the one a
+        long run would have used.
+        """
+        return min(self.character_eval_every, max(1, self.character_steps // 10))
 
 
 @dataclass(frozen=True, slots=True)
@@ -312,7 +321,7 @@ def train_character_baseline(plan: ExperimentPlan, prepared: PreparedCorpus) -> 
         learning_rate=plan.character_learning_rate,
         seed=plan.seed,
         steps=plan.character_steps,
-        eval_every=plan.character_eval_every,
+        eval_every=plan.character_evaluation_interval(),
     )
     text_split = Split(
         train_text="".join(unit.text for unit in split.train),
@@ -327,7 +336,7 @@ def train_character_baseline(plan: ExperimentPlan, prepared: PreparedCorpus) -> 
         config,
         batch_size=plan.character_batch_windows,
         max_steps=plan.character_steps,
-        eval_every=plan.character_eval_every,
+        eval_every=plan.character_evaluation_interval(),
         seed=plan.seed,
     )
     wall = time.perf_counter() - started
@@ -342,7 +351,7 @@ def train_character_baseline(plan: ExperimentPlan, prepared: PreparedCorpus) -> 
         config,
         batch_size=plan.character_batch_windows,
         max_steps=max(best_step, 1),
-        eval_every=plan.character_eval_every,
+        eval_every=plan.character_evaluation_interval(),
         seed=plan.seed,
     )
     model = CharCausalMLP(
@@ -377,7 +386,7 @@ def train_character_baseline(plan: ExperimentPlan, prepared: PreparedCorpus) -> 
         "budget": {
             "batch_windows": plan.character_batch_windows,
             "max_steps": plan.character_steps,
-            "eval_every": plan.character_eval_every,
+            "eval_every": plan.character_evaluation_interval(),
             "selected_step": best_step,
             "selected_validation_loss_nats": round(best_validation, 6),
             "wall_clock_s": round(wall, 2),

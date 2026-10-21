@@ -217,3 +217,18 @@ def test_a_plan_that_cannot_run_is_refused_before_any_work_starts(tmp_path: Path
         ExperimentPlan(root=root, work_dir=tmp_path / "work", vocab_size=200)
     with pytest.raises(ValueError, match="step budget"):
         ExperimentPlan(root=root, work_dir=tmp_path / "work", max_steps=2, eval_every=8)
+
+
+def test_a_short_character_budget_clamps_its_interval_instead_of_never_reporting(
+    tmp_path: Path,
+) -> None:
+    plan = _plan(_root(tmp_path), tmp_path / "work")
+
+    # The interval is clamped to a budget that can actually honour it: 30 steps evaluated every 200 would
+    # select on nothing, and a plan that cannot report is worse than a plan that reports late.
+    short = replace(plan, character_steps=30, character_eval_every=200)
+    assert short.character_evaluation_interval() == 3
+
+    # A budget that already fits its interval is left alone, so a long run is unchanged by the clamp.
+    long = replace(plan, character_steps=4000, character_eval_every=200)
+    assert long.character_evaluation_interval() == 200
