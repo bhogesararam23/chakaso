@@ -9,10 +9,13 @@ files and the load must say which ones.
 from __future__ import annotations
 
 import json
+from collections.abc import Callable
 from pathlib import Path
+from typing import Any
 
 import pytest
 
+from chakaso.core.hashing import sha256_hex
 from chakaso.training.errors import (
     CorpusDriftError,
     CorpusError,
@@ -390,6 +393,21 @@ def read_manifest_of(manifest: CorpusManifest, root: Path) -> CorpusManifest:
 # ------------------------------------------------------------------ snapshots
 
 
+def _edit_snapshot(path: Path, mutate: Callable[[dict[str, Any]], None]) -> None:
+    """Apply ``mutate`` to a snapshot's record and reseal the file's own checksum.
+
+    A snapshot verifies itself top-down: file checksum, then manifest record, then document digests, then
+    the document set. Editing a body without resealing it is therefore caught by the first check, which is
+    the right answer but not the guarantee under test. Resealing is what lets these tests aim at the check
+    below it; nothing here makes a bad snapshot readable, and the stale-checksum case is tested on its own.
+    """
+    document = json.loads(path.read_text(encoding="utf-8"))
+    mutate(document)
+    content = {key: value for key, value in document.items() if key != "checksum"}
+    document["checksum"] = sha256_hex(json.dumps(content, sort_keys=True, separators=(",", ":")))
+    path.write_text(json.dumps(document, sort_keys=True, separators=(",", ":")), encoding="utf-8")
+
+
 def test_snapshot_round_trips_and_preserves_the_fingerprint(tmp_path: Path) -> None:
     _corpus(tmp_path)
     manifest = _build(tmp_path)
@@ -399,11 +417,92 @@ def test_snapshot_round_trips_and_preserves_the_fingerprint(tmp_path: Path) -> N
     loaded = read_snapshot(snapshot)
 
     assert digest and snapshot.is_file()
+    assert loaded.checksum == digest
+    assert loaded.acquisition == {}
     assert loaded.fingerprint == manifest.fingerprint
-    assert loaded.combined_text() == manifest.combined_text()
-    assert [document.text for document in loaded.documents] == [
+    assert loaded.manifest.combined_text() == manifest.combined_text()
+    assert [document.text for document in loaded.manifest.documents] == [
         document.text for document in manifest.documents
     ]
+
+
+def test_a_snapshot_records_how_its_bytes_were_acquired(tmp_path: Path) -> None:
+    _corpus(tmp_path)
+    snapshot = tmp_path / "snapshot.json"
+
+    write_snapshot(_build(tmp_path), snapshot, acquisition={"method": "test", "revision": "abc123"})
+
+    assert read_snapshot(snapshot).acquisition == {"method": "test", "revision": "abc123"}
+
+
+def test_a_snapshot_does_not_replace_an_existing_one_unasked(tmp_path: Path) -> None:
+    _corpus(tmp_path)
+    snapshot = tmp_path / "snapshot.json"
+    write_snapshot(_build(tmp_path), snapshot)
+
+    with pytest.raises(CorpusError, match="not replaced unless"):
+        write_snapshot(_build(tmp_path), snapshot)
+
+    write_snapshot(_build(tmp_path), snapshot, allow_overwrite=True)
+    assert read_snapshot(snapshot).manifest.char_count > 0
+
+
+def test_a_snapshot_write_leaves_no_partial_file_behind(tmp_path: Path) -> None:
+    _corpus(tmp_path)
+    snapshot = tmp_path / "nested" / "snapshot.json"
+
+    write_snapshot(_build(tmp_path), snapshot)
+
+    assert not list(snapshot.parent.glob("*.partial"))
+    assert not list(snapshot.parent.glob(f".{snapshot.name}*"))
+
+
+def test_a_snapshot_is_verifiable_from_its_own_bytes(tmp_path: Path) -> None:
+    """The digest a reader computes over the file's bytes must be the digest the file records.
+
+    Worth pinning down because every reproduction claim depends on it: a checksum computed over a string
+    and written in a mode that rewrites line endings would not survive being read back as bytes.
+    """
+    _corpus(tmp_path)
+    manifest = _build(tmp_path)
+    snapshot = tmp_path / "snapshot.json"
+
+    digest = write_snapshot(manifest, snapshot)
+
+    raw = snapshot.read_bytes()
+    assert b"\r\n" not in raw
+    content = json.loads(raw.decode("utf-8"))
+    content.pop("checksum")
+    assert sha256_hex(json.dumps(content, sort_keys=True, separators=(",", ":"))) == digest
+
+
+def test_a_truncated_snapshot_is_refused(tmp_path: Path) -> None:
+    _corpus(tmp_path)
+    snapshot = tmp_path / "snapshot.json"
+    write_snapshot(_build(tmp_path), snapshot)
+    intact = snapshot.read_text(encoding="utf-8")
+
+    snapshot.write_text(intact[: len(intact) // 2], encoding="utf-8")
+
+    with pytest.raises(CorruptedCorpusArtifactError, match="not valid JSON"):
+        read_snapshot(snapshot)
+
+
+def test_a_snapshot_that_does_not_match_its_own_checksum_is_refused(tmp_path: Path) -> None:
+    _corpus(tmp_path)
+    snapshot = tmp_path / "snapshot.json"
+    write_snapshot(_build(tmp_path), snapshot)
+
+    def swap_body(document: dict[str, Any]) -> None:
+        document["documents"][0]["text"] = "quietly shorter than the digest claims\n"
+
+    _edit_snapshot(snapshot, swap_body)
+    edited = json.loads(snapshot.read_text(encoding="utf-8"))
+    edited["checksum"] = "0" * 64
+    snapshot.write_text(json.dumps(edited), encoding="utf-8")
+
+    with pytest.raises(CorruptedCorpusArtifactError, match="does not match its own checksum"):
+        read_snapshot(snapshot)
 
 
 def test_a_snapshot_refuses_a_manifest_with_no_text(tmp_path: Path) -> None:
@@ -419,11 +518,84 @@ def test_altered_text_in_a_snapshot_is_caught_by_the_digest(tmp_path: Path) -> N
     manifest = _build(tmp_path)
     snapshot = tmp_path / "snapshot.json"
     write_snapshot(manifest, snapshot)
-    document = json.loads(snapshot.read_text(encoding="utf-8"))
-    document["documents"][0]["text"] = "swapped in by someone else\n"
-    snapshot.write_text(json.dumps(document), encoding="utf-8")
+
+    def swap_body(document: dict[str, Any]) -> None:
+        for entry in document["documents"]:
+            if entry["path"] == "docs/a.md":
+                entry["text"] = "swapped in by someone else\n"
+
+    _edit_snapshot(snapshot, swap_body)
 
     with pytest.raises(CorruptedCorpusArtifactError, match="does not hash to the digest"):
+        read_snapshot(snapshot)
+
+
+def test_a_snapshot_whose_document_digest_lies_is_refused(tmp_path: Path) -> None:
+    _corpus(tmp_path)
+    snapshot = tmp_path / "snapshot.json"
+    write_snapshot(_build(tmp_path), snapshot)
+
+    def lie_about_the_digest(document: dict[str, Any]) -> None:
+        for entry in document["documents"]:
+            if entry["path"] == "docs/a.md":
+                entry["sha256"] = sha256_hex("text nobody wrote\n")
+
+    _edit_snapshot(snapshot, lie_about_the_digest)
+
+    with pytest.raises(CorruptedCorpusArtifactError, match="records digest"):
+        read_snapshot(snapshot)
+
+
+def test_a_snapshot_carrying_an_unrecorded_document_is_refused(tmp_path: Path) -> None:
+    _corpus(tmp_path)
+    snapshot = tmp_path / "snapshot.json"
+    write_snapshot(_build(tmp_path), snapshot)
+
+    def smuggle(document: dict[str, Any]) -> None:
+        document["documents"].append(
+            {
+                "path": "docs/never-recorded.md",
+                "sha256": sha256_hex("sneaked in\n"),
+                "byte_count": 11,
+                "char_count": 11,
+                "text": "sneaked in\n",
+            }
+        )
+
+    _edit_snapshot(snapshot, smuggle)
+
+    with pytest.raises(
+        CorruptedCorpusArtifactError, match=r"does not record: \['docs/never-recorded\.md'\]"
+    ):
+        read_snapshot(snapshot)
+
+
+def test_a_snapshot_dropping_a_recorded_document_is_refused(tmp_path: Path) -> None:
+    _corpus(tmp_path)
+    snapshot = tmp_path / "snapshot.json"
+    write_snapshot(_build(tmp_path), snapshot)
+
+    def drop(document: dict[str, Any]) -> None:
+        document["documents"].pop()
+
+    _edit_snapshot(snapshot, drop)
+
+    with pytest.raises(CorruptedCorpusArtifactError, match="is missing 1 document"):
+        read_snapshot(snapshot)
+
+
+def test_a_snapshot_repeating_a_document_is_refused(tmp_path: Path) -> None:
+    _corpus(tmp_path)
+    snapshot = tmp_path / "snapshot.json"
+    write_snapshot(_build(tmp_path), snapshot)
+
+    def repeat(document: dict[str, Any]) -> None:
+        first = next(entry for entry in document["documents"] if entry["path"] == "docs/a.md")
+        document["documents"].append(dict(first))
+
+    _edit_snapshot(snapshot, repeat)
+
+    with pytest.raises(CorruptedCorpusArtifactError, match=r"carries document 'docs/a\.md' twice"):
         read_snapshot(snapshot)
 
 
@@ -432,9 +604,10 @@ def test_a_snapshot_carrying_a_foreign_manifest_is_refused(tmp_path: Path) -> No
     manifest = _build(tmp_path)
     snapshot = tmp_path / "snapshot.json"
     write_snapshot(manifest, snapshot)
-    document = json.loads(snapshot.read_text(encoding="utf-8"))
-    document["manifest_fingerprint"] = "0" * 16
-    snapshot.write_text(json.dumps(document), encoding="utf-8")
+
+    _edit_snapshot(
+        snapshot, lambda document: document.__setitem__("manifest_fingerprint", "0" * 16)
+    )
 
     with pytest.raises(CorruptedCorpusArtifactError, match="manifest fingerprint"):
         read_snapshot(snapshot)
@@ -448,16 +621,35 @@ def test_a_snapshot_of_unknown_schema_is_refused(tmp_path: Path) -> None:
         read_snapshot(target)
 
 
+def test_a_snapshot_that_is_not_an_object_is_refused(tmp_path: Path) -> None:
+    target = tmp_path / "snapshot.json"
+    target.write_text("[1, 2, 3]", encoding="utf-8")
+
+    with pytest.raises(CorruptedCorpusArtifactError, match="must be a JSON object"):
+        read_snapshot(target)
+
+
 def test_a_snapshot_missing_a_required_field_is_refused(tmp_path: Path) -> None:
     _corpus(tmp_path)
     snapshot = tmp_path / "snapshot.json"
     write_snapshot(_build(tmp_path), snapshot)
-    document = json.loads(snapshot.read_text(encoding="utf-8"))
-    document.pop("manifest")
-    snapshot.write_text(json.dumps(document), encoding="utf-8")
+
+    _edit_snapshot(snapshot, lambda document: document.pop("manifest"))
 
     with pytest.raises(CorpusError, match="missing a required field"):
         read_snapshot(snapshot)
+
+
+def test_a_manifest_does_not_replace_an_existing_one_unasked(tmp_path: Path) -> None:
+    _corpus(tmp_path)
+    manifest = _build(tmp_path)
+    target = tmp_path / "manifest.json"
+    save_manifest(manifest, target)
+
+    with pytest.raises(CorpusError, match="already exists"):
+        save_manifest(manifest, target)
+
+    assert read_manifest(target).fingerprint == manifest.fingerprint
 
 
 # ------------------------------------------------------------------ convenience views

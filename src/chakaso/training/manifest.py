@@ -12,9 +12,10 @@ artifact with the same discipline the rest of the repository applies to evidence
   paths — never a silent substitution of a different dataset under a saved result.
 * **Recorded licence and preparation.** Source, licence, normalization step and size bound live on the
   manifest, because "we trained on some markdown" is not provenance.
-* **Snapshotting.** The bytes a run actually consumed can be written once into an uncommitted,
-  digest-checked file, so a run stays replayable after the tracked text moves — with the drift guard still
-  standing between the manifest and a fresh preparation.
+* **Snapshotting.** The bytes a run actually consumed can be written once into a digest-checked file, so a
+  run stays replayable after the tracked text moves — with the drift guard still standing between the
+  manifest and a fresh preparation. A snapshot carries its own checksum and an acquisition record;
+  :mod:`chakaso.training.snapshot` explains how the bytes for a *past* revision are recovered.
 
 Digests are taken over the **normalized** text (line endings to ``\\n``), so a CRLF checkout and an LF
 checkout produce one fingerprint. That is the point of normalizing before hashing: a corpus identity must
@@ -28,8 +29,10 @@ from __future__ import annotations
 
 import fnmatch
 import json
-from collections.abc import Sequence
-from dataclasses import dataclass
+import os
+import tempfile
+from collections.abc import Mapping, Sequence
+from dataclasses import dataclass, field
 from pathlib import Path, PurePosixPath
 from typing import Any
 
@@ -45,6 +48,7 @@ __all__ = [
     "DEFAULT_MAX_DOCUMENT_BYTES",
     "CorpusDocument",
     "CorpusManifest",
+    "CorpusSnapshot",
     "TextUnit",
     "build_manifest",
     "normalize_text",
@@ -56,7 +60,7 @@ __all__ = [
 ]
 
 _MANIFEST_SCHEMA = "chakaso-corpus-manifest/1"
-_SNAPSHOT_SCHEMA = "chakaso-corpus-snapshot/1"
+_SNAPSHOT_SCHEMA = "chakaso-corpus-snapshot/2"
 _NORMALIZATION = "crlf-and-cr-to-lf"
 #: Files larger than this are refused: a corpus document is a document, not a data blob, and an accidental
 #: half-gigabyte file must not be read into memory by a preparation step.
@@ -532,12 +536,50 @@ def verify_corpus(manifest: CorpusManifest, root: Path) -> CorpusManifest:
     )
 
 
-def save_manifest(manifest: CorpusManifest, path: Path) -> None:
-    """Write the manifest record (never the text) as deterministic UTF-8 JSON."""
-    target = Path(path)
+def _atomic_write_text(payload: str, target: Path, *, allow_overwrite: bool, label: str) -> None:
+    """Write ``payload`` so a reader never sees half a file, and refuse to clobber unless told.
+
+    A temporary file in the destination's own directory plus ``os.replace`` is an all-or-nothing swap on
+    every platform this project runs on; a corpus artifact truncated by an interrupted write would
+    otherwise be indistinguishable from a corpus that was altered on purpose. The overwrite guard is
+    ADR-0035's rule applied to corpus artifacts: the file a measured run cites is not something a later run
+    gets to replace silently.
+    """
+    if target.exists() and not allow_overwrite:
+        message = (
+            f"{label} already exists at {str(target)!r}; a recorded run's corpus artifact is not replaced "
+            "unless the caller passes allow_overwrite=True"
+        )
+        raise CorpusError(message)
     target.parent.mkdir(parents=True, exist_ok=True)
-    text = json.dumps(manifest.to_document(), sort_keys=True, separators=(",", ":"))
-    target.write_text(text, encoding="utf-8")
+    descriptor, temporary = tempfile.mkstemp(
+        dir=target.parent, prefix=f".{target.name}.", suffix=".partial"
+    )
+    partial = Path(temporary)
+    try:
+        with os.fdopen(descriptor, "w", encoding="utf-8", newline="") as handle:
+            handle.write(payload)
+            handle.flush()
+            os.fsync(handle.fileno())
+        # newline="" above is what makes the file's bytes equal the string that was hashed. Written in text
+        # mode on Windows, an indented JSON payload would gain CRLF endings and its own checksum would no
+        # longer be verifiable from the bytes a reader holds.
+        partial.replace(target)
+    except BaseException:
+        partial.unlink(missing_ok=True)
+        raise
+
+
+def save_manifest(manifest: CorpusManifest, path: Path, *, allow_overwrite: bool = False) -> None:
+    """Write the manifest record (never the text) as deterministic UTF-8 JSON.
+
+    Raises:
+        CorpusError: a file already occupies ``path`` and ``allow_overwrite`` was not passed.
+    """
+    payload = json.dumps(manifest.to_document(), sort_keys=True, separators=(",", ":"))
+    _atomic_write_text(
+        payload, Path(path), allow_overwrite=allow_overwrite, label="corpus manifest"
+    )
 
 
 def read_manifest(path: Path) -> CorpusManifest:
@@ -562,17 +604,49 @@ def read_manifest(path: Path) -> CorpusManifest:
     return CorpusManifest.from_document(document)
 
 
-def write_snapshot(manifest: CorpusManifest, path: Path) -> str:
-    """Write the corpus text the manifest pins into one uncommitted artifact; return its digest.
+@dataclass(frozen=True, slots=True)
+class CorpusSnapshot:
+    """A corpus whose text travels with it: the pinned manifest, its bodies, and how they were obtained.
 
-    A snapshot exists so a run's exact input survives later edits: the manifest fingerprint identifies
-    the tracked files it was built from, and the snapshot identifies the bytes this corpus actually
-    contributed. It belongs under ``data/``, which the artifact policy and ``.gitignore`` keep out of
-    version control.
+    Attributes:
+        manifest: The corpus, carrying every document's verified text.
+        checksum: The digest the snapshot file records over its own content.
+        acquisition: Where the bytes came from, as recorded when the snapshot was written. Empty means "the
+            tracked files, as they stood when this process read them"; a restored snapshot names the
+            revision instead, which is what distinguishes a historical corpus from the working tree.
+    """
+
+    manifest: CorpusManifest
+    checksum: str
+    acquisition: Mapping[str, str] = field(default_factory=dict)
+
+    @property
+    def fingerprint(self) -> str:
+        """The manifest fingerprint this snapshot's bytes reproduce."""
+        return self.manifest.fingerprint
+
+
+def write_snapshot(
+    manifest: CorpusManifest,
+    path: Path,
+    *,
+    acquisition: Mapping[str, str] | None = None,
+    allow_overwrite: bool = False,
+) -> str:
+    """Write the corpus text the manifest pins into one checksum-verified artifact; return its digest.
+
+    A snapshot exists so a run's exact input survives later edits: the manifest fingerprint identifies the
+    tracked files it was built from, and the snapshot identifies the bytes this corpus actually contributed.
+    It belongs under ``data/``, which the artifact policy and ``.gitignore`` keep out of version control.
+
+    Every document carries its own digest here as well as in the embedded manifest, and the file as a whole
+    carries a checksum over its content, so a reader can tell an altered document from a truncated file
+    from a substituted manifest — the three ways a snapshot could otherwise stop being the corpus a record
+    names.
 
     Raises:
         CorpusError: the manifest carries no text (call :func:`verify_corpus` first, so the bytes being
-            written have been checked against their digests).
+            written have been checked against their digests), or a file already occupies ``path``.
     """
     if not any(document.text for document in manifest.documents):
         message = (
@@ -580,33 +654,46 @@ def write_snapshot(manifest: CorpusManifest, path: Path) -> str:
             "being written have been checked against their digests"
         )
         raise CorpusError(message)
-    payload = json.dumps(
-        {
-            "schema_version": _SNAPSHOT_SCHEMA,
-            "manifest_fingerprint": manifest.fingerprint,
-            "manifest": manifest.to_document(),
-            "documents": [
-                {"path": document.path, "text": document.text}
-                for document in manifest.documents
-                if document.text
-            ],
-        },
-        sort_keys=True,
-        separators=(",", ":"),
+    content: dict[str, Any] = {
+        "schema_version": _SNAPSHOT_SCHEMA,
+        "manifest_fingerprint": manifest.fingerprint,
+        "manifest": manifest.to_document(),
+        "documents": [
+            {
+                "path": document.path,
+                "sha256": document.sha256,
+                "byte_count": document.byte_count,
+                "char_count": document.char_count,
+                "text": document.text,
+            }
+            for document in manifest.documents
+        ],
+        "acquisition": dict(acquisition or {}),
+    }
+    payload = json.dumps(content, sort_keys=True, separators=(",", ":"))
+    checksum = sha256_hex(payload)
+    _atomic_write_text(
+        json.dumps({**content, "checksum": checksum}, sort_keys=True, separators=(",", ":")),
+        Path(path),
+        allow_overwrite=allow_overwrite,
+        label="corpus snapshot",
     )
-    target = Path(path)
-    target.parent.mkdir(parents=True, exist_ok=True)
-    target.write_text(payload, encoding="utf-8")
-    return sha256_hex(payload)
+    return checksum
 
 
-def read_snapshot(path: Path) -> CorpusManifest:
-    """Load a snapshot written by :func:`write_snapshot`, re-checking every document digest.
+def read_snapshot(path: Path) -> CorpusSnapshot:
+    """Load a snapshot written by :func:`write_snapshot`, re-checking every digest it carries.
+
+    The order of checks is the order of trust: the file's own checksum first (so a truncated or edited file
+    is named as corruption rather than as a corpus problem), then the manifest record inside it, then every
+    document body against the digest the manifest pins, then the document set against the manifest's path
+    set. Nothing is taken from the snapshot that the manifest does not vouch for.
 
     Raises:
-        CorruptedCorpusArtifactError: the file is not valid JSON, its schema is unknown, a body does not
-            hash to its recorded digest, or the fingerprint does not match the manifest it carries.
-        CorpusError: a required field is missing or mis-typed.
+        CorruptedCorpusArtifactError: the file is not valid JSON, its own checksum disagrees with its
+            content, a body does not hash to its recorded digest, its document set is not the manifest's, or
+            it does not carry the manifest fingerprint it claims.
+        CorpusError: the schema is unknown or a required field is missing or mis-typed.
     """
     raw = Path(path).read_text(encoding="utf-8")
     try:
@@ -614,24 +701,80 @@ def read_snapshot(path: Path) -> CorpusManifest:
     except json.JSONDecodeError as exc:
         message = f"corpus snapshot at {str(path)!r} is not valid JSON: {exc}"
         raise CorruptedCorpusArtifactError(message) from exc
-    if not isinstance(document, dict) or document.get("schema_version") != _SNAPSHOT_SCHEMA:
+    if not isinstance(document, dict):
+        message = f"corpus snapshot at {str(path)!r} must be a JSON object"
+        raise CorruptedCorpusArtifactError(message)
+    if document.get("schema_version") != _SNAPSHOT_SCHEMA:
         message = f"corpus snapshot at {str(path)!r} has an unsupported schema"
+        raise CorruptedCorpusArtifactError(message)
+
+    if "checksum" not in document:
+        message = f"corpus snapshot at {str(path)!r} has no checksum field"
+        raise CorruptedCorpusArtifactError(message)
+    content = {key: value for key, value in document.items() if key != "checksum"}
+    stored_checksum = document["checksum"]
+    recomputed = sha256_hex(json.dumps(content, sort_keys=True, separators=(",", ":")))
+    if recomputed != stored_checksum:
+        message = (
+            f"corpus snapshot at {str(path)!r} does not match its own checksum (stored "
+            f"{str(stored_checksum)[:12]}…, computed {recomputed[:12]}…) — the file was altered or truncated"
+        )
         raise CorruptedCorpusArtifactError(message)
 
     try:
         manifest_document = document["manifest"]
         entries = document["documents"]
         stored_fingerprint = document["manifest_fingerprint"]
+        acquisition = document["acquisition"]
     except KeyError as exc:
         message = f"corpus snapshot at {str(path)!r} is missing a required field: {exc}"
         raise CorpusError(message) from exc
 
-    texts = {str(entry["path"]): str(entry["text"]) for entry in entries}
+    texts: dict[str, str] = {}
+    for entry in entries:
+        path_name = str(entry["path"])
+        if path_name in texts:
+            message = f"corpus snapshot at {str(path)!r} carries document {path_name!r} twice"
+            raise CorruptedCorpusArtifactError(message)
+        texts[path_name] = str(entry["text"])
+
     manifest = CorpusManifest.from_document(manifest_document, texts=texts)
+    recorded = {document.path: document for document in manifest.documents}
+    unexpected = sorted(set(texts) - set(recorded))
+    if unexpected:
+        message = (
+            f"corpus snapshot at {str(path)!r} carries {len(unexpected)} document(s) the manifest does not "
+            f"record: {unexpected}"
+        )
+        raise CorruptedCorpusArtifactError(message)
+    missing = sorted(set(recorded) - set(texts))
+    if missing:
+        message = (
+            f"corpus snapshot at {str(path)!r} is missing {len(missing)} document(s) the manifest records: "
+            f"{missing}"
+        )
+        raise CorruptedCorpusArtifactError(message)
+    for entry in entries:
+        path_name = str(entry["path"])
+        document_digest = str(entry["sha256"])
+        if document_digest != recorded[path_name].sha256:
+            message = (
+                f"corpus snapshot document {path_name!r} records digest {document_digest[:12]}… where the "
+                f"manifest pins {recorded[path_name].sha256[:12]}…"
+            )
+            raise CorruptedCorpusArtifactError(message)
+
     if manifest.fingerprint != stored_fingerprint:
         message = (
             f"corpus snapshot at {str(path)!r} does not carry the manifest fingerprint it claims "
             f"({stored_fingerprint!r} stored, {manifest.fingerprint!r} rebuilt)"
         )
         raise CorruptedCorpusArtifactError(message)
-    return manifest
+    if not isinstance(acquisition, dict):
+        message = f"corpus snapshot at {str(path)!r} has an acquisition block that is not an object"
+        raise CorpusError(message)
+    return CorpusSnapshot(
+        manifest=manifest,
+        checksum=stored_checksum,
+        acquisition={str(key): str(value) for key, value in acquisition.items()},
+    )
