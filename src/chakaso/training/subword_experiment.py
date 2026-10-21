@@ -122,14 +122,13 @@ class CorpusSpec:
             message = f"corpus name {self.name!r} cannot be used as a file name"
             raise ValueError(message)
 
-    def manifest_path(self, work: Path) -> Path:
-        return work / f"{self.name}-manifest.json"
-
     def snapshot_path(self, work: Path) -> Path:
-        return work / f"{self.name}-snapshot.json"
+        """Where this corpus's snapshot lives in a run directory.
 
-    def tokenizer_path(self, work: Path) -> Path:
-        return work / f"{self.name}-tokenizer.json"
+        The manifest and tokenizer records are named from the resolved manifest itself, because a run that
+        loads a snapshot may be training on a corpus this spec was never told about.
+        """
+        return work / f"{self.name}-snapshot.json"
 
 
 #: The corpus E2605 measured: this repository's own tracked prose, discovered from the repository root.
@@ -338,13 +337,19 @@ def _resolve_manifest(
         CorpusDriftError: the working tree no longer matches the pinned manifest, or the directory's manifest
             pins a different corpus than the snapshot it was given.
     """
-    manifest_path = plan.corpus.manifest_path(work)
     snapshot_path = plan.snapshot_path()
 
-    def pinned_record() -> CorpusManifest | None:
-        if not manifest_path.is_file():
+    def pinned_record(name: str) -> CorpusManifest | None:
+        # Named after the corpus that is actually pinned. A run of an external corpus must not leave a
+        # record called chakaso-repo-text-v1-manifest.json behind it just because the plan's default spec
+        # carries that name.
+        candidate = work / f"{name}-manifest.json"
+        if not candidate.is_file():
             return None
-        return CorpusManifest.from_document(json.loads(manifest_path.read_text(encoding="utf-8")))
+        return CorpusManifest.from_document(json.loads(candidate.read_text(encoding="utf-8")))
+
+    def save_record(manifest: CorpusManifest) -> None:
+        save_manifest(manifest, work / f"{manifest.name}-manifest.json")
 
     if snapshot_path.is_file():
         snapshot = read_snapshot(snapshot_path)
@@ -353,14 +358,15 @@ def _resolve_manifest(
             if plan.corpus_snapshot is not None
             else "snapshot from this work dir"
         )
-        declared = pinned_record()
+        declared = pinned_record(snapshot.manifest.name)
         if declared is None:
-            save_manifest(snapshot.manifest, manifest_path)
+            save_record(snapshot.manifest)
         elif declared.fingerprint != snapshot.fingerprint:
             message = (
                 f"the corpus snapshot at {str(snapshot_path)!r} pins fingerprint "
-                f"{snapshot.fingerprint!r} but {str(manifest_path)!r} pins {declared.fingerprint!r}; a "
-                "run must not be pointed at one corpus while its directory records another"
+                f"{snapshot.fingerprint!r} but the directory's own record pins "
+                f"{declared.fingerprint!r}; a run must not be pointed at one corpus while its directory "
+                "records another"
             )
             raise CorpusDriftError(message)
         return snapshot.manifest, origin, snapshot
@@ -376,14 +382,14 @@ def _resolve_manifest(
         extensions=corpus.extensions,
         exact_paths=corpus.exact_paths,
     )
-    declared = pinned_record()
+    declared = pinned_record(corpus.name)
     if declared is not None and declared.fingerprint != manifest.fingerprint:
         # The recorded manifest wins: an experiment's corpus is fixed by what it pinned, and a
         # documentation edit must not move the data under a saved run. verify_corpus still checks the
         # files against those digests.
         manifest = verify_corpus(declared, plan.root)
     elif declared is None:
-        save_manifest(manifest, manifest_path)
+        save_record(manifest)
 
     # Writing the snapshot is what makes this run reproducible later: the manifest pins the digests, and
     # these are the bytes that produced them.
@@ -426,7 +432,7 @@ def prepare_corpus(plan: ExperimentPlan) -> PreparedCorpus:
     vocabulary = train_subword_vocabulary(
         (unit.text for unit in split.train), target_size=plan.vocab_size, min_frequency=3
     )
-    vocabulary.save(plan.corpus.tokenizer_path(work))
+    vocabulary.save(work / f"{manifest.name}-tokenizer.json")
     char_vocabulary = CharVocabulary(tuple(unit.text for unit in split.train))
 
     char_windows = {

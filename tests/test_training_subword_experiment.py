@@ -381,6 +381,40 @@ def test_selection_is_a_function_of_the_validation_curve_alone(tmp_path: Path) -
     assert report["transformer"]["test"]["positions_scored"] > 0
 
 
+def test_a_snapshot_of_another_corpus_is_recorded_under_its_own_name(tmp_path: Path) -> None:
+    """A run pointed at an external snapshot must not leave files named for this repository's corpus.
+
+    The plan's default corpus spec is what a fresh preparation uses; when the bytes come from a snapshot,
+    every record has to be named after the corpus the snapshot actually pins, or the directory would
+    describe the wrong corpus.
+    """
+    from chakaso.training.manifest import build_manifest, write_snapshot
+
+    root = _root(tmp_path)
+    foreign = build_manifest(
+        root,
+        name="harbour-text",
+        version="1.0.0",
+        licence="Apache-2.0",
+        source="built by tests",
+        include=("docs/", "*.md"),
+        extensions=(".md",),
+        exact_paths=("LICENSE", "AGENTS.md"),
+    )
+    snapshot = tmp_path / "harbour-snapshot.json"
+    write_snapshot(foreign, snapshot)
+    work = tmp_path / "work"
+
+    prepared = prepare_corpus(_plan(root, work, corpus_snapshot=snapshot))
+
+    assert prepared.manifest.name == "harbour-text"
+    written = sorted(path.name for path in work.iterdir())
+    assert written == [
+        "harbour-text-manifest.json",
+        "harbour-text-tokenizer.json",
+    ]
+
+
 def test_a_second_run_into_the_same_directory_is_refused(tmp_path: Path) -> None:
     root = _root(tmp_path)
     plan = _plan(root, tmp_path / "work")
