@@ -31,6 +31,7 @@ Requires the optional ``[nn]`` extra.
 
 from __future__ import annotations
 
+import math
 import random
 import time
 from collections.abc import Callable, Mapping, Sequence
@@ -40,6 +41,7 @@ from typing import Any
 
 import torch
 
+from chakaso.training.decoder import ChakasoDecoder, DecoderConfig
 from chakaso.training.errors import TrainingError
 from chakaso.training.nn_checkpoint import ModelArtifact, describe_environment, save_artifact
 from chakaso.training.packing import PackedExample
@@ -47,15 +49,20 @@ from chakaso.training.subword import SubwordVocabulary
 from chakaso.training.transformer import CausalTransformer, TransformerConfig
 
 __all__ = [
+    "COMPLETED_BUDGET_CEILING",
+    "COMPLETED_CONVERGED",
+    "COMPLETED_STOP_REQUESTED",
     "StepRecord",
     "TrainingOutcome",
     "TrainingScheduleError",
     "TransformerTrainingConfig",
+    "build_model",
     "choose_validation_best",
     "evaluate_loss",
     "plan_batch",
     "resume_state_from",
     "train_transformer",
+    "verify_resume_compatibility",
 ]
 
 
@@ -68,7 +75,7 @@ class TransformerTrainingConfig:
     """Optimization, evaluation and reproducibility settings for one Transformer run.
 
     Attributes:
-        batch_size: Sequences per optimizer step.
+        batch_size: Sequences per optimizer step, before accumulation.
         max_steps: Absolute ceiling on optimizer steps, counted from zero and not from ``start_step``.
         learning_rate: Peak AdamW learning rate, approached by linear warmup.
         weight_decay: AdamW decoupled weight decay.
@@ -78,7 +85,16 @@ class TransformerTrainingConfig:
         eval_every: Evaluate and record every this-many-th step (and at the final step).
         patience: Evaluations without a ``min_delta`` improvement before the run stops.
         min_delta: Improvement, in nats, that counts against patience.
-        architecture: The Transformer this run builds when no model is supplied.
+        architecture: The model this run builds when none is supplied.
+        schedule: How the learning rate moves after warmup. ``constant`` is what E2605, E2606 and E2607
+            ran with, and it stays the default so a measured protocol is reproducible by name. ``cosine``
+            anneals to ``decay_to`` by the ceiling, which is the change E2607's budget-truncated curve
+            asks for.
+        decay_to: Fraction of the peak rate a cosine schedule ends at. Ignored by ``constant``.
+        grad_accum_steps: Micro-batches per optimizer step. One accumulates gradients over this many
+            ``batch_size`` slices, which buys a larger effective batch on a machine that cannot hold it.
+        checkpoint_every: How often to rewrite the resumable artifact. Zero means every evaluation, which
+            is what the measured runs did; a long run on a small machine may want it less often.
     """
 
     batch_size: int
@@ -91,7 +107,11 @@ class TransformerTrainingConfig:
     eval_every: int
     patience: int
     min_delta: float
-    architecture: TransformerConfig
+    architecture: TransformerConfig | DecoderConfig
+    schedule: str = "constant"
+    decay_to: float = 0.1
+    grad_accum_steps: int = 1
+    checkpoint_every: int = 0
 
     def __post_init__(self) -> None:
         for name in ("batch_size", "max_steps", "warmup_steps", "eval_every", "patience"):
@@ -125,12 +145,41 @@ class TransformerTrainingConfig:
         if self.learning_rate <= 0:
             message = f"learning_rate must be positive, got {self.learning_rate!r}"
             raise ValueError(message)
+        if self.schedule not in _SCHEDULES:
+            message = f"schedule {self.schedule!r} is not one of {sorted(_SCHEDULES)}"
+            raise ValueError(message)
+        if isinstance(self.decay_to, bool) or not isinstance(self.decay_to, (int, float)):
+            message = f"decay_to must be a number, got {self.decay_to!r}"
+            raise ValueError(message)
+        if not 0.0 <= self.decay_to < 1.0:
+            message = f"decay_to must be in [0, 1), got {self.decay_to}"
+            raise ValueError(message)
+        if isinstance(self.grad_accum_steps, bool) or not isinstance(self.grad_accum_steps, int):
+            message = f"grad_accum_steps must be an integer, got {self.grad_accum_steps!r}"
+            raise ValueError(message)
+        if self.grad_accum_steps < 1:
+            message = f"grad_accum_steps must be >= 1, got {self.grad_accum_steps}"
+            raise ValueError(message)
+        if isinstance(self.checkpoint_every, bool) or not isinstance(self.checkpoint_every, int):
+            message = f"checkpoint_every must be an integer, got {self.checkpoint_every!r}"
+            raise ValueError(message)
+        if self.checkpoint_every < 0:
+            message = f"checkpoint_every must be >= 0, got {self.checkpoint_every}"
+            raise ValueError(message)
+
+    @property
+    def effective_batch_size(self) -> int:
+        """Sequences per optimizer step, accumulation included — the number a record should state."""
+        return self.batch_size * self.grad_accum_steps
 
     def as_dict(self) -> dict[str, Any]:
         """The configuration as plain data, minus the architecture, which is recorded separately."""
         values = asdict(self)
         values.pop("architecture")
         return values
+
+
+_SCHEDULES = frozenset({"constant", "cosine"})
 
 
 @dataclass(frozen=True, slots=True)
@@ -144,6 +193,13 @@ class StepRecord:
     gradient_norm: float
     learning_rate: float
     elapsed_seconds: float
+    positions_per_second: float = 0.0
+
+
+#: How a run ended, named rather than inferred from a combination of booleans by whoever reads the record.
+COMPLETED_CONVERGED = "converged"
+COMPLETED_BUDGET_CEILING = "budget_ceiling"
+COMPLETED_STOP_REQUESTED = "stopped_by_request"
 
 
 @dataclass(frozen=True, slots=True)
@@ -164,6 +220,14 @@ class TrainingOutcome:
     validation_positions: int
     parameter_count: int
     optimizer_state: Mapping[str, Any] | None = None
+    completion: str = COMPLETED_BUDGET_CEILING
+    wall_clock_seconds: float = 0.0
+    positions_per_second: float = 0.0
+
+    @property
+    def reached_budget(self) -> bool:
+        """Whether the run trained to its declared ceiling without converging or being stopped."""
+        return self.completion == COMPLETED_BUDGET_CEILING
 
     @property
     def initial_validation_loss(self) -> float:
@@ -199,6 +263,10 @@ class TrainingOutcome:
                 "best_validation_loss_nats": self.best_validation_loss,
                 "final_validation_loss_nats": self.final_validation_loss,
                 "initial_validation_loss_nats": self.initial_validation_loss,
+                "completion": self.completion,
+                "wall_clock_seconds": round(self.wall_clock_seconds, 2),
+                "positions_per_second": round(self.positions_per_second, 1),
+                "effective_batch_size": self.config.effective_batch_size,
             },
             step=self.best_step,
             optimizer_state=None,
@@ -307,10 +375,81 @@ def _snapshot(model: CausalTransformer) -> dict[str, torch.Tensor]:
 
 
 def _learning_rate(config: TransformerTrainingConfig, step: int) -> float:
-    """Linear warmup to the peak rate; the schedule is a function of step, not of accumulated state."""
-    if config.warmup_steps <= 0 or step >= config.warmup_steps:
+    """The rate at ``step``: linear warmup, then the declared schedule to the ceiling.
+
+    ``constant`` holds the peak, which is what E2605 to E2607 ran. ``cosine`` anneals from the peak at
+    ``warmup_steps`` to ``learning_rate * decay_to`` at ``max_steps``. The schedule is a pure function of the
+    step rather than accumulated scheduler state, so a resumed run reads the same rate the uninterrupted one
+    would have — which is the only reason resumption can be called the same run.
+    """
+    if config.warmup_steps > 0 and step < config.warmup_steps:
+        return config.learning_rate * (step / config.warmup_steps)
+    if config.schedule == "constant":
         return config.learning_rate
-    return config.learning_rate * (step / config.warmup_steps)
+    span = max(1, config.max_steps - config.warmup_steps)
+    progress = min(1.0, max(0.0, (step - config.warmup_steps) / span))
+    cosine = 0.5 * (1.0 + math.cos(math.pi * progress))
+    floor = config.decay_to
+    return config.learning_rate * (floor + (1.0 - floor) * cosine)
+
+
+def build_model(architecture: TransformerConfig | DecoderConfig) -> Any:
+    """Construct the model one configuration names. One dispatch, so no caller guesses a family."""
+    if isinstance(architecture, DecoderConfig):
+        return ChakasoDecoder(architecture)
+    return CausalTransformer(architecture)
+
+
+def verify_resume_compatibility(
+    artifact: ModelArtifact,
+    *,
+    config: TransformerTrainingConfig,
+    corpus_fingerprint: str,
+    vocabulary: SubwordVocabulary,
+) -> tuple[Mapping[str, torch.Tensor], Mapping[str, Any], int]:
+    """Check that a saved resume point is the one *this* run may continue, then hand back its state.
+
+    A resume that is merely plausible is the dangerous case: continuing from another corpus, another
+    architecture or another tokenizer produces a curve that looks like a run and is a mixture of two. Every
+    disagreement is named, and an artifact without optimizer moments is refused because restarting Adam from
+    zero is a different schedule, not the same one interrupted.
+
+    Raises:
+        TrainingScheduleError: any identity field disagrees, or the artifact carries no optimizer state.
+    """
+    if artifact.optimizer_state is None:
+        message = (
+            "this artifact carries no optimizer state, so it cannot be continued as a run; it is a usable "
+            "model, not a resume point"
+        )
+        raise TrainingScheduleError(message)
+    disagreements: list[str] = []
+    if artifact.corpus_fingerprint != corpus_fingerprint:
+        disagreements.append(
+            f"corpus: resumed from {artifact.corpus_fingerprint}, this run is on {corpus_fingerprint}"
+        )
+    if artifact.config.as_dict() != config.architecture.as_dict():
+        disagreements.append(
+            f"architecture: resumed from {artifact.config.as_dict()}, this run declares "
+            f"{config.architecture.as_dict()}"
+        )
+    if artifact.vocabulary.fingerprint != vocabulary.fingerprint:
+        disagreements.append(
+            f"tokenizer: resumed from {artifact.vocabulary.fingerprint}, this run trained "
+            f"{vocabulary.fingerprint}"
+        )
+    recorded = artifact.run_metadata.get("training")
+    if isinstance(recorded, dict) and recorded != config.as_dict():
+        differences = sorted(
+            key
+            for key in set(recorded) | set(config.as_dict())
+            if recorded.get(key) != config.as_dict().get(key)
+        )
+        disagreements.append(f"training configuration differs in: {differences}")
+    if disagreements:
+        message = "this checkpoint cannot resume the requested run — " + "; ".join(disagreements)
+        raise TrainingScheduleError(message)
+    return resume_state_from(artifact)
 
 
 def train_transformer(
@@ -320,19 +459,25 @@ def train_transformer(
     vocabulary: SubwordVocabulary,
     config: TransformerTrainingConfig,
     corpus_fingerprint: str,
-    model: CausalTransformer | None = None,
+    model: Any | None = None,
     resume_state: Mapping[str, torch.Tensor] | None = None,
     resume_optimizer: Mapping[str, Any] | None = None,
     start_step: int = 0,
     on_step: Callable[[StepRecord], None] | None = None,
     checkpoint_path: Path | None = None,
+    should_stop: Callable[[], bool] | None = None,
 ) -> TrainingOutcome:
-    """Train a Transformer on packed examples, selecting the returned parameters on validation loss.
+    """Train on packed examples, selecting the returned parameters on validation loss.
 
     ``max_steps`` is the absolute ceiling: a resumed run reaches the same step number an uninterrupted run
     would have reached. ``resume_state`` restores weights and ``resume_optimizer`` restores Adam moments, so
-    the batch plan lines up with the original schedule (see :func:`plan_batch`). Supplying one without the
-    other continues the run but not the schedule, and is the caller's documented choice, not a default.
+    the batch plan and the learning-rate schedule line up with the original run (see :func:`plan_batch` and
+    :func:`_learning_rate`). Supplying one without the other continues the run but not the schedule, and is
+    the caller's documented choice, not a default.
+
+    ``should_stop`` is consulted at every evaluation; when it answers yes the run ends early, writes its
+    resume point and reports :data:`COMPLETED_STOP_REQUESTED` — an interruption a caller asked for is not a
+    failure and not a convergence, and the record says which.
 
     Raises:
         TrainingScheduleError: either side has no examples, or ``start_step`` is negative or already at the
@@ -357,7 +502,7 @@ def train_transformer(
 
     if model is None:
         torch.manual_seed(config.seed)
-        model = CausalTransformer(config.architecture)
+        model = build_model(config.architecture)
     if resume_state is not None:
         model.load_state_dict(dict(resume_state), strict=True)
 
@@ -373,7 +518,10 @@ def train_transformer(
     )
     # The batch the next update will draw, so a fresh run's first training number is a pre-update number.
     baseline_indices = plan_batch(
-        len(train_examples), start_step, batch_size=config.batch_size, seed=config.seed
+        len(train_examples),
+        start_step * config.grad_accum_steps,
+        batch_size=config.batch_size,
+        seed=config.seed,
     )
     baseline_train, _ = evaluate_loss(
         model,
@@ -399,29 +547,46 @@ def train_transformer(
     best_validation = baseline_validation
     stagnant = 0
     stopped_early = False
+    completion = COMPLETED_BUDGET_CEILING
     started = time.perf_counter()
+    last_elapsed = 0.0
+    trained_positions = 0
     train_positions = len(train_examples) * len(train_examples[0].input_ids)
 
     for offset in range(1, config.max_steps - start_step + 1):
         step = start_step + offset
-        # Planned by absolute update index, so a resumed run draws exactly the batches the uninterrupted run
-        # would have drawn; that is what makes the resume property equivalence rather than resemblance.
-        indices = plan_batch(
-            len(train_examples), step - 1, batch_size=config.batch_size, seed=config.seed
-        )
-        batch = [train_examples[index] for index in indices]
-        inputs = torch.tensor([list(example.input_ids) for example in batch], dtype=torch.int64)
-        targets = torch.tensor([list(example.targets) for example in batch], dtype=torch.int64)
-
         learning_rate = _learning_rate(config, step)
         for group in optimizer.param_groups:
             group["lr"] = learning_rate
 
-        model.train()
-        _, loss = model(inputs, targets)
-        assert loss is not None
+        # One optimizer step may be the sum of several micro-batches. Each micro-batch is planned by its own
+        # absolute index, so enabling accumulation changes the effective batch and nothing else: the same
+        # sequence of examples, the same schedule, the same step count.
         optimizer.zero_grad(set_to_none=True)
-        loss.backward()
+        positions = 0
+        step_loss = 0.0
+        for micro in range(config.grad_accum_steps):
+            # Planned by absolute update index, so a resumed run draws exactly the batches the uninterrupted
+            # run would have drawn; that is what makes the resume property equivalence rather than resemblance.
+            micro_index = (step - 1) * config.grad_accum_steps + micro
+            indices = plan_batch(
+                len(train_examples), micro_index, batch_size=config.batch_size, seed=config.seed
+            )
+            batch = [train_examples[index] for index in indices]
+            inputs = torch.tensor([list(example.input_ids) for example in batch], dtype=torch.int64)
+            targets = torch.tensor([list(example.targets) for example in batch], dtype=torch.int64)
+            positions += int(inputs.numel())
+
+            model.train()
+            _, loss = model(inputs, targets)
+            assert loss is not None
+            # Gradients average across micro-batches, so an accumulated step has the same gradient magnitude
+            # as one big batch would — otherwise accumulation would silently be a larger learning rate.
+            (loss / config.grad_accum_steps).backward()
+            step_loss += float(loss.detach())
+
+        trained_positions += positions
+        average_loss = step_loss / config.grad_accum_steps
         # clip_grad_norm_ returns the norm *before* clipping, which is what makes "clipping happened"
         # observable in the record rather than a claim about a value that was thrown away.
         norm = float(
@@ -436,16 +601,20 @@ def train_transformer(
             validation_loss, _ = evaluate_loss(
                 model, validation_examples, batch_size=config.batch_size
             )
+            elapsed = time.perf_counter() - started
+            interval = elapsed - last_elapsed
             record = StepRecord(
                 step=step,
-                train_loss=float(loss.detach()),
+                train_loss=average_loss,
                 validation_loss=validation_loss,
-                positions_trained=int(inputs.numel()),
+                positions_trained=positions,
                 gradient_norm=norm,
                 learning_rate=learning_rate,
-                elapsed_seconds=time.perf_counter() - started,
+                elapsed_seconds=elapsed,
+                positions_per_second=positions / interval if interval > 0 else 0.0,
             )
             records.append(record)
+            last_elapsed = elapsed
             if on_step is not None:
                 on_step(record)
             if validation_loss < best_validation - config.min_delta:
@@ -455,7 +624,10 @@ def train_transformer(
                 stagnant = 0
             else:
                 stagnant += 1
-            if checkpoint_path is not None:
+            cadence = config.checkpoint_every or config.eval_every
+            if checkpoint_path is not None and (
+                step % cadence == 0 or step == config.max_steps or stagnant > config.patience
+            ):
                 save_artifact(
                     _interim_artifact(
                         model,
@@ -474,6 +646,10 @@ def train_transformer(
                 )
             if stagnant > config.patience:
                 stopped_early = True
+                completion = COMPLETED_CONVERGED
+                break
+            if should_stop is not None and should_stop():
+                completion = COMPLETED_STOP_REQUESTED
                 break
 
     final_state = _snapshot(model)
@@ -496,6 +672,7 @@ def train_transformer(
         )
         raise TrainingScheduleError(message)
 
+    elapsed = time.perf_counter() - started
     return TrainingOutcome(
         config=config,
         records=tuple(records),
@@ -511,6 +688,9 @@ def train_transformer(
         validation_positions=validation_positions,
         parameter_count=model.parameter_count,
         optimizer_state=optimizer.state_dict(),
+        completion=completion,
+        wall_clock_seconds=elapsed,
+        positions_per_second=trained_positions / elapsed if elapsed > 0 else 0.0,
     )
 
 
