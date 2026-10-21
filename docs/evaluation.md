@@ -168,18 +168,48 @@ Cases where a system that merely sounds good fails:
 - follow-ups that deliberately change topic,
 - user claims that contradict the retrieved evidence.
 
-## Standard model evaluation
+## Model evaluation
 
-For language-model benchmarks, the intent is to use an existing harness
-(`lm-evaluation-harness` supports local models and custom tasks) rather than write
-one. Chakaso-specific behaviour — retrieval, grounding, citations, correction,
-follow-ups — needs its own suite, because no general harness measures those.
+A language model is measured against held-out text, and the metric that makes two
+tokenizations comparable is **bits per character**: the total description length of a
+scored stream in bits, divided by the characters those tokens decode to. Per-token
+cross-entropy and perplexity are reported beside it and labelled as tokenizer-bound — a
+1,024-entry subword vocabulary and a 90-character one do not mean the same thing by
+`ln(V)`, so neither number may be used to compare the two. The denominator is the decoded
+whole stream rather than a per-token character count, because a multi-byte character split
+across byte tokens contributes its characters at the completion, not at each byte.
 
-No language-model benchmark has been run. A **retrieval development benchmark** exists and
-runs (`chakaso.benchmark`), from the command line too (`chakaso benchmark`, with `--json` for a
-deterministic machine-readable report), reporting retrieval metrics over synthetic
-fixtures; it is not evidence of model quality. The standard-model harness is still to be
-wired up ([`research/open-questions.md`](research/open-questions.md)).
+| Quantity | Definition | Where it is computed |
+| --- | --- | --- |
+| `loss_nats` | mean next-token cross-entropy over every scored position | `chakaso.training.model_metrics.metrics_from_scores` |
+| `perplexity` | `exp(loss_nats)`, one identifier space only | same |
+| `bits_per_character` | total bits / characters the scored tokens decode to | same |
+| `token_accuracy` | argmax match rate over scored positions | same |
+| `positions_scored`, `characters_scored`, `separator_targets` | the denominators, stated so a number can be re-derived | same |
+| uniform baseline | `ln(V)` over the model's own identifier space | `chakaso.training.baselines` |
+| unigram baseline | Laplace-smoothed training-token frequencies scored on held-out targets | same |
+| held-out evaluation of the character model | `chakaso.training.evaluation` (aggregate) and `per_position_cross_entropies` (the series the shared arithmetic consumes) |
+| held-out evaluation of the Transformer | `chakaso.training.nn_evaluation`, which scores an artifact with the tokenizer stored inside it |
+
+Two properties are deliberate. Training loss and held-out loss are separate recorded
+numbers — a step's training figure is the batch it updated, and a held-out figure is a
+full pass over the evaluation side, recombined by position count so a short final batch
+cannot tilt it. And the same metric function scores both architectures and both baselines,
+so a comparison in an experiment record is one measurement applied four times rather than
+four measurements that happen to be printed together.
+
+**What model evaluation is not.** The retrieval and correction benchmarks, the semantic
+scorer, the grounded-answer evaluation workload and the evidence-sufficiency policy measure
+the harness and the retriever. A reference oracle in the grounded evaluation scores the
+plumbing; it is not a model, and no number from those instruments is evidence of language
+capability. That distinction is stated in the reports as well as here.
+
+No external language-model benchmark has been run. The intent to use an existing harness
+(`lm-evaluation-harness` supports local models and custom tasks) for general capability
+stands, and Chakaso-specific behaviour — retrieval, grounding, citations, correction,
+follow-ups — will still need its own suite because no general harness measures those.
+[ADR-0033](decisions/ADR-0033-model-centred-product-contract.md) rule 7 keeps a borrowed
+benchmark from becoming a substitute for a corpus and a task the project can defend.
 
 ## Confidence
 
@@ -246,11 +276,16 @@ was not measured, it is not written down.
 | Experiment records & regression baseline | Implemented (`chakaso.experiments`, ADR-0020); reproducible result fingerprints, deterministic compatible-version comparison; no model-quality claim |
 | Retrieval-strategy comparison (lexical vs dense vs hybrid over the fixtures) | Implemented (`chakaso.experiments.compare_retrieval_strategies`); measured deltas only, labelled development — dense/hybrid run over the non-semantic fixture embedding (E-001 showed no gain, a small MRR regression) |
 | Red-team suite | Planned |
-| Standard model benchmarks | Planned |
+| Model metrics: held-out loss, perplexity, bits per character, token accuracy, uniform + unigram baselines | Implemented (`chakaso.training.model_metrics`, `chakaso.training.nn_evaluation`, `chakaso.training.evaluation`); dependency-free arithmetic, tested against hand-computable cases and against the training loop's own position-weighted loss |
+| Measured model result on a real text corpus | E2605: a subword Transformer versus the character model versus both baselines, in bits per character, on the project's own pinned documentation corpus. A single author, one domain, CPU scale — not general capability, and not an external benchmark |
+| Standard external model benchmarks | Planned |
 | Regression gates beyond unit tests | Partially implemented (pinned-fingerprint benchmark regressions and a deterministic experiment baseline comparison; statistical significance deliberately not built) |
-| Any measured result | Retrieval, correction and retrieval-strategy development metrics over synthetic fixtures (E-001); the first trained-model results (E2601, E2602); and the grounded-answer evaluation baseline over the self-authored workload (E2603). None is a model-quality result, and none tests a semantic-retrieval or answer-capability hypothesis |
+| Any measured result | Retrieval, correction and retrieval-strategy development metrics over synthetic fixtures (E-001); the first trained-model results (E2601, E2602) and the first subword Transformer result (E2605), all on small self-authored or synthetic text; the grounded-answer evaluation and evidence-sufficiency baselines over the self-authored workload (E2603, E2604). None of these is a real-workload result, and none tests a semantic-retrieval or answer-capability hypothesis |
 
-No model-quality or general-performance number appears anywhere in this repository,
-because none has been measured. The retrieval and correction development benchmarks
+No general-performance number appears anywhere in this repository. Model-quality numbers do
+exist — held-out loss, perplexity and bits per character for a character MLP and for a small
+subword Transformer, measured on the project's own text — and each is stated with the corpus,
+split, seed, parameter count and baselines that produced it, because a model number without its
+data and protocol is not a result. The retrieval and correction development benchmarks
 produce their metrics at run time over synthetic fixtures; those are a development
 instrument, not a result about answers or about real-world correction skill.
