@@ -3,7 +3,7 @@
 Real problems with the current state, including the ones that are only
 inconvenient. An empty file here would mean nobody has looked.
 
-Last reviewed: 2026-10-19.
+Last reviewed: 2026-10-21.
 
 ## Open
 
@@ -173,15 +173,29 @@ under the same strict settings — clean where both extras are installed, and an
 failure where torch is absent. Two hygiene tests keep the two configurations' strictness identical and pin
 the exclusion list to the modules whose dependency it names.
 
-**Re-verified this session (2026-10-21, P31/E2605).** The token's scopes were checked again: `gist, read:org,
-repo` — no `workflow` — so the gap is still not something this session can close. Locally, all three matrices
-run: **1,391 passed / 16 skipped** dependency-free (1,407 collected), **1,472 passed / 7 skipped** with
-`[train]`, and **1,605 passed / 1 skipped** with `[train,nn]` (1,606 collected). Strict typing passes over
-every module in the `[train,nn]` environment (`mypy --config-file configs/mypy-model-path.toml`, 142 source
-files, no issues). E2605
-itself ran in that environment and is measured, recorded and committed
-([`../../experiments/E2605/record.md`](../../experiments/E2605/record.md)), so the artifact is verified where
-it was produced — but no remote job has ever run any of it.
+**Re-verified again (2026-10-21, P33–P36).** The token's scopes are still `gist, read:org, repo` — no
+`workflow` — so a push that touches `.github/workflows/*` is still refused (GitHub refuses the *whole* push,
+naming the file, which is why the prepared matrix is delivered as a document rather than committed as a
+workflow: it would block every other commit in the same push). Checked while at it: `main` is **not**
+protected, and Actions is enabled with `allowed_actions: all` — the missing scope is the only blocker.
+
+Locally all three matrices still run, and the counts grew with the new tests: **1,479 pass / 21 skip**
+dependency-free, **1,560 pass / 12 skip** with `[train]`, and **1,739 pass / 1 skip** with `[train,nn]`;
+strict typing is clean over all 147 source files in the `[nn]` environment (and over the 118 the
+dependency-free `mypy src` reaches). Measured on 2026-10-21 against this working tree; the figures for the
+delivered head are restated in the delivery ledger.
+
+**The fix is now written and partly tested, which is new.**
+[`docs/internal/engineering/optional-dependency-ci-matrix.md`](../internal/engineering/optional-dependency-ci-matrix.md)
+carries a complete three-tier workflow — core on 3.11/3.12/3.13, `[dev,train]` on the same three, and
+`[dev,train,nn]` on the floor and the latest with the CPU wheel index ADR-0034 names — ready to paste into
+`.github/workflows/ci.yml` by anyone holding a `workflow`-scoped token. Four tests in
+`tests/test_repository_hygiene.py` keep it from being decoration: the jobs install exactly the tiers they
+claim, every `run:` command is one `AGENTS.md` and `CONTRIBUTING.md` document, nothing can fail quietly
+(no `continue-on-error`, no deselection), and the **shipped** workflow still installs only `.[dev]` — that
+last assertion is written to fail the moment someone applies the matrix, which is exactly when this entry
+should be rewritten rather than left to rot. None of it has run on a runner, and no claim is made that it
+will pass there: the `[nn]` job would download a torch wheel on a GitHub host for the first time.
 
 **What would close it:** a CI workflow change (jobs installing `.[dev,train]` and `.[dev,train,nn]`) made with
 a credential that has the `workflow` scope, plus a decision on fetching the CPU wheel index in CI.

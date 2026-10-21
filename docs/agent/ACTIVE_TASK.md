@@ -1,47 +1,55 @@
 # Active task
 
-## Current unit: nodes K–L — documentation realignment, then full regression and delivery
+## Current unit: nodes N–O — E2607's result, the full regression, and delivery
 
-**Goal.** The model path is built, tested and measured (P30 delivered the data layer, P31 the model, its
-training path, its checkpoint, its Python interface and the E2605 comparison). What is in flight now is the
-last two nodes of the realignment: make every document describe the code that exists (K), then run every
-gate in every dependency matrix, review the history as a deliverable and push it (L).
+**Goal.** The reproducibility arc is built, measured and recorded: E2605 is reproducible from a corpus
+recovered out of git history and its five-seed study (E2606) is measured. What remains in this unit is the last
+node of the research arc (E2607's three seeds on the external corpus), then every gate in every dependency
+matrix, the delivery ledger, and the push.
 
-**Definition of done (K).** Every status label matches the thing it describes: `CURRENT_STATE.md` names the
-model path and E2605's measured numbers as the authority it is; the roadmap's P7/P8 rows and `docs/training.md`
-say what has been *measured* rather than what is planned; `docs/architecture.md` carries the model-path
-components and the normative dependency direction; `docs/evaluation.md` keeps model evaluation and harness
-evaluation separate and cites the measured figures; K-001 and K-009 are re-verified against the token and the
-matrices and rewritten to what is actually still open; no document claims a capability E2605 did not measure.
+**Definition of done.** `pytest` passes in the dependency-free, `[train]` and `[train,nn]` matrices; `ruff
+check`, `ruff format --check` and `mypy src` pass, and `mypy --config-file
+configs/mypy-model-path.toml` passes over every source file where both extras are installed; the package builds
+and imports from a clean install; the E2607 aggregate is rebuilt from its per-run reports and independently
+recomputed; the history reads as a deliverable (each subject matching its diff, no rewritten pushed history);
+the work is pushed to `main`, the remote SHA verified independently, and CI status read from the runner.
+`.github/workflows/*` is not touched: the session's credential has no `workflow` scope, so the prepared
+three-tier matrix ships as a tested document instead and the gap stays recorded (K-009).
 
-**Definition of done (L).** `pytest` passes in the dependency-free, `[train]` and `[train,nn]` matrices;
-`ruff check`, `ruff format --check` and `mypy src` pass, and `mypy --config-file
-configs/mypy-model-path.toml` passes over all 142 source files where both extras are installed; the package
-builds and imports from a clean install; the commit history reads as a deliverable (each subject matching its
-diff, no rewritten pushed history); the work is pushed to `main` and
-the remote SHA verified; CI status is read from the runner, not inferred. No `.github/workflows/*` file is
-touched: the session's credential has no `workflow` scope, so that gap is recorded, not claimed away.
+**What this unit is not.** Not a bigger model. E2607's budget stays at E2605's 2,400 steps deliberately, which
+means a smaller gap there has two candidate causes — the data, or the under-scaled budget — and the record says
+so rather than picking after the fact.
 
-**What this unit is not.** Not a bigger model, not a second run dressed up as the first, and not a
-capability claim. E2605's generations loop; nothing here makes the trained checkpoint a runtime dependency.
+## Mission ledger — reproducibility, multi-seed validation and generalization (P33–P36)
 
-**The next units, in order, each gated on the one before it.**
-1. **P33 — a measured corpus must stay trainable.** The driver writes a snapshot of the pinned text beside
-   its manifest and `prepare_corpus` can consume it, so re-running a recorded experiment either trains on the
-   bytes it names or refuses. Today it refuses in this checkout, because the repository text moved on after
-   the pin (E2605's record documents exactly that).
-2. **P34 — E2606: reproduce E2605 across pre-declared seeds**, reporting mean ± sample SD bits per character
-   for both architectures and both baselines, so the 1.8657 gap becomes an effect with a spread.
-3. **An external corpus with a recorded licence**, pinned by the same manifest machinery, before any capacity
-   question is worth asking.
+Durable status for this arc. Nodes are the delivery graph of the session brief; a node is complete only when
+its acceptance criteria are met and evidenced here.
 
-**Deferred by this realignment, deliberately.** P29 (calibrating the retrieval evidence-sufficiency policy)
-and P32 (runtime consumption of that decision) remain exactly as P28 left them: valid, bounded, and now
-behind the model path. That is a decision, recorded in
-[ADR-0033](../decisions/ADR-0033-model-centred-product-contract.md), not an oversight — the sufficiency
-policy is measured and honest, and nothing in the model path depends on it.
+| Node | Task | Depends on | Owns | Status | Evidence / commit | Tests |
+| --- | --- | --- | --- | --- | --- | --- |
+| A | Verify the starting state | — | (read-only) | validated | HEAD == `origin/main` == `35e40f7`, clean tree, token scopes `gist, read:org, repo`, branch unprotected, Actions enabled; baseline gates 1,391/16 dependency-free, 1,472 `[train]`, 1,605 `[train,nn]` | the recorded gates re-run before any edit |
+| B | E2605 provenance, and a snapshot that can be recovered | A | `training.{manifest,snapshot}`, ADR-0036 | pushed | `bdd6e53` (self-verifying snapshot format), `592b3f4` (recovery from a revision) + ADR-0036 | 71/71 documents recovered from `9b8a478` and re-hashed; fingerprint `e45993f9badf706c` reproduced; 21 acquisition tests, 12 new snapshot-format tests |
+| C | Data and leakage contract strengthened | B | `tests/test_training_{manifest,snapshot,subword_experiment}.py` | pushed | `55f3c81` | fingerprint stable across CRLF and lone-CR; verification freezes the bytes a run uses; selection shown to be a function of the validation curve alone |
+| D | Snapshot in the driver, declared corpus, split seed, per-experiment naming | B | `training/subword_experiment.py`, `cli.py` | pushed | `cf4b8ca`, `561c7c9`, `8de19be` (record naming), `261814a` (overwrite/collect guards) | 20 driver tests incl. snapshot origin, refusal on a foreign corpus, artifact naming |
+| E | Seed study runner | D | `training/seed_study.py` | pushed | `0ba1744`, `ca6e619` | 29 study tests: declaration rules, aggregation from disk, reuse refusal, failure accounting, no interval published |
+| F | E2606 measured | E | `experiments/E2606/` | measured | `fc5f8ff` (preregistration, before the runs), `aacc863` (results), `e41d7e8` (E2605 addendum) | 5/5 seeds; mean 1.8794 ± 0.0077 bits/char against 3.0937 ± 0.0267; seed-7 reproduction exact, all 41 tensors equal |
+| G | Independent licensed corpus | B | `training/source_corpus.py`, `experiments/E2607/` | pushed | `7fe88a3` (ingestion), `b765d37` (pinned corpus + preregistration) | 16 ingestion tests; 3 Project Gutenberg texts, 105 documents, 1,660,274 characters, fingerprint `931b07a635ca5a0c`, byte digests equal to `sha256sum` |
+| H | E2607 executed | E, G | `experiments/E2607/` | in_progress | 3 seeds declared (7, 11, 13), split seed 7, same budget | pilot measured at 120 steps; per-run reports on disk |
+| I | Generation and generalization evaluation | D | `training/generation_eval.py` | pushed | `3654f92`, `0ad1604` | 22 dependency-free tests; all five E2606 checkpoints measured, raw samples retained |
+| J | Correctness, security, resource discipline | B–G | `core/atomic.py`, `nn_checkpoint.py`, tests | pushed | `0a48ca8` (staged writes), `d2051ac` (environment block) | interrupted-write, corruption, path-traversal and revision-shape tests; wall clock recorded per run, peak memory not measurable from this shell (stated, not guessed) |
+| K | Documentation and research integrity | B–J | `README.md`, `docs/*`, `CHANGELOG.md`, `docs/agent/*` | in_progress | `53896b8`, `74a2a04`, `c3923e6`, `bbd350f`, `c0c9ae5`, `d057bfe` | link + status hygiene (23 tests) |
+| L | Optional-dependency CI design | J | `docs/internal/engineering/optional-dependency-ci-matrix.md` | blocked (scope) | `9b47724` | 4 hygiene tests assert the matrix's parity with the documented commands and that the shipped workflow still covers only `.[dev]` |
+| M | Full regression and package verification | K | whole tree | pending | — | three matrices, both mypy configs, wheel build + clean-interpreter import |
+| N | Delivery | M | — | pending | — | push to `main`, verify the remote SHA, read the CI status |
 
-## Mission ledger — model-centred realignment
+**Brief-node mapping (this session).** Brief §3 (verify the repository) → row A. §4 (E2605 provenance and
+snapshot) → rows B and D. §5 (data and leakage contract) → row C. §6 (predeclare the multi-seed study) →
+row E's declaration rules and the `fc5f8ff` preregistration. §7 (trustworthy experiment runner) → row E. §8
+(execute the study) → row F. §9 (independent corpus) → row G. §10 (generation and generalization) → row I. §11
+(optional-dependency CI) → row L. §12 (correctness, security, resources) → row J. §13 (documentation) → row K.
+§14 (commit history) → the table's commit column. §15 (delivery) → row N.
+
+## Mission ledger — model-centred realignment (prior arc, delivered)
 
 Durable status for the realignment arc (nodes are the delivery graph; a node is complete only when its
 acceptance criteria are met and recorded here). Statuses: `pending`, `ready`, `in_progress`, `blocked`,
