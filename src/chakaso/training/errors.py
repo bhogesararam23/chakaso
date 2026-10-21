@@ -9,7 +9,10 @@ from __future__ import annotations
 
 __all__ = [
     "CheckpointError",
+    "CorpusDriftError",
+    "CorpusError",
     "CorruptedCheckpointError",
+    "CorruptedCorpusArtifactError",
     "IncompatibleCheckpointError",
     "TrainingError",
 ]
@@ -29,3 +32,21 @@ class CorruptedCheckpointError(CheckpointError):
 
 class IncompatibleCheckpointError(CheckpointError):
     """The checkpoint is well-formed but speaks a schema or shape this code cannot load."""
+
+
+class CorpusError(TrainingError):
+    """Base for failures involving a corpus manifest or the text it pins."""
+
+
+class CorruptedCorpusArtifactError(CorpusError):
+    """A stored manifest or vocabulary does not match its own checksum."""
+
+
+class CorpusDriftError(CorpusError):
+    """The files on disk no longer match what a pinned manifest recorded.
+
+    This is the failure that makes a recorded experiment honest: the corpus a model was trained on is
+    identified by the hashes of named files, so if any of those files changes, disappears or a new one
+    joins the pattern, the corpus is *different* and saying so is the only acceptable response. Loading
+    whatever happens to be on disk instead would silently move the dataset under a saved result.
+    """
