@@ -338,6 +338,7 @@ def test_the_training_extra_is_numpy_and_bounded_for_the_python_floor() -> None:
 TORCH_IMPORT_MODULES = frozenset(
     {
         "src/chakaso/training/transformer.py",
+        "src/chakaso/training/decoder.py",
         "src/chakaso/training/nn_training.py",
         "src/chakaso/training/nn_evaluation.py",
         "src/chakaso/training/nn_checkpoint.py",

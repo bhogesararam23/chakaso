@@ -163,6 +163,10 @@ install and the three-version offline CI matrix.
 - New modules that import torch live in `chakaso.training` (the module
   [ADR-0005](ADR-0005-src-layout.md) reserved for training code) plus one adapter under `chakaso.models`,
   added to the hygiene test's adapter allowlists in the same commit as the adapter.
+- **Amended 2026-10-22, under the rule above:** `chakaso.training.decoder` (the release-path decoder: rotary
+  positions, an explicit attention block with a key/value cache, and masked targets) is admitted as a
+  torch-importing module. It is a second architecture beside `transformer`, not a replacement of it, so the
+  measured E2605/E2606/E2607 checkpoints keep their own schema and their own meaning.
 - `mypy src` in the dependency-free matrix must keep excluding the torch-importing modules, for the same
   documented reason `chakaso.training` is already excluded: their type aliases resolve through an optional
   dependency the matrix does not install. They are fully type-checked where the extra is present.

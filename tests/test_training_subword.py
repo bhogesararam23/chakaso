@@ -325,3 +325,55 @@ def test_a_vocabulary_file_that_is_not_json_is_refused(tmp_path: Path) -> None:
 
     with pytest.raises(CorruptedCorpusArtifactError, match="not valid JSON"):
         SubwordVocabulary.load(target)
+
+
+# ------------------------------------------------------------------ identity boundaries
+def test_the_reserved_identifier_never_moves_when_the_vocabulary_is_retrained() -> None:
+    # Two different corpora at two different sizes: the merge table moves, the reserved layout does not.
+    # A checkpoint decoded against a vocabulary whose separator had shifted would be nonsense, and this is
+    # the property that stops it from shifting.
+    first = _trained(320)
+    second = train_subword_vocabulary(
+        ["another text entirely, with different words and different repeats."],
+        target_size=420,
+        min_frequency=2,
+    )
+
+    assert (
+        first.document_end_id == second.document_end_id == RESERVED_DOCUMENT_END_ID == DOCUMENT_END
+    )
+    assert first.size > FIRST_MERGED_ID
+    assert second.size != first.size
+    assert second.fingerprint != first.fingerprint
+    assert first.fingerprint == _trained(320).fingerprint
+
+
+def test_a_long_input_encodes_decodes_and_keeps_its_length() -> None:
+    vocabulary = _trained()
+    text = _CORPUS * 2_000
+
+    identifiers = vocabulary.encode(text)
+    restored = vocabulary.decode(identifiers)
+
+    assert len(text) == 2_000 * len(_CORPUS)
+    assert restored == text
+    assert vocabulary.token_count(text) == len(identifiers)
+    assert vocabulary.compression_ratio(text) > 1.0
+
+
+def test_every_whitespace_shape_survives_the_round_trip() -> None:
+    vocabulary = _trained()
+    text = "tabs\tbetween\tsymbols\r\nwindows\r\nlines\n\n\nblank\vdotted.\n"
+
+    assert vocabulary.decode(vocabulary.encode(text)) == text
+
+
+def test_a_symbol_heavy_input_round_trips_without_inventing_tokens() -> None:
+    vocabulary = _trained()
+    text = "βαθμός — ὁδός; 日本語の文, Émile Zola; Çikolata ☕ 🎹 🧶\n"
+
+    identifiers = vocabulary.encode(text)
+
+    assert vocabulary.decode(identifiers) == text
+    assert all(item < vocabulary.size for item in identifiers)
+    assert all(item != DOCUMENT_END for item in identifiers)
