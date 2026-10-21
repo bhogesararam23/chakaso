@@ -77,6 +77,21 @@ class UnigramBaseline:
             _check_in_range(identifier, vocab_size)
         return cls(list(train_targets), vocab_size, alpha=alpha)
 
+    def log_probability(self, identifier: int) -> float:
+        """The log-probability this baseline assigns to ``identifier``.
+
+        Exposed because an experiment needs the *per-position* description length, not only the mean, to
+        convert a per-token loss into bits per character — and a caller should not have to reach into the
+        estimator's internals to get it.
+        """
+        _check_in_range(identifier, self.vocab_size)
+        return self._log_probabilities[identifier]
+
+    @property
+    def most_frequent(self) -> int:
+        """The identifier this baseline would predict every time — its argmax, for scoring accuracy."""
+        return max(range(self.vocab_size), key=self._log_probabilities.__getitem__)
+
     def cross_entropy(self, targets: Sequence[int]) -> float:
         """Mean cross-entropy, in nats, of this baseline evaluated on ``targets``.
 

@@ -1,0 +1,618 @@
+"""E2605: the experiment that compares two tokenizations and two architectures on one text.
+
+This module produces a measured result rather than a demonstration. It runs the whole model path — manifest,
+document split, subword tokenizer, packing, a mini-batch character model, a Transformer, validation-selected
+early stopping, held-out scoring — and reports every number the record states in units both models can share.
+
+Three things make the comparison honest, and the code enforces them:
+
+* **One text, one split, computed once.** :func:`prepare_corpus` performs the document split a single time
+  and every consumer — both tokenizations, both models, both baselines — reads the same three sides. A
+  second split anywhere else would be a different experiment, and the character baseline in particular gets
+  its windows from the *training documents* only.
+* **One metric.** Bits per character comes from
+  :func:`chakaso.training.model_metrics.metrics_from_scores` for every model and both baselines, so a
+  subword model cannot look better by splitting the same sentence into more tokens. Per-token loss and
+  perplexity are reported as well and labelled as tokenizer-bound.
+* **Baselines on the same tokens.** A uniform and a unigram predictor are scored over the same test
+  positions; a model that does not beat them has not learned anything worth recording.
+
+Requires the optional ``[nn]`` extra, and ``[train]`` for the character baseline. Nothing in the
+application layer imports this module: an experiment is a consumer of the library, not a dependency of it.
+"""
+
+from __future__ import annotations
+
+import json
+import time
+from dataclasses import asdict, dataclass
+from math import log
+from pathlib import Path
+from typing import Any
+
+import numpy as np
+import torch
+
+from chakaso.core.hashing import sha256_hex
+from chakaso.training.baselines import UnigramBaseline, uniform_next_token_loss
+from chakaso.training.config import TrainingConfig
+from chakaso.training.data import (
+    Split,
+    UnitSplit,
+    character_windows,
+    split_text_units,
+)
+from chakaso.training.loop import run_minibatch_training
+from chakaso.training.manifest import CorpusManifest, build_manifest, save_manifest, verify_corpus
+from chakaso.training.model import CharCausalMLP, batches_from_examples
+from chakaso.training.model_metrics import ModelMetrics, metrics_from_scores
+from chakaso.training.nn_checkpoint import checkpoint_filename, save_artifact
+from chakaso.training.nn_evaluation import score_model_on_examples
+from chakaso.training.nn_training import TransformerTrainingConfig, train_transformer
+from chakaso.training.packing import PackedBatch, pack_units
+from chakaso.training.subword import SubwordVocabulary, train_subword_vocabulary
+from chakaso.training.tokenizer import UNK_ID, CharVocabulary
+from chakaso.training.transformer import CausalTransformer, TransformerConfig
+
+__all__ = [
+    "CHARACTER_CONTEXT",
+    "CORPUS_NAME",
+    "EXPERIMENT_ID",
+    "ExperimentPlan",
+    "PreparedCorpus",
+    "prepare_corpus",
+    "run_experiment",
+    "summarise",
+    "write_report",
+]
+
+EXPERIMENT_ID = "E2605"
+CORPUS_NAME = "chakaso-repo-text-v1"
+#: The character baseline's conditioning window in characters. The Transformer's is 128 *subword tokens*,
+#: which covers far more text; the asymmetry is a property of the architectures being compared, not a
+#: handicap either one was given, and the record states both.
+CHARACTER_CONTEXT = 16
+_VALIDATION_FRACTION = 0.15
+_TEST_FRACTION = 0.15
+_PROMPTS = (
+    "# Chakaso\n\nChakaso is a",
+    "## Status\n\nThe retrieval layer",
+    "The tokenizer is trained by the project because",
+)
+
+
+@dataclass(frozen=True, slots=True)
+class ExperimentPlan:
+    """Every knob of one run, validated on construction.
+
+    Attributes:
+        root: Repository root the corpus is prepared from.
+        work_dir: Where the snapshot, tokenizer and checkpoints are written (never committed).
+        vocab_size: Target subword vocabulary size, including the byte base and reserved separator.
+        context_length: Transformer context, in tokens.
+        batch_size: Sequences per optimizer step.
+        d_model/num_layers/num_heads/feedforward_dim: Transformer geometry.
+        max_steps: Absolute ceiling on optimizer steps.
+        eval_every: Validation interval in steps.
+        patience: Evaluations without improvement before early stopping.
+        min_delta: Held-out improvement that counts against patience, in nats.
+        learning_rate/weight_decay/warmup_steps/gradient_clip_norm: Optimization settings.
+        seed: Master seed for initialization, batching and the document split.
+        character_*: The character baseline's own geometry and budget.
+        samples_per_prompt: Tokens generated for each qualitative sample.
+    """
+
+    root: Path
+    work_dir: Path
+    vocab_size: int = 1024
+    context_length: int = 128
+    batch_size: int = 32
+    d_model: int = 128
+    num_layers: int = 3
+    num_heads: int = 4
+    feedforward_dim: int = 384
+    max_steps: int = 2400
+    eval_every: int = 60
+    patience: int = 8
+    min_delta: float = 0.001
+    learning_rate: float = 6e-4
+    weight_decay: float = 0.01
+    warmup_steps: int = 60
+    gradient_clip_norm: float = 1.0
+    seed: int = 7
+    character_context: int = CHARACTER_CONTEXT
+    character_embed_dim: int = 32
+    character_hidden_dim: int = 64
+    character_batch_windows: int = 256
+    character_steps: int = 4000
+    character_eval_every: int = 200
+    character_learning_rate: float = 2e-2
+    samples_per_prompt: int = 96
+    #: An experiment run rewrites its own artifact only when told to. Re-running into a directory that
+    #: already holds a measured run's artifact is how a result gets silently replaced by a different one,
+    #: so ADR-0035's overwrite guard applies here too.
+    overwrite_artifacts: bool = False
+
+    def __post_init__(self) -> None:
+        if not self.root.is_dir():
+            message = f"experiment root {str(self.root)!r} is not a directory"
+            raise ValueError(message)
+        if self.vocab_size < 258:
+            message = f"vocab_size must be >= 258 (byte base + separator + one merge), got {self.vocab_size}"
+            raise ValueError(message)
+        if self.context_length < 2 or self.batch_size < 1:
+            message = "context_length must be >= 2 and batch_size >= 1"
+            raise ValueError(message)
+        if self.max_steps < self.eval_every or self.character_steps < self.character_eval_every:
+            message = "each model's step budget must reach at least one evaluation"
+            raise ValueError(message)
+        if self.character_batch_windows < 1 or self.character_context < 1:
+            message = "the character baseline needs a positive window and batch"
+            raise ValueError(message)
+
+
+@dataclass(frozen=True, slots=True)
+class PreparedCorpus:
+    """The pinned corpus, its single document split, and both tokenizations of it."""
+
+    manifest: CorpusManifest
+    split: UnitSplit
+    vocabulary: SubwordVocabulary
+    char_vocabulary: CharVocabulary
+    train: PackedBatch
+    validation: PackedBatch
+    test: PackedBatch
+    char_windows: dict[str, tuple[np.ndarray, np.ndarray]]
+    timings: dict[str, float]
+
+    @property
+    def tokens(self) -> dict[str, int]:
+        """Packed identifiers per side — the sizes a record has to state."""
+        return {
+            "train": self.train.tokens_available,
+            "validation": self.validation.tokens_available,
+            "test": self.test.tokens_available,
+        }
+
+
+def architecture_for(plan: ExperimentPlan, vocabulary: SubwordVocabulary) -> TransformerConfig:
+    """The Transformer geometry, bound to a trained vocabulary's identifier count."""
+    return TransformerConfig(
+        vocab_size=vocabulary.size,
+        context_length=plan.context_length,
+        d_model=plan.d_model,
+        num_layers=plan.num_layers,
+        num_heads=plan.num_heads,
+        feedforward_dim=plan.feedforward_dim,
+    )
+
+
+class _CharacterDecoder:
+    """The character vocabulary, expressed in the shape the shared metric arithmetic consumes.
+
+    ``document_end_id`` is the reserved unknown identifier: like a document separator it stands for no
+    text, so an unknown character is scored (the model must predict *something*) but adds nothing to the
+    character denominator. The count of such positions is reported by the record, never hidden.
+    """
+
+    def __init__(self, vocabulary: CharVocabulary) -> None:
+        self._vocabulary = vocabulary
+        self.document_end_id = UNK_ID
+
+    def decode(self, identifiers: Any) -> str:
+        return self._vocabulary.decode(list(identifiers))
+
+
+def prepare_corpus(plan: ExperimentPlan) -> PreparedCorpus:
+    """Pin the corpus, split it once by document, and train both tokenizations on the training side only.
+
+    Raises:
+        CorpusDriftError: a manifest already recorded for this experiment pins different content than the
+            tracked files now hold, which would make this a different dataset than the one measured.
+    """
+    started = time.perf_counter()
+    work = plan.work_dir
+    work.mkdir(parents=True, exist_ok=True)
+    manifest_path = work / f"{CORPUS_NAME}-manifest.json"
+
+    manifest = build_manifest(
+        plan.root,
+        name=CORPUS_NAME,
+        version="1.0.0",
+        licence="Apache-2.0 (the project's own licence; the text is authored for Chakaso)",
+        source="Chakaso's tracked markdown and LICENSE files, discovered from the include spec on this plan.",
+        include=("docs/", "*.md"),
+        extensions=(".md",),
+        exact_paths=("LICENSE", "AGENTS.md"),
+    )
+    if manifest_path.is_file():
+        pinned = CorpusManifest.from_document(json.loads(manifest_path.read_text(encoding="utf-8")))
+        if pinned.fingerprint != manifest.fingerprint:
+            # The recorded manifest wins: an experiment's corpus is fixed by what it pinned, and a
+            # documentation edit must not move the data under a saved run. verify_corpus still checks the
+            # files against those digests.
+            manifest = verify_corpus(pinned, plan.root)
+    save_manifest(manifest, manifest_path)
+
+    split = split_text_units(
+        manifest.text_units(),
+        validation_fraction=_VALIDATION_FRACTION,
+        test_fraction=_TEST_FRACTION,
+        seed=plan.seed,
+    )
+    vocabulary = train_subword_vocabulary(
+        (unit.text for unit in split.train), target_size=plan.vocab_size, min_frequency=3
+    )
+    vocabulary.save(work / f"{CORPUS_NAME}-tokenizer.json")
+    char_vocabulary = CharVocabulary(tuple(unit.text for unit in split.train))
+
+    char_windows = {
+        side: _character_batches(split_side, char_vocabulary, plan.character_context)
+        for side, split_side in (
+            ("train", split.train),
+            ("validation", split.validation),
+            ("test", split.test),
+        )
+    }
+
+    return PreparedCorpus(
+        manifest=manifest,
+        split=split,
+        vocabulary=vocabulary,
+        char_vocabulary=char_vocabulary,
+        train=pack_units(split.train, vocabulary, context_length=plan.context_length),
+        validation=pack_units(split.validation, vocabulary, context_length=plan.context_length),
+        test=pack_units(split.test, vocabulary, context_length=plan.context_length),
+        char_windows=char_windows,
+        timings={"prepare_seconds": round(time.perf_counter() - started, 2)},
+    )
+
+
+def _character_batches(
+    units: tuple[Any, ...], vocabulary: CharVocabulary, context_size: int
+) -> tuple[np.ndarray, np.ndarray]:
+    text = "".join(unit.text for unit in units)
+    examples = character_windows(text, vocabulary, context_size)
+    return batches_from_examples(examples, context_size)
+
+
+def _metrics(
+    nats: list[float], targets: list[int], predictions: list[int], decoder: Any
+) -> ModelMetrics:
+    return metrics_from_scores(nats, targets, predictions, decoder)
+
+
+def _character_scores(
+    params: Any, model: CharCausalMLP, contexts: np.ndarray, targets: np.ndarray
+) -> tuple[list[float], list[int], list[int]]:
+    probabilities = model.probabilities(params, contexts)
+    nats: list[float] = []
+    target_list: list[int] = []
+    predictions: list[int] = []
+    for index in range(int(contexts.shape[0])):
+        row = probabilities[index]
+        target = int(targets[index])
+        nats.append(float(-log(max(float(row[target]), 1e-12))))
+        target_list.append(target)
+        predictions.append(int(np.argmax(row)))
+    return nats, target_list, predictions
+
+
+def train_character_baseline(plan: ExperimentPlan, prepared: PreparedCorpus) -> dict[str, Any]:
+    """Train the character model over the training documents and score it on the test documents.
+
+    Selection reads the validation windows; the reported numbers come from the test windows at the
+    validation-selected step, so the same early-stopping discipline applies to both models.
+    """
+    split = prepared.split
+    config = TrainingConfig(
+        context_size=plan.character_context,
+        embed_dim=plan.character_embed_dim,
+        hidden_dim=plan.character_hidden_dim,
+        learning_rate=plan.character_learning_rate,
+        seed=plan.seed,
+        steps=plan.character_steps,
+        eval_every=plan.character_eval_every,
+    )
+    text_split = Split(
+        train_text="".join(unit.text for unit in split.train),
+        validation_text="".join(unit.text for unit in split.validation),
+        train_units=tuple(unit.text for unit in split.train),
+        validation_units=tuple(unit.text for unit in split.validation),
+    )
+
+    started = time.perf_counter()
+    result = run_minibatch_training(
+        text_split,
+        config,
+        batch_size=plan.character_batch_windows,
+        max_steps=plan.character_steps,
+        eval_every=plan.character_eval_every,
+        seed=plan.seed,
+    )
+    wall = time.perf_counter() - started
+
+    curve = [(point.step, point.validation_loss) for point in result.curve]
+    best_step, best_validation = min(curve, key=lambda point: point[1])
+
+    # The curve's final point is not the reported model: E2601 and E2602 measured that a character model of
+    # this size overfits well before its budget ends, so the selected step is re-run and scored.
+    selected = run_minibatch_training(
+        text_split,
+        config,
+        batch_size=plan.character_batch_windows,
+        max_steps=max(best_step, 1),
+        eval_every=plan.character_eval_every,
+        seed=plan.seed,
+    )
+    model = CharCausalMLP(
+        vocab_size=prepared.char_vocabulary.size,
+        context_size=plan.character_context,
+        embed_dim=plan.character_embed_dim,
+        hidden_dim=plan.character_hidden_dim,
+    )
+    test_contexts, test_targets = prepared.char_windows["test"]
+    nats, targets, predictions = _character_scores(
+        selected.final_params, model, test_contexts, test_targets
+    )
+    metrics = _metrics(nats, targets, predictions, _CharacterDecoder(prepared.char_vocabulary))
+
+    _, train_targets = prepared.char_windows["train"]
+    uniform = uniform_next_token_loss(prepared.char_vocabulary.size)
+    unigram = UnigramBaseline.fit(list(train_targets), prepared.char_vocabulary.size).cross_entropy(
+        list(test_targets)
+    )
+
+    return {
+        "architecture": {
+            "kind": "character_causal_mlp",
+            "context_characters": plan.character_context,
+            "embed_dim": plan.character_embed_dim,
+            "hidden_dim": plan.character_hidden_dim,
+            "parameter_count": result.parameter_count,
+            "vocabulary_size": prepared.char_vocabulary.size,
+            "vocabulary_fingerprint": prepared.char_vocabulary.fingerprint,
+            "gradients": "hand-derived, finite-difference verified (ADR-0030)",
+        },
+        "budget": {
+            "batch_windows": plan.character_batch_windows,
+            "max_steps": plan.character_steps,
+            "eval_every": plan.character_eval_every,
+            "selected_step": best_step,
+            "selected_validation_loss_nats": round(best_validation, 6),
+            "wall_clock_s": round(wall, 2),
+            "train_windows": int(prepared.char_windows["train"][0].shape[0]),
+            "validation_windows": int(prepared.char_windows["validation"][0].shape[0]),
+            "test_windows": int(prepared.char_windows["test"][0].shape[0]),
+            "unknown_character_targets_scored": metrics.separator_targets,
+        },
+        "test": metrics.as_dict(),
+        "baselines": {"uniform_nats": round(uniform, 6), "unigram_nats": round(unigram, 6)},
+        "curve": [{"step": step, "validation_loss": round(value, 6)} for step, value in curve],
+    }
+
+
+def baseline_metrics(prepared: PreparedCorpus) -> dict[str, Any]:
+    """Score uniform and unigram predictors over the same test tokens the Transformer is scored on."""
+    vocabulary = prepared.vocabulary
+    test_targets = [token for example in prepared.test.examples for token in example.targets]
+    train_targets = [token for example in prepared.train.examples for token in example.targets]
+    if not test_targets:
+        message = "the test side produced no scored tokens, so baselines cannot be computed"
+        raise ValueError(message)
+
+    uniform_value = log(vocabulary.size)
+    uniform = _metrics(
+        [uniform_value] * len(test_targets), test_targets, [-1] * len(test_targets), vocabulary
+    )
+    baseline = UnigramBaseline.fit(train_targets, vocabulary.size)
+    unigram_nats = [-baseline.log_probability(token) for token in test_targets]
+    unigram = _metrics(
+        unigram_nats, test_targets, [baseline.most_frequent] * len(test_targets), vocabulary
+    )
+    return {
+        "uniform": {**uniform.as_dict(), "vocabulary_size": vocabulary.size},
+        "unigram": {**unigram.as_dict(), "smoothing_alpha": baseline.alpha},
+    }
+
+
+def score_transformer(
+    model: CausalTransformer, batch: PackedBatch, vocabulary: SubwordVocabulary
+) -> ModelMetrics:
+    """Score a Transformer on one packed side of the split, through the shared arithmetic."""
+    nats, targets, predictions = score_model_on_examples(model, batch.examples)
+    return _metrics(nats, targets, predictions, vocabulary)
+
+
+def run_experiment(plan: ExperimentPlan, *, verbose: bool = False) -> dict[str, Any]:
+    """Run E2605 end to end and return the measured report.
+
+    Every value in the returned mapping was produced by this call: no field is a default, a target or an
+    expectation. A missing dependency fails here with a named error rather than yielding a partial report.
+    """
+    work = plan.work_dir
+    work.mkdir(parents=True, exist_ok=True)
+    if not torch.cuda.is_available() and verbose:
+        print("device: cpu", flush=True)  # noqa: T201 - operator-visible progress
+    prepared = prepare_corpus(plan)
+    architecture = architecture_for(plan, prepared.vocabulary)
+
+    character = train_character_baseline(plan, prepared)
+
+    def on_step(record: Any) -> None:
+        if verbose:
+            print(  # noqa: T201 - operator-visible progress
+                f"step {record.step}: train {record.train_loss:.4f} "
+                f"validation {record.validation_loss} grad-norm {record.gradient_norm:.3f}",
+                flush=True,
+            )
+
+    started = time.perf_counter()
+    outcome = train_transformer(
+        train_examples=prepared.train.examples,
+        validation_examples=prepared.validation.examples,
+        vocabulary=prepared.vocabulary,
+        config=TransformerTrainingConfig(
+            batch_size=plan.batch_size,
+            max_steps=plan.max_steps,
+            learning_rate=plan.learning_rate,
+            weight_decay=plan.weight_decay,
+            warmup_steps=plan.warmup_steps,
+            gradient_clip_norm=plan.gradient_clip_norm,
+            seed=plan.seed,
+            eval_every=plan.eval_every,
+            patience=plan.patience,
+            min_delta=plan.min_delta,
+            architecture=architecture,
+        ),
+        corpus_fingerprint=prepared.manifest.fingerprint,
+        on_step=on_step,
+        checkpoint_path=work / f"{EXPERIMENT_ID}-resumable.pt",
+    )
+    wall = time.perf_counter() - started
+
+    artifact = outcome.artifact()
+    model = artifact.to_model()
+    test_metrics = score_transformer(model, prepared.test, prepared.vocabulary)
+    validation_metrics = score_transformer(model, prepared.validation, prepared.vocabulary)
+    artifact_path = work / checkpoint_filename(EXPERIMENT_ID)
+    save_artifact(artifact, artifact_path, allow_overwrite=plan.overwrite_artifacts)
+
+    # Generation goes through the boundary, not the adapter class: the experiment is a consumer of the
+    # public interface, exactly as an application would be, so a break in load_model or in the contract
+    # shows up here as well as in the adapter's own tests.
+    from chakaso.models import GenerationParams, Message, Role, load_model
+
+    inference = load_model(artifact_path)
+    params = GenerationParams(max_new_tokens=plan.samples_per_prompt, temperature=0.0)
+    samples = []
+    for prompt in _PROMPTS:
+        result = inference.generate([Message(role=Role.USER, content=prompt)], params)
+        samples.append(
+            {
+                "prompt": prompt,
+                "text": result.text,
+                "finish_reason": result.finish_reason.value,
+                "model_id": result.model_id,
+            }
+        )
+
+    targets = [token for example in prepared.test.examples for token in example.targets]
+    return {
+        "experiment": EXPERIMENT_ID,
+        "corpus": {
+            "name": prepared.manifest.name,
+            "version": prepared.manifest.version,
+            "licence": prepared.manifest.licence,
+            "source": prepared.manifest.source,
+            "fingerprint": prepared.manifest.fingerprint,
+            "documents": len(prepared.manifest.documents),
+            "characters": prepared.manifest.char_count,
+            "duplicate_groups": [list(group) for group in prepared.manifest.duplicate_paths],
+            "split_seed": plan.seed,
+            "split_fingerprint": prepared.split.fingerprint,
+            "documents_per_side": {
+                "train": len(prepared.split.train),
+                "validation": len(prepared.split.validation),
+                "test": len(prepared.split.test),
+                "dropped_duplicates": len(prepared.split.dropped_duplicates),
+            },
+            "identifiers_per_side": {
+                side: [unit.identifier for unit in getattr(prepared.split, side)]
+                for side in ("train", "validation", "test")
+            },
+        },
+        "tokenizer": {
+            "kind": "byte-pair subword trained by chakaso.training.subword",
+            "size": prepared.vocabulary.size,
+            "merges": prepared.vocabulary.merge_count,
+            "fingerprint": prepared.vocabulary.fingerprint,
+            "min_frequency": prepared.vocabulary.min_frequency,
+            "tokens_per_side": prepared.tokens,
+            "test_characters_decoded": len(prepared.vocabulary.decode(targets)),
+            "characters_per_token_test": round(
+                len(prepared.vocabulary.decode(targets)) / max(1, len(targets)), 4
+            ),
+        },
+        "character_baseline": character,
+        "transformer": {
+            "architecture": architecture.as_dict(),
+            "parameter_count": outcome.parameter_count,
+            "parameters_by_configuration": architecture.parameter_count,
+            "budget": {
+                "batch_size": plan.batch_size,
+                "max_steps": plan.max_steps,
+                "eval_every": plan.eval_every,
+                "patience": plan.patience,
+                "min_delta": plan.min_delta,
+                "learning_rate": plan.learning_rate,
+                "weight_decay": plan.weight_decay,
+                "warmup_steps": plan.warmup_steps,
+                "gradient_clip_norm": plan.gradient_clip_norm,
+                "seed": plan.seed,
+                "best_step": outcome.best_step,
+                "stopped_early": outcome.stopped_early,
+                "records": len(outcome.records),
+                "wall_clock_s": round(wall, 2),
+                "steps_per_epoch_estimate": -(-len(prepared.train.examples) // plan.batch_size),
+            },
+            "validation": validation_metrics.as_dict(),
+            "test": test_metrics.as_dict(),
+            "curve": [
+                {
+                    "step": record.step,
+                    "train_loss": round(record.train_loss, 6),
+                    "validation_loss": record.validation_loss,
+                    "gradient_norm": round(record.gradient_norm, 4),
+                    "learning_rate": record.learning_rate,
+                }
+                for record in outcome.records
+            ],
+            "artifact": {
+                "path": artifact_path.name,
+                "checksum": artifact.checksum(),
+                "schema": "chakaso-transformer-checkpoint/1",
+            },
+        },
+        "baselines_subword": baseline_metrics(prepared),
+        "samples": samples,
+        "timings": prepared.timings | {"transformer_wall_clock_s": round(wall, 2)},
+        "environment": artifact.environment,
+        "plan": {
+            key: str(value) if isinstance(value, Path) else value
+            for key, value in asdict(plan).items()
+            if isinstance(value, int | float | str | Path)
+        },
+    }
+
+
+def write_report(report: dict[str, Any], destination: Path) -> str:
+    """Write the machine-readable report deterministically and return its digest.
+
+    The digest is what the record cites: a reader who regenerates the report can compare hashes without
+    reading every number in it.
+    """
+    payload = json.dumps(report, indent=2, sort_keys=True, default=str)
+    destination.parent.mkdir(parents=True, exist_ok=True)
+    destination.write_text(payload, encoding="utf-8")
+    return sha256_hex(payload)
+
+
+def summarise(report: dict[str, Any]) -> str:
+    """A one-line digest of the comparison, for the record and for an operator's terminal."""
+    transformer = report["transformer"]["test"]
+    character = report["character_baseline"]["test"]
+    uniform = report["baselines_subword"]["uniform"]
+    unigram = report["baselines_subword"]["unigram"]
+    budget = report["transformer"]["budget"]
+    return " | ".join(
+        (
+            f"transformer {report['transformer']['parameter_count']:,} params, "
+            f"test bits/char {transformer['bits_per_character']:.4f}, "
+            f"perplexity {transformer['perplexity']:.2f} at step {budget['best_step']} "
+            f"(early stopped: {budget['stopped_early']})",
+            f"character test bits/char {character['bits_per_character']:.4f}",
+            f"unigram {unigram['bits_per_character']:.4f}",
+            f"uniform {uniform['bits_per_character']:.4f}",
+        )
+    )
