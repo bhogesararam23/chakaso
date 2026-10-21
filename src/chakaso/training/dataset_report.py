@@ -44,6 +44,7 @@ __all__ = [
     "bottom_k",
     "build_report",
     "candidate_pairs",
+    "default_limitations",
     "near_duplicate_groups",
     "render_data_card",
     "report_to_file",
@@ -177,14 +178,27 @@ def near_duplicate_groups(
     if not 0.0 < similarity <= 1.0:
         message = f"similarity must be in (0, 1], got {similarity}"
         raise CorpusError(message)
-    identifiers = sorted(documents)
-    shingle_sets = {key: word_shingles(documents[key], size=shingle_words) for key in identifiers}
-    sketches = {key: bottom_k(shingle_sets[key], width=sketch_width) for key in identifiers}
+    # Two passes, because a corpus of a thousand documents does not fit in memory as a thousand shingle
+    # sets on the machine this project runs on. The first pass keeps only the 64-value sketch of each
+    # document and throws the strings away; the second recomputes shingles for the documents the sketch
+    # actually proposed a comparison for, which is a handful.
+    sketches = {
+        key: bottom_k(word_shingles(text, size=shingle_words), width=sketch_width)
+        for key, text in documents.items()
+    }
     candidates = _shared_values(sketches, min_shared=min_shared, max_bucket=max_bucket)
+    del sketches
+
+    remembered: dict[str, frozenset[str]] = {}
+
+    def shingles_of(key: str) -> frozenset[str]:
+        if key not in remembered:
+            remembered[key] = word_shingles(documents[key], size=shingle_words)
+        return remembered[key]
 
     matched: list[tuple[tuple[str, ...], float]] = []
     for left, right in sorted(candidates):
-        value = _jaccard(shingle_sets[left], shingle_sets[right])
+        value = _jaccard(shingles_of(left), shingles_of(right))
         if value >= similarity:
             matched.append(((left, right), value))
     return tuple(sorted(_merge(matched), key=lambda item: -item[1]))
@@ -372,6 +386,33 @@ def build_report(
         similarity_threshold=similarity,
         shingle_words=shingle_words,
     )
+
+
+def default_limitations(report: DatasetReport) -> tuple[str, ...]:
+    """What the measured shape of a corpus already says about its own limits.
+
+    These are computed from the report rather than written by hand, so a data card cannot keep a limitation
+    after the corpus stops having it — a dominant source is named with its actual share, and disappears from
+    the card when the share does.
+    """
+    total = report.characters or 1
+    lines: list[str] = []
+    for slug, characters in report.characters_by_source:
+        share = 100.0 * characters / total
+        if share >= 25.0:
+            lines.append(
+                f"`{slug}` supplies {share:.1f}% of the characters, so a model trained on this corpus "
+                "inherits that source's house style as much as the collection's."
+            )
+    lines += [
+        "Continuous prose only: no instruction examples, no dialogue turns and no question-answer pairs, "
+        "so nothing in this corpus can teach a model to answer anything.",
+        "Split assignment belongs to an experiment, not to the corpus: two runs with different split seeds "
+        "hold out different documents from the same bytes.",
+        "Characters are counted after the manifest's line-ending normalization, and nothing else is "
+        "normalized — no case folding, no diacritic removal, no deduplication across sources.",
+    ]
+    return tuple(lines)
 
 
 def render_data_card(

@@ -1137,6 +1137,286 @@ def test_corpus_restore_requires_its_three_arguments() -> None:
     assert caught.value.code == 2
 
 
+def _gutenberg_raw(tmp_path: Path) -> Path:
+    """Two downloaded texts in the directory layout the catalogue reads."""
+    raw = tmp_path / "raw"
+    raw.mkdir()
+    for slug, body in (
+        ("pg11", "Alice was beginning to get very tired of sitting by her sister on the bank."),
+        ("pg84", "It will not be I think that my correspondence amuses the public."),
+    ):
+        (raw / f"{slug}.txt").write_text(
+            "\n".join(
+                (
+                    f"Title: {slug} title",
+                    "Author: A Person",
+                    "",
+                    "*** START OF THE PROJECT GUTENBERG EBOOK 11 ***",
+                    body,
+                    "*** END OF THE PROJECT GUTENBERG EBOOK 11 ***",
+                    "",
+                )
+            ),
+            encoding="utf-8",
+        )
+    return raw
+
+
+_DECLARE_ARGUMENTS = (
+    "--name",
+    "cli-corpus",
+    "--version",
+    "1.0.0",
+    "--licence",
+    "Public domain in the United States",
+    "--retrieved",
+    "2026-01-05",
+)
+
+
+def _declared(tmp_path: Path, raw: Path) -> Path:
+    """Run the real declare step and return the catalog a later command reads."""
+    catalog = tmp_path / "catalog.toml"
+    assert (
+        main(
+            [
+                "corpus",
+                "declare",
+                "--raw-dir",
+                str(raw),
+                *_DECLARE_ARGUMENTS,
+                "--output",
+                str(catalog),
+            ]
+        )
+        == 0
+    )
+    return catalog
+
+
+def test_corpus_declare_records_what_each_source_file_says(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    from chakaso.training.dataset_catalog import load_catalog
+
+    raw = _gutenberg_raw(tmp_path)
+    output = tmp_path / "catalog.toml"
+
+    assert (
+        main(
+            [
+                "corpus",
+                "declare",
+                "--raw-dir",
+                str(raw),
+                "--name",
+                "cli-corpus",
+                "--version",
+                "1.0.0",
+                "--licence",
+                "Public domain in the United States",
+                "--retrieved",
+                "2026-01-05",
+                "--output",
+                str(output),
+            ]
+        )
+        == 0
+    )
+
+    assert "declared 2 source(s) as cli-corpus 1.0.0" in capsys.readouterr().out
+    catalog = load_catalog(output)
+    assert [item.slug for item in catalog.sources] == ["pg11", "pg84"]
+    # Title and digest come from the files, not from anyone's memory of them.
+    assert catalog.sources[0].title == "pg11 title"
+    assert len(catalog.sources[0].sha256) == 64
+
+
+def test_corpus_declare_refuses_a_directory_with_no_sources(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    raw = tmp_path / "empty"
+    raw.mkdir()
+
+    assert (
+        main(
+            [
+                "corpus",
+                "declare",
+                "--raw-dir",
+                str(raw),
+                *_DECLARE_ARGUMENTS,
+                "--output",
+                str(tmp_path / "catalog.toml"),
+            ]
+        )
+        == 1
+    )
+
+    assert "no pg<number>.txt sources" in capsys.readouterr().err
+
+
+def test_corpus_prepare_pins_verifies_and_reports(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    from chakaso.training.manifest import read_snapshot
+
+    raw = _gutenberg_raw(tmp_path)
+    catalog = _declared(tmp_path, raw)
+    snapshot = tmp_path / "data" / "cli-snapshot.json"
+    report_path = tmp_path / "data" / "cli-report.json"
+    card_path = tmp_path / "docs" / "DATA_CARD.md"
+    capsys.readouterr()
+
+    assert (
+        main(
+            [
+                "corpus",
+                "prepare",
+                "--catalog",
+                str(catalog),
+                "--raw-dir",
+                str(raw),
+                "--cache-dir",
+                str(tmp_path / "cache"),
+                "--snapshot",
+                str(snapshot),
+                "--report",
+                str(report_path),
+                "--data-card",
+                str(card_path),
+            ]
+        )
+        == 0
+    )
+
+    printed = capsys.readouterr().out
+    assert "pins fingerprint" in printed
+    assert "near-duplicate group(s)" in printed
+    loaded = read_snapshot(snapshot)
+    assert loaded.manifest.name == "cli-corpus"
+    # The acquisition block records the digest of the downloaded bytes; the manifest pins the digest of the
+    # normalized text. They are different numbers, and a card that conflated them would be wrong.
+    assert "pg11=" in loaded.acquisition["source_digests"]
+    assert loaded.acquisition["source_digests"].split("pg11=")[1].split(";")[0] != (
+        loaded.manifest.documents[0].sha256
+    )
+    assert json.loads(report_path.read_text(encoding="utf-8"))["documents"] == len(
+        loaded.manifest.documents
+    )
+    card = card_path.read_text(encoding="utf-8")
+    assert "# Data card: cli-corpus 1.0.0" in card
+    assert "Public domain in the United States" in card
+    assert "Continuous prose only" in card
+
+
+def test_corpus_prepare_refuses_bytes_that_are_not_what_was_declared(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    raw = _gutenberg_raw(tmp_path)
+    catalog = _declared(tmp_path, raw)
+    (raw / "pg11.txt").write_text(
+        "\n".join(
+            (
+                "Title: pg11 title",
+                "Author: A Person",
+                "",
+                "*** START OF THE PROJECT GUTENBERG EBOOK 11 ***",
+                "A different text than the one that was declared.",
+                "*** END OF THE PROJECT GUTENBERG EBOOK 11 ***",
+                "",
+            )
+        ),
+        encoding="utf-8",
+    )
+    capsys.readouterr()
+
+    assert (
+        main(
+            [
+                "corpus",
+                "prepare",
+                "--catalog",
+                str(catalog),
+                "--raw-dir",
+                str(raw),
+                "--cache-dir",
+                str(tmp_path / "cache"),
+                "--snapshot",
+                str(tmp_path / "snap.json"),
+            ]
+        )
+        == 1
+    )
+
+    assert "do not match the digest" in capsys.readouterr().err
+    assert not (tmp_path / "snap.json").exists()
+
+
+def test_corpus_prepare_does_not_replace_a_snapshot_unasked(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    raw = _gutenberg_raw(tmp_path)
+    catalog = _declared(tmp_path, raw)
+    arguments = [
+        "corpus",
+        "prepare",
+        "--catalog",
+        str(catalog),
+        "--raw-dir",
+        str(raw),
+        "--cache-dir",
+        str(tmp_path / "cache"),
+        "--snapshot",
+        str(tmp_path / "snap.json"),
+    ]
+    assert main(arguments) == 0
+    capsys.readouterr()
+
+    assert main(arguments) == 1
+    assert "not replaced unless" in capsys.readouterr().err
+    assert main([*arguments, "--overwrite"]) == 0
+
+
+def test_corpus_report_measures_a_snapshot_it_was_given(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    from chakaso.training.manifest import build_manifest, write_snapshot
+
+    root = tmp_path / "repo"
+    (root / "docs").mkdir(parents=True)
+    (root / "docs" / "a.md").write_text(
+        "One two three four five six seven eight nine ten.\n", encoding="utf-8"
+    )
+    (root / "docs" / "b.md").write_text(
+        "Ten nine eight seven six five four three two one.\n", encoding="utf-8"
+    )
+    snapshot = tmp_path / "snap.json"
+    write_snapshot(
+        build_manifest(root, name="reported", version="1", licence="l", source="s"), snapshot
+    )
+
+    assert (
+        main(
+            [
+                "corpus",
+                "report",
+                "--snapshot",
+                str(snapshot),
+                "--output",
+                str(tmp_path / "report.json"),
+                "--data-card",
+                str(tmp_path / "CARD.md"),
+            ]
+        )
+        == 0
+    )
+
+    assert "near-duplicate group(s)" in capsys.readouterr().out
+    assert json.loads((tmp_path / "report.json").read_text(encoding="utf-8"))["documents"] == 2
+    assert "carries no catalogue" in (tmp_path / "CARD.md").read_text(encoding="utf-8")
+
+
 # ---------------------------------------------------------------------------
 # storage
 # ---------------------------------------------------------------------------

@@ -135,18 +135,40 @@ number obtained that way is worse than no number, because it will be trusted.
 
 ### What is actually pinned today
 
-Two corpora exist, both named by content rather than described, and the licence column is filled in from
+Three corpora exist, each named by content rather than described, and the licence column is filled in from
 what each source states about itself:
 
 | Corpus | Documents | Characters | Licence | Used by |
 | --- | --- | --- | --- | --- |
 | `chakaso-repo-text-v1` | 71 | 780,223 | Apache-2.0, the project's own licence; the text is authored for Chakaso | E2605, E2606 |
 | `gutenberg-english-prose-v1` | 105 | 1,660,274 | Public domain in the United States, distributed under the Project Gutenberg License, whose own preamble tells users outside the United States to check local law | E2607 |
+| `gutenberg-english-prose-v2` | 919 | 14,490,005 | the same Project Gutenberg terms, recorded per source in `configs/corpora/gutenberg-english-prose-v2.toml` | E2608 |
+
+Each corpus has a data card — [`gutenberg-english-prose-v1`](data/gutenberg-english-prose-v1.md),
+[`gutenberg-english-prose-v2`](data/gutenberg-english-prose-v2.md) — generated from the artifact itself by
+`chakaso corpus report`, carrying the measured composition, the document-length percentiles and the
+near-duplicate screen rather than a description of the collection.
+
+A corpus is declared before it is used. `chakaso corpus declare` reads each downloaded file's own header and
+bytes and writes the catalogue; `chakaso corpus prepare` refuses any file whose digest is not the declared
+one, ingests the rest into a digest-keyed cache, and pins the snapshot a run trains from:
+
+```bash
+chakaso corpus declare --raw-dir data/corpora/gutenberg-v2 --name gutenberg-english-prose-v2 \
+  --version 1.0.0 --licence "…" --retrieved 2026-10-22 \
+  --output configs/corpora/gutenberg-english-prose-v2.toml
+chakaso corpus prepare --catalog configs/corpora/gutenberg-english-prose-v2.toml \
+  --raw-dir data/corpora/gutenberg-v2 --cache-dir data/corpora/gutenberg-english-prose-v2 \
+  --snapshot data/experiments/E2608/gutenberg-english-prose-v2-snapshot.json \
+  --report data/experiments/E2608/dataset-report.json \
+  --data-card docs/data/gutenberg-english-prose-v2.md
+```
 
 The instruction, grounded-QA, correction-pair, abstention and preference rows above are still **no dataset
 collected**, and nothing in this table suggests otherwise: neither pinned corpus contains a question and an
-answer grounded in evidence. The second one is 19th-century prose and a classical epic in English, chosen
-because it is somebody else's text, not because it is training data for an assistant.
+answer grounded in evidence. The Gutenberg corpora are 19th-century prose, a classical epic and a scientific
+essay in English, chosen because they are somebody else's text and legally re-usable, not because they are
+training data for an assistant.
 
 ## Reproducing a recorded run
 

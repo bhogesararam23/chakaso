@@ -48,6 +48,7 @@ __all__ = [
     "CATALOG_SCHEMA_VERSION",
     "CatalogSource",
     "DatasetCatalog",
+    "declare_gutenberg_directory",
     "gutenberg_url",
     "load_catalog",
     "pin_catalog",
@@ -489,6 +490,67 @@ def _combined_licence(catalog: DatasetCatalog) -> str:
     if not overrides:
         return catalog.licence
     return catalog.licence + "; exceptions: " + " | ".join(overrides)
+
+
+def declare_gutenberg_directory(
+    raw_dir: Path,
+    *,
+    name: str,
+    version: str,
+    licence: str,
+    source: str,
+    retrieved: str,
+    max_characters_per_document: int = DEFAULT_MAX_CHARACTERS_PER_DOCUMENT,
+) -> DatasetCatalog:
+    """Write down what the files in a directory declare about themselves, as a catalogue.
+
+    The catalogue is generated from the sources rather than typed by hand, because a hand-copied title or
+    digest is exactly the kind of provenance claim that quietly goes wrong: the file is read, its own header
+    supplies title and author, and its bytes supply the digest.
+
+    Raises:
+        CorpusAcquisitionError: the directory holds no ``pg<number>.txt`` files, or one of them cannot be
+            read as a Project Gutenberg text.
+    """
+    files = sorted(raw_dir.glob("pg*.txt"))
+    if not files:
+        message = f"no pg<number>.txt sources found under {str(raw_dir)!r} to declare"
+        raise CorpusAcquisitionError(message)
+    sources: list[CatalogSource] = []
+    for path in files:
+        match = re.match(r"^pg(\d+)$", path.stem)
+        if match is None:
+            message = (
+                f"{str(path)!r} is not named pg<number>.txt, so its ebook number cannot be read"
+            )
+            raise CorpusAcquisitionError(message)
+        number = int(match.group(1))
+        raw_bytes = path.read_bytes()
+        ingested = ingest_project_gutenberg(
+            raw_bytes.decode("utf-8-sig"),
+            slug=path.stem,
+            ebook_number=number,
+            source_digest=sha256_hex(raw_bytes),
+        )
+        sources.append(
+            CatalogSource(
+                slug=ingested.slug,
+                ebook_number=number,
+                url=gutenberg_url(number),
+                sha256=ingested.source_digest,
+                title=ingested.title,
+                author=ingested.author,
+            )
+        )
+    return DatasetCatalog(
+        name=name,
+        version=version,
+        licence=licence,
+        source=source,
+        retrieved=retrieved,
+        sources=tuple(sources),
+        max_characters_per_document=max_characters_per_document,
+    )
 
 
 def gutenberg_url(ebook_number: int) -> str:

@@ -37,6 +37,10 @@ import sys
 from collections.abc import Sequence
 from dataclasses import replace
 from pathlib import Path
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from chakaso.training.dataset_report import DatasetReport
 
 from chakaso import __version__
 from chakaso.answers import (
@@ -699,6 +703,103 @@ def _build_parsers() -> tuple[argparse.ArgumentParser, argparse.ArgumentParser]:
         type=Path,
         default=Path(),
         help="the repository whose tracked files are checked (default: the current directory)",
+    )
+    corpus_declare = corpus_subparsers.add_parser(
+        "declare",
+        help="write a dataset catalog from the source files already downloaded",
+        description=(
+            "Read each source's own header and bytes and record them as a catalog: title, author, url and "
+            "content digest. The catalog is committed; the corpus bytes are not."
+        ),
+    )
+    corpus_declare.add_argument(
+        "--raw-dir", type=Path, required=True, help="directory holding pg<number>.txt sources"
+    )
+    corpus_declare.add_argument("--name", required=True, help="corpus name the catalog declares")
+    corpus_declare.add_argument("--version", required=True, help="corpus version, e.g. 1.0.0")
+    corpus_declare.add_argument(
+        "--licence", required=True, help="terms that apply to the collection"
+    )
+    corpus_declare.add_argument(
+        "--retrieved", required=True, help="ISO date the bytes were taken from the provider"
+    )
+    corpus_declare.add_argument("--output", type=Path, required=True, help="catalog file to write")
+    corpus_declare.add_argument(
+        "--max-characters-per-document",
+        type=int,
+        default=16_384,
+        help="document bound applied when a source is chunked (default: 16384)",
+    )
+    corpus_declare.add_argument(
+        "--overwrite", action="store_true", help="replace an existing catalog at --output"
+    )
+    corpus_prepare = corpus_subparsers.add_parser(
+        "prepare",
+        help="verify a catalog's sources, pin them, and write the snapshot training reads",
+        description=(
+            "Refuse any source whose bytes are not the digest the catalog declares, ingest the rest, pin the "
+            "result as a checksummed snapshot, and report the corpus's measured shape."
+        ),
+    )
+    corpus_prepare.add_argument(
+        "--catalog", type=Path, required=True, help="the dataset catalog to prepare from"
+    )
+    corpus_prepare.add_argument(
+        "--raw-dir", type=Path, required=True, help="directory holding the downloaded sources"
+    )
+    corpus_prepare.add_argument(
+        "--cache-dir",
+        type=Path,
+        required=True,
+        help="where ingested documents are cached, keyed by source digest",
+    )
+    corpus_prepare.add_argument(
+        "--snapshot",
+        type=Path,
+        required=True,
+        help="where to write the pinned snapshot (under data/)",
+    )
+    corpus_prepare.add_argument(
+        "--report",
+        type=Path,
+        default=None,
+        help="also write the machine-readable dataset report here",
+    )
+    corpus_prepare.add_argument(
+        "--data-card",
+        type=Path,
+        default=None,
+        help="also write the data card describing this corpus here (a documentation path)",
+    )
+    corpus_prepare.add_argument(
+        "--overwrite", action="store_true", help="replace an existing snapshot at --snapshot"
+    )
+    corpus_report = corpus_subparsers.add_parser(
+        "report",
+        help="measure a pinned corpus: composition, document shape and duplication",
+        description=(
+            "Count documents and characters per source, take percentiles of document length, and screen for "
+            "near-duplicate documents with a deterministic sketch."
+        ),
+    )
+    corpus_report.add_argument(
+        "--snapshot", type=Path, required=True, help="the pinned corpus snapshot to measure"
+    )
+    corpus_report.add_argument("--output", type=Path, required=True, help="report file to write")
+    corpus_report.add_argument(
+        "--data-card",
+        type=Path,
+        default=None,
+        help="also write the data card here (a documentation path)",
+    )
+    corpus_report.add_argument(
+        "--similarity",
+        type=float,
+        default=0.5,
+        help="shingle overlap at which two documents are reported as near duplicates (default: 0.5)",
+    )
+    corpus_report.add_argument(
+        "--overwrite", action="store_true", help="replace an existing report at --output"
     )
 
     storage_parser = subparsers.add_parser(
@@ -1925,6 +2026,36 @@ def _run_model_study(args: argparse.Namespace) -> int:
     return 0
 
 
+def _emit_corpus_report(
+    report: DatasetReport,
+    report_path: Path | None,
+    card_path: Path | None,
+    *,
+    card: str,
+    allow_overwrite: bool,
+) -> None:
+    """Write a dataset report and its data card when they were asked for, and say what was measured.
+
+    Both corpus actions produce the same artifacts, so the printing lives here once rather than in each
+    branch — and neither handler decides what a corpus claim means, because that is the library's job.
+    """
+    from chakaso.training.dataset_report import report_to_file, write_data_card
+
+    if report_path is not None:
+        report_to_file(report, report_path, allow_overwrite=allow_overwrite)
+    if card_path is not None:
+        write_data_card(card, card_path, allow_overwrite=allow_overwrite)
+    print(
+        f"measured shape: {report.documents} document(s) over {report.characters:,} characters; "
+        f"{len(report.near_duplicate_groups)} near-duplicate group(s) among "
+        f"{report.pairs_examined:,} candidate pair(s) at similarity {report.similarity_threshold:g}; "
+        f"document length p50 {report.document_characters['p50']:,} characters"
+    )
+    for destination in (report_path, card_path):
+        if destination is not None:
+            print(f"wrote {str(destination)!r}", file=sys.stderr)
+
+
 def _run_corpus_command(args: argparse.Namespace) -> int:
     """Recover or verify a recorded corpus through the library API. No corpus logic lives here.
 
@@ -1932,15 +2063,103 @@ def _run_corpus_command(args: argparse.Namespace) -> int:
     default paths stay free of it, and a missing extra or an unreadable history is reported by name rather
     than half-done.
     """
+    from chakaso.training.dataset_catalog import (
+        declare_gutenberg_directory,
+        load_catalog,
+        pin_catalog,
+        write_catalog,
+    )
+    from chakaso.training.dataset_report import (
+        build_report,
+        default_limitations,
+        render_data_card,
+    )
     from chakaso.training.errors import TrainingError
     from chakaso.training.manifest import read_manifest, read_snapshot, verify_corpus
     from chakaso.training.snapshot import GitRevisionReader, restore_corpus_snapshot
 
     if args.corpus_command is None:
-        print(f"{PROGRAM}: choose a corpus action: 'restore' or 'verify'", file=sys.stderr)
+        print(
+            f"{PROGRAM}: choose a corpus action: 'declare', 'prepare', 'report', 'restore' or 'verify'",
+            file=sys.stderr,
+        )
         return 1
 
     try:
+        if args.corpus_command == "declare":
+            catalog = declare_gutenberg_directory(
+                args.raw_dir,
+                name=args.name,
+                version=args.version,
+                licence=args.licence,
+                source="Project Gutenberg",
+                retrieved=args.retrieved,
+                max_characters_per_document=args.max_characters_per_document,
+            )
+            write_catalog(catalog, args.output, allow_overwrite=args.overwrite)
+            print(
+                f"declared {len(catalog.sources)} source(s) as {catalog.name} {catalog.version} in "
+                f"{str(args.output)!r}; every title, author and digest was read from the file itself"
+            )
+            return 0
+
+        if args.corpus_command == "prepare":
+            catalog = load_catalog(args.catalog)
+            manifest, checksum = pin_catalog(
+                catalog,
+                raw_dir=args.raw_dir,
+                cache_dir=args.cache_dir,
+                snapshot=args.snapshot,
+                catalog_path=args.catalog,
+                allow_overwrite=args.overwrite,
+            )
+            print(
+                f"{str(args.snapshot)!r} pins fingerprint {manifest.fingerprint} — "
+                f"{len(manifest.documents)} document(s), {manifest.char_count:,} characters, "
+                f"checksum {checksum}"
+            )
+            report = build_report(manifest)
+            _emit_corpus_report(
+                report,
+                args.report,
+                args.data_card,
+                card=render_data_card(
+                    report,
+                    catalog=catalog,
+                    snapshot_checksum=checksum,
+                    sources=[
+                        (item.slug, item.title, item.url, item.sha256) for item in catalog.sources
+                    ],
+                    prepared_with=(
+                        f"chakaso corpus prepare --catalog {args.catalog} --raw-dir {args.raw_dir} "
+                        f"--cache-dir {args.cache_dir} --snapshot {args.snapshot}"
+                    ),
+                    limitations=default_limitations(report),
+                ),
+                allow_overwrite=args.overwrite,
+            )
+            return 0
+
+        if args.corpus_command == "report":
+            loaded = read_snapshot(args.snapshot)
+            report = build_report(loaded.manifest, similarity=args.similarity)
+            _emit_corpus_report(
+                report,
+                args.output,
+                args.data_card,
+                card=render_data_card(
+                    report,
+                    snapshot_checksum=loaded.checksum,
+                    limitations=(
+                        *default_limitations(report),
+                        "This report was built from a snapshot alone, so it carries no catalogue: the "
+                        "provider, retrieval date and per-source urls are not stated.",
+                    ),
+                ),
+                allow_overwrite=args.overwrite,
+            )
+            return 0
+
         if args.corpus_command == "restore":
             snapshot = restore_corpus_snapshot(
                 manifest=args.manifest,

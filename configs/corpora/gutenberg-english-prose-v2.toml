@@ -1,0 +1,200 @@
+# Declared sources of one corpus. The bytes stay out of Git; this file is the audit trail.
+schema_version = "chakaso-dataset-catalog/1"
+name = "gutenberg-english-prose-v2"
+version = "1.0.0"
+licence = "Public domain in the United States; distributed by Project Gutenberg under the Project Gutenberg License, which permits copying, giving away and re-use; users outside the United States must check local law before use"
+source = "Project Gutenberg"
+retrieved = "2026-10-22"
+max_characters_per_document = 16384
+
+[[sources]]
+slug = "pg11"
+ebook_number = 11
+url = "https://www.gutenberg.org/cache/epub/11/pg11.txt"
+sha256 = "01b38ea4c710a84bc18d0bd41271a5a1a92b94e97b2812f4dece97d4a694725e"
+title = "Alice's Adventures in Wonderland"
+author = "Lewis Carroll"
+
+[[sources]]
+slug = "pg120"
+ebook_number = 120
+url = "https://www.gutenberg.org/cache/epub/120/pg120.txt"
+sha256 = "5bc08275eacea8640b1aa185c645283bb8c564d7b23df6b03437d229b4fc6ebd"
+title = "Treasure Island"
+author = "Robert Louis Stevenson"
+
+[[sources]]
+slug = "pg1260"
+ebook_number = 1260
+url = "https://www.gutenberg.org/cache/epub/1260/pg1260.txt"
+sha256 = "13414dee2951c3ee731d76d2ffd822016b2479c892162760c5d0eb2aa5fa7631"
+title = "Jane Eyre: An Autobiography"
+author = "Charlotte Bront\u00eb"
+
+[[sources]]
+slug = "pg1342"
+ebook_number = 1342
+url = "https://www.gutenberg.org/cache/epub/1342/pg1342.txt"
+sha256 = "3f6bb9d6f78e0293b56acd4714dd68cb7d6d1d293402031ce9d5a216bcaf9d75"
+title = "Pride and Prejudice"
+author = "Jane Austen"
+
+[[sources]]
+slug = "pg1400"
+ebook_number = 1400
+url = "https://www.gutenberg.org/cache/epub/1400/pg1400.txt"
+sha256 = "9a637118af8e953e9764ec603d9b0a032883384d465acac2e27966a80cf1c6f8"
+title = "Great Expectations"
+author = "Charles Dickens"
+
+[[sources]]
+slug = "pg1661"
+ebook_number = 1661
+url = "https://www.gutenberg.org/cache/epub/1661/pg1661.txt"
+sha256 = "922e2a12ccb43a4c9544c260b2166c6ad2097aeb5957faeee113f173bb857cd0"
+title = "The Adventures of Sherlock Holmes"
+author = "Arthur Conan Doyle"
+
+[[sources]]
+slug = "pg174"
+ebook_number = 174
+url = "https://www.gutenberg.org/cache/epub/174/pg174.txt"
+sha256 = "38f36b510417177aa87a6a24c968e3ec63a447b7df36a9c1a7c5a3f2d9e51547"
+title = "The Picture of Dorian Gray"
+author = "Oscar Wilde"
+
+[[sources]]
+slug = "pg1871"
+ebook_number = 1871
+url = "https://www.gutenberg.org/cache/epub/1871/pg1871.txt"
+sha256 = "f604cc291496ae4e77856c4c4dd28481c65b4171be5692c8e251a4c85c5f984c"
+title = "The Deputy of Arcis"
+author = "Honor\u00e9 de Balzac"
+
+[[sources]]
+slug = "pg2000"
+ebook_number = 2000
+url = "https://www.gutenberg.org/cache/epub/2000/pg2000.txt"
+sha256 = "534f41d59f7142163fa0964076ac6351845c006ea6433778be637fac6d5b04d7"
+title = "Don Quijote"
+author = "Miguel de Cervantes Saavedra"
+
+[[sources]]
+slug = "pg214"
+ebook_number = 214
+url = "https://www.gutenberg.org/cache/epub/214/pg214.txt"
+sha256 = "dae08e7ad618b825884eefba2f07c75d175a2f4c8817612e855931350a7f2489"
+title = "In the Days When the World Was Wide, and Other Verses"
+author = "Henry Lawson"
+
+[[sources]]
+slug = "pg25424"
+ebook_number = 25424
+url = "https://www.gutenberg.org/cache/epub/25424/pg25424.txt"
+sha256 = "af12d836f7086d7423a8f441bb8782181f2330bbfef8e8f8a6c44d6014538173"
+title = "In the Mayor's Parlour"
+author = "J. S. Fletcher"
+
+[[sources]]
+slug = "pg2591"
+ebook_number = 2591
+url = "https://www.gutenberg.org/cache/epub/2591/pg2591.txt"
+sha256 = "377ebb8ca06cd8bc0b1015ddb54766c44f50dece731c53bb030f1cc00f54092a"
+title = "Grimms' Fairy Tales"
+author = "Jacob Grimm"
+
+[[sources]]
+slug = "pg2701"
+ebook_number = 2701
+url = "https://www.gutenberg.org/cache/epub/2701/pg2701.txt"
+sha256 = "b5e88b71a1cda068e9ab1d94344c9d932338ba6da1a66def97a1aecd9cfcc87d"
+title = "Moby Dick; Or, The Whale"
+author = "Herman Melville"
+
+[[sources]]
+slug = "pg30422"
+ebook_number = 30422
+url = "https://www.gutenberg.org/cache/epub/30422/pg30422.txt"
+sha256 = "74c4dcd20f616d2d425483db3206d090f6b0416b0d1719e3866d7359d3ba35ee"
+title = "The Internet and Languages [around the year 2000]"
+author = "Marie Lebert"
+
+[[sources]]
+slug = "pg32"
+ebook_number = 32
+url = "https://www.gutenberg.org/cache/epub/32/pg32.txt"
+sha256 = "d2887a5e9cd99e09b091270016f69cf975401d1190ee432aa812ecfbe5f6eae2"
+title = "Herland"
+author = "Charlotte Perkins Gilman"
+
+[[sources]]
+slug = "pg3207"
+ebook_number = 3207
+url = "https://www.gutenberg.org/cache/epub/3207/pg3207.txt"
+sha256 = "3de1e492641d939567a8b0de827fb13e1ad992324f9ac8b204f60475009b7294"
+title = "Leviathan"
+author = "Thomas Hobbes"
+
+[[sources]]
+slug = "pg345"
+ebook_number = 345
+url = "https://www.gutenberg.org/cache/epub/345/pg345.txt"
+sha256 = "96cd16eacdbfebae8fdda5591f66e0cc8ee76be18e0cd1aca02bc00615782d28"
+title = "Dracula"
+author = "Bram Stoker"
+
+[[sources]]
+slug = "pg35"
+ebook_number = 35
+url = "https://www.gutenberg.org/cache/epub/35/pg35.txt"
+sha256 = "2892e919000e17c83e1dac51b30f4675db50536b644d7579fe8a89bb399a9bdc"
+title = "The Time Machine"
+author = "H. G. Wells"
+
+[[sources]]
+slug = "pg36"
+ebook_number = 36
+url = "https://www.gutenberg.org/cache/epub/36/pg36.txt"
+sha256 = "8417469e3ab664749f7b36ebb85799075818207b0380b54c27d07d592a44117d"
+title = "The war of the worlds"
+author = "H. G. Wells"
+
+[[sources]]
+slug = "pg4395"
+ebook_number = 4395
+url = "https://www.gutenberg.org/cache/epub/4395/pg4395.txt"
+sha256 = "3fe6c6b045837ceaba56f6b889a092cb5d6a616605a6825a4bc3803b1b440617"
+title = "In Wicklow and West Kerry"
+author = "J. M. Synge"
+
+[[sources]]
+slug = "pg5200"
+ebook_number = 5200
+url = "https://www.gutenberg.org/cache/epub/5200/pg5200.txt"
+sha256 = "0933283a19a4daaef0d412e8f69c74fae126b0a946cb74b8f3c783a8e869830d"
+title = "Metamorphosis"
+author = "Franz Kafka"
+
+[[sources]]
+slug = "pg768"
+ebook_number = 768
+url = "https://www.gutenberg.org/cache/epub/768/pg768.txt"
+sha256 = "e533fe750589f0421d5d744576315f5c2b9b0d69e981179ea0551bbf134c5e02"
+title = "Wuthering Heights"
+author = "Emily Bront\u00eb"
+
+[[sources]]
+slug = "pg84"
+ebook_number = 84
+url = "https://www.gutenberg.org/cache/epub/84/pg84.txt"
+sha256 = "7810cd483cffcf2cc8a1d8f0d5807931e69d4f48cd14149b8c76f88af82fead3"
+title = "Frankenstein; or, the modern prometheus"
+author = "Mary Wollstonecraft Shelley"
+
+[[sources]]
+slug = "pg98"
+ebook_number = 98
+url = "https://www.gutenberg.org/cache/epub/98/pg98.txt"
+sha256 = "d54c2b80d40a40b982cd88852c6180bb944d95acdb028af3d0e01a1750681784"
+title = "A Tale of Two Cities"
+author = "Charles Dickens"
