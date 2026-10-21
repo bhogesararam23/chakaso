@@ -256,6 +256,56 @@ def _corpus_and_rebuild(root: Path, *, edit: bool = False, add: bool = False) ->
     return _build(root)
 
 
+def test_the_fingerprint_does_not_move_with_the_line_endings_a_checkout_used(
+    tmp_path: Path,
+) -> None:
+    """A corpus identity may not depend on a contributor's git configuration.
+
+    The digests are taken over normalized text, so the same characters written with CRLF or with a stray
+    lone CR pin to the same fingerprint — which is what lets a snapshot recovered on Windows train the
+    corpus a run measured on Linux.
+    """
+    _corpus(tmp_path)
+    lf = _build(tmp_path)
+
+    for name in ("docs/a.md", "docs/b.md"):
+        current = (tmp_path / name).read_text(encoding="utf-8")
+        (tmp_path / name).write_bytes(current.replace("\n", "\r\n").encode("utf-8"))
+    crlf = _build(tmp_path)
+
+    for name in ("docs/a.md", "docs/b.md"):
+        current = (tmp_path / name).read_text(encoding="utf-8")
+        (tmp_path / name).write_bytes(current.replace("\n", "\r").encode("utf-8"))
+    cr = _build(tmp_path)
+
+    assert crlf.fingerprint == lf.fingerprint
+    assert cr.fingerprint == lf.fingerprint
+    assert [document.sha256 for document in crlf.documents] == [
+        document.sha256 for document in lf.documents
+    ]
+
+
+def test_verification_freezes_the_bytes_a_run_uses(tmp_path: Path) -> None:
+    """What a run trains on is what verification returned, not whatever the file says later.
+
+    The guarantee's scope is worth stating exactly: `verify_corpus` checks the files and hands back their
+    text in memory. A document edited *after* that is not noticed — it cannot be, and the run is unaffected,
+    because it reads the returned bytes. The next verification is what refuses.
+    """
+    _corpus(tmp_path)
+    manifest = _build(tmp_path)
+    verified = verify_corpus(manifest, tmp_path)
+    before = verified.combined_text()
+
+    (tmp_path / "docs" / "a.md").write_text("Rewritten after verification.\n", encoding="utf-8")
+
+    assert verified.combined_text() == before
+    alpha = next(document for document in verified.documents if document.path == "docs/a.md")
+    assert alpha.text == "Alpha document.\n"
+    with pytest.raises(CorpusDriftError, match="content changed"):
+        verify_corpus(manifest, tmp_path)
+
+
 # ------------------------------------------------------------------ manifest save/load
 
 

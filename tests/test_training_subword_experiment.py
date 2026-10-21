@@ -358,6 +358,29 @@ def test_a_plan_that_cannot_name_its_artifacts_is_refused(tmp_path: Path) -> Non
         _plan(root, tmp_path / "work", expected_corpus_fingerprint="too-short")
 
 
+def test_selection_is_a_function_of_the_validation_curve_alone(tmp_path: Path) -> None:
+    """The reported step comes from held-out *selection* text; the test side is scored, never chosen from.
+
+    E2601 measured that this architecture overfits well before its budget ends, so a step selected against
+    the test documents would report a number the model never had to earn. The curve the report carries
+    contains only validation losses, and the selected step is its argmin under the declared rule.
+    """
+    plan = _plan(_root(tmp_path), tmp_path / "work")
+    report = run_experiment(plan)
+
+    curve = report["transformer"]["curve"]
+    assert all(row["validation_loss"] is not None for row in curve)
+    validation = [(row["step"], row["validation_loss"]) for row in curve]
+    selected = report["transformer"]["budget"]["best_step"]
+    assert validation[min(range(len(validation)), key=lambda index: validation[index][1])] == (
+        selected,
+        min(value for _, value in validation),
+    )
+    assert report["transformer"]["budget"]["patience"] == plan.patience
+    assert report["transformer"]["budget"]["min_delta"] == plan.min_delta
+    assert report["transformer"]["test"]["positions_scored"] > 0
+
+
 def test_a_second_run_into_the_same_directory_is_refused(tmp_path: Path) -> None:
     root = _root(tmp_path)
     plan = _plan(root, tmp_path / "work")
