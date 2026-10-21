@@ -43,6 +43,7 @@ from chakaso.training.data import (
     character_windows,
     split_text_units,
 )
+from chakaso.training.decoder import DecoderConfig
 from chakaso.training.errors import CorpusDriftError, CorpusError
 from chakaso.training.loop import run_minibatch_training
 from chakaso.training.manifest import (
@@ -59,10 +60,15 @@ from chakaso.training.model_metrics import ModelMetrics, metrics_from_scores
 from chakaso.training.nn_checkpoint import (
     TrainedModel,
     checkpoint_filename,
+    load_artifact,
     save_artifact,
 )
 from chakaso.training.nn_evaluation import score_model_on_examples
-from chakaso.training.nn_training import TransformerTrainingConfig, train_transformer
+from chakaso.training.nn_training import (
+    TransformerTrainingConfig,
+    train_transformer,
+    verify_resume_compatibility,
+)
 from chakaso.training.packing import PackedBatch, pack_units
 from chakaso.training.subword import SubwordVocabulary, train_subword_vocabulary
 from chakaso.training.tokenizer import UNK_ID, CharVocabulary
@@ -90,6 +96,8 @@ CORPUS_NAME = "chakaso-repo-text-v1"
 CHARACTER_CONTEXT = 16
 _VALIDATION_FRACTION = 0.15
 _TEST_FRACTION = 0.15
+_FAMILIES = frozenset({"transformer", "decoder"})
+_SCHEDULES = frozenset({"constant", "cosine"})
 _PROMPTS = (
     "# Chakaso\n\nChakaso is a",
     "## Status\n\nThe retrieval layer",
@@ -214,6 +222,26 @@ class ExperimentPlan:
     #: already holds a measured run's artifact is how a result gets silently replaced by a different one,
     #: so ADR-0035's overwrite guard applies here too.
     overwrite_artifacts: bool = False
+    #: Which architecture family the run builds. ``transformer`` is what E2605, E2606 and E2607 measured and
+    #: stays the default so those protocols are reproducible by name; ``decoder`` builds the release-path
+    #: architecture in :mod:`chakaso.training.decoder`, whose checkpoints carry their own schema.
+    model_family: str = "transformer"
+    #: Rotary base for the decoder family. Ignored by the transformer family, which has a position table.
+    rope_theta: float = 10_000.0
+    #: Learning-rate policy after warmup: ``constant`` (what was measured) or ``cosine`` (annealed).
+    schedule: str = "constant"
+    decay_to: float = 0.1
+    #: Micro-batches per optimizer step, for an effective batch the memory cannot hold at once.
+    grad_accum_steps: int = 1
+    #: How often the resumable artifact is rewritten; zero means at every evaluation.
+    checkpoint_every: int = 0
+    #: Whether the character-model baseline runs at all. Its windows are materialized per character, so on a
+    #: corpus of tens of millions of characters it costs more memory than this project's machine has; a run
+    #: that skips it says so in its report rather than pretending the number was measured.
+    character_baseline: bool = True
+    #: A resume point written by an earlier pass of *this* run. Verified against the plan's corpus,
+    #: architecture, tokenizer and configuration before a single step is taken.
+    resume_from: Path | None = None
 
     def __post_init__(self) -> None:
         if not self.root.is_dir():
@@ -222,6 +250,34 @@ class ExperimentPlan:
         if not self.experiment_id or "/" in self.experiment_id or "\\" in self.experiment_id:
             message = f"experiment_id {self.experiment_id!r} cannot be used as a file name"
             raise ValueError(message)
+        if self.model_family not in _FAMILIES:
+            message = f"model_family {self.model_family!r} is not one of {sorted(_FAMILIES)}"
+            raise ValueError(message)
+        if self.schedule not in _SCHEDULES:
+            message = f"schedule {self.schedule!r} is not one of {sorted(_SCHEDULES)}"
+            raise ValueError(message)
+        if isinstance(self.decay_to, bool) or not 0.0 <= self.decay_to < 1.0:
+            message = f"decay_to must be in [0, 1), got {self.decay_to!r}"
+            raise ValueError(message)
+        if isinstance(self.grad_accum_steps, bool) or self.grad_accum_steps < 1:
+            message = f"grad_accum_steps must be >= 1, got {self.grad_accum_steps!r}"
+            raise ValueError(message)
+        if isinstance(self.checkpoint_every, bool) or self.checkpoint_every < 0:
+            message = f"checkpoint_every must be >= 0, got {self.checkpoint_every!r}"
+            raise ValueError(message)
+        if self.model_family == "decoder":
+            head_width = self.d_model // self.num_heads
+            if self.d_model % self.num_heads or head_width % 2:
+                message = (
+                    "the decoder family needs a head width that is an even integer: d_model "
+                    f"{self.d_model} with num_heads {self.num_heads} gives {self.d_model / self.num_heads}"
+                )
+                raise ValueError(message)
+            if self.rope_theta <= 1.0:
+                message = (
+                    f"rope_theta must exceed 1.0 for the decoder family, got {self.rope_theta}"
+                )
+                raise ValueError(message)
         if self.vocab_size < 258:
             message = f"vocab_size must be >= 258 (byte base + separator + one merge), got {self.vocab_size}"
             raise ValueError(message)
@@ -293,8 +349,25 @@ class PreparedCorpus:
         }
 
 
-def architecture_for(plan: ExperimentPlan, vocabulary: SubwordVocabulary) -> TransformerConfig:
-    """The Transformer geometry, bound to a trained vocabulary's identifier count."""
+def architecture_for(
+    plan: ExperimentPlan, vocabulary: SubwordVocabulary
+) -> TransformerConfig | DecoderConfig:
+    """The architecture geometry this plan names, bound to a trained vocabulary's identifier count.
+
+    The vocabulary decides ``vocab_size`` rather than the plan, in both families: a model wider than the
+    tokenizer is a shape error, and a tokenizer trained to a different target size than the model expects is
+    the same error in the other direction.
+    """
+    if plan.model_family == "decoder":
+        return DecoderConfig(
+            vocab_size=vocabulary.size,
+            context_length=plan.context_length,
+            d_model=plan.d_model,
+            num_layers=plan.num_layers,
+            num_heads=plan.num_heads,
+            feedforward_dim=plan.feedforward_dim,
+            rope_theta=plan.rope_theta,
+        )
     return TransformerConfig(
         vocab_size=vocabulary.size,
         context_length=plan.context_length,
@@ -439,14 +512,19 @@ def prepare_corpus(plan: ExperimentPlan) -> PreparedCorpus:
     vocabulary.save(work / f"{manifest.name}-tokenizer.json")
     char_vocabulary = CharVocabulary(tuple(unit.text for unit in split.train))
 
-    char_windows = {
-        side: _character_batches(split_side, char_vocabulary, plan.character_context)
-        for side, split_side in (
-            ("train", split.train),
-            ("validation", split.validation),
-            ("test", split.test),
-        )
-    }
+    # One window per character position of every side: on the repository's own 780 KB that is affordable,
+    # on a 14.5M-character corpus it is not, and the machine running the experiment has the last word. A
+    # skipped baseline is recorded as skipped rather than quietly omitted.
+    char_windows: dict[str, tuple[Any, Any]] = {}
+    if plan.character_baseline:
+        char_windows = {
+            side: _character_batches(split_side, char_vocabulary, plan.character_context)
+            for side, split_side in (
+                ("train", split.train),
+                ("validation", split.validation),
+                ("test", split.test),
+            )
+        }
 
     return PreparedCorpus(
         manifest=manifest,
@@ -619,6 +697,34 @@ def score_transformer(
     return _metrics(nats, targets, predictions, vocabulary)
 
 
+def _training_config(
+    plan: ExperimentPlan, architecture: TransformerConfig | DecoderConfig
+) -> TransformerTrainingConfig:
+    """The optimization settings this plan names, bound to its architecture.
+
+    One function because the resume check has to compare against exactly the configuration the run will
+    use: a second, slightly different construction of the same settings is how a verified resume becomes an
+    unverified one.
+    """
+    return TransformerTrainingConfig(
+        batch_size=plan.batch_size,
+        max_steps=plan.max_steps,
+        learning_rate=plan.learning_rate,
+        weight_decay=plan.weight_decay,
+        warmup_steps=plan.warmup_steps,
+        gradient_clip_norm=plan.gradient_clip_norm,
+        seed=plan.seed,
+        eval_every=plan.eval_every,
+        patience=plan.patience,
+        min_delta=plan.min_delta,
+        architecture=architecture,
+        schedule=plan.schedule,
+        decay_to=plan.decay_to,
+        grad_accum_steps=plan.grad_accum_steps,
+        checkpoint_every=plan.checkpoint_every,
+    )
+
+
 def run_experiment(plan: ExperimentPlan, *, verbose: bool = False) -> dict[str, Any]:
     """Run E2605 end to end and return the measured report.
 
@@ -632,7 +738,18 @@ def run_experiment(plan: ExperimentPlan, *, verbose: bool = False) -> dict[str, 
     prepared = prepare_corpus(plan)
     architecture = architecture_for(plan, prepared.vocabulary)
 
-    character = train_character_baseline(plan, prepared)
+    character = (
+        train_character_baseline(plan, prepared)
+        if plan.character_baseline
+        else {
+            "skipped": True,
+            "reason": (
+                "the character baseline materializes one window per character position; on a corpus of "
+                f"{prepared.manifest.char_count:,} characters that exceeds the memory this project's "
+                "machine has, and the run states that instead of silently dropping the comparison"
+            ),
+        }
+    )
 
     def on_step(record: Any) -> None:
         if verbose:
@@ -643,26 +760,31 @@ def run_experiment(plan: ExperimentPlan, *, verbose: bool = False) -> dict[str, 
             )
 
     started = time.perf_counter()
+    resume: dict[str, Any] = {}
+    budget_extended_from: int | None = None
+    if plan.resume_from is not None:
+        point = load_artifact(plan.resume_from)
+        verified = verify_resume_compatibility(
+            point,
+            config=_training_config(plan, architecture),
+            corpus_fingerprint=prepared.manifest.fingerprint,
+            vocabulary=prepared.vocabulary,
+        )
+        budget_extended_from = verified.budget_extended_from
+        resume = {
+            "resume_state": verified.state,
+            "resume_optimizer": verified.optimizer_state,
+            "start_step": verified.start_step,
+        }
     outcome = train_transformer(
         train_examples=prepared.train.examples,
         validation_examples=prepared.validation.examples,
         vocabulary=prepared.vocabulary,
-        config=TransformerTrainingConfig(
-            batch_size=plan.batch_size,
-            max_steps=plan.max_steps,
-            learning_rate=plan.learning_rate,
-            weight_decay=plan.weight_decay,
-            warmup_steps=plan.warmup_steps,
-            gradient_clip_norm=plan.gradient_clip_norm,
-            seed=plan.seed,
-            eval_every=plan.eval_every,
-            patience=plan.patience,
-            min_delta=plan.min_delta,
-            architecture=architecture,
-        ),
+        **resume,
+        config=_training_config(plan, architecture),
         corpus_fingerprint=prepared.manifest.fingerprint,
         on_step=on_step,
-        checkpoint_path=work / f"{plan.experiment_id}-resumable.pt",
+        checkpoint_path=work / f"{plan.experiment_id}-{plan.model_family}-resumable.pt",
     )
     wall = time.perf_counter() - started
 
@@ -670,7 +792,7 @@ def run_experiment(plan: ExperimentPlan, *, verbose: bool = False) -> dict[str, 
     model = artifact.to_model()
     test_metrics = score_transformer(model, prepared.test, prepared.vocabulary)
     validation_metrics = score_transformer(model, prepared.validation, prepared.vocabulary)
-    artifact_path = work / checkpoint_filename(plan.experiment_id)
+    artifact_path = work / checkpoint_filename(plan.experiment_id, plan.model_family)
     save_artifact(artifact, artifact_path, allow_overwrite=plan.overwrite_artifacts)
 
     # Generation goes through the boundary, not the adapter class: the experiment is a consumer of the
@@ -744,6 +866,7 @@ def run_experiment(plan: ExperimentPlan, *, verbose: bool = False) -> dict[str, 
             ),
         },
         "character_baseline": character,
+        "model_family": plan.model_family,
         "transformer": {
             "architecture": architecture.as_dict(),
             "parameter_count": outcome.parameter_count,
@@ -761,6 +884,14 @@ def run_experiment(plan: ExperimentPlan, *, verbose: bool = False) -> dict[str, 
                 "seed": plan.seed,
                 "best_step": outcome.best_step,
                 "stopped_early": outcome.stopped_early,
+                "completion": outcome.completion,
+                "resumed_from_step": resume.get("start_step"),
+                "budget_extended_from": budget_extended_from,
+                "schedule": plan.schedule,
+                "decay_to": plan.decay_to,
+                "grad_accum_steps": plan.grad_accum_steps,
+                "effective_batch_size": outcome.config.effective_batch_size,
+                "positions_per_second": round(outcome.positions_per_second, 1),
                 "records": len(outcome.records),
                 "wall_clock_s": round(wall, 2),
                 "steps_per_epoch_estimate": -(-len(prepared.train.examples) // plan.batch_size),

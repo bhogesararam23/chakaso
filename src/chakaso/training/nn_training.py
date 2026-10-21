@@ -52,6 +52,7 @@ __all__ = [
     "COMPLETED_BUDGET_CEILING",
     "COMPLETED_CONVERGED",
     "COMPLETED_STOP_REQUESTED",
+    "ResumePoint",
     "StepRecord",
     "TrainingOutcome",
     "TrainingScheduleError",
@@ -400,22 +401,44 @@ def build_model(architecture: TransformerConfig | DecoderConfig) -> Any:
     return CausalTransformer(architecture)
 
 
+@dataclass(frozen=True, slots=True)
+class ResumePoint:
+    """What a verified resume gives back: the state, the step it stopped at, and any budget change.
+
+    Attributes:
+        state: The saved parameters.
+        optimizer_state: The saved Adam moments — without them the continuation is not the same schedule.
+        start_step: The step the next update will be.
+        budget_extended_from: The ceiling the saved run declared, when this run declares a larger one.
+            Extending a ceiling is a real change of protocol, so it comes back as a fact for the record to
+            print rather than being absorbed into a run that looks uninterrupted.
+    """
+
+    state: Mapping[str, torch.Tensor]
+    optimizer_state: Mapping[str, Any]
+    start_step: int
+    budget_extended_from: int | None = None
+
+
 def verify_resume_compatibility(
     artifact: ModelArtifact,
     *,
     config: TransformerTrainingConfig,
     corpus_fingerprint: str,
     vocabulary: SubwordVocabulary,
-) -> tuple[Mapping[str, torch.Tensor], Mapping[str, Any], int]:
-    """Check that a saved resume point is the one *this* run may continue, then hand back its state.
+) -> ResumePoint:
+    """Check that a saved resume point is the one *this* run may continue.
 
     A resume that is merely plausible is the dangerous case: continuing from another corpus, another
-    architecture or another tokenizer produces a curve that looks like a run and is a mixture of two. Every
-    disagreement is named, and an artifact without optimizer moments is refused because restarting Adam from
-    zero is a different schedule, not the same one interrupted.
+    architecture or another tokenizer produces a curve that looks like a run and is a mixture of two. Those
+    are refused by name. A larger ``max_steps`` is treated differently, because a run that stopped at its
+    ceiling — which is exactly what E2607 measured — is continued by raising the ceiling, and refusing that
+    would leave no honest way to do it. Any other difference in the optimization settings is refused: the
+    learning rate, the batch, the schedule or the seed would make the continuation a different protocol.
 
     Raises:
-        TrainingScheduleError: any identity field disagrees, or the artifact carries no optimizer state.
+        TrainingScheduleError: an identity field disagrees, the optimizer state is absent, or a setting
+            other than the step ceiling differs.
     """
     if artifact.optimizer_state is None:
         message = (
@@ -438,18 +461,29 @@ def verify_resume_compatibility(
             f"tokenizer: resumed from {artifact.vocabulary.fingerprint}, this run trained "
             f"{vocabulary.fingerprint}"
         )
+
+    extended: int | None = None
     recorded = artifact.run_metadata.get("training")
-    if isinstance(recorded, dict) and recorded != config.as_dict():
-        differences = sorted(
-            key
-            for key in set(recorded) | set(config.as_dict())
-            if recorded.get(key) != config.as_dict().get(key)
+    wanted = config.as_dict()
+    if isinstance(recorded, dict):
+        differing = sorted(
+            key for key in set(recorded) | set(wanted) if recorded.get(key) != wanted.get(key)
         )
-        disagreements.append(f"training configuration differs in: {differences}")
+        if differing == ["max_steps"] and int(wanted["max_steps"]) > int(recorded["max_steps"]):
+            extended = int(recorded["max_steps"])
+        elif differing:
+            disagreements.append(f"training configuration differs in: {differing}")
     if disagreements:
         message = "this checkpoint cannot resume the requested run — " + "; ".join(disagreements)
         raise TrainingScheduleError(message)
-    return resume_state_from(artifact)
+
+    state, optimizer_state, start_step = resume_state_from(artifact)
+    return ResumePoint(
+        state=state,
+        optimizer_state=optimizer_state,
+        start_step=start_step,
+        budget_extended_from=extended,
+    )
 
 
 def train_transformer(

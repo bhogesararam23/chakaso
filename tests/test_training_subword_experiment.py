@@ -24,6 +24,7 @@ pytest.importorskip("numpy")
 
 from chakaso.core.hashing import sha256_hex
 from chakaso.training.errors import CheckpointError, CorpusDriftError, CorpusError
+from chakaso.training.nn_training import TrainingScheduleError
 from chakaso.training.subword_experiment import (
     CorpusSpec,
     ExperimentPlan,
@@ -331,8 +332,10 @@ def test_a_run_names_its_artifacts_after_its_experiment_and_its_corpus(tmp_path:
     assert report["corpus"]["name"] == "harbour-text"
     assert report["corpus"]["include"] == ["docs/"]
     written = sorted(path.name for path in (tmp_path / "work").iterdir())
+    # The resumable file carries the family in its name, so a checkpoint written by one architecture can
+    # never be picked up as the resume point of the other by a directory convention alone.
     assert written == [
-        "E2699-resumable.pt",
+        "E2699-transformer-resumable.pt",
         "E2699-transformer.pt",
         "harbour-text-manifest.json",
         "harbour-text-snapshot.json",
@@ -451,3 +454,93 @@ def test_a_short_character_budget_clamps_its_interval_instead_of_never_reporting
     # A budget that already fits its interval is left alone, so a long run is unchanged by the clamp.
     long = replace(plan, character_steps=4000, character_eval_every=200)
     assert long.character_evaluation_interval() == 200
+
+
+# ------------------------------------------------------------------ architecture families
+def test_a_decoder_family_run_records_the_family_and_its_own_artifact(tmp_path: Path) -> None:
+    root = _root(tmp_path)
+    work = tmp_path / "work-decoder"
+
+    report = run_experiment(
+        _plan(root, work, model_family="decoder", character_baseline=False, vocab_size=268)
+    )
+
+    assert report["model_family"] == "decoder"
+    assert report["transformer"]["architecture"]["rope_theta"] == 10_000.0
+    budget = report["transformer"]["budget"]
+    assert budget["completion"] in {"converged", "budget_ceiling"}
+    assert budget["positions_per_second"] > 0
+    assert budget["schedule"] == "constant"
+    assert budget["effective_batch_size"] == budget["batch_size"]
+    assert report["character_baseline"]["skipped"] is True
+    assert (work / "E2605-decoder.pt").is_file()
+    assert (work / "E2605-decoder-resumable.pt").is_file()
+
+
+def test_a_skipped_character_baseline_says_why_in_the_report(tmp_path: Path) -> None:
+    root = _root(tmp_path)
+
+    report = run_experiment(
+        _plan(root, tmp_path / "work-skip", model_family="decoder", character_baseline=False)
+    )
+
+    reason = report["character_baseline"]["reason"]
+    assert "memory" in reason
+    assert f"{report['corpus']['characters']:,}" in reason
+
+
+def test_an_unknown_model_family_is_refused_before_anything_runs(tmp_path: Path) -> None:
+    with pytest.raises(ValueError, match="model_family"):
+        _plan(_root(tmp_path), tmp_path / "work", model_family="mamba")
+
+
+def test_the_decoder_family_needs_a_head_width_it_can_rotate(tmp_path: Path) -> None:
+    with pytest.raises(ValueError, match="even integer"):
+        _plan(_root(tmp_path), tmp_path / "work", model_family="decoder", d_model=14, num_heads=2)
+
+
+def test_an_unsupported_schedule_name_is_refused_on_the_plan(tmp_path: Path) -> None:
+    with pytest.raises(ValueError, match="schedule"):
+        _plan(_root(tmp_path), tmp_path / "work", schedule="warmup-rest-warmup")
+
+
+def test_a_resume_from_another_corpus_is_refused_before_a_step_is_taken(tmp_path: Path) -> None:
+    root = _root(tmp_path)
+    work = tmp_path / "work-resume"
+    run_experiment(_plan(root, work, max_steps=8, eval_every=4))
+    point = work / "E2605-transformer-resumable.pt"
+    other = _other_root(tmp_path)
+
+    with pytest.raises(TrainingScheduleError, match="corpus:"):
+        run_experiment(
+            _plan(
+                other,
+                tmp_path / "work-other",
+                resume_from=point,
+                max_steps=12,
+                eval_every=4,
+            )
+        )
+
+
+def test_a_verified_resume_continues_from_the_step_it_stopped_at(tmp_path: Path) -> None:
+    root = _root(tmp_path)
+    work = tmp_path / "work-partial"
+    run_experiment(_plan(root, work, max_steps=8, eval_every=4))
+    point = work / "E2605-transformer-resumable.pt"
+
+    report = run_experiment(
+        _plan(
+            root,
+            work,
+            max_steps=12,
+            eval_every=4,
+            resume_from=point,
+            overwrite_artifacts=True,
+        )
+    )
+
+    curve = report["transformer"]["curve"]
+    assert curve[0]["step"] == 8
+    assert curve[-1]["step"] == 12
+    assert report["transformer"]["budget"]["records"] == len(curve)

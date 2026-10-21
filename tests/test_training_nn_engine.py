@@ -238,8 +238,13 @@ def test_a_stopped_run_resumes_onto_the_schedule_it_was_on(tmp_path: Path) -> No
 
     stopped = _run(config, should_stop=lambda: True, checkpoint_path=checkpoint)
     resumed_artifact = load_resumable(checkpoint)
-    state, optimizer_state, start_step = verify_resume_compatibility(
+    verified = verify_resume_compatibility(
         resumed_artifact, config=config, corpus_fingerprint="fixture", vocabulary=_VOCABULARY
+    )
+    state, optimizer_state, start_step = (
+        verified.state,
+        verified.optimizer_state,
+        verified.start_step,
     )
 
     resumed = _run(
@@ -303,13 +308,40 @@ def test_a_resume_point_from_another_tokenizer_is_named() -> None:
         )
 
 
-def test_a_resume_point_from_a_changed_schedule_is_named() -> None:
+def test_a_larger_ceiling_is_accepted_and_reported_as_an_extension() -> None:
+    # The case E2607's truncated curve creates: the same protocol, declared to run further.
+    artifact = resumable_artifact(_config(max_steps=2, eval_every=1))
+
+    verified = verify_resume_compatibility(
+        artifact,
+        config=_config(max_steps=9, warmup_steps=1, eval_every=1),
+        corpus_fingerprint="fixture",
+        vocabulary=_VOCABULARY,
+    )
+
+    assert verified.budget_extended_from == 2
+    assert verified.start_step == artifact.step
+
+
+def test_a_shorter_ceiling_is_refused_because_it_is_a_different_run() -> None:
+    artifact = resumable_artifact(_config(max_steps=6, eval_every=1))
+
+    with pytest.raises(TrainingScheduleError, match="max_steps"):
+        verify_resume_compatibility(
+            artifact,
+            config=_config(max_steps=2, warmup_steps=1, eval_every=1),
+            corpus_fingerprint="fixture",
+            vocabulary=_VOCABULARY,
+        )
+
+
+def test_a_resume_point_from_a_changed_learning_rate_is_named() -> None:
     artifact = resumable_artifact(_config(max_steps=2, eval_every=1))
 
     with pytest.raises(TrainingScheduleError, match="training configuration differs in"):
         verify_resume_compatibility(
             artifact,
-            config=_config(max_steps=9, warmup_steps=1, eval_every=1),
+            config=_config(max_steps=2, learning_rate=3e-3, warmup_steps=1, eval_every=1),
             corpus_fingerprint="fixture",
             vocabulary=_VOCABULARY,
         )
