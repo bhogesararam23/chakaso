@@ -14,7 +14,7 @@
 ## Motivation
 
 E2605 measured 1.8657 bits per character for a 643,840-parameter subword Transformer against 3.1343 for the
-character model on the same held-out documents ([`../E2605/record.md`](E2605/record.md)). It did that with
+character model on the same held-out documents ([`../E2605/record.md`](../E2605/record.md)). It did that with
 **one seed**. A single run cannot separate an effect from the initialization and batch order that produced
 it, so the project's headline number currently has no spread attached to it, and nothing in the repository
 says how large that spread is.
@@ -120,7 +120,7 @@ enlarged for this study; changing it would require a separately declared experim
 | documents | 71 |
 | characters | 780,223 |
 | corpus fingerprint | `e45993f9badf706c` |
-| manifest checksum | `3255f98d9bdface2…` ([`E2605/corpus-manifest.json`](E2605/corpus-manifest.json)) |
+| manifest checksum | `3255f98d9bdface2…` ([`E2605/corpus-manifest.json`](../E2605/corpus-manifest.json)) |
 | licence | Apache-2.0, the project's own licence; text authored for Chakaso |
 | recovery revision | `9b8a478` → commit `9b8a47876de7e13c60aefca0b9c7fe501bc03def` |
 | snapshot checksum after recovery | recorded per run from the file it loaded |
