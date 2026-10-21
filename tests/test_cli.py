@@ -924,16 +924,6 @@ def corpus_cli(tmp_path: Path) -> tuple[Path, Path, str]:
 
     root = tmp_path / "repo"
     recorded = _corpus_repository(root)
-    manifest = build_manifest(
-        root,
-        name="cli-corpus",
-        version="1.0.0",
-        licence="Apache-2.0",
-        source="built by tests",
-        include=("docs/", "*.md"),
-        extensions=(".md",),
-        exact_paths=("LICENSE", "AGENTS.md"),
-    )
     # Pin the manifest as the *recorded* revision held it, not as the edited tree holds it: that is the
     # situation the command exists for.
     archive = tmp_path / "as-recorded"
