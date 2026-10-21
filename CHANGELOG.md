@@ -10,6 +10,117 @@ capability is implemented or still planned.
 
 ## Unreleased
 
+### 2026-10-21 — A measured result can be reproduced, and it was: E2605 across five seeds, and on prose nobody wrote about this project (ADR-0036, P33–P36)
+
+**Measured**
+
+- **E2606 puts a spread on the project's headline number.** Five pre-declared seeds (E2605's own seed, then the
+  next four primes) over the identical corpus, split, tokenizer, architecture and budget: **1.8794 ± 0.0077
+  bits per character** for the 643,840-parameter subword Transformer against **3.0937 ± 0.0267** for E2601's
+  character architecture, with the unigram (3.3224) and uniform (4.8010) baselines identical across seeds
+  because they depend on fixed data. Every seed beat every baseline; the gap on every seed was between 1.1828
+  and 1.2685 bits. The seed effect is roughly 1/158 of the measured difference — so E2605's result was not the
+  luck of one draw, but it *was* the most favourable of five, and the spread belongs beside the number.
+- **E2605 was reproduced exactly.** Its seed-7 run returned the same corpus, split and tokenizer fingerprints,
+  the same 643,840 parameters, the same selected step (1380), and held-out metrics identical to the last
+  decimal on both architectures and both baselines. Loading both artifacts and comparing all 41 stored tensors
+  returns equal, and their state digest matches: the model was reproduced, not merely its score. The one
+  deviation is named rather than smoothed — the artifact *metadata* checksum differs because the environment
+  block gained `numpy` and `torch_threads` between the two runs.
+- **E2607 answers the question the internal corpus could not.** The same protocol, budget, tokenizer rules and
+  metric code, run on three seeds of independently licensed prose — Project Gutenberg's Alice, Frankenstein and
+  The Iliad, 105 documents, 1,660,274 characters — give **2.0176 ± 0.0118 against 3.2218 ± 0.0153 bits per
+  character**, a gap of 1.2042 against 1.2143 internally. The advantage is not a property of Chakaso's own
+  documentation. Absolute levels must not be compared across corpora (the subword tokenizer compresses 2.0829
+  characters per identifier on the internal text and 1.8782 on the external one); gaps may, and they agree.
+- **The text is still not usable, and now that is measured rather than asserted.** `chakaso.training.generation_eval`
+  ran over all five internal and all three external checkpoints with the raw output retained: mean bigram
+  repetition 0.4870–0.6904 internally and 0.5618–0.6956 externally, most samples stopping only because the
+  token budget ended, and on the external corpus one sample degenerating into 38 characters of `OF` repeated
+  and another coining words the corpus does not contain. An empty prompt is a typed `ModelError` naming the
+  model and the reason on every checkpoint.
+
+**Decided**
+
+- **ADR-0036**: a recorded corpus is recovered from the revision that pinned it, never re-pinned from the
+  working tree. The alternative — re-pinning when the tree moves — was rejected because it destroys the result
+  rather than reproducing it, and "the corpus is what the fingerprint says" was rejected because a checksum
+  that points at bytes nobody holds is not reproducible. The consequence is accepted: this project's
+  reproducibility now depends on its history, which raises the cost of rewriting pushed commits.
+
+**Added — reproducibility and measurement, in the dependency-free tier where possible**
+
+- **Implemented** `chakaso.training.snapshot`: recover the exact corpus a manifest pins from a named revision
+  of the local history, materialize it, run the same `verify_corpus` check a fresh preparation runs, and write a
+  snapshot whose acquisition block names the commit object the bytes came out of. A revision one documentation
+  edit away from the pin is refused with the same drift error the stale working tree gets, so this is a way to
+  *find* the bytes and not a way to talk the guard out of its job. `chakaso corpus restore` and
+  `chakaso corpus verify` reach it from the terminal; both are offline.
+- **Implemented** the snapshot format at schema/2: per-document digests beside the bodies, a checksum over the
+  file's own content, an acquisition block that distinguishes historical bytes from the current tree, and
+  refusal of a document set that is missing, duplicated, unexpected or altered. ADR-0035's overwrite guard now
+  covers corpus artifacts and experiment reports too, and `chakaso.core.atomic` stages every one of those
+  writes so a process that dies mid-write leaves no half artifact — and no newline translation, which is what
+  makes a written report's bytes the text its cited digest was computed over.
+- **Implemented** `chakaso.training.seed_study`: declared seeds over one protocol template, one directory per
+  run, aggregation rebuilt from the reports on disk (mean, sample standard deviation, median, range, with no
+  confidence interval published and the reason stated), failed and missing runs named rather than averaged away,
+  and a reused report accepted only after its configuration, corpus fingerprint and seed match the study that
+  claims it. `chakaso experiment study --collect-only` rebuilds a published summary without training anything,
+  which is how an outside reader checks one.
+- **Implemented** `chakaso.training.source_corpus`: turn a downloaded licensed text into a pinned corpus
+  offline — cut by the source's own wrapper markers, chunked at whole-paragraph boundaries, recorded with URL,
+  byte digest, retrieval date and the licence in the file's own words. Nothing in the training path reaches the
+  network; E2607's corpus bytes live in `data/` per the artifact policy, and what is committed is the
+  acquisition.
+- **Implemented** `chakaso.training.generation_eval`, over the `LanguageModel` boundary rather than behind it,
+  so the same probes run against the development double, the character checkpoint and the Transformer. It
+  carries its interpretation limit inside its payload: repetition ratios, cycles and termination are surface
+  statistics, and judging whether a continuation means anything is a separate, human act.
+- **Made explicit in the experiment driver**, because a study needs them to be comparable: `split_seed`, so a
+  seed study varies initialization without re-dealing the held-out documents (without it, "the effect of a
+  seed" would be the effect of a seed *and* a different test set); `expected_corpus_fingerprint`, so a run
+  cannot train on merely *a* pinned corpus; and per-run experiment and corpus naming, so an E2607 directory
+  does not hold files named for the repository's own text.
+
+**Fixed**
+
+- **A measured result could not be re-trained at all** — the driver never wrote a snapshot, so the moment the
+  repository edited its own documentation the pinned corpus became unreachable and `verify_corpus` correctly
+  refused. Now refused-or-reproduced are the only two outcomes.
+- **`chakaso experiment model` let a typed corpus failure escape as a traceback.** `TrainingError` does not
+  derive from `ChakasoError`, so the drift refusal and the overwrite guard that were already reachable from
+  that command were never reported as the refusals they are.
+- **A resumed seed could not replace its own interrupted run**: the retry was recorded as a failed seed because
+  it refused to overwrite a checkpoint its earlier pass had left behind. A seed with no report now may; a seed
+  with one still needs an explicit declaration, and the summary line no longer crashes on a study that has
+  completed nothing.
+- **The tail-only loop rule missed the case it exists to catch**, found by running it on E2605's own output: a
+  sample that repeats a block eight times in its middle and ends elsewhere reported no loop. The suite now
+  records both the tail verdict and the longest cycle anywhere, because they answer different questions.
+
+**Verification and CI**
+
+- All three dependency tiers are green locally at this head (dependency-free, `[train]`, `[train,nn]`), with
+  strict typing clean over every source file in the `[nn]` environment. The counts and the delivery record are
+  in `docs/agent/ACTIVE_TASK.md`.
+- **The optional-dependency CI matrix is written, tested against the documented commands, and still not
+  running.** `docs/internal/engineering/optional-dependency-ci-matrix.md` carries a complete three-tier
+  workflow; four hygiene tests assert that its jobs install exactly the tiers they claim, that every command it
+  runs is one `AGENTS.md` documents, that nothing can fail quietly, and that the *shipped* workflow still covers
+  only the dependency-free tier. It cannot be pushed: this session's token has no `workflow` scope, and GitHub
+  refuses the whole push rather than part of it. K-009 records the scope, the fact that the branch is
+  unprotected and Actions enabled, and the exact step a person with that scope has to take. No claim is made
+  that any of it ran on a runner.
+
+**What this does not change**
+
+Nothing here is a capable language model, a workload, or an answer to a question. Two corpora are now measured
+on instead of one, which is a real widening of the evidence and not a step toward usefulness: no number in this
+repository comes from a task anybody needed doing (K-001), the runtime's default model is still the
+development double, and the next budget question is now constrained by a measured fact — on the larger corpus,
+nothing converged within 2,400 steps.
+
 ### 2026-10-21 — There is a trained model: a subword Transformer, loadable from Python, measured against the character model (ADR-0035, P31, E2605)
 
 **Decided**

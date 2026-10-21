@@ -1,6 +1,6 @@
 # E2607 — Does the advantage survive on text that is not Chakaso's own?
 
-- Status: running (preregistered before its runs; three seeds, not five — the reason is measured, below)
+- Status: completed (measured; all three declared seeds, preregistered before any of them ran)
 - Date: 2026-10-21
 - Hypothesis: not one of H1–H7. This is the generalization step that E2605's and E2606's own limitation
   sections name: a model measured on the project's documentation has never been tested on text it has no
@@ -176,8 +176,180 @@ at the same seed and configuration, and a completed run with a bad score is neve
   external text would mean the model learns statistical structure in prose it was not written about. It
   would not mean the model is useful, coherent, or able to answer anything.
 
-## Follow-up
+## Follow-up, as declared before the runs
 
 Whichever way this lands: the generator's looping behaviour on this corpus is the next measurement, then the
 capacity question that both corpora bound. If the advantage does not survive, the next experiment is about
 the corpus (size and domain), not the architecture.
+
+---
+
+## Results
+
+**All three declared seeds completed. None failed, none was dropped, none was rerun, and no seed was added
+after a score was seen.** Every run loaded the pinned snapshot (checksum `776afa22a2d54f49…`) and reported the
+same corpus fingerprint `931b07a635ca5a0c`, split fingerprint `93be3cc6f9e80423` (73 / 16 / 16 documents,
+exactly the assignment declared above), tokenizer fingerprint `48b813f9269bf039` at 1,024 identifiers and 767
+merges, 643,840 parameters, and 135,040 scored positions over 253,629 decoded characters with 15 separator
+targets excluded. The aggregate refuses to build if any of those disagree across runs.
+
+| Seed | Transformer bits/char | nats/token | perplexity | token acc | selected step | early-stopped | character bits/char | gap | checkpoint checksum |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| 7 | 2.004910 | 2.610098 | 13.6004 | 0.448860 | 2400 | no | 3.204348 | 1.199438 | `f46610501aa0…` |
+| 11 | 2.019749 | 2.629416 | 13.8657 | 0.446083 | 2400 | no | 3.227964 | 1.208215 | `c1a0a2378bb1…` |
+| 13 | 2.028269 | 2.640508 | 14.0203 | 0.443024 | 2400 | no | 3.233075 | 1.204806 | `aa7daf6874bd…` |
+
+| Statistic (n=3) | Transformer bits/char | Character bits/char | Gap | Unigram | Uniform |
+| --- | --- | --- | --- | --- | --- |
+| mean | **2.017643** | **3.221796** | **1.204153** | 3.611479 | 5.324312 |
+| sample standard deviation | 0.011821 | 0.015325 | 0.004642 | 0.0 | 0.0 |
+| median | 2.019749 | 3.227964 | 1.204806 | 3.611479 | 5.324312 |
+| min – max | 2.004910 – 2.028269 | 3.204348 – 3.233075 | 1.199438 – 1.208215 | 3.611479 | 5.324312 |
+| range | 0.023359 | 0.028727 | 0.008777 | 0.0 | 0.0 |
+
+Wall clock per run: preparation 26.43–46.46 s, character baseline 123.30–175.95 s, Transformer
+971.09–1,357.63 s (mean 1,124.74, sample SD 205.09). The aggregate is
+`data/experiments/E2607/study.json`, digest `efe541727c46c3699c02a48757d7abab…`, rebuilt from the three
+per-run reports by `--collect-only`; the same statistics were computed a second time directly over the values
+in the table above and agree.
+
+**The preregistered success condition holds on every seed.** The Transformer is below the character model on
+all three (by 1.1994 to 1.2082 bits per character), below the unigram baseline on all three (by 1.5918 to
+1.6066), and below uniform on all three (by 3.2960 to 3.3194). The two trivial baselines are identical across
+seeds, as they must be: they depend on the corpus and the split, both of which are fixed.
+
+## The budget did not finish, and that is the headline caveat
+
+On this corpus **no run early-stopped.** All three selected step **2400 — the ceiling of the budget** — with
+41 evaluations recorded and the validation loss still falling at the last one:
+
+| Seed | validation nats at step 0 | at step 2400 | minimum over the curve | step of that minimum |
+| --- | --- | --- | --- | --- |
+| 7 | 6.9759 | 2.6763 | 2.6763 | 2400 |
+| 11 | 6.9856 | 2.6922 | 2.6922 | 2400 |
+| 13 | 6.9758 | 2.7039 | 2.7039 | 2400 |
+
+The minimum sits at the final evaluation on every seed, which is the definition of a truncated curve.
+E2606's runs on the internal corpus stopped between step 1260 and 1380 of the same 2,400.
+
+That is the limitation this record declared in advance, and it happened exactly as stated: 2,400 steps of 32
+sequences is proportionally fewer epochs over 1.66 MB of prose than over 780 KB, so the reported model is
+**budget-limited, not converged**. Two consequences, neither of which may be glossed:
+
+- **2.0176 bits per character is a floor on what this architecture reaches on this data, not its optimum.** A
+  longer budget would lower it, and would very likely also lower the character baseline's number, whose own
+  selection landed at step 3000, 3400 and 3600 of its 4,000-step budget rather than early-stopping either.
+- **The comparison stays internally fair**, because both architectures and both baselines were run to the same
+  declared ceiling on the same split. What the budget limits is the *absolute* level, not the direction or the
+  size of the gap.
+
+So the honest cross-corpus comparison is a comparison of gaps, and the gaps are close: **1.2042 bits per
+character here (sample SD 0.0046 over three seeds) against 1.2143 there (SD 0.0336 over five).** The
+Transformer's advantage over the character architecture survived the move off the project's own prose to within
+0.010 bits, which is 0.8% of the gap.
+
+## Generation on prose the model was not written about
+
+`chakaso.training.generation_eval` ran over each of the three checkpoints. The continuation prompts were taken
+from **held-out documents of this corpus**, not from Chakaso's headings — the internal suite's prompts quote
+this repository's own section titles, which would make the comparison meaningless. They are recorded by source
+identifier: `pg11/part-0001.md` (whose first paragraph is the placeholder line `[Illustration]` — an honest
+artifact of the corpus rather than a curated prompt), `pg6130/part-0006.md` and `pg6130/part-0014.md`. All raw
+output is retained in `data/experiments/E2607/generation-E2607-seed-*.json`.
+
+| Seed | samples (of 3) with a periodic run of ≥3 | tail loop | mean bigram repetition |
+| --- | --- | --- | --- |
+| 7 | 1 | 0 | 0.5772 |
+| 11 | 0 | 0 | 0.5618 |
+| 13 | 1 | 1 | 0.6956 |
+
+Representative output, verbatim and unedited:
+
+```text
+[prompt: "The armies being ready to engage, a single combat is agreed"]
+  → " the\nbirth of the poorial poems of the poetry. The poet of the poet and the\npoetry of the poetry"
+
+[prompt: "[Illustration]"]
+  → " THE OF OF OF OF THE OF OF OF OF OF THE OF OF OF OF OF OF OF OF OF OF "
+
+[prompt: "The speeches are to be considered as they flow from the"]
+  → " body of the poems. The\npalm of the brass of the body of the brass of the brass of the poets\nand"
+```
+
+The model produces pseudo-Homeric noun phrases and stops coining words that are not in the corpus (`poorial`,
+`pooriginal`, `matigin`) — which is what a next-token predictor does when it has learned the surface music of a
+text without learning anything that constrains it to be true. The repetition statistics are the same order as
+on the internal corpus (mean bigram repetition 0.4870–0.6904 there, 0.5618–0.6956 here), and on the external
+text the looping is if anything more naked, since one sample above is 38 characters of `OF` repeated.
+
+**The measured improvement in held-out loss did not become usable text. It was never expected to, and this
+record states that rather than letting the loss number imply otherwise.**
+
+## Interpretation
+
+1. **The subword Transformer's advantage is not an artifact of this project's own prose.** On three seeds of
+   independently licensed text, in three different registers, with the same architecture, budget, tokenizer
+   configuration and metric code, the held-out gap to the character model is 1.2042 bits per character against
+   1.2143 on the internal corpus. The direction, the size and the ordering of the four quantities (Transformer
+   < character < unigram < uniform) all replicate.
+2. **Absolute numbers do not transfer, and must not be compared across corpora.** 2.0176 against 1.8794 bits
+   per character is not the model getting worse at language: the denominators are different text, and the
+   subword tokenizer's compression falls from 2.0829 to 1.8782 characters per identifier, which alone moves
+   bits-per-character in the unfavourable direction at a fixed per-token loss. Bits per character is comparable
+   *within* a corpus across tokenizations, which is why it is the primary metric; across corpora it describes
+   that corpus.
+3. **The seed spread is again far smaller than the gap**: SD 0.0118 against a gap of 1.2042, roughly 1/102 —
+   the same order as E2606's 1/158, measured over fewer seeds, so read it as "small", not as a refined
+   estimate.
+4. **What the failure would have looked like, and did not.** Had the Transformer landed above the unigram
+   baseline on this prose, every claim made from E2605's 1.8657 would have had to be reworded as a statement
+   about Chakaso's own documentation. It did not — but it did not on three seeds of three 19th-century books,
+   which is a long way from a general claim about language.
+
+## Deviations from the preregistration
+
+1. **The budget risk declared in advance materialized**: no run early-stopped and all three selected the
+   2400-step ceiling. The protocol was not changed mid-study — no budget was raised after the curve was seen —
+   and the consequence is reported as a floor on the level, not a revision of the gap.
+2. **The generation prompts moved to held-out documents of this corpus**, which the Planned outputs already
+   specified; the recorded identifiers and the `[Illustration]` artifact are disclosed rather than swapped for
+   prettier prompts.
+3. Nothing else. The corpus, split, tokenizer rules, model configuration, baselines, seeds, aggregation and
+   reporting rules are what was declared before the runs, and no seed was added, dropped, rerun or
+   substituted.
+
+## Limitations beyond those declared in advance
+
+- **Three seeds, and a standard deviation over three numbers.** The gap's SD (0.0046) is not stable at this n,
+  and the 1/102 spread-to-gap ratio should be read as "small", not as a measurement.
+- **Public-domain prose is not a workload.** Three books are *somebody else's text*, which is what makes the
+  comparison independent; nobody asked the model to do anything with them.
+- **Chunking leaves some documents beginning with a placeholder or a front-matter line**, and the split assigns
+  whole documents, so a held-out prompt can start awkwardly — one of the three here does.
+- **The Iliad is a translation and by far the largest contributor** (69 of 105 documents), so "external prose"
+  leans toward one register rather than balancing three.
+- **No peak-memory figure was obtained**, as elsewhere in this repository: the process-memory interfaces
+  available from this shell return nothing, so nothing is estimated in its place.
+
+## Conclusion
+
+Believed, at the strength three seeds of externally licensed prose support: **the subword Transformer's
+held-out advantage over the character architecture and over both trivial baselines is not a property of
+Chakaso's own documentation.** On 1.66 MB of Project Gutenberg text, with the budget and protocol unchanged, the
+gap is 1.2042 bits per character against 1.2143 measured on the internal corpus, and every seed beats every
+baseline. Also believed, and unchanged by that result: **the generated text is not usable.** Its loss improved;
+its sequences did not become statements, and on the external corpus one degenerates into repeated function
+words.
+
+Not established, and not claimed here: that the model generalizes to language in general, that the reported
+level is where this architecture converges (no run finished its budget), or that anything about a real
+workload has been measured. K-001 stays open.
+
+## Follow-up
+
+The next experiment is the one this record's own caveat makes unavoidable rather than optional: **the same
+external corpus at a budget that lets training converge.** The validation curve was still falling at step 2400
+on all three seeds, so the level reported here is truncated. Two candidates, varied one at a time: raise the
+step budget on this corpus, or hold the budget and vary the corpus size. Raising the budget first is the
+cheaper inference, because the truncation is measured and its direction is known, and a capacity question asked
+against an unconverged baseline cannot be answered.

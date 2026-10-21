@@ -348,5 +348,11 @@ score. The single deviation is in the record's container: the artifact metadata 
 E2606 also puts the spread on the headline figure: across five declared seeds, **1.8794 ± 0.0077 bits per
 character (sample standard deviation) against 3.0937 ± 0.0267 for the character architecture**. This record's
 1.8657 was the best of the five draws and its gap to the character model the widest; the number to quote is
-the mean, with the range beside it. Item 2 (external prose) is in progress as
-[E2607](../E2607/record.md) on pinned Project Gutenberg text, and item 3 remains deliberately deferred.
+the mean, with the range beside it. Item 2 is measured by [E2607](../E2607/record.md) on three seeds of
+externally licensed prose: the same protocol, budget and metric code give **2.0176 ± 0.0118 bits per character
+against 3.2218 ± 0.0153** for the character model — a gap of 1.2042 against the 1.2143 measured here, so the
+advantage is not an artifact of this repository's own writing, and the generated text is still not usable.
+Absolute numbers may not be compared across the two corpora (the subword tokenizer compresses at 2.0829
+characters per identifier here against 1.8782 there); the gaps may, and they agree. Item 3 stays deliberately
+deferred, with one caveat E2607 added: on 2.13× the data no run early-stopped, so a capacity experiment on
+that corpus needs a budget that converges first.
