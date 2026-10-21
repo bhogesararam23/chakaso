@@ -16,9 +16,11 @@ grounded model could later be measured honestly. It is one consumer of the model
 centre, and it is not the primary interface either: the Python library is. A CLI, a web frontend or a
 hosted API may exist only with a technical justification that does not displace model work.
 
-What exists today, precisely: a conversation can be held, but the only model implementations behind the
-boundary are a deterministic development double and an adapter over a measured 984-parameter character
-toy. No model answers a grounded question. Local lexical retrieval exists (ingest, corpus, BM25, evidence
+What exists today, precisely: a conversation can be held, but the model implementations behind the boundary
+are a deterministic development double, an adapter over a measured 984-parameter character toy, and an
+adapter over a measured 643,840-parameter subword Transformer (E2605, reproduced and put on a spread by
+E2606). None of the three answers a grounded question, and neither trained model is useful text. Local
+lexical retrieval exists (ingest, corpus, BM25, evidence
 pack); web fetching is opt-in and off every default path — see
 [`docs/agent/CURRENT_STATE.md`](docs/agent/CURRENT_STATE.md), which is the authority on what is real.
 [`docs/internal/engineering/model-centred-audit.md`](docs/internal/engineering/model-centred-audit.md)
@@ -49,6 +51,14 @@ data, tokenization, architecture, training, checkpoints, inference, model evalua
 **A trained checkpoint must be usable from Python.** Loadable and generatable with no terminal, no
 configuration file and no import of the conversation runtime. CLI handlers stay thin and call the same
 Python services; no core model behaviour may live only inside a CLI handler.
+
+**A measured result must stay re-trainable.** A record that trains on tracked text names the revision its
+corpus came from, and the run reads a checksum-verified snapshot — never the current working tree
+([ADR-0036](docs/decisions/ADR-0036-corpus-snapshot-recovery-from-history.md)). The drift guard is never
+weakened to let a re-run proceed, a reproduction is a new record with its own deviations rather than an edit
+to the numbers it reproduces, and an experiment's artifacts (manifest, snapshot, checkpoint, report) are
+written atomically and refused from being clobbered unasked. Seeds, budget, metric definitions and the primary
+comparison are declared in the record before any run, and a result is aggregated from the reports on disk.
 
 **Numerical dependencies stay optional and confined.** `numpy` belongs to `[train]`; `torch` belongs to
 `[nn]` and may be imported only by the modules
@@ -135,6 +145,22 @@ it; the second configuration file is what checks the model path, and it needs bo
 On Linux, install the CPU wheel index explicitly (`--extra-index-url
 https://download.pytorch.org/whl/cpu`); PyPI's default `torch` wheel is not the CPU build
 ([ADR-0034](docs/decisions/ADR-0034-optional-pytorch-model-extra.md)).
+
+Reproducing a measured run needs the corpus it consumed, which is not the text on disk once the repository
+has edited it. The full sequence is in [`docs/training.md`](docs/training.md); the shape is:
+
+```bash
+chakaso corpus restore --manifest experiments/E2605/corpus-manifest.json --revision 9b8a478 \
+  --output data/experiments/E2605/chakaso-repo-text-v1-snapshot.json   # reads history, verifies, writes a snapshot
+chakaso corpus verify  --manifest experiments/E2605/corpus-manifest.json \
+  --snapshot data/experiments/E2605/chakaso-repo-text-v1-snapshot.json
+chakaso experiment model --work-dir … --corpus-snapshot … --expected-corpus-fingerprint e45993f9badf706c
+chakaso experiment study --work-dir … --experiment E2606 --seeds 7,11,13,17,19 --split-seed 7 …
+chakaso experiment study … --collect-only     # rebuild an aggregate from the reports, training nothing
+```
+
+`corpus restore` reads a local revision with `git archive`; it needs a clone with history, and it refuses a
+revision whose tree is not the pinned corpus rather than substituting one.
 
 ## Repository map
 
