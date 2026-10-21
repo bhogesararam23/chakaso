@@ -39,8 +39,29 @@ its acceptance criteria are met and evidenced here.
 | J | Correctness, security, resource discipline | B–G | `core/atomic.py`, `nn_checkpoint.py`, tests | pushed | `0a48ca8` (staged writes), `d2051ac` (environment block) | interrupted-write, corruption, path-traversal and revision-shape tests; wall clock recorded per run, peak memory not measurable from this shell (stated, not guessed) |
 | K | Documentation and research integrity | B–J | `README.md`, `docs/*`, `CHANGELOG.md`, `docs/agent/*` | in_progress | `53896b8`, `74a2a04`, `c3923e6`, `bbd350f`, `c0c9ae5`, `d057bfe` | link + status hygiene (23 tests) |
 | L | Optional-dependency CI design | J | `docs/internal/engineering/optional-dependency-ci-matrix.md` | blocked (scope) | `9b47724` | 4 hygiene tests assert the matrix's parity with the documented commands and that the shipped workflow still covers only `.[dev]` |
-| M | Full regression and package verification | K | whole tree | in_progress | — | three matrices, both mypy configs, wheel build + clean-interpreter import |
+| M | Full regression and package verification | K | whole tree | validated | gates recorded below | three matrices, both mypy configs, wheel build, clean-interpreter import, checkpoint load from the installed copy |
 | N | Delivery | M | — | pending | — | push to `main`, verify the remote SHA, read the CI status |
+
+**Gate and package record for row M (measured 2026-10-21 against this tree).**
+
+| Check | Result |
+| --- | --- |
+| `pytest`, dependency-free `.venv` | 1,479 passed, 21 skipped in 21.44 s (1,500 collected; the skips are the numpy- and torch-gated modules) |
+| `pytest`, `.venv-train` (`.[dev,train]`) | 1,560 passed, 12 skipped in 25.58 s |
+| `pytest`, `.venv-nn` (`.[dev,train,nn]`) | 1,739 passed, 1 skipped in 99.50 s |
+| `ruff check .` / `ruff format --check .` | clean / 331 files already formatted |
+| `mypy src` (dependency-free) | clean over 118 source files |
+| `mypy --config-file configs/mypy-model-path.toml` (`[nn]`) | clean over all 147 source files |
+| `pip wheel --no-deps .` | `chakaso-0.1.0.dev0-py3-none-any.whl`: 147 modules, `py.typed`, `LICENSE`, no `.pt`/corpus bytes, no runtime dependency, extras `dev`/`train`/`nn` with the declared bounds |
+| Unpacked wheel, clean interpreter (`python -I -S`) | `chakaso 0.1.0.dev0`; `chakaso.models`, `chakaso.training`, and the dependency-free `manifest` / `snapshot` / `source_corpus` / `generation_eval` all import; `import numpy` fails, which is the point; 43 training exports, `restore_corpus_snapshot` among them |
+| CLI from the unpacked wheel | `--version` exits 0, `capabilities` / `config show` / `sources list` exit 0, `corpus` with no action returns 1, `experiment study` without its required arguments exits 2 |
+| `load_model` on a trained E2607 checkpoint, from the installed copy | `model_id=subword_transformer`, `development_double=False`, `context_window=128`; a 16-token greedy sample returns `\nAnd now the dust of the dark`; `score()` over `docs/architecture.md` returns 5.3878 nats (an out-of-domain smoke observation on a file the model never trained on, **not** a recorded result); an absent path is refused with a typed `ModelError` naming it |
+| Corpus recovery, end to end | `chakaso corpus restore` recovered E2605's 71 documents from `9b8a478` (fingerprint `e45993f9badf706c`, snapshot checksum `84ecbc61cf1e634b…`); `corpus verify` accepts the snapshot and refuses the moved working tree, naming 19 changed files and one newly selected document |
+| E2606 / E2607 aggregates | rebuilt from per-run reports by `--collect-only`, then recomputed independently over the reported values; both agree. Digests `3f8f0175c510ff68…` and `efe541727c46c369…` |
+| Tracked-file guards | `test_repository_hygiene` 23 passed: private pack untracked, no secret-shaped files, no tracked file over 1 MiB, no commercial provider dependency, torch confined to the admitted modules, both mypy configurations non-drifting, the CI document consistent with the documented commands and with what the shipped workflow actually installs |
+
+**Peak memory is not stated anywhere.** The process-memory interfaces reachable from this shell return
+nothing, so no RSS figure is claimed for any run, in any record, in this session.
 
 **Brief-node mapping (this session).** Brief §3 (verify the repository) → row A. §4 (E2605 provenance and
 snapshot) → rows B and D. §5 (data and leakage contract) → row C. §6 (predeclare the multi-seed study) →
