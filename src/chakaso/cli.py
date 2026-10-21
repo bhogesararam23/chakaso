@@ -538,6 +538,106 @@ def _build_parsers() -> tuple[argparse.ArgumentParser, argparse.ArgumentParser]:
         help="print a progress line per evaluation while the Transformer trains",
     )
 
+    experiment_study = experiment_subparsers.add_parser(
+        "study",
+        help="run one protocol across pre-declared seeds and aggregate the runs",
+        description=(
+            "Run chakaso.training.seed_study: a declared seed list over one fixed protocol, each run in its "
+            "own directory, aggregated from the reports on disk. The document split, corpus, tokenizer, "
+            "architecture and budget are shared across seeds; only initialization and batch order move. "
+            "Requires the optional [train] and [nn] extras."
+        ),
+    )
+    experiment_study.add_argument(
+        "--work-dir",
+        type=Path,
+        required=True,
+        help="where each run's artifacts and reports are written",
+    )
+    experiment_study.add_argument(
+        "--root", type=Path, default=Path(), help="repository root the corpus is prepared from"
+    )
+    experiment_study.add_argument(
+        "--experiment", required=True, help="the experiment identifier these runs belong to"
+    )
+    experiment_study.add_argument(
+        "--seeds",
+        required=True,
+        help="the pre-declared seeds, comma-separated, e.g. 7,11,13,17,19",
+    )
+    experiment_study.add_argument(
+        "--split-seed",
+        type=int,
+        required=True,
+        help="the seed every run draws its document split with, fixed across the study",
+    )
+    experiment_study.add_argument(
+        "--expected-corpus-fingerprint",
+        required=True,
+        help="the 16-character corpus fingerprint every run must train on",
+    )
+    experiment_study.add_argument(
+        "--corpus-snapshot", type=Path, default=None, help="train on this verified corpus snapshot"
+    )
+    experiment_study.add_argument(
+        "--max-steps",
+        type=int,
+        default=None,
+        help="override the step budget (a technical pilot uses a small one; a study must not)",
+    )
+    experiment_study.add_argument(
+        "--eval-every",
+        type=int,
+        default=None,
+        help="override the validation interval, in steps",
+    )
+    experiment_study.add_argument(
+        "--warmup-steps", type=int, default=None, help="override the learning-rate warmup length"
+    )
+    experiment_study.add_argument(
+        "--collect-only",
+        action="store_true",
+        help="rebuild the aggregate from the reports already on disk, running nothing",
+    )
+    experiment_study.add_argument(
+        "--no-reuse",
+        action="store_true",
+        help="re-run seeds that already have a report instead of reusing it",
+    )
+    experiment_study.add_argument(
+        "--reference",
+        type=Path,
+        default=None,
+        help="a recorded report to reproduce against, e.g. the experiment being repeated",
+    )
+    experiment_study.add_argument(
+        "--reference-seed",
+        type=int,
+        default=None,
+        help="which of this study's seeds is the reproduction of --reference",
+    )
+    experiment_study.add_argument(
+        "--write-report",
+        type=Path,
+        default=None,
+        help="write the aggregate here and print its digest",
+    )
+    experiment_study.add_argument(
+        "--overwrite",
+        action="store_true",
+        help="replace artifacts this study would otherwise refuse",
+    )
+    experiment_study.add_argument(
+        "--json",
+        action="store_true",
+        help="emit the full aggregate instead of the one-line summary",
+    )
+    experiment_study.add_argument(
+        "--verbose",
+        action="store_true",
+        help="print a progress line per evaluation while each run trains",
+    )
+
     corpus_parser = subparsers.add_parser(
         "corpus",
         help="recover or verify the pinned corpus a recorded experiment trained on",
@@ -1647,9 +1747,11 @@ def _run_experiment_command(args: argparse.Namespace) -> int:
     """
     if args.experiment_command == "model":
         return _run_model_experiment(args)
+    if args.experiment_command == "study":
+        return _run_model_study(args)
     if args.experiment_command != "run":
         print(
-            f"{PROGRAM}: choose an experiment action: 'run retrieval', 'run correction' or 'model'",
+            f"{PROGRAM}: choose an experiment action: 'run retrieval', 'run correction', 'model' or 'study'",
             file=sys.stderr,
         )
         return 1
@@ -1734,6 +1836,89 @@ def _run_model_experiment(args: argparse.Namespace) -> int:
     print(
         "note: a small model trained on this repository's own text on CPU; the numbers measure the "
         "training path and the corpus, not language capability",
+        file=sys.stderr,
+    )
+    return 0
+
+
+def _run_model_study(args: argparse.Namespace) -> int:
+    """Run or rebuild a seed study through the library API. No study logic lives here.
+
+    The seed list is parsed here because it is operator input, and it is parsed *strictly*: a study whose
+    seeds were mistyped would report a spread over runs nobody declared. Every number that defines the
+    protocol still comes from the library's defaults unless the operator names it.
+    """
+    try:
+        from chakaso.training.errors import StudyProtocolError, TrainingError
+        from chakaso.training.seed_study import (
+            SeedStudy,
+            build_study_report,
+            run_seed_study,
+            study_summary,
+            write_study_report,
+        )
+        from chakaso.training.subword_experiment import ExperimentPlan
+    except ImportError as exc:  # pragma: no cover - depends on the environment lacking the extras
+        print(
+            f"{PROGRAM}: the 'experiment study' action needs the optional [train] and [nn] extras "
+            f'(pip install -e ".[dev,train,nn]"); {exc}',
+            file=sys.stderr,
+        )
+        return 1
+
+    try:
+        seeds = tuple(int(item) for item in args.seeds.split(",") if item.strip())
+        reference = None
+        if args.reference is not None:
+            reference = json.loads(args.reference.read_text(encoding="utf-8"))
+        base = ExperimentPlan(root=args.root, work_dir=args.work_dir)
+        max_steps = args.max_steps if args.max_steps is not None else base.max_steps
+        plan = ExperimentPlan(
+            root=args.root,
+            work_dir=args.work_dir,
+            max_steps=max_steps,
+            eval_every=args.eval_every if args.eval_every is not None else base.eval_every,
+            warmup_steps=(
+                args.warmup_steps
+                if args.warmup_steps is not None
+                else min(base.warmup_steps, max_steps)
+            ),
+            split_seed=args.split_seed,
+            expected_corpus_fingerprint=args.expected_corpus_fingerprint,
+            corpus_snapshot=args.corpus_snapshot,
+            overwrite_artifacts=args.overwrite,
+        )
+        study = SeedStudy(experiment=args.experiment, plan=plan, seeds=seeds)
+        if args.collect_only:
+            aggregate = build_study_report(
+                experiment=args.experiment,
+                work_dir=plan.work_dir,
+                seeds=seeds,
+                reference=reference,
+                reference_seed=args.reference_seed,
+            )
+        else:
+            aggregate = run_seed_study(
+                study,
+                verbose=args.verbose,
+                reuse_completed=not args.no_reuse,
+                reference=reference,
+                reference_seed=args.reference_seed,
+            )
+    except (OSError, ValueError, StudyProtocolError, TrainingError) as exc:
+        print(f"{PROGRAM}: {exc}", file=sys.stderr)
+        return 1
+
+    if args.write_report is not None:
+        digest = write_study_report(aggregate, args.write_report)
+        print(f"study report digest {digest}", file=sys.stderr)
+    if args.json:
+        print(json.dumps(aggregate, sort_keys=True, indent=2, ensure_ascii=False, default=str))
+    else:
+        print(study_summary(aggregate))
+    print(
+        "note: a small model trained on this repository's own text on CPU; the spread measures the "
+        "training path across seeds, not language capability",
         file=sys.stderr,
     )
     return 0

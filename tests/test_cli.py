@@ -882,6 +882,72 @@ def test_experiment_model_refuses_a_corpus_it_was_not_given(
     assert not (tmp_path / "work" / "E2605-transformer.pt").exists()
 
 
+@pytest.mark.skipif(
+    __import__("importlib").util.find_spec("torch") is None,
+    reason="the seed study lives behind [train] and [nn]",
+)
+def test_experiment_study_collects_without_running_anything(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """`--collect-only` is how an aggregate is rebuilt after the fact, so it must not train."""
+    arguments = [
+        "experiment",
+        "study",
+        "--work-dir",
+        str(tmp_path / "study"),
+        "--experiment",
+        "E2699",
+        "--seeds",
+        "7,11",
+        "--split-seed",
+        "7",
+        "--expected-corpus-fingerprint",
+        "0" * 16,
+        "--collect-only",
+        "--write-report",
+        str(tmp_path / "study.json"),
+    ]
+
+    assert main(arguments) == 0
+
+    out = capsys.readouterr()
+    assert "E2699: 0/2 seeds, nothing measured yet, missing [7, 11]" in out.out
+    assert "study report digest" in out.err
+    payload = json.loads((tmp_path / "study.json").read_text(encoding="utf-8"))
+    assert payload["declared_seeds"] == [7, 11]
+    assert payload["completed_seeds"] == []
+    assert not (tmp_path / "study" / "E2699").exists()
+
+
+@pytest.mark.skipif(
+    __import__("importlib").util.find_spec("torch") is None,
+    reason="the seed study lives behind [train] and [nn]",
+)
+def test_experiment_study_refuses_a_seed_list_that_is_not_a_declaration(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    base = [
+        "experiment",
+        "study",
+        "--work-dir",
+        str(tmp_path / "study"),
+        "--experiment",
+        "E2699",
+        "--split-seed",
+        "7",
+        "--expected-corpus-fingerprint",
+        "0" * 16,
+        "--collect-only",
+    ]
+
+    assert main([*base, "--seeds", "7,seven"]) == 1
+    assert "invalid literal" in capsys.readouterr().err
+    assert main([*base, "--seeds", "7,7"]) == 1
+    assert "must be distinct" in capsys.readouterr().err
+    assert main([*base, "--seeds", ""]) == 1
+    assert "no declared seeds" in capsys.readouterr().err
+
+
 # ---------------------------------------------------------------------------
 # corpus
 # ---------------------------------------------------------------------------

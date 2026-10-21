@@ -301,6 +301,26 @@ def test_the_summary_line_names_the_sample_the_spread_and_the_missing_runs(tmp_p
     assert "missing [13]" in line
 
 
+def test_the_summary_survives_a_study_with_nothing_completed(tmp_path: Path) -> None:
+    """The line an operator reads after an hour of training must not crash on the failure case."""
+    report = build_study_report(experiment="E2698", work_dir=tmp_path, seeds=[7, 11])
+
+    line = study_summary(report)
+
+    assert line == "E2698: 0/2 seeds, nothing measured yet, missing [7, 11]"
+
+
+def test_a_single_completed_run_reports_no_spread_and_says_single_run(tmp_path: Path) -> None:
+    _write_run(tmp_path, "E2698", 7, _run_report(7, bits=2.0))
+
+    report = build_study_report(experiment="E2698", work_dir=tmp_path, seeds=[7, 11])
+    line = study_summary(report)
+
+    assert report["aggregate"]["transformer_bits_per_character"]["sample_stdev"] is None
+    assert "sample stdev single run" in line
+    assert "missing [11]" in line
+
+
 # ------------------------------------------------------------------ reproduction comparison
 
 

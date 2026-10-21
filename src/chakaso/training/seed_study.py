@@ -258,7 +258,12 @@ def _require_same_protocol(
 
 
 def run_seed_study(
-    study: SeedStudy, *, verbose: bool = False, reuse_completed: bool = True
+    study: SeedStudy,
+    *,
+    verbose: bool = False,
+    reuse_completed: bool = True,
+    reference: Mapping[str, Any] | None = None,
+    reference_seed: int | None = None,
 ) -> dict[str, Any]:
     """Run every declared seed, then build the aggregate from the reports the runs wrote.
 
@@ -266,6 +271,10 @@ def run_seed_study(
     because the third seed crashed is worse than a report with a named failure in it, and a failure is data.
     Nothing here decides whether a failed run is rerun — that is the preregistered policy's job, and the
     aggregate always shows what is missing.
+
+    Args:
+        reference: A recorded report to reproduce against, with ``reference_seed`` naming which run is the
+            reproduction. Both are optional; a study with no reference only reports its spread.
 
     Returns:
         The study report from :func:`build_study_report`, whose per-run numbers were read back off disk.
@@ -327,6 +336,8 @@ def run_seed_study(
         work_dir=study.plan.work_dir,
         seeds=study.seeds,
         outcomes=outcomes,
+        reference=reference,
+        reference_seed=reference_seed,
     )
 
 
@@ -539,19 +550,27 @@ def write_study_report(report: Mapping[str, Any], destination: Path) -> str:
 
 
 def study_summary(report: Mapping[str, Any]) -> str:
-    """One line naming the sample, its centre and its spread — and the runs that are not there."""
-    aggregate = report["aggregate"]["transformer_bits_per_character"]
-    character = report["aggregate"]["character_bits_per_character"]
-    spread = (
-        f"{aggregate['sample_stdev']:.4f}"
-        if aggregate["sample_stdev"] is not None
-        else "single run"
-    )
-    line = (
-        f"{report['study']}: {aggregate['runs']}/{len(report['declared_seeds'])} seeds, "
-        f"transformer {aggregate['mean']:.4f} bits/char (sample stdev {spread}), "
-        f"character {character['mean']:.4f}"
-    )
+    """One line naming the sample, its centre and its spread — and the runs that are not there.
+
+    A study with nothing completed says so rather than formatting a ``None``: this line is what an operator
+    reads after an hour of training, and it has to survive the failure case.
+    """
+    transformer = report["aggregate"]["transformer_bits_per_character"]
+    declared = len(report["declared_seeds"])
+    head = f"{report['study']}: {transformer['runs']}/{declared} seeds"
+    if transformer["runs"] == 0:
+        line = f"{head}, nothing measured yet"
+    else:
+        character = report["aggregate"]["character_bits_per_character"]
+        spread = (
+            f"{transformer['sample_stdev']:.4f}"
+            if transformer["sample_stdev"] is not None
+            else "single run"
+        )
+        line = (
+            f"{head}, transformer {transformer['mean']:.4f} bits/char (sample stdev {spread}), "
+            f"character {character['mean']:.4f}"
+        )
     if report["missing_seeds"]:
         line += f", missing {report['missing_seeds']}"
     if report["failed_seeds"]:
