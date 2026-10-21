@@ -36,8 +36,8 @@ the project's central claim false.
 | Stage | Goal | Output | Status |
 | --- | --- | --- | --- |
 | M0 | Train nothing; validate the system architecture | Web-grounded prototype | In progress |
-| M1 | Train a tokenizer on a controlled corpus | Versioned tokenizer | Partial — a deterministic character vocabulary is built and used in E2601; a learned subword/BPE tokenizer is Planned |
-| M2 | Train a tiny Transformer from random initialisation | Chakaso-0 checkpoint | Planned — E2601 trained a tiny *non-Transformer* character MLP from random init as a precursor; the Transformer itself has not been built |
+| M1 | Train a tokenizer on a controlled corpus | Versioned tokenizer | **Done for both tokenizations** — a deterministic character vocabulary (used by E2601/E2602) and, since P30, a learned byte-pair subword vocabulary trained on pinned training-split text (`chakaso.training.subword`, ADR-0033's model-centred contract) |
+| M2 | Train a tiny Transformer from random initialisation | Chakaso-0 checkpoint | In progress — E2601 trained a 984-parameter *non-Transformer* character MLP as a precursor; P30 delivered its prerequisites (manifest, document split, subword tokenizer, sequence packing) and the Transformer itself is P31 |
 | M3 | Pretrain a small useful base model | Chakaso Base | Planned |
 | M4 | Instruction tune | Chakaso Instruct | Planned |
 | M5 | Teach grounding and correction behaviour | Chakaso Grounded | Planned |
@@ -169,12 +169,15 @@ something nobody defined.
 
 | Item | Status |
 | --- | --- |
-| Tokenizer | Not started |
-| Dataset pipeline | Not started |
-| Model code | Not started |
-| Training loop | Not started |
-| Checkpoints | None exist |
-| Experiments | None run |
+| Corpus and provenance | Implemented — `chakaso.training.corpus` (the self-authored toy text) and, since P30, `chakaso.training.manifest`, which pins a real document set by path and content digest and refuses drift |
+| Tokenizer | Implemented — a deterministic character vocabulary (`chakaso.training.tokenizer`, used by E2601/E2602) and a learned byte-pair subword vocabulary (`chakaso.training.subword`, dependency-free, total over Unicode, self-describing and checksum-verified on load) |
+| Dataset pipeline | Implemented — document-level three-way split with deduplication before selection (`chakaso.training.data.split_text_units`), sequence packing with per-position targets (`chakaso.training.packing`), and split/manifest fingerprints |
+| Model code | Experimental — the character MLP is implemented and measured (E2601); the Transformer is P31 |
+| Training loop | Experimental — full-batch Adam over the character model is implemented and measured; mini-batching arrives with P31 |
+| Checkpoints | Implemented for the character model (JSON schema/2, checksum-verified, vocabulary embedded); a versioned Transformer format is P31 |
+| Experiments | E2601 and E2602 are measured results on a toy corpus; nothing has been measured on a real workload (K-001) |
 
-Nothing in this document has been executed. The sequence above is a plan, and it
-will be revised when the first experiment contradicts it.
+The two halves of this table used to contradict each other — the header cited a measured E2601 while the
+rows below said the tokenizer, model code, training loop and checkpoints did not exist. They were written
+before any of it ran. The rows now state what is implemented, what is experimental, and what is still P31;
+the substance has not changed, only the accuracy of the description.

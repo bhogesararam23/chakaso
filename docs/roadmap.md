@@ -1,9 +1,14 @@
 # Roadmap
 
-The roadmap's rule: build the system before scaling the model, and require each
-phase to produce a working artifact plus evidence that the next phase is
-justified. Phases are not dates. A phase is done when its exit criteria are met,
-and the criteria are written so that a phase cannot be declared done by assertion.
+The rule that ordered this roadmap — build the system before scaling the model,
+and require each phase to produce a working artifact plus evidence that the next
+phase is justified — was reversed by
+[ADR-0033](decisions/ADR-0033-model-centred-product-contract.md): the model is now the
+product and the system is one of its consumers, because P4, P5 and P10's remaining exit
+criteria all need a model that generates, and scheduling them ahead of it kept deferring
+the thing the project exists to build. The rest of the discipline is unchanged: a phase
+is done when its exit criteria are met on evidence, never by assertion, and the criteria
+are written so a phase cannot declare itself done.
 
 ## Phases
 
@@ -16,7 +21,7 @@ and the criteria are written so that a phase cannot be declared done by assertio
 | P4 | Web-grounded answers | Permitted public retrieval produces source-linked answers with verified citations | Partial — bounded opt-in fetcher and narrow HTML ingestion exist; no default path fetches, and no model turns retrieved evidence into a cited answer |
 | P5 | Correction loop | Challenge → reassessment → correction works on fixed tests | Partial — the decision rule, reassessment over a stored answer, an explicit identifier trigger and a correction development benchmark pass on synthetic tests; no revised prose (no model) and no autonomous loop |
 | P6 | Evaluation harness | Automated grounding, citation, retrieval and conversation benchmarks | Partial — retrieval, correction, strategy-comparison and semantic-evaluation development benchmarks plus structural claim/citation/grounding/answer evaluation exist over synthetic fixtures; no real-workload or model-quality benchmark |
-| P7 | Training pipeline | Tokenizer, data, configuration and checkpoint pipeline runs end to end | Partial — E2601 ran a character tokenizer, a leak-free split, a validated config, an optimizer, a checkpoint format and a training loop end to end on a 344-token synthetic corpus; a real/subword tokenizer and scale are not built |
+| P7 | Training pipeline | Tokenizer, data, configuration and checkpoint pipeline runs end to end | Partial — E2601 ran a character tokenizer, a leak-free split, a validated config, an optimizer, a checkpoint format and a training loop end to end on a 344-token synthetic corpus. Since P30 the data half is built for a real corpus: a content-pinned manifest, a document-level split, a learned byte-pair subword tokenizer and sequence packing (dependency-free, in the core CI matrix). A Transformer, mini-batching and scale are P31 |
 | P8 | Chakaso-0 | Tiny model trains from random initialisation and learns a controlled corpus | Achieved as a measured experiment — E2601 trained a 984-parameter character model from random init that lowers held-out loss below uniform/unigram baselines; it is a learning-loop demonstration, not a useful model, and the single-seed high-variance result is flagged as such |
 | P9 | Chakaso Base | Small model reaches useful language-model baselines | Not started |
 | P10 | Chakaso Grounded | Instruction, grounding and correction behaviour improve on internal benchmarks | Not started |

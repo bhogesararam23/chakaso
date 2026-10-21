@@ -10,6 +10,67 @@ capability is implemented or still planned.
 
 ## Unreleased
 
+### 2026-10-21 — Chakaso is a language-model project, and now has a real corpus to train on (ADR-0033/0034, P30)
+
+**Decided**
+
+- **ADR-0033** states the product contract: the product is a trained model plus the reproducibility
+  machinery around it; the primary interface is the Python library — a checkpoint must be loadable and
+  generatable with no terminal, no config file and no runtime import; the CLI is a secondary developer
+  utility whose handlers stay thin; model evaluation is separate from harness evaluation, so a retrieval
+  benchmark or a reference oracle can never be cited as language-model competence. It inverts the
+  roadmap's "system before model" rule and, on the record, defers P29 and P32 rather than completing them.
+- **ADR-0034** admits `torch` as a second optional extra, `[nn]`, for the model path only. It reopens
+  ADR-0030 on that record's own revisit conditions with measurements: the existing full-batch loop costs
+  1.87 s/step at a 100 k batch and materializes 1.04 GB of probabilities at corpus scale, and verifying
+  every scalar of the target model by finite differences extrapolates to ~45 hours. It records honestly
+  that the speed argument did **not** survive measurement (1.16× on a same-shape float32 matmul), that the
+  Windows process-memory APIs gave no peak-RSS number from this shell, and that the `[nn]` tests inherit
+  K-009's gap: they skip in the dependency-free matrix and no CI job for them is claimed.
+- The measured environment and candidate comparison are in
+  [`docs/research/next-model-experiment.md`](docs/research/next-model-experiment.md), and the diagnosis of
+  how the repository drifted is in
+  [`docs/internal/engineering/model-centred-audit.md`](docs/internal/engineering/model-centred-audit.md).
+
+**Added — the model path's data layer, dependency-free**
+
+- **Implemented** `chakaso.training.manifest`: a corpus named by path and content digest, with licence,
+  source, normalization step and size bound recorded. `verify_corpus` checks the corpus *as a set* — an
+  edited, deleted or newly-matching file is drift and is named, so a saved result cannot be restated
+  against text the model never saw. Digests are taken after CRLF→LF normalization, so a contributor's git
+  line-ending setting cannot move a corpus fingerprint. Snapshots keep a run's exact bytes after the
+  tracked text moves; duplicate content is reported.
+- **Implemented** `chakaso.training.data.split_text_units`: a document-level three-way split that
+  deduplicates by content *before* selecting sides, because a byte-identical document otherwise trains
+  twice and can straddle the boundary it is supposed to sit behind. Sides, an identifier map and a
+  fingerprint over the exact assignment are carried on the result.
+- **Implemented** `chakaso.training.subword`: a byte-pair subword vocabulary trained by this project on
+  the text it is given. Byte-level base, so encoding is total and no character is unknown; a named
+  pre-tokenizer, so merges never cross a word boundary and segmentation is reviewable; a reserved
+  document-separator identifier allocated before any merge; deterministic tie-breaking, so the same
+  training text always produces the same fingerprint; and a self-describing, checksum-verified record whose
+  load refuses an altered merge table or a foreign format.
+- **Implemented** `chakaso.training.packing`: one side of a split becomes fixed-length next-token
+  examples, with every document terminated by the separator, targets shifted by exactly one token, long
+  documents truncated into blocks rather than discarded, and the dropped tail reported rather than hidden.
+- **Measured on the real corpus** (this checkout, 2026-10-21): 69 tracked documents, 754,789 characters,
+  manifest fingerprint `0f9f7d2f57644a4d`; a 49/10/10 document split with no duplicate content; a
+  1,024-entry vocabulary trained in 20.3 s over 178,252 pieces, compressing the training side to 234,960
+  tokens at 2.12 characters per token, with 82,663 validation and 38,982 test tokens.
+- **98 new tests**, all of them in the dependency-free matrix (1366 passed, 8 skipped there, up from 1268;
+  1418 passed with `[train]` installed), including leakage tests written so they can actually fail: a
+  held-out document carries a token no other document has, and its appearance anywhere in the training side
+  is a failure.
+
+**Corrected**
+
+- `docs/training.md` ended with a status table saying the tokenizer, dataset pipeline, model code, training
+  loop and checkpoints were "Not started" and that "Nothing in this document has been executed", while its
+  own header cited the measured E2601. The table now names what is implemented, what is experimental and
+  what is still P31. The README's status rows and the roadmap's ordering rule are realigned the same way.
+- The `chakaso.training` package docstring still said "No trained Chakaso model exists yet"; it now states
+  the three dependency tiers and that the measured result is a learning loop on a toy, not a useful model.
+
 ### 2026-10-19 — Retrieval can now tell "no evidence" from "k candidates" (P28, E2604)
 
 **Added / measured**
