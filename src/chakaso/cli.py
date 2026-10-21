@@ -451,6 +451,68 @@ def _build_parsers() -> tuple[argparse.ArgumentParser, argparse.ArgumentParser]:
         help="emit the machine-readable result record instead of a one-line summary",
     )
 
+    experiment_model = experiment_subparsers.add_parser(
+        "model",
+        help="run the from-scratch model experiment (E2605-class) through the training API",
+        description=(
+            "Run chakaso.training.subword_experiment end to end: pin the tracked text into a corpus "
+            "manifest, split it by document, train a byte-pair subword vocabulary on the training side, "
+            "train the character baseline and the causal Transformer, select on validation, and report "
+            "held-out bits per character against uniform and unigram baselines. Requires the optional "
+            "[train] and [nn] extras. This is a measurement of a small model on the project's own text "
+            "on CPU — not a capable language model, and not a real-world workload."
+        ),
+    )
+    experiment_model.add_argument(
+        "--work-dir",
+        type=Path,
+        required=True,
+        help="where the corpus manifest, tokenizer and checkpoints are written (never committed)",
+    )
+    experiment_model.add_argument(
+        "--root",
+        type=Path,
+        default=Path(),
+        help="repository root the corpus is prepared from (default: the current directory)",
+    )
+    experiment_model.add_argument(
+        "--max-steps",
+        type=int,
+        default=None,
+        help="override the Transformer optimizer-step ceiling",
+    )
+    experiment_model.add_argument(
+        "--seed", type=int, default=None, help="override the experiment's master seed"
+    )
+    experiment_model.add_argument(
+        "--eval-every",
+        type=int,
+        default=None,
+        help="override the validation interval, in steps (a short smoke run needs a small one)",
+    )
+    experiment_model.add_argument(
+        "--warmup-steps",
+        type=int,
+        default=None,
+        help="override the learning-rate warmup length (it may not exceed the step budget)",
+    )
+    experiment_model.add_argument(
+        "--write-report",
+        type=Path,
+        default=None,
+        help="also write the machine-readable report to this path and print its digest",
+    )
+    experiment_model.add_argument(
+        "--json",
+        action="store_true",
+        help="emit the full machine-readable report instead of the one-line comparison",
+    )
+    experiment_model.add_argument(
+        "--verbose",
+        action="store_true",
+        help="print a progress line per evaluation while the Transformer trains",
+    )
+
     storage_parser = subparsers.add_parser(
         "storage",
         help="check or migrate a durable answer store",
@@ -1492,9 +1554,11 @@ def _run_experiment_command(args: argparse.Namespace) -> int:
     this only picks the baseline by subject and formats the library's ``to_dict``. Output is
     deterministic and offline; the result's ``result_id`` is the reproducibility fingerprint.
     """
+    if args.experiment_command == "model":
+        return _run_model_experiment(args)
     if args.experiment_command != "run":
         print(
-            f"{PROGRAM}: choose an experiment action: 'run retrieval' or 'run correction'",
+            f"{PROGRAM}: choose an experiment action: 'run retrieval', 'run correction' or 'model'",
             file=sys.stderr,
         )
         return 1
@@ -1512,6 +1576,63 @@ def _run_experiment_command(args: argparse.Namespace) -> int:
             f"experiment {result.experiment_id}: result {result.result_id} "
             f"on {result.dataset_id} v{result.dataset_version}"
         )
+    return 0
+
+
+def _run_model_experiment(args: argparse.Namespace) -> int:
+    """Run the model experiment through the library API. No experiment logic lives here.
+
+    ``chakaso.training.subword_experiment`` imports ``torch``, so the module is loaded only when this
+    action is chosen — every other CLI path stays dependency-free, and a missing extra is reported by
+    name instead of silently running something smaller.
+    """
+    try:
+        from chakaso.training.subword_experiment import ExperimentPlan, run_experiment, summarise
+        from chakaso.training.subword_experiment import write_report as write_model_report
+    except ImportError as exc:  # pragma: no cover - depends on the environment lacking the extras
+        print(
+            f"{PROGRAM}: the 'experiment model' action needs the optional [train] and [nn] extras "
+            f'(pip install -e ".[dev,train,nn]"); {exc}',
+            file=sys.stderr,
+        )
+        return 1
+
+    # Defaults stay in the library: a base plan is read for the values the operator did not name. The plan
+    # is then built in one go rather than patched flag by flag, because it validates on construction and a
+    # half-applied override (a short step budget against the default warmup) would be rejected as if the
+    # operator had asked for it.
+    base = ExperimentPlan(root=args.root, work_dir=args.work_dir)
+    max_steps = args.max_steps if args.max_steps is not None else base.max_steps
+    plan = ExperimentPlan(
+        root=args.root,
+        work_dir=args.work_dir,
+        max_steps=max_steps,
+        eval_every=args.eval_every if args.eval_every is not None else base.eval_every,
+        warmup_steps=(
+            args.warmup_steps
+            if args.warmup_steps is not None
+            else min(base.warmup_steps, max_steps)
+        ),
+        seed=args.seed if args.seed is not None else base.seed,
+    )
+    try:
+        report = run_experiment(plan, verbose=args.verbose)
+    except (ValueError, ChakasoError) as exc:
+        print(f"{PROGRAM}: {exc}", file=sys.stderr)
+        return 1
+
+    if args.write_report is not None:
+        digest = write_model_report(report, args.write_report)
+        print(f"report digest {digest}", file=sys.stderr)
+    if args.json:
+        print(json.dumps(report, sort_keys=True, indent=2, ensure_ascii=False, default=str))
+    else:
+        print(summarise(report))
+    print(
+        "note: a small model trained on this repository's own text on CPU; the numbers measure the "
+        "training path and the corpus, not language capability",
+        file=sys.stderr,
+    )
     return 0
 
 

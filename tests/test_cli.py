@@ -716,6 +716,87 @@ def test_experiment_without_an_action_is_reported(capsys: pytest.CaptureFixture[
     assert "run" in capsys.readouterr().err
 
 
+def test_experiment_model_action_is_documented(capsys: pytest.CaptureFixture[str]) -> None:
+    # The CLI is a secondary interface, so the one thing it must get right is saying what it runs: a
+    # small model on the project's own text, and not a claim of capability.
+    with pytest.raises(SystemExit) as caught:  # argparse prints help and exits
+        main(["experiment", "model", "--help"])
+    assert caught.value.code == 0
+
+    # argparse wraps help text, so the limitation sentence is read with its line breaks collapsed.
+    printed = " ".join(capsys.readouterr().out.split())
+    assert "--work-dir" in printed
+    assert "not a capable language model, and not a real-world workload" in printed
+
+
+def test_experiment_model_requires_a_work_directory() -> None:
+    with pytest.raises(SystemExit) as caught:
+        main(["experiment", "model"])
+    assert caught.value.code == 2
+
+
+@pytest.mark.skipif(
+    __import__("importlib").util.find_spec("torch") is None,
+    reason="the model experiment lives behind [train] and [nn]",
+)
+def test_experiment_model_runs_the_pipeline_through_the_library_api(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """End to end through the CLI: the handler must delegate, not reimplement."""
+    root = tmp_path / "repo"
+    # Big enough that the default 128-token context yields at least one packed block per side, which is
+    # what the driver's packing layer refuses to do silently if it does not.
+    for index in range(40):
+        target = root / "docs" / f"doc{index}.md"
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_text(
+            "# Document "
+            + str(index)
+            + " prose about topic "
+            + str(index)
+            + " that repeats, and repeats, and repeats again across the sentence.\n"
+            + "A second line about the same topic with other words that repeat as well.\n",
+            encoding="utf-8",
+        )
+    # The driver's include spec names these files exactly, so a corpus root has to carry them.
+    (root / "AGENTS.md").write_text(
+        "# Notes\n\nShort notes that repeat about the repository.\n", encoding="utf-8"
+    )
+    (root / "LICENSE").write_text("Apache License 2.0\n", encoding="utf-8")
+    work = tmp_path / "work"
+    report_path = tmp_path / "results.json"
+
+    assert (
+        main(
+            [
+                "experiment",
+                "model",
+                "--root",
+                str(root),
+                "--work-dir",
+                str(work),
+                "--max-steps",
+                "12",
+                "--eval-every",
+                "4",
+                "--warmup-steps",
+                "2",
+                "--seed",
+                "5",
+                "--write-report",
+                str(report_path),
+            ]
+        )
+        == 0
+    )
+
+    out = capsys.readouterr()
+    assert "bits/char" in out.out
+    assert "not language capability" in out.err
+    assert report_path.is_file()
+    assert "report digest" in out.err
+
+
 # ---------------------------------------------------------------------------
 # storage
 # ---------------------------------------------------------------------------
