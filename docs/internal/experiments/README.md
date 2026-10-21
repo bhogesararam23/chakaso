@@ -1,6 +1,7 @@
 # Experiments
 
-**Four experiment records are committed: E2601, E2602, E2603 and E2604.** E2601
+**Five experiment records are closed: E2601, E2602, E2603, E2604 and E2605. Two more are preregistered and
+running: E2606 and E2607.** E2601
 ([`../../../experiments/E2601/record.md`](../../../experiments/E2601/record.md)) is the project's first
 measured result — a from-scratch character model whose held-out next-token loss beats uniform and unigram
 baselines; E2602
@@ -14,10 +15,21 @@ retrieval failures (forbidden hits, false retrievals), not any model capability;
 ([`../../../experiments/E2604/record.md`](../../../experiments/E2604/record.md)) evaluates the P28
 evidence-sufficiency decision (ADR-0032) against the E2603 baseline — 100% accurate on the workload (all
 unanswerable cases caught, zero answerable cases wrongly abstained) with a documented narrow,
-corpus-specific threshold band. No *hypothesis* (H1–H7) has been tested yet; none of the four establishes
-a research claim about grounding, citation or correction on real language. The project also has development
-benchmarks (retrieval and correction) and a reproducible experiment layer (`chakaso.experiments`) — those
-are regression instruments over synthetic fixtures, distinct from a committed experiment record.
+corpus-specific threshold band; E2605
+([`../../../experiments/E2605/record.md`](../../../experiments/E2605/record.md)) measures the subword
+Transformer against the character architecture on 71 pinned documents of this repository's own prose —
+1.8657 bits per character against 3.1343, 3.3224 unigram and 4.8010 uniform, one seed. No *hypothesis*
+(H1–H7) has been tested yet; none of the five establishes a research claim about grounding, citation or
+correction on real language, and E2605 establishes a next-token result on self-authored text, not capability.
+The project also has development benchmarks (retrieval and correction) and a reproducible experiment layer
+(`chakaso.experiments`) — those are regression instruments over synthetic fixtures, distinct from a committed
+experiment record.
+
+E2606 and E2607 were **written, committed and frozen before their runs began**, which is what the word
+"preregistered" is used for here: their seeds, primary metric, budget, aggregation method, failure policy and
+success/failure interpretations are fixed in the record, so a result cannot be sorted into a story afterwards.
+E2606 puts a spread on E2605's number across five declared seeds; E2607 asks whether the same protocol beats
+the same baselines on an externally licensed corpus that is not this project's own writing.
 
 This directory defines the record format so that an experiment is recorded properly rather than being
 described in a commit message.
@@ -117,6 +129,12 @@ The next experiment, or the decision this settles.
 
 - A record is written **before** the run, with status `running`. A record written
   afterwards is a summary, and summaries omit the things that went wrong.
+- A record whose result is measured on tracked text names the **revision** its corpus came from, and the run
+  trains from the snapshot recovered out of it ([ADR-0036](../../decisions/ADR-0036-corpus-snapshot-recovery-from-history.md)).
+  A fingerprint alone identifies a corpus; it does not reproduce its bytes, and a documentation edit after the
+  pin makes the recorded text unreachable from the working tree.
+- An experiment that is re-run with a change is a **new experiment id**. A reproduction is published as its
+  own result with its own deviations, never as an edit to the number it is reproducing.
 - Abandoned experiments stay in the repository. An approach that failed is a result
   and saves the next person from repeating it.
 - A result is never reported in documentation without a record to point at.
