@@ -15,6 +15,7 @@ __all__ = [
     "CorruptedCheckpointError",
     "CorruptedCorpusArtifactError",
     "IncompatibleCheckpointError",
+    "StudyProtocolError",
     "TrainingError",
 ]
 
@@ -59,4 +60,13 @@ class CorpusAcquisitionError(CorpusError):
     Distinct from drift, which is a *content* verdict: here the source itself was unavailable — no version
     control tool, a revision the local history does not hold, a path absent from the revision named, or an
     archive that could not be unpacked. The remedy is to obtain the bytes, not to re-pin the corpus.
+    """
+
+
+class StudyProtocolError(TrainingError):
+    """A run does not speak the protocol the study declared.
+
+    A seed study is only one experiment if every run shares a corpus, a split, a tokenizer, an architecture
+    and a budget. A report that disagrees on any of those is a different experiment sitting in a plausible
+    directory, and averaging it with the others would produce a number that describes nothing.
     """
