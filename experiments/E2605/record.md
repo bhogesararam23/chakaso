@@ -311,3 +311,42 @@ The branch was fixed in advance and the first branch applies. In order:
    interpretable until 1 and 2 say what the baseline variance is and what the data can support.
 4. The deferred application-side items (P29 calibration, P32 runtime consumption) stay deferred: nothing in
    this result makes them more executable, and ADR-0033's ordering still holds.
+
+---
+
+## Addendum, 2026-10-21 — the reproduction was performed, and it is exact
+
+*This section was written after the measurements above, and it changes none of them.* Every number in this
+record stands as measured; the point of this addendum is that follow-up items 0 and 1 have now been executed
+and what they returned.
+
+Item 0 is closed: `chakaso.training.snapshot` recovers a pinned corpus from the revision that recorded it,
+`prepare_corpus` can train from a verified snapshot, and E2605's corpus was recovered from commit
+`9b8a47876de7e13c60aefca0b9c7fe501bc03def` — 71 documents, 780,223 characters, fingerprint
+`e45993f9badf706c`, snapshot checksum `84ecbc61cf1e634bbfd92d0bdddde05d54ee75443c118c18d6960960f89a98a0`.
+The drift guard was not weakened to do it: the recovery runs the same `verify_corpus` check a fresh
+preparation runs, which is why the answer had to come from history rather than from the tree.
+
+Item 1 is closed by [E2606](../E2606/record.md), whose seed-7 run *is* this experiment's protocol:
+
+| Quantity | Recorded here (2026-10-21) | Reproduced by E2606 seed 7 |
+| --- | --- | --- |
+| corpus / split / tokenizer fingerprint | `e45993f9badf706c` / `87067cca96275def` / `2605bf8f50183a6e` | identical |
+| parameter count, selected step, early-stopped | 643,840 / 1380 / yes | identical |
+| held-out bits per character | 1.8657340418089126 | 1.8657340418089126 |
+| held-out nats per token | 2.693647205504745 | 2.693647205504745 |
+| token accuracy | 0.4500952216066482 | 0.4500952216066482 |
+| character model bits per character | 3.134278645735399 | 3.134278645735399 |
+| unigram / uniform bits per character | 3.322429516434608 / 4.80103069218461 | identical |
+| the three committed generations | loop | byte-identical strings, looping the same way |
+
+All 41 stored tensors of the two artifacts compare equal, so the model was reproduced and not merely its
+score. The single deviation is in the record's container: the artifact metadata checksum differs
+(`95c849b3cffa5cb0…` here, `262b01a5611f5973…` there) because the environment block gained `numpy` and
+`torch_threads` between the two runs. Weights, tokenizer and metrics are unaffected.
+
+E2606 also puts the spread on the headline figure: across five declared seeds, **1.8794 ± 0.0077 bits per
+character (sample standard deviation) against 3.0937 ± 0.0267 for the character architecture**. This record's
+1.8657 was the best of the five draws and its gap to the character model the widest; the number to quote is
+the mean, with the range beside it. Item 2 (external prose) is in progress as
+[E2607](../E2607/record.md) on pinned Project Gutenberg text, and item 3 remains deliberately deferred.
