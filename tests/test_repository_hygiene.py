@@ -515,3 +515,123 @@ def test_markdown_relative_links_resolve(tracked_files: list[Path]) -> None:
                     broken.append(f"{path.relative_to(REPO_ROOT).as_posix()}:{number} -> {target}")
 
     assert not broken, "Documentation links point at paths that do not exist:\n" + "\n".join(broken)
+
+
+# ---------------------------------------------------------------------------
+# The optional-dependency CI matrix, and the gap that keeps it out of the repository
+
+
+CI_MATRIX_DOCUMENT = REPO_ROOT / "docs/internal/engineering/optional-dependency-ci-matrix.md"
+
+
+def _yaml_blocks(text: str) -> list[str]:
+    """The fenced ```yaml blocks of a document, in order."""
+    blocks: list[str] = []
+    current: list[str] | None = None
+    for line in text.splitlines():
+        if current is None and line.startswith("```yaml"):
+            current = []
+            continue
+        if current is not None:
+            if line.startswith("```"):
+                blocks.append(chr(10).join(current))
+                current = None
+            else:
+                current.append(line)
+    return blocks
+
+
+def _body(job_lines: list[str]) -> str:
+    """A job's lines as one text block, joined with the newline they were split on."""
+    return chr(10).join(job_lines)
+
+
+def _jobs(block: str) -> dict[str, list[str]]:
+    """job name -> the lines of its body, for a block whose `jobs:` mapping is indented by two.
+
+    A hand-rolled reader rather than a YAML parser, because PyYAML is not a dependency of this project and a
+    CI file is not worth adding one for: the shape it has to understand is a list of two-space-indented job
+    names, and if the document ever stops matching that, these tests fail loudly instead of reading nothing.
+    """
+    jobs: dict[str, list[str]] = {}
+    name: str | None = None
+    for line in block.splitlines():
+        header = re.match(r"^  ([A-Za-z][\w-]*):$", line)
+        if header:
+            name = header.group(1)
+            jobs[name] = []
+            continue
+        if name is not None and line.strip():
+            jobs[name].append(line)
+    return jobs
+
+
+def test_the_prepared_ci_matrix_installs_exactly_the_documented_tiers() -> None:
+    """Every tier the package declares gets a job, and no job installs a tier it does not name.
+
+    The document and pyproject are the two places this can drift, and a job that silently installs `.[dev]`
+    while claiming to cover `[nn]` would make the coverage claim false without any test failing.
+    """
+    package = tomllib.loads((REPO_ROOT / "pyproject.toml").read_text(encoding="utf-8"))["project"]
+    tiers = {
+        "checks": ["dev"],
+        "train": ["dev", "train"],
+        "model-path": ["dev", "train", "nn"],
+    }
+    blocks = _yaml_blocks(CI_MATRIX_DOCUMENT.read_text(encoding="utf-8"))
+    assert blocks, "the CI document carries no yaml block to apply"
+    jobs = _jobs(blocks[0])
+
+    assert set(jobs) == set(tiers)
+    for job, extras in tiers.items():
+        installs = [line.strip() for line in jobs[job] if "pip install -e" in line]
+        assert len(installs) == 1, f"{job} must install exactly one set of extras"
+        for extra in extras:
+            assert extra in package["optional-dependencies"], f"{extra} is no longer an extra"
+        declared = installs[0].split('"')[1]
+        assert declared == f".[{','.join(extras)}]"
+
+
+def test_the_prepared_ci_matrix_cannot_hide_a_failure() -> None:
+    block = _yaml_blocks(CI_MATRIX_DOCUMENT.read_text(encoding="utf-8"))[0]
+
+    assert "continue-on-error" not in block
+    assert "|| true" not in block
+    assert "if: failure()" not in block
+    for job_lines in _jobs(block).values():
+        for line in job_lines:
+            assert " --deselect" not in line and "-k " not in line, line
+
+
+def test_the_prepared_ci_matrix_runs_the_documented_commands_and_the_cpu_wheel_index() -> None:
+    """A CI job that runs a weaker command than the contributor contract is not coverage of it."""
+    agents = (REPO_ROOT / "AGENTS.md").read_text(encoding="utf-8")
+    contributing = (REPO_ROOT / "CONTRIBUTING.md").read_text(encoding="utf-8")
+    jobs = _jobs(_yaml_blocks(CI_MATRIX_DOCUMENT.read_text(encoding="utf-8"))[0])
+
+    for gate in ("ruff format --check .", "ruff check .", "mypy src"):
+        assert f"python -m {gate}" in agents
+        assert f"python -m {gate}" in contributing
+    for line in jobs["checks"]:
+        if line.strip().startswith("run: python -m"):
+            command = line.strip().removeprefix("run: ").removeprefix("python -m ")
+            assert command in agents, f"{command} is run in CI but documented nowhere"
+    assert "python -m pytest" in _body(jobs["train"])
+    assert "python -m mypy --config-file configs/mypy-model-path.toml" in _body(jobs["model-path"])
+    model_path_runs = _body(jobs["model-path"])
+    assert "https://download.pytorch.org/whl/cpu" in model_path_runs
+    assert "[dev,train,nn]" in model_path_runs
+
+
+def test_the_shipped_workflow_still_covers_only_the_core_tier() -> None:
+    """The gap this document describes is asserted, not remembered.
+
+    If someone applies the matrix with a `workflow`-scoped token, this test fails — and the right response is
+    to delete it and rewrite the document, which is exactly what a stale "still blocked" claim would need.
+    """
+    shipped = (REPO_ROOT / ".github/workflows/ci.yml").read_text(encoding="utf-8")
+
+    assert "jobs:" in shipped
+    assert '.[dev]"' in shipped
+    for tier in ("[dev,train]", "[dev,train,nn]"):
+        assert tier not in shipped, f"the shipped workflow installs {tier}: update the CI document"
