@@ -10,10 +10,12 @@ from __future__ import annotations
 import pytest
 
 from chakaso.training.data import (
+    TextUnit,
     character_windows,
     dataset_fingerprint,
     fit_vocabulary,
     split_corpus,
+    split_text_units,
     split_three_way,
 )
 from chakaso.training.tokenizer import UNK_ID
@@ -189,3 +191,136 @@ def test_three_way_rejects_bad_fractions_and_sizes() -> None:
         split_three_way("one\ntwo\n", validation_fraction=0.2, test_fraction=0.2, seed=0)
     with pytest.raises(ValueError, match="integer"):
         split_three_way(_TEXT, validation_fraction=0.2, test_fraction=0.2, seed=True)  # type: ignore[arg-type]
+
+
+# ---------------------------------------------------------------------------
+# Document-level splitting: the shape a real corpus needs.
+# ---------------------------------------------------------------------------
+
+
+def _units(count: int, *, marker: str = "doc") -> tuple[TextUnit, ...]:
+    return tuple(
+        TextUnit(
+            identifier=f"{marker}-{index}",
+            text=f"document {index} says its own thing about topic {index * 7}.\n",
+        )
+        for index in range(count)
+    )
+
+
+def test_every_document_lands_on_exactly_one_side() -> None:
+    units = _units(10)
+
+    split = split_text_units(units, validation_fraction=0.2, test_fraction=0.2, seed=3)
+
+    assigned = split.train + split.validation + split.test
+    assert len(assigned) == len(units)
+    identifiers = [unit.identifier for unit in assigned]
+    assert len(set(identifiers)) == len(identifiers)
+    assert set(identifiers) == {unit.identifier for unit in units}
+
+
+def test_document_split_is_deterministic_and_seed_dependent() -> None:
+    units = _units(11)
+    first = split_text_units(units, seed=5)
+    second = split_text_units(units, seed=5)
+    other = split_text_units(units, seed=6)
+
+    assert first.fingerprint == second.fingerprint
+    assert first.identifiers == second.identifiers
+    # A seed that changed nothing would make "deterministic" and "seeded" the same claim twice; at least
+    # one document must move for the seed to be doing work.
+    assert other.fingerprint != first.fingerprint
+
+
+def test_a_marker_unique_to_a_held_out_document_never_reaches_the_training_text() -> None:
+    # The leakage property, stated so it can actually fail: each document holds a token no other document
+    # has, so a token from a validation or test document appearing in the training text is a real leak.
+    units = tuple(
+        TextUnit(
+            identifier=f"doc-{index}",
+            text=f"plain shared prose about the same subject zzx{index:03d}\n",
+        )
+        for index in range(12)
+    )
+    leaked = 0
+    for seed in range(24):
+        split = split_text_units(units, validation_fraction=0.25, test_fraction=0.25, seed=seed)
+        held_out = split.validation + split.test
+        assert held_out, "a split with no held-out documents proves nothing"
+        for unit in held_out:
+            marker = unit.text.split("zzx")[1][:3]
+            if f"zzx{marker}" in split.train_text:
+                leaked += 1
+    assert leaked == 0
+
+
+def test_duplicate_content_is_dropped_once_and_reported() -> None:
+    original = TextUnit(identifier="doc-1", text="the same paragraph, twice.\n")
+    twin = TextUnit(identifier="doc-2", text="the same paragraph, twice.\n")
+    others = _units(4, marker="other")
+
+    split = split_text_units((original, *others, twin), seed=1)
+
+    assert [unit.identifier for unit in split.dropped_duplicates] == ["doc-2"]
+    assigned = {unit.identifier for unit in split.train + split.validation + split.test}
+    assert "doc-2" not in assigned
+    assert "doc-1" in assigned
+
+
+def test_a_duplicated_document_cannot_straddle_the_split() -> None:
+    repeated = TextUnit(
+        identifier="copy-a", text="identical body text that must not be memorised.\n"
+    )
+    units = (repeated, TextUnit(identifier="copy-b", text=repeated.text), *_units(5, marker="fill"))
+
+    for seed in range(12):
+        split = split_text_units(units, seed=seed)
+        held_out = split.validation + split.test
+        in_train = any(unit.text == repeated.text for unit in split.train)
+        in_held_out = any(unit.text == repeated.text for unit in held_out)
+        assert not (in_train and in_held_out)
+
+
+def test_side_texts_hold_their_own_documents_and_no_others() -> None:
+    units = _units(9)
+
+    split = split_text_units(units, seed=2)
+
+    for unit in split.train:
+        assert unit.text in split.train_text
+        assert unit.text not in split.validation_text
+        assert unit.text not in split.test_text
+    assert split.train_text.count("\n\n") == max(0, len(split.train) - 1)
+
+
+def test_document_split_rejects_bad_fractions_seeds_and_sizes() -> None:
+    units = _units(6)
+    with pytest.raises(ValueError, match="strictly between 0 and 1"):
+        split_text_units(units, validation_fraction=0.0)
+    with pytest.raises(ValueError, match="must be < 1"):
+        split_text_units(units, validation_fraction=0.5, test_fraction=0.6)
+    with pytest.raises(ValueError, match="integer"):
+        split_text_units(units, seed=True)  # type: ignore[arg-type]
+    with pytest.raises(ValueError, match="at least three distinct documents"):
+        split_text_units(_units(2))
+
+
+def test_document_split_refuses_empty_or_repeated_units() -> None:
+    units = _units(4)
+    with pytest.raises(ValueError, match="non-empty identifier"):
+        split_text_units((*units, TextUnit(identifier="", text="orphan text\n")))
+    with pytest.raises(ValueError, match="has no text"):
+        split_text_units((*units, TextUnit(identifier="blank", text="")))
+    with pytest.raises(ValueError, match="appears twice"):
+        split_text_units((*units, TextUnit(identifier="doc-0", text="a different body\n")))
+
+
+def test_split_fingerprint_moves_when_the_assignment_moves() -> None:
+    units = _units(12)
+    before = split_text_units(units, seed=1)
+    after = split_text_units(
+        (*units, TextUnit(identifier="doc-12", text="a new document\n")), seed=1
+    )
+
+    assert before.fingerprint != after.fingerprint

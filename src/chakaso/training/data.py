@@ -15,27 +15,211 @@ The split is deterministic: for a given text, fraction and seed, two runs produc
 identical vocabulary, and an identical dataset fingerprint. The seed only decides *which* units land in
 validation; it never touches the data. This is the reproducibility the experiment record depends on,
 checked by test rather than asserted.
+
+Two shapes of split live here because they answer two different sizes of data. :func:`split_corpus` and
+:func:`split_three_way` separate **lines** of a small module-constant corpus, which is the right unit when
+the corpus is 344 characters and every line is a sentence. :func:`split_text_units` separates
+**documents**, and is the shape a real corpus needs: a line-level split of prose leaves neighbouring
+sentences on opposite sides, so a model that memorised one has not been tested on the other. It also
+deduplicates by content before assigning sides, because a repeated document both trains twice and can
+straddle the boundary it is supposed to be held out by.
 """
 
 from __future__ import annotations
 
 import hashlib
 import random
+from collections.abc import Sequence
 from dataclasses import dataclass
 from typing import Protocol
 
+from chakaso.core.hashing import join_parts, sha256_hex
 from chakaso.training.tokenizer import UNK_ID, CharVocabulary
 
 __all__ = [
     "Example",
     "Split",
+    "TextUnit",
     "ThreeWaySplit",
+    "UnitSplit",
     "character_windows",
     "dataset_fingerprint",
     "fit_vocabulary",
     "split_corpus",
+    "split_text_units",
     "split_three_way",
 ]
+
+
+@dataclass(frozen=True, slots=True)
+class TextUnit:
+    """One document of training text with a stable identifier.
+
+    The split layer separates corpora by this unit, so an identifier is what makes a leakage claim
+    checkable: two units with the same identifier are the same document.
+    """
+
+    identifier: str
+    text: str
+
+
+@dataclass(frozen=True, slots=True)
+class UnitSplit:
+    """A document-level train/validation/test separation, with duplicates removed before selection.
+
+    Sides hold whole units, never fragments, so no example can straddle the boundary: the packing layer
+    builds windows *within* one side's units only.
+
+    Attributes:
+        train: Units the model is fitted on.
+        validation: Units model selection may read.
+        test: Units scored for reporting only.
+        dropped_duplicates: Units excluded because their text was byte-identical to an earlier unit. A
+            repeated document otherwise trains twice, and if two copies landed on opposite sides the
+            held-out number would not be held out.
+    """
+
+    train: tuple[TextUnit, ...]
+    validation: tuple[TextUnit, ...]
+    test: tuple[TextUnit, ...]
+    dropped_duplicates: tuple[TextUnit, ...] = ()
+
+    @property
+    def train_text(self) -> str:
+        """The training units joined by a blank line — the text a vocabulary is fit on."""
+        return _join_units(self.train)
+
+    @property
+    def validation_text(self) -> str:
+        """The selection units joined by a blank line."""
+        return _join_units(self.validation)
+
+    @property
+    def test_text(self) -> str:
+        """The reporting-only units joined by a blank line."""
+        return _join_units(self.test)
+
+    @property
+    def identifiers(self) -> dict[str, tuple[str, ...]]:
+        """Which unit landed on which side, in side order."""
+        return {
+            "train": tuple(unit.identifier for unit in self.train),
+            "validation": tuple(unit.identifier for unit in self.validation),
+            "test": tuple(unit.identifier for unit in self.test),
+            "dropped_duplicates": tuple(unit.identifier for unit in self.dropped_duplicates),
+        }
+
+    @property
+    def fingerprint(self) -> str:
+        """A short digest of the exact side assignment, so a re-run can prove it split the same way."""
+        payload = join_parts(
+            "chakaso-unit-split/1",
+            *(
+                join_parts(side, *identifiers)
+                for side, identifiers in sorted(self.identifiers.items())
+                if identifiers
+            ),
+        )
+        return sha256_hex(payload)[:16]
+
+
+def _join_units(units: Sequence[TextUnit]) -> str:
+    return "\n\n".join(unit.text for unit in units)
+
+
+def split_text_units(
+    units: Sequence[TextUnit],
+    *,
+    validation_fraction: float = 0.2,
+    test_fraction: float = 0.2,
+    seed: int = 0,
+) -> UnitSplit:
+    """Split whole documents into train/validation/test, deterministically and without leakage.
+
+    The unit is a document, which is the strongest separation available for prose: a line-level split can
+    leave near-identical neighbouring lines on both sides, and a model that memorised one has not been
+    tested on the other. Documents are deduplicated by content first, then assigned by a seeded shuffle of
+    indices, so the same input produces the same sides and the same fingerprint.
+
+    Raises:
+        ValueError: a fraction is outside ``(0, 1)``, the two fractions leave nothing for training, the
+            seed is not an integer, there are fewer than three usable documents, a unit has an empty
+            identifier or text, or two units share an identifier.
+    """
+    for name, value in (
+        ("validation_fraction", validation_fraction),
+        ("test_fraction", test_fraction),
+    ):
+        if not 0.0 < value < 1.0:
+            message = f"{name} must be strictly between 0 and 1, got {value!r}"
+            raise ValueError(message)
+    if validation_fraction + test_fraction >= 1.0:
+        message = (
+            f"validation_fraction + test_fraction must be < 1, got "
+            f"{validation_fraction + test_fraction}"
+        )
+        raise ValueError(message)
+    if isinstance(seed, bool) or not isinstance(seed, int):
+        message = f"seed must be an integer, got {seed!r}"
+        raise ValueError(message)
+
+    usable: list[TextUnit] = []
+    dropped: list[TextUnit] = []
+    seen_text: set[str] = set()
+    seen_identifiers: set[str] = set()
+    for unit in units:
+        if not unit.identifier:
+            message = (
+                "every text unit needs a non-empty identifier for a leakage claim to be checkable"
+            )
+            raise ValueError(message)
+        if not unit.text:
+            message = f"text unit {unit.identifier!r} has no text; an empty document is not data"
+            raise ValueError(message)
+        if unit.identifier in seen_identifiers:
+            message = f"text unit identifier {unit.identifier!r} appears twice"
+            raise ValueError(message)
+        seen_identifiers.add(unit.identifier)
+        content_key = hashlib.sha256(unit.text.encode("utf-8")).hexdigest()
+        if content_key in seen_text:
+            dropped.append(unit)
+            continue
+        seen_text.add(content_key)
+        usable.append(unit)
+
+    if len(usable) < 3:
+        message = (
+            f"a document-level split needs at least three distinct documents, got {len(usable)} "
+            f"from {len(units)} unit(s) ({len(dropped)} duplicate(s) dropped)"
+        )
+        raise ValueError(message)
+
+    order = list(range(len(usable)))
+    random.Random(seed).shuffle(order)
+
+    test_count = max(1, round(len(usable) * test_fraction))
+    validation_count = max(1, round(len(usable) * validation_fraction))
+    if test_count + validation_count >= len(usable):
+        message = "the validation and test fractions would leave no documents for training"
+        raise ValueError(message)
+
+    test_positions = set(order[:test_count])
+    validation_positions = set(order[test_count : test_count + validation_count])
+    sides: dict[str, list[TextUnit]] = {"train": [], "validation": [], "test": []}
+    for index, unit in enumerate(usable):
+        if index in test_positions:
+            sides["test"].append(unit)
+        elif index in validation_positions:
+            sides["validation"].append(unit)
+        else:
+            sides["train"].append(unit)
+
+    return UnitSplit(
+        train=tuple(sides["train"]),
+        validation=tuple(sides["validation"]),
+        test=tuple(sides["test"]),
+        dropped_duplicates=tuple(dropped),
+    )
 
 
 class _HasTrainText(Protocol):

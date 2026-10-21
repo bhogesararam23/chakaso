@@ -34,6 +34,7 @@ from pathlib import Path, PurePosixPath
 from typing import Any
 
 from chakaso.core.hashing import is_sha256_hex, join_parts, sha256_hex
+from chakaso.training.data import TextUnit
 from chakaso.training.errors import (
     CorpusDriftError,
     CorpusError,
@@ -62,18 +63,6 @@ _NORMALIZATION = "crlf-and-cr-to-lf"
 DEFAULT_MAX_DOCUMENT_BYTES = 512 * 1024
 
 _GLOB_CHARACTERS = "*?["
-
-
-@dataclass(frozen=True, slots=True)
-class TextUnit:
-    """One document of training text with a stable identifier.
-
-    The split layer separates corpora by this unit, so an identifier is what makes a leakage claim
-    checkable: two units with the same identifier are the same document.
-    """
-
-    identifier: str
-    text: str
 
 
 def normalize_text(raw: str) -> str:
