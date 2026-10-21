@@ -1,9 +1,54 @@
 # Architecture
 
-Chakaso is a local-first, model-agnostic, retrieval-grounded conversational
-system. This document describes the components, what each one owns, and where the
-boundaries are. It describes the intended architecture; the current status of each
-component is stated explicitly.
+Chakaso is a **language-model project**: its product is a model trained from random
+initialization on data this repository can name, plus the Python interface that lets a
+developer use a trained checkpoint. A local-first, model-agnostic, retrieval-grounded
+conversational system is built here too, and is the reason a grounded model will be
+measurable when one exists — but it is one consumer of the model, not the definition of
+the product ([ADR-0033](decisions/ADR-0033-model-centred-product-contract.md)).
+
+This document describes the components, what each one owns, and where the boundaries
+are. It describes the intended architecture; the current status of each component is
+stated explicitly, and
+[`docs/agent/CURRENT_STATE.md`](agent/CURRENT_STATE.md) remains the authority on what is
+real.
+
+## Dependency direction
+
+Responsibility flows one way. The application layer is optional *above* the model; the
+model layer must never depend on it.
+
+```text
+corpus manifest -> tokenizer -> model -> training -> checkpoint -> inference API -> model evaluation
+                                                                                                                           optional application layer
+                                          (retrieval, evidence, claims, citation,
+                                           grounding, correction, answers, runtime)
+                                                                                                                             optional CLI / other interfaces
+```
+
+Six rules follow from the direction, and each is enforced by a test rather than by review:
+
+* **Model code does not import CLI code**, and training does not need an interactive
+  session: `chakaso.training` is callable from Python and `chakaso.cli` only formats what
+  the library returns.
+* **Inference does not need training alive.** A checkpoint is loadable and generatable on
+  its own (`chakaso.models.load_model`), and it carries or verifies everything needed to
+  reproduce inference: architecture, tokenizer, vocabulary size, context length, corpus
+  fingerprint, seed and training configuration
+  ([ADR-0035](decisions/ADR-0035-transformer-checkpoint-format.md)).
+* **A checkpoint cannot load with an incompatible tokenizer, architecture or
+  configuration** — it refuses, as a typed error, and never falls back to another model.
+* **Application subsystems do not require the model layer to be importable.** The
+  dependency tiers are `[train]` (numpy) and `[nn]` (torch); `import chakaso`,
+  `import chakaso.models` and `import chakaso.training` require neither, and only the
+  modules [ADR-0034](decisions/ADR-0034-optional-pytorch-model-extra.md) names may
+  import `torch` at all.
+* **Model evaluation is separate from harness evaluation.** Bits per character, perplexity
+  and token accuracy describe a model; retrieval and correction benchmarks, the reference
+  oracle and the sufficiency policy describe the plumbing. Neither is reported as the other.
+* **No module may produce source identity.** The retrieval layer owns identifiers; the
+  model references them ([ADR-0003](decisions/ADR-0003-evidence-identifier-ownership.md)),
+  and that rule does not soften because the model is now the centre.
 
 ## Design rules
 
@@ -31,6 +76,13 @@ needs a decision record explaining why.
    with no GPU and no network access to model providers.
 9. **Retrieved content is untrusted input.** Webpage text is data. It is never an
    instruction, and it never overrides application policy.
+10. **A trained model is described at the strength it was measured at.** A character-level
+    toy is not a language model, a training-loop implementation is not a measured run, and
+    a measured run on self-authored text is not general capability. Every capability claim
+    carries a status label.
+11. **Training data is named by content, not by a path.** A corpus is a manifest of
+    document paths and content digests with a recorded licence, and preparation refuses
+    drift rather than silently substituting different text.
 
 ## Component overview
 
