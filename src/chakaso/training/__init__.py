@@ -1,19 +1,28 @@
-"""Training: the code the from-scratch experiment runs on.
+"""Training: the product's own module — the code that makes a Chakaso model.
 
-This is the module [ADR-0005](../../../docs/decisions/ADR-0005-src-layout.md) reserved for model-training
-code, and [ADR-0030](../../../docs/decisions/ADR-0030-minimal-optional-training-dependency.md) admits
-`numpy` — as an *optional* `[train]` extra — for the numerical layers here. Nothing above the model
-boundary imports this package, and importing `chakaso` never requires `numpy`.
+[ADR-0033](../../../docs/decisions/ADR-0033-model-centred-product-contract.md) makes this package the centre
+of the repository rather than an experiment living beside it: a model this project trained, on data this
+project can name, behind an interface a developer can use from Python.
+[ADR-0005](../../../docs/decisions/ADR-0005-src-layout.md) reserved the module for training code,
+[ADR-0030](../../../docs/decisions/ADR-0030-minimal-optional-training-dependency.md) admits `numpy` for its
+character-level layers and [ADR-0034](../../../docs/decisions/ADR-0034-optional-pytorch-model-extra.md)
+admits `torch` for the Transformer path. Nothing above the model boundary imports this package, and
+importing `chakaso` requires neither.
 
-The layers split by whether they need a numerical library. The text-facing ones — the corpus and the
-character tokenizer, the deterministic train/validation split, and the corpus manifest that pins a real
-document set by content digest — are pure standard library, so they install, import and type-check with no
-optional dependency at all. Only the model, the training step, the checkpoint format and the loss
-computations import `numpy`; the Transformer path imports `torch`, and only in the modules ADR-0034 names.
+The layers split by what they need:
 
-No trained Chakaso model exists yet. The whole point of this package is to build the smallest honest
-experiment that produces the project's first genuinely measured learning result; until that experiment
-has actually run, nothing here is a claim that the approach works.
+* **Dependency-free** — the corpus manifest that pins a real document set by content digest, the
+  document-level split, the character vocabulary, the learned byte-pair subword vocabulary, and sequence
+  packing. These install, import, type-check and run their tests in the dependency-free CI matrix, because
+  how text becomes identifiers is a decision that must be reviewable without a numerical framework in the
+  way.
+* **Numerical (`[train]`)** — the character model, its hand-derived gradients, the optimizer, the training
+  loop, the checkpoint format and held-out evaluation.
+* **`torch` (`[nn]`)** — the Transformer, its training and its checkpoints, in the modules ADR-0034 names.
+
+What exists here is a measured *learning loop*: E2601 and E2602 trained and reproduced a 984-parameter
+character model that beats uniform and unigram baselines on held-out loss. That is a real result on a toy,
+not a useful language model, and nothing in this package is allowed to read as the latter.
 """
 
 from __future__ import annotations
@@ -45,17 +54,34 @@ from chakaso.training.manifest import (
     verify_corpus,
     write_snapshot,
 )
+from chakaso.training.packing import (
+    PackedBatch,
+    PackedExample,
+    count_tokens,
+    pack_units,
+    token_stream,
+)
+from chakaso.training.subword import (
+    DOCUMENT_END,
+    SubwordVocabulary,
+    pre_tokenize,
+    train_subword_vocabulary,
+)
 from chakaso.training.tokenizer import UNK_ID, CharVocabulary
 
 __all__ = [
     "CORPUS",
+    "DOCUMENT_END",
     "UNK_ID",
     "CharVocabulary",
     "Corpus",
     "CorpusDocument",
     "CorpusManifest",
     "Example",
+    "PackedBatch",
+    "PackedExample",
     "Split",
+    "SubwordVocabulary",
     "TextUnit",
     "ThreeWaySplit",
     "TrainingConfig",
@@ -64,15 +90,20 @@ __all__ = [
     "build_manifest",
     "character_windows",
     "corpus_text",
+    "count_tokens",
     "dataset_fingerprint",
     "fit_vocabulary",
     "normalize_text",
+    "pack_units",
+    "pre_tokenize",
     "read_manifest",
     "read_snapshot",
     "save_manifest",
     "split_corpus",
     "split_text_units",
     "split_three_way",
+    "token_stream",
+    "train_subword_vocabulary",
     "uniform_next_token_loss",
     "verify_corpus",
     "write_snapshot",
