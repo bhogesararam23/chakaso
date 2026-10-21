@@ -1,6 +1,6 @@
 # E2606 — How much of E2605's result is the seed?
 
-- Status: running (preregistered, not yet executed)
+- Status: completed (measured; five of five declared seeds)
 - Date: 2026-10-21
 - Hypothesis: [docs/research/hypotheses.md](../../docs/research/hypotheses.md) — none of H1–H7. This experiment
   tests the *stability* of E2605's measured claim, which is a prerequisite for treating it as evidence at
@@ -328,3 +328,206 @@ A negative result here is a valid outcome and will be written as one.
 Whichever way this lands, the next question is the one this study cannot answer: whether the advantage
 survives on text that is not Chakaso's own documentation. That is **E2607**, on an independently licensed
 corpus pinned by the same manifest machinery.
+
+## Results
+
+**All five declared seeds completed. None failed, none was dropped, none was rerun.** The study process
+started at commit `fc5f8ff` (the commit that contains this record) and ran to completion; two commits after it
+changed how a run names its corpus records and added a generation statistic, neither of which altered these
+runs' inputs — the identity fields below are the evidence for that, taken from the runs themselves.
+
+Every run loaded corpus fingerprint `e45993f9badf706c` from snapshot checksum `84ecbc61cf1e634bbfd92d0bd…`
+(recovered from revision `9b8a47876de7e13c60aefca0b9c7fe501bc03def`), and every run reported split fingerprint
+`87067cca96275def`, tokenizer fingerprint `2605bf8f50183a6e`, 643,840 parameters, 46,208 scored positions,
+96,246 scored characters and 10 separator targets. The aggregate rebuild refuses to run if any of those
+disagrees across seeds; it did not have to.
+
+| Seed | Transformer bits/char | nats/token | perplexity | token acc | selected step | character bits/char | gap to character | checkpoint checksum |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| 7 | 1.865734 | 2.693647 | 14.7855 | 0.450095 | 1380 | 3.134279 | 1.268545 | `262b01a5611f…` |
+| 11 | 1.881652 | 2.716629 | 15.1292 | 0.447195 | 1320 | 3.096885 | 1.215233 | `bdbf8c5c072f…` |
+| 13 | 1.882356 | 2.717645 | 15.1446 | 0.441331 | 1320 | 3.065195 | 1.182839 | `6414802f18ed…` |
+| 17 | 1.884429 | 2.720638 | 15.1900 | 0.445204 | 1260 | 3.074580 | 1.190151 | `87079b5107d1…` |
+| 19 | 1.882783 | 2.718261 | 15.1540 | 0.446200 | 1320 | 3.097405 | 1.214622 | `c152f3481b1d…` |
+
+| Statistic (n=5) | Transformer bits/char | Character bits/char | Gap | Unigram | Uniform |
+| --- | --- | --- | --- | --- | --- |
+| mean | 1.879391 | 3.093669 | 1.214278 | 3.322430 | 4.801031 |
+| sample standard deviation | 0.007702 | 0.026686 | 0.033602 | 0.0 | 0.0 |
+| median | 1.882356 | 3.096885 | 1.214622 | 3.322430 | 4.801031 |
+| min – max | 1.865734 – 1.884429 | 3.065195 – 3.134279 | 1.182839 – 1.268545 | 3.322430 | 4.801031 |
+| range | 0.018695 | 0.069084 | 0.085706 | 0.0 | 0.0 |
+
+Secondary metrics over the same five runs: nats/token mean 2.713364 (SD 0.011120, range 0.026991),
+perplexity mean 15.080663 (SD 0.166506), token accuracy mean 0.446005 (SD 0.003189), selected step mean 1320
+(SD 42.4, min 1260, max 1380). **Every run early-stopped**; none used its full 2,400-step budget.
+
+Per-run wall clock: preparation 11.49–29.61 s, character baseline 102.19–151.23 s, Transformer
+655.78–983.22 s (mean 890.11, range 327.44). These are **not comparable to E2605's recorded 513.63 s**: the
+study ran while this session's own test suites and pilots competed for the same 18 logical CPUs, and every
+run recorded `torch_threads: 14`. No timing claim is made here; the numbers are recorded so a later reader
+can see that the wall clock is the noisiest quantity in the study by an order of magnitude (range/mean 37%
+against 0.41% for the metric that matters).
+
+The aggregate is `data/experiments/E2606/study.json`, digest
+`3f8f0175c510ff680cf1772b2644fce9ec7ee16e16b577bb5e96f17364e52831`, rebuilt from the five per-run reports by
+`chakaso experiment study … --collect-only`. The same statistics were then computed a second time, directly
+over the five reported values, outside the study code (`statistics.fmean`/`stdev` on the values in the table
+above) and agree with the aggregate on every field it reports.
+
+## Reproduction of E2605 (seed 7, pre-declared tolerances)
+
+**Verdict: reproduced, with zero deviation on every measured field.** The comparison is
+`chakaso.training.seed_study.compare_with_reference` run against
+[`../E2605/results.json`](../E2605/results.json), at the tolerances declared above:
+
+| Field | Recorded (E2605) | Reproduced (E2606 seed 7) | Difference |
+| --- | --- | --- | --- |
+| corpus / split / tokenizer fingerprint | `e45993f9badf706c` / `87067cca96275def` / `2605bf8f50183a6e` | identical | — |
+| architecture, parameter count | 9 fields, 643,840 | identical | 0 |
+| selected step, early-stopped | 1380, true | 1380, true | — |
+| held-out bits per character | 1.8657340418089126 | 1.8657340418089126 | **0.0** |
+| held-out nats per token | 2.693647205504745 | 2.693647205504745 | **0.0** |
+| perplexity | 14.785503470353591 | 14.785503470353591 | **0.0** |
+| token accuracy | 0.4500952216066482 | 0.4500952216066482 | **0.0** |
+| character model bits/char, nats/token, selected step | 3.134278645735399 / 2.1724045178920877 / 3800 | identical | **0.0** |
+| unigram, uniform bits/char | 3.322429516434608 / 4.80103069218461 | identical | **0.0** |
+
+The tolerances were not needed: the agreement is exact at full double precision, so the four reproduction
+levels collapse into one. Artifact/provenance reproduction, training-procedure reproduction (33 recorded
+evaluations, same schedule, same selected step) and numerical reproduction are all satisfied. **The
+declared tolerance therefore played no part in this verdict** — which is worth stating, because a tolerance
+that ends up deciding is a weaker claim than one that turns out to be unnecessary.
+
+Two follow-ups were measured rather than assumed:
+
+- **The weights themselves are identical, not merely their scores.** Loading both artifacts and comparing all
+  41 stored tensors with `torch.equal` returns true, and a SHA-256 over the concatenated float32 bytes of the
+  state dicts is `7e8407f7132d6097053f899a` for both.
+- **The artifact checksums differ, and the cause is the metadata block, not the model.** E2605's usable
+  artifact is `95c849b3cffa5cb0…`, this run's is `262b01a5611f5973…`. Between the two, the environment block
+  gained `numpy` and `torch_threads` (commit `d2051ac`), and the checksum covers metadata. This is the one
+  recorded deviation of the reproduction, it is a format-of-the-record change rather than a change in the
+  trained object, and it is listed here instead of being smoothed over.
+- **The generations are identical too.** The greedy continuations from the two checkpoints reproduce the same
+  strings, including the same looping.
+
+## Generation behaviour, measured over the same five checkpoints
+
+`chakaso.training.generation_eval` was run over each seed's checkpoint at temperature 0 on five fixed
+continuation prompts and four hostile inputs (`data/experiments/E2606/generation-E2606-seed-*.json`). All
+five models behave the same way in kind, and the raw text of all 45 samples is retained in those files:
+
+| Seed | samples with a periodic run of ≥3 (of 5) | tail loop detected | mean bigram repetition | samples that hit the length bound (of 5) |
+| --- | --- | --- | --- | --- |
+| 7 | 1 | 0 | 0.4870 | 4 |
+| 11 | 4 | 0 | 0.6561 | 5 |
+| 13 | 4 | 1 | 0.5255 | 5 |
+| 17 | 5 | 1 | 0.4868 | 5 |
+| 19 | 4 | 0 | 0.6904 | 5 |
+
+Every seed emitted text like `' model that is a model that is a model that that is not a model to a model
+that it.'` and `' model to model model and a model model and a model model to model s a'` — that is what
+1.8794 bits per character looks like when read aloud. Four of the five seeds produce a sample that repeats
+the same block at least three times back to back; on seed 17 every sample does. Four or five of five samples
+per seed stop because the token budget ran out rather than because the model produced a separator: there is
+no learned stop, so no sample here ended by deciding to stop.
+
+Two things this measurement does **not** support, and the record says so because the numbers are tempting:
+the repetition ratio is not a quality score (a heading-style artifact of this corpus inflates it and a short
+sample deflates it), and the seed-to-seed differences in it are not ranked — four of five samples versus five
+of five is not an effect, at n=5. The empty-prompt probe raises a typed `ModelError` naming the model and the
+reason ("produced no input identifiers from the supplied text") on every seed; the boundary refuses, the
+tokenizer does not crash, and non-ASCII input encodes.
+
+## Interpretation
+
+The hypothesis stands on all five seeds, in all three of its parts.
+
+1. The Transformer beat the character model on **every** seed, by between 1.1828 and 1.2685 bits per character
+   — never by less than a third of the character model's own distance from the unigram baseline.
+2. It beat the unigram baseline on every seed (mean gap 1.4430 bits/char) and the uniform baseline on every
+   seed (mean gap 2.9216). A model that does not beat a frequency count has learned nothing worth recording;
+   this one clears it on every draw.
+3. The spread across seeds is **small relative to the gap**: a sample standard deviation of 0.0077 bits/char
+   for the Transformer against a mean gap of 1.2143 to the character model — the gap is roughly 158 times the
+   seed-to-seed standard deviation, and the whole observed range (0.0187) is 11 SDs wide, i.e. the five runs
+   sit inside a band one part in 65 of the measured difference.
+
+So E2605's result was not the luck of one seed. It was, however, the luck of the *best* one: seed 7 produced
+the lowest Transformer loss **and** the highest character-model loss of the five, which is why its gap
+(1.2685) is the maximum and the honest figure to quote is the mean, **1.8794 against 3.0937 bits per
+character, a gap of 1.2143 with a sample SD of 0.0336 across seeds**. Quoting 1.8657 without the spread
+overstates the model by about one part in a thousand and the gap by 4.5%.
+
+A second finding worth stating on its own: **the smaller model is the less stable one.** The character
+architecture's spread across seeds (SD 0.0267, 0.86% of its mean) is 3.5× the Transformer's in absolute bits
+and 2.1× in relative terms, and its selected step was 3800 on every seed while the Transformer's moved
+between 1260 and 1380. E2601 and E2602 already showed the character model overfitting early; across seeds it
+is the noisy one, which is consistent with a 44,084-parameter model with a 16-character window having less
+structure to fall back on than 643,840 parameters with 128 tokens.
+
+The early-stopping result replicates too: five for five runs stopped before their budget, selecting between
+step 1260 and 1380 of 2400. A run that used its whole budget would have been reporting an overfit model, and
+this is the fifth and sixth independent observation (E2601, E2602's five seeds, E2605, E2606) that the
+un-stopped end of the curve is not the model you want.
+
+What none of this touches is capability. The generations loop on every seed. The corpus is one author's
+technical prose about the project itself, and the model has been shown to predict *it* better than a
+frequency count predicts it. Bits per character is a compression measurement, and the tight spread says the
+compression estimate is stable, not that what is being compressed is language in any general sense.
+
+## Deviations from the preregistration
+
+Three, none of which changes a measurement:
+
+1. **Runtime was underestimated** because the pilot ran on a quieter machine. The projection was ~610 s per
+   seed; measured runs took 655.78–983.22 s of Transformer time against E2605's recorded 513.63 s for the
+   same work, with this session's own test suites and pilots competing for CPU. The declared budget, seeds and
+   protocol were unchanged.
+2. **The environment block grew between the two records** (`numpy` and `torch_threads` added by `d2051ac`),
+   which is why the reproduced artifact's metadata checksum differs while its weights are bit-identical. The
+   reproduction section above states this as the single recorded deviation rather than presenting identical
+   checksums.
+3. **The recorded run's code version is `fc5f8ff`, and the tree moved during the study.** Later commits changed
+   corpus-record naming for snapshot runs and added the whole-output periodic-run statistic; neither affects a
+   number in this record, and the identity fields each run reported are the evidence that the five runs share
+   one protocol.
+
+No seed was added, dropped, rerun or substituted. No tolerance was widened after the fact — every comparison
+came out exact, so the declared tolerances were never the deciding criterion.
+
+## Limitations
+
+- **Five seeds, one machine, one corpus.** The spread described here is seed-to-seed variation of this
+  protocol on this data. It is not a confidence statement about seeds in general, and no interval is claimed.
+- **The split was held fixed by design**, so nothing here measures split-to-split variation. That would be a
+  different study, and E2605's number and this one share a single 11-document test side.
+- **Seeds 7 and 11 bracket the outcome asymmetrically**: 7 is the best Transformer draw and the worst
+  character draw of the five, which is exactly the coincidence a single-seed result cannot see and a
+  five-seed study can. Two more seeds would not have shown it.
+- **Wall-clock numbers are contention-dominated** and should be read as "this is what it cost on a busy
+  laptop", not as a performance figure.
+- **The generations were not judged by a human.** Every statement above about them is a statement about
+  repeated substrings, lengths and termination.
+
+## Conclusion
+
+Believed, at the strength the five runs support: **on this corpus, with the held-out documents fixed, the
+subword Transformer's advantage over the character architecture and over both trivial baselines is real and
+stable — mean held-out 1.8794 against 3.0937 bits per character, a gap of 1.2143 ± 0.0336 (sample SD across
+five seeds), with every seed below every baseline.** E2605's single figure is confirmed as a reproducible
+result, reproduced here bit-for-bit from a corpus recovered out of the repository's own history, and corrected
+in emphasis: it was the most favourable of five draws, and the spread belongs beside it.
+
+Also believed, and unchanged: the model loops, its text is not usable, and none of this measures language
+ability on any material but this repository's own prose.
+
+## Next experiment, from the measured result
+
+The question this study cannot answer is the one E2607 asks: does the same protocol, on text nobody wrote
+about this project, still beat the same baselines? If it does, the next decision after that is capacity, and
+the budget that held here (2,400 steps) becomes the thing to vary — on the external corpus's 2.13× the data,
+the same step count is proportionally fewer epochs, which E2607's record declares as a limitation rather than
+a comparison. If it does not, then every number in this record describes how well a model learned
+Chakaso's own documentation, and the next experiment is about the data, not the model.
