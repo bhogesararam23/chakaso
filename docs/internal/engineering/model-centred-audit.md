@@ -319,4 +319,3 @@ were re-checked rather than trusted:
   the credential that prevents it), a peak-memory figure for any run, and any capability claim. The single
   measured model result is 1.8657 bits per character on one author's prose, with the generations that loop
   committed beside it.
-

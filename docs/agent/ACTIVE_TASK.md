@@ -59,8 +59,32 @@ acceptance criteria are met and recorded here). Statuses: `pending`, `ready`, `i
 | H | Inference and Python API | G | `chakaso.models` | committed | `c0e5f64` (`load_model` + adapter), `625f08a` (artifact scoring) | 12 + 30 tests, adapter inherits the contract suite |
 | I | Model evaluation and baselines | E, G | `chakaso.training.model_metrics`, `nn_evaluation` | committed | `3fa9f12`, `625f08a` | 10 hand-computable metric tests + 7 evaluation tests |
 | J | Experiment E2605, measured | E–I | `experiments/E2605/` | committed | driver `0cbed79`, CLI `d878828`, pre-run record `9b8a478`, `bcdfa7d`, measured record `490ac1f`, reproduction note `00cbd78` | 11 driver tests; the run itself measured 513.6 s + 69.9 s + 13.2 s |
-| K | Subsystem reassessment + documentation | J | `README.md`, `docs/*`, `CHANGELOG.md`, `docs/agent/*` | in_progress | `760af7a`, `2470af6`, `691a319`, `adc9e77`, `cc816af`, `6fa370a`, plus the agent-state commit | link + status checks (`test_repository_hygiene`) |
-| L | Full regression, review, push | K | whole tree | pending | — | four gates across three matrices, then push and verify the remote |
+| K | Subsystem reassessment + documentation | J | `README.md`, `docs/*`, `CHANGELOG.md`, `docs/agent/*` | committed | audit §11 re-reads the subsystem verdicts against the delivered tree; `760af7a`, `2470af6`, `691a319`, `adc9e77`, `cc816af`, `6fa370a`, `e59a8bd`, `e183a87` | hygiene 19 passed (links + status guards), and the dependency direction re-checked by grep |
+| L | Full regression, review, push | K | whole tree | validated (pending push) | gates recorded below | three matrices green, both mypy configurations green, wheel built and smoke-tested |
+
+**Brief-node mapping.** The delivery brief numbers its own nodes; this ledger's rows are the same work at a
+finer grain. Brief A (inspect the repository) → row A. Brief B (model-centred target architecture) → rows B
+and D. Brief C (choose the next experiment on evidence) → row C. Brief D (training data and tokenization) →
+row E. Brief E (model implementation) → row F. Brief F (training, optimization, checkpoints) → row G. Brief G
+(checkpoint-backed Python API) → row H. Brief H (model evaluation and experiment quality) → rows I and J.
+Brief I (reassess the surrounding subsystems) → audit §9 and §11. Brief J (reconcile documentation and
+project identity) → row K. Brief K (testing, CI, security, reproducibility) and brief L (professional git
+history) → row L.
+
+**Gate and smoke-test record for row L (measured 2026-10-21 at `e183a87`).**
+
+| Check | Result |
+| --- | --- |
+| `pytest` dependency-free | 1,391 passed, 16 skipped in 13.37 s |
+| `pytest` with `[train]` | 1,472 passed, 7 skipped in 17.67 s |
+| `pytest` with `[train,nn]` | 1,605 passed, 1 skipped in 55.21 s |
+| `ruff check .` / `ruff format --check .` | clean / 317 files already formatted |
+| `mypy src` (dependency-free) and `mypy --config-file configs/mypy-model-path.toml` (`[nn]`) | 117 files clean; 142 files clean |
+| `pip wheel --no-deps .` | built `chakaso-0.1.0.dev0-py3-none-any.whl`, 142 modules + `py.typed`, no runtime dependency, extras `dev`/`train`/`nn` |
+| Clean-interpreter import of the unpacked wheel (`python -I -S`) | `chakaso 0.1.0.dev0`; `chakaso.models.load_model` and `chakaso.training` import; `chakaso --version`, `capabilities`, `config show` and `sources list` all exit 0, with `config show` reporting "No configuration file was read; these are the built-in defaults" |
+| Checkpoint load / generate / score from the installed library | `load_model` on E2605's artifact reports `model_id=subword_transformer`, `development_double=False`; a 24-token greedy sample reproduces the recorded looping style; `score()` over `docs/training.md` returns 2.4996 nats (a smoke observation on a file that has since been edited, **not** a recorded result); scoring a text shorter than one 128-token window raises a typed `ModelError` naming both counts |
+| `git diff --check` over the arc | one new blank line at EOF in the audit, fixed before push |
+| Tracked-file guards | `test_repository_hygiene` 19 passed: private pack untracked, no secret-shaped files, no tracked file over 1 MiB, no commercial provider dependency, torch confined to the named allowlist, mypy configurations non-drifting |
 
 **Blockers and standing constraints.** Remote CI cannot gain a `[train]`/`[nn]` job: this session's GitHub
 credential has scopes `gist, read:org, repo` and no `workflow` scope (K-009, re-verified 2026-10-21), so CI
