@@ -138,6 +138,37 @@ class TransformerConfig:
         """The width of one attention head."""
         return self.d_model // self.num_heads
 
+    @property
+    def parameter_count(self) -> int:
+        """Trainable scalars this architecture has, computed from the configuration alone.
+
+        Derived arithmetically rather than by building a model, so a record can state model size before a
+        run and a test can check that the built model agrees with it. The breakdown: token and position
+        embeddings, then per layer a fused input projection (``3d x d`` plus bias), an output projection, a
+        two-matrix feed-forward, and two LayerNorms, then the final LayerNorm and — when the head is not
+        tied to the embedding matrix — a second ``d x vocab`` block.
+        """
+        d = self.d_model
+        per_layer = (
+            3 * d * d
+            + 3 * d
+            + d * d
+            + d
+            + d * self.feedforward_dim
+            + self.feedforward_dim
+            + self.feedforward_dim * d
+            + d
+            + 2 * (d + d)
+        )
+        head = 0 if self.tie_embeddings else self.vocab_size * d
+        return (
+            self.vocab_size * d
+            + self.context_length * d
+            + self.num_layers * per_layer
+            + 2 * d
+            + head
+        )
+
 
 def mask_positions(sequence_length: int, device: torch.device | None = None) -> torch.Tensor:
     """The strictly-upper-triangular additive mask that makes attention causal.
