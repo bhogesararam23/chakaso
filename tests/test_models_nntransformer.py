@@ -248,6 +248,36 @@ def test_score_refuses_text_it_cannot_score(checkpoint: Path) -> None:
 # ------------------------------------------------------------------ selection and refusal
 
 
+def test_a_checkpoint_loads_and_generates_in_a_fresh_process(checkpoint: Path) -> None:
+    """Reproduction means a later process can use the artifact, so this one is a separate interpreter.
+
+    Greedy decoding is deterministic, so the two processes must agree character for character; a checkpoint
+    that only worked inside the process that wrote it would still pass every other test in this module.
+    """
+    import subprocess
+    import sys
+
+    from chakaso.models import load_model
+
+    in_process = load_model(checkpoint).sample(_TEXT, max_new_tokens=12, temperature=0.0).text
+    program = (
+        "from pathlib import Path\n"
+        "from chakaso.models import load_model\n"
+        f"model = load_model(Path(input()))\n"
+        f"print(model.sample({_TEXT!r}, max_new_tokens=12, temperature=0.0).text)\n"
+    )
+
+    result = subprocess.run(
+        [sys.executable, "-c", program],
+        input=str(checkpoint),
+        capture_output=True,
+        text=True,
+        check=True,
+    )
+
+    assert result.stdout.strip() == in_process.strip()
+
+
 def test_load_model_returns_the_transformer_adapter(checkpoint: Path) -> None:
     loaded = load_model(checkpoint)
 
