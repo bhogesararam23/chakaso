@@ -69,11 +69,13 @@ def test_a_missing_file_is_refused_before_any_adapter_is_built(tmp_path: Path) -
         select_adapter_for(tmp_path / "absent.pt")
 
 
-def test_a_directory_is_refused(tmp_path: Path) -> None:
+def test_a_directory_that_is_not_a_release_is_refused(tmp_path: Path) -> None:
+    # A directory is only loadable when it carries a release contract; anything else is named as the
+    # absence it is, rather than being guessed at or silently treated as a checkpoint.
     folder = tmp_path / "data.pt"
     folder.mkdir()
 
-    with pytest.raises(ModelError, match="no checkpoint file"):
+    with pytest.raises(ModelError, match="holds no release document"):
         select_adapter_for(folder)
 
 

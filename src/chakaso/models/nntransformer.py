@@ -23,7 +23,9 @@ double.
 from __future__ import annotations
 
 import hashlib
-from collections.abc import Sequence
+import random
+from collections.abc import Callable, Iterator, Sequence
+from dataclasses import replace
 from pathlib import Path
 
 import torch
@@ -31,6 +33,7 @@ import torch
 from chakaso.models.base import (
     Capability,
     FinishReason,
+    GenerationChunk,
     GenerationParams,
     GenerationResult,
     Message,
@@ -38,9 +41,11 @@ from chakaso.models.base import (
     Role,
     require_messages,
 )
+from chakaso.models.decoding import AbortSignal, StopScanner, TokenSelector, truncate_prompt
 from chakaso.models.errors import ModelError
+from chakaso.training.decoder import ChakasoDecoder, KeyValueCache
 from chakaso.training.errors import CheckpointError, TrainingError
-from chakaso.training.nn_checkpoint import ModelArtifact, load_artifact
+from chakaso.training.nn_checkpoint import ModelArtifact, family_of, load_artifact
 from chakaso.training.subword import DOCUMENT_END
 
 __all__ = ["SUBWORD_TRANSFORMER_MODEL_ID", "SubwordTransformerModel"]
@@ -54,14 +59,26 @@ _DISPLAY_NAME = (
 )
 
 
-def _replayable_seed(prompt: str, params: GenerationParams, top_k: int | None) -> int:
-    """A seed derived from the request, so a sampled call repeats itself when asked identically.
+def _request_seed(prompt: str, params: GenerationParams) -> int:
+    """The seed a sampled request draws from when the caller did not name one.
 
-    The boundary promises a run is replayable; sampling from process-global RNG state would break that for
-    every adapter at once. Deriving the seed from the inputs keeps two identical requests identical without
-    asking callers to manage a generator, and a *different* request still gets a different stream.
+    Derived from the request rather than taken from process-global RNG state, because the boundary promises
+    a replayable run: two identical calls must produce two identical samples, while a different prompt or a
+    different ceiling must not be pinned to the same stream. An explicit ``params.seed`` overrides this and
+    is the form a recorded experiment uses.
     """
-    payload = f"{prompt}\x1f{params.temperature}\x1f{params.max_new_tokens}\x1f{top_k}"
+    payload = "".join(
+        (
+            prompt,
+            repr(params.temperature),
+            str(params.max_new_tokens),
+            str(params.top_k),
+            str(params.top_p),
+            str(params.stop_sequences),
+            str(params.stop_token_ids),
+            repr(params.repeat_penalty),
+        )
+    )
     return int(hashlib.sha256(payload.encode("utf-8")).hexdigest()[:12], 16)
 
 
@@ -75,6 +92,14 @@ class SubwordTransformerModel:
         model_id: str = SUBWORD_TRANSFORMER_MODEL_ID,
         top_k: int | None = None,
     ) -> None:
+        if top_k is not None and (
+            isinstance(top_k, bool) or not isinstance(top_k, int) or top_k < 1
+        ):
+            message = (
+                f"the 'subword_transformer' adapter was configured with top_k={top_k!r}; it must be an "
+                "integer >= 1 or None"
+            )
+            raise ModelError(message)
         if not checkpoint_path:
             message = (
                 "the 'subword_transformer' adapter requires a checkpoint path and none was given; it does "
@@ -95,12 +120,15 @@ class SubwordTransformerModel:
 
         self._model = self._artifact.to_model()
         self._context_length = self._artifact.config.context_length
-        self._top_k = top_k
+        self._default_top_k = top_k
+        #: Rows scored per forward pass when this model scores text. A loaded model scores in batches for the
+        #: same reason a trained one does: one pass per block makes evaluation the expensive part of a call.
+        self._scoring_batch = 32
         self._metadata = ModelMetadata(
             model_id=model_id,
             display_name=_DISPLAY_NAME,
             context_window=self._context_length,
-            capabilities=frozenset({Capability.TOKENIZE}),
+            capabilities=frozenset({Capability.TOKENIZE, Capability.STREAMING}),
             development_double=False,
         )
 
@@ -123,12 +151,39 @@ class SubwordTransformerModel:
         messages: Sequence[Message],
         params: GenerationParams,
     ) -> GenerationResult:
-        """Complete the conversation's text, bounded by ``params.max_new_tokens``.
+        """Complete the conversation's text under the parameters the caller declared.
 
-        Deterministic at temperature zero (argmax). Above zero it samples, seeded from the request itself
-        so an identical request reproduces and a different one does not.
+        Deterministic at temperature zero (argmax over the penalized logits). Above zero it samples from the
+        truncated candidate set, seeded from the request itself when ``params.seed`` is unset, so an identical
+        request reproduces and a different one does not.
         """
-        return self._complete(messages, params, top_k=self._top_k)
+        return self._decode(messages, params)
+
+    def stream(
+        self,
+        messages: Sequence[Message],
+        params: GenerationParams,
+        *,
+        signal: AbortSignal | None = None,
+    ) -> Iterator[GenerationChunk]:
+        """Yield each generated step as it happens, and stop when the caller aborts.
+
+        A chunk is one token's decoded text, which may be an incomplete multi-byte sequence: a caller
+        rendering live output should accumulate and re-render, not trust one chunk. The final chunk carries
+        ``finish_reason``, so a consumer can tell a complete answer from one cut off by the ceiling or the
+        window.
+        """
+        collected: list[GenerationChunk] = []
+
+        def emit(identifier: int, text: str) -> None:
+            collected.append(GenerationChunk(text=text, token_id=identifier))
+
+        result = self._decode(messages, params, on_token=emit, signal=signal)
+        for index, chunk in enumerate(collected):
+            last = index == len(collected) - 1
+            yield (
+                replace(chunk, final=True, finish_reason=result.finish_reason) if last else chunk
+            )
 
     def sample(
         self,
@@ -137,68 +192,165 @@ class SubwordTransformerModel:
         max_new_tokens: int = 64,
         temperature: float = 0.0,
         top_k: int | None = None,
+        params: GenerationParams | None = None,
     ) -> GenerationResult:
         """Complete one bare prompt string — the shape an inference caller usually wants.
 
         Equivalent to :meth:`generate` with a single user message, and it shares the same decoding code, so
-        there is one generation implementation rather than two that can disagree.
+        there is one generation implementation rather than two that can disagree. Pass ``params`` for the
+        full control set; the loose arguments are then refused rather than silently overridden.
         """
         if not prompt:
             message = (
                 "generation requires a non-empty prompt; an empty prompt has nothing to continue"
             )
             raise ModelError(message)
-        return self._complete(
-            [Message(role=Role.USER, content=prompt)],
-            GenerationParams(max_new_tokens=max_new_tokens, temperature=temperature),
-            top_k=top_k if top_k is not None else self._top_k,
-        )
+        if params is not None:
+            supplied = [
+                name
+                for name, value in (
+                    ("max_new_tokens", max_new_tokens != 64),
+                    ("temperature", temperature != 0.0),
+                    ("top_k", top_k is not None),
+                )
+                if value
+            ]
+            if supplied:
+                message = (
+                    "sample() was given both a GenerationParams and "
+                    f"{supplied}; the parameters object is the authority, so pass one or the other"
+                )
+                raise ModelError(message)
+            chosen = params
+        else:
+            chosen = GenerationParams(
+                max_new_tokens=max_new_tokens,
+                temperature=temperature,
+                top_k=top_k if top_k is not None else self._default_top_k,
+            )
+        return self._decode([Message(role=Role.USER, content=prompt)], chosen)
 
-    def _complete(
+    def _cache(self) -> KeyValueCache | None:
+        """A fresh key/value cache when the loaded architecture supports one, otherwise nothing.
+
+        The measured transformer has no incremental path — its ``forward`` re-runs the prefix — so a
+        generation from its checkpoints keeps the older sliding-window behaviour instead of pretending to be
+        cached. Which of the two ran is part of ``describe()``, because the difference is the difference
+        between linear and quadratic generation cost.
+        """
+        if isinstance(self._model, ChakasoDecoder):
+            return KeyValueCache(self._model.config.num_layers)
+        return None
+
+    def _decode(
         self,
         messages: Sequence[Message],
         params: GenerationParams,
         *,
-        top_k: int | None,
+        on_token: Callable[[int, str], None] | None = None,
+        signal: AbortSignal | None = None,
     ) -> GenerationResult:
         require_messages(messages)
         prompt = "\n".join(message.content for message in messages if message.content)
-        identifiers = list(self._artifact.vocabulary.encode(prompt))
-        if not identifiers:
+        encoded = list(self._artifact.vocabulary.encode(prompt))
+        if not encoded:
             message = (
                 f"model {self._metadata.model_id!r} produced no input identifiers from the supplied text; "
                 "the request contains nothing the tokenizer can encode"
             )
             raise ModelError(message)
 
-        generator = torch.Generator().manual_seed(_replayable_seed(prompt, params, top_k))
-        window = identifiers[-self._context_length :]
+        window, truncated = truncate_prompt(encoded, self._context_length)
+        vocabulary = self._artifact.vocabulary
+        selector = TokenSelector(
+            params,
+            vocabulary_size=vocabulary.size,
+            rng=random.Random(
+                params.seed if params.seed is not None else _request_seed(prompt, params)
+            ),
+        )
+        scanner = StopScanner(
+            sequences=params.stop_sequences,
+            token_ids=params.stop_token_ids,
+            document_end_id=DOCUMENT_END,
+        )
+        cache = self._cache()
         produced: list[int] = []
+        texts: list[str] = []
         reason = FinishReason.LENGTH
+        stopped_by: str | None = None
 
         with torch.no_grad():
+            # The first step consumes the whole prompt; a cached step then consumes only the token it just
+            # produced, which is the entire point of carrying the cache.
+            step_input: Sequence[int] = window
             for _ in range(params.max_new_tokens):
-                input_ids = torch.tensor([window], dtype=torch.int64)
-                logits = self._model.next_token_logits(input_ids)[0]
-                if params.temperature <= 0.0:
-                    nxt = int(logits.argmax())
-                else:
-                    probabilities = torch.softmax(logits / params.temperature, dim=-1)
-                    if top_k is not None:
-                        probabilities = _keep_top_k(probabilities, top_k)
-                    nxt = int(torch.multinomial(probabilities, 1, generator=generator))
-                if nxt == DOCUMENT_END:
-                    # The separator is a boundary, not content: the model has signalled the end of a
-                    # document, so generation stops and reports STOP rather than emitting it as text.
-                    reason = FinishReason.STOP
+                if signal is not None and signal.cancelled:
+                    reason = FinishReason.CANCELLED
                     break
-                produced.append(nxt)
-                window.append(nxt)
-                if len(window) > self._context_length:
-                    del window[0]
+                logits = self._logits(step_input, cache)
+                identifier = selector.select(logits)
+                if identifier == DOCUMENT_END:
+                    # The separator is a boundary, not content: the model signalled the end of a document,
+                    # so generation stops and reports STOP rather than emitting it as text.
+                    reason = FinishReason.STOP
+                    stopped_by = "document-end"
+                    break
+                verdict = scanner.feed(vocabulary.decode([identifier]), identifier)
+                selector.note(identifier)
+                produced.append(identifier)
+                chunk = vocabulary.decode([identifier])
+                texts.append(chunk)
+                if on_token is not None:
+                    on_token(identifier, chunk)
+                if cache is None:
+                    step_input = (*step_input, identifier)[-self._context_length :]
+                else:
+                    step_input = (identifier,)
+                    if cache.length >= self._context_length:
+                        # A cached run cannot slide its window: the positions already computed are what the
+                        # attention is conditioned on. Saying so is better than silently truncating the
+                        # beginning of a long answer.
+                        reason = FinishReason.CONTEXT
+                        break
+                if verdict.stopped:
+                    reason = FinishReason.STOP
+                    stopped_by = verdict.marker
+                    break
 
-        text = self._artifact.vocabulary.decode(produced)
-        return GenerationResult(text=text, model_id=self._metadata.model_id, finish_reason=reason)
+        return GenerationResult(
+            text="".join(texts),
+            model_id=self._metadata.model_id,
+            finish_reason=reason,
+            token_ids=tuple(produced),
+            new_tokens=len(produced),
+            prompt_tokens=len(window),
+            truncated=truncated,
+            stopped_by=stopped_by,
+        )
+
+    def _logits(self, identifiers: Sequence[int], cache: KeyValueCache | None) -> list[float]:
+        """One row of logits for the next token, from either architecture family."""
+        row = torch.tensor([list(identifiers)], dtype=torch.int64)
+        if cache is None:
+            return [float(value) for value in self._model.next_token_logits(row)[0]]
+        logits, _ = self._model(row, cache=cache)
+        return [float(value) for value in logits[0, -1]]
+
+    def describe(self) -> dict[str, object]:
+        """Runtime facts a caller needs before choosing parameters, read from the artifact."""
+        return {
+            "model_id": self._metadata.model_id,
+            "family": family_of(self._artifact.config),
+            "parameter_count": self._artifact.parameter_count,
+            "context_window": self._context_length,
+            "vocabulary_size": self._artifact.vocabulary.size,
+            "corpus_fingerprint": self._artifact.corpus_fingerprint,
+            "tokenizer_fingerprint": self._artifact.vocabulary.fingerprint,
+            "checkpoint": self._artifact.checksum()[:16],
+            "cached_decoding": self._cache() is not None,
+            "development_double": False,
+        }
 
     def score(self, text: str) -> float:
         """Mean next-token cross-entropy, in nats, over ``text`` packed at the model's own context.
@@ -234,38 +386,10 @@ class SubwordTransformerModel:
             # family, so the message is carried rather than replaced.
             message = f"model {self._metadata.model_id!r} cannot score the supplied text: {exc}"
             raise ModelError(message) from exc
-        model = self._model
-        nats: list[float] = []
-        targets: list[int] = []
-        predictions: list[int] = []
+        from chakaso.training.nn_evaluation import score_model_on_examples
+
+        # One scoring implementation, shared with the experiment's held-out numbers: a boundary that scored
+        # text its own way would let a report and a caller disagree about the same checkpoint.
         with torch.no_grad():
-            for example in examples.examples:
-                input_ids = torch.tensor([list(example.input_ids)], dtype=torch.int64)
-                logits, _ = model(input_ids)
-                log_probabilities = torch.log_softmax(logits[0], dim=-1)
-                for position, target in enumerate(example.targets):
-                    token = int(target)
-                    nats.append(-float(log_probabilities[position, token]))
-                    targets.append(token)
-                    predictions.append(int(log_probabilities[position].argmax()))
+            nats, targets, predictions = score_model_on_examples(self._model, examples.examples)
         return metrics_from_scores(nats, targets, predictions, self._artifact.vocabulary).loss_nats
-
-
-def _keep_top_k(probabilities: torch.Tensor, top_k: int) -> torch.Tensor:
-    """Zero every identifier outside the ``top_k`` most likely, then renormalize.
-
-    Raises:
-        ModelError: ``top_k`` is not a positive integer, or exceeds the model's vocabulary.
-    """
-    if isinstance(top_k, bool) or not isinstance(top_k, int) or top_k < 1:
-        message = f"top_k must be an integer >= 1, got {top_k!r}"
-        raise ModelError(message)
-    if top_k >= probabilities.numel():
-        return probabilities
-    kth = torch.topk(probabilities, top_k).values[-1]
-    masked = torch.where(probabilities >= kth, probabilities, torch.zeros_like(probabilities))
-    total = masked.sum()
-    if float(total) <= 0.0:
-        message = f"top_k={top_k} left no probability mass to sample from"
-        raise ModelError(message)
-    return masked / total

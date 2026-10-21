@@ -107,7 +107,7 @@ def checkpoint(tmp_path_factory: pytest.TempPathFactory) -> Path:
 
 
 class TestSubwordTransformerModel(LanguageModelContract):
-    expected_capabilities = frozenset({Capability.TOKENIZE})
+    expected_capabilities = frozenset({Capability.TOKENIZE, Capability.STREAMING})
 
     @pytest.fixture
     def model(self, checkpoint: Path) -> SubwordTransformerModel:
@@ -183,8 +183,19 @@ def test_top_k_one_matches_the_greedy_choice(checkpoint: Path) -> None:
 def test_an_invalid_top_k_is_refused(checkpoint: Path, top_k: object) -> None:
     model = SubwordTransformerModel(str(checkpoint))
 
-    with pytest.raises(ModelError, match="top_k"):
+    # One validation point for generation parameters: the parameter type itself. The adapter used to check
+    # the same field a second way, which let a bad value pass one gate and fail the other.
+    with pytest.raises(ValueError, match="top_k must be an integer"):
         model.sample(_TEXT, max_new_tokens=4, temperature=0.5, top_k=top_k)  # type: ignore[arg-type]
+
+
+@pytest.mark.parametrize("top_k", [0, -1, True, "3"])
+def test_a_misconfigured_adapter_is_refused_at_construction(
+    top_k: object, checkpoint: Path
+) -> None:
+    # The registry's own knob, checked where it is set: a configuration that cannot sample should not load.
+    with pytest.raises(ModelError, match="configured with top_k"):
+        SubwordTransformerModel(str(checkpoint), top_k=top_k)
 
 
 def test_an_empty_prompt_is_refused_rather_than_answered(checkpoint: Path) -> None:

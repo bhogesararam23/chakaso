@@ -42,7 +42,7 @@ from typing import Any
 import torch
 
 from chakaso.training.decoder import ChakasoDecoder, DecoderConfig
-from chakaso.training.errors import TrainingError
+from chakaso.training.errors import TrainingError, TrainingScheduleError
 from chakaso.training.nn_checkpoint import ModelArtifact, describe_environment, save_artifact
 from chakaso.training.packing import PackedExample
 from chakaso.training.subword import SubwordVocabulary
@@ -65,10 +65,6 @@ __all__ = [
     "train_transformer",
     "verify_resume_compatibility",
 ]
-
-
-class TrainingScheduleError(TrainingError):
-    """A training request cannot be scheduled: empty data, or a configuration that cannot make progress."""
 
 
 @dataclass(frozen=True, slots=True)
@@ -583,8 +579,12 @@ def train_transformer(
     stopped_early = False
     completion = COMPLETED_BUDGET_CEILING
     started = time.perf_counter()
-    last_elapsed = 0.0
     trained_positions = 0
+    # Throughput is measured over gradient work only. Timing an interval that spans an evaluation would
+    # charge the model for reading the validation set, and the number would then depend on how often the
+    # caller asked to evaluate rather than on how fast the model trains.
+    train_seconds = 0.0
+    last_train_seconds = 0.0
     train_positions = len(train_examples) * len(train_examples[0].input_ids)
 
     for offset in range(1, config.max_steps - start_step + 1):
@@ -599,6 +599,7 @@ def train_transformer(
         optimizer.zero_grad(set_to_none=True)
         positions = 0
         step_loss = 0.0
+        step_started = time.perf_counter()
         for micro in range(config.grad_accum_steps):
             # Planned by absolute update index, so a resumed run draws exactly the batches the uninterrupted
             # run would have drawn; that is what makes the resume property equivalence rather than resemblance.
@@ -619,6 +620,7 @@ def train_transformer(
             (loss / config.grad_accum_steps).backward()
             step_loss += float(loss.detach())
 
+        train_seconds += time.perf_counter() - step_started
         trained_positions += positions
         average_loss = step_loss / config.grad_accum_steps
         # clip_grad_norm_ returns the norm *before* clipping, which is what makes "clipping happened"
@@ -636,7 +638,8 @@ def train_transformer(
                 model, validation_examples, batch_size=config.batch_size
             )
             elapsed = time.perf_counter() - started
-            interval = elapsed - last_elapsed
+            spent = train_seconds - last_train_seconds
+            last_train_seconds = train_seconds
             record = StepRecord(
                 step=step,
                 train_loss=average_loss,
@@ -645,10 +648,9 @@ def train_transformer(
                 gradient_norm=norm,
                 learning_rate=learning_rate,
                 elapsed_seconds=elapsed,
-                positions_per_second=positions / interval if interval > 0 else 0.0,
+                positions_per_second=positions / spent if spent > 0 else 0.0,
             )
             records.append(record)
-            last_elapsed = elapsed
             if on_step is not None:
                 on_step(record)
             if validation_loss < best_validation - config.min_delta:
@@ -724,7 +726,7 @@ def train_transformer(
         optimizer_state=optimizer.state_dict(),
         completion=completion,
         wall_clock_seconds=elapsed,
-        positions_per_second=trained_positions / elapsed if elapsed > 0 else 0.0,
+        positions_per_second=trained_positions / train_seconds if train_seconds > 0 else 0.0,
     )
 
 

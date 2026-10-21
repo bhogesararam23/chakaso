@@ -596,3 +596,49 @@ def test_a_tampered_cached_tokenizer_is_refused_rather_than_trusted(tmp_path: Pa
 
     with pytest.raises(CorruptedCorpusArtifactError, match="checksum"):
         prepare_corpus(_plan(root, work))
+
+
+def test_a_shared_cache_directory_is_used_instead_of_each_runs_own(tmp_path: Path) -> None:
+    root = _root(tmp_path)
+    shared = tmp_path / "shared-tokenizers"
+    first = prepare_corpus(_plan(root, tmp_path / "work-a", tokenizer_cache_dir=shared))
+    second = prepare_corpus(_plan(root, tmp_path / "work-b", tokenizer_cache_dir=shared))
+
+    assert not first.tokenizer_reused
+    assert second.tokenizer_reused
+    assert second.vocabulary.fingerprint == first.vocabulary.fingerprint
+    assert len(list(shared.glob("*-tokenizer-*.json"))) == 1
+    assert not any((tmp_path / "work-a").glob("*-tokenizer-*.json"))
+
+
+def test_held_out_prompts_come_from_the_test_side_and_are_recorded(tmp_path: Path) -> None:
+    root = _root(tmp_path)
+    work = tmp_path / "work-held-out"
+
+    report = run_experiment(_plan(root, work, sample_prompts="held_out", samples_per_prompt=4))
+
+    samples = report["samples"]
+    assert samples
+    test_side = set(report["corpus"]["identifiers_per_side"]["test"])
+    trained = set(report["corpus"]["identifiers_per_side"]["train"]) | set(
+        report["corpus"]["identifiers_per_side"]["validation"]
+    )
+    for sample in samples:
+        # The prompt's provenance is a document identifier, and it is one the model never trained on. That
+        # is the whole point of the option: a heading from the trained corpus would flatter the sample.
+        assert sample["prompt_source"] in test_side
+        assert sample["prompt_source"] not in trained
+        assert sample["text"] != ""
+
+
+def test_the_repository_prompt_set_is_named_as_such(tmp_path: Path) -> None:
+    root = _root(tmp_path)
+
+    report = run_experiment(_plan(root, tmp_path / "work-repo-prompts", samples_per_prompt=4))
+
+    assert {sample["prompt_source"] for sample in report["samples"]} == {"chakaso-repo-text-v1"}
+
+
+def test_an_unknown_prompt_source_is_refused(tmp_path: Path) -> None:
+    with pytest.raises(ValueError, match="sample_prompts"):
+        _plan(_root(tmp_path), tmp_path / "work", sample_prompts="whatever-the-model-likes")

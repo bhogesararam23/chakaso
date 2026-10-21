@@ -531,6 +531,52 @@ def _build_parsers() -> tuple[argparse.ArgumentParser, argparse.ArgumentParser]:
         default=None,
         help="also write the machine-readable report to this path and print its digest",
     )
+    for name, kind, help_text in (
+        ("--experiment", str, "name this run's artifacts and report (default: the library's)"),
+        ("--model-family", str, "architecture family: transformer or decoder"),
+        ("--vocab-size", int, "subword vocabulary size, fitted on the training side only"),
+        ("--context-length", int, "model context, in tokens"),
+        ("--d-model", int, "residual stream width"),
+        ("--num-layers", int, "repeated attention + feed-forward blocks"),
+        ("--num-heads", int, "attention heads per block"),
+        ("--feedforward-dim", int, "inner width of the feed-forward block"),
+        ("--rope-theta", float, "rotary base for the decoder family"),
+        ("--batch-size", int, "sequences per optimizer step, before accumulation"),
+        ("--grad-accum-steps", int, "micro-batches per optimizer step"),
+        ("--learning-rate", float, "peak AdamW learning rate"),
+        ("--weight-decay", float, "AdamW decoupled weight decay"),
+        ("--schedule", str, "learning-rate policy after warmup: constant or cosine"),
+        ("--decay-to", float, "fraction of the peak rate a cosine schedule ends at"),
+        ("--patience", int, "evaluations without improvement before the run stops"),
+        ("--min-delta", float, "held-out improvement in nats that counts against patience"),
+        ("--checkpoint-every", int, "steps between resumable writes (0 means every evaluation)"),
+        ("--tokenizer-min-frequency", int, "merge frequency floor for the subword vocabulary"),
+        ("--samples-per-prompt", int, "tokens generated for each recorded sample"),
+    ):
+        experiment_model.add_argument(name, type=kind, default=None, help=help_text)
+    experiment_model.add_argument(
+        "--tokenizer-cache-dir",
+        type=Path,
+        default=None,
+        help="share fitted tokenizers across runs from this directory (a study points its seeds here)",
+    )
+    experiment_model.add_argument(
+        "--sample-prompts",
+        choices=("repository", "held_out"),
+        default=None,
+        help="record generation prompts from this project's text, or from the corpus's held-out side",
+    )
+    experiment_model.add_argument(
+        "--resume-from",
+        type=Path,
+        default=None,
+        help="continue from a resumable artifact this run wrote, after verifying it is the same run",
+    )
+    experiment_model.add_argument(
+        "--no-character-baseline",
+        action="store_true",
+        help="skip the character-model baseline, whose windows are materialized per character",
+    )
     experiment_model.add_argument(
         "--json",
         action="store_true",
@@ -1898,21 +1944,57 @@ def _run_model_experiment(args: argparse.Namespace) -> int:
     # operator had asked for it.
     base = ExperimentPlan(root=args.root, work_dir=args.work_dir)
     max_steps = args.max_steps if args.max_steps is not None else base.max_steps
+    named = (
+        "model_family",
+        "vocab_size",
+        "context_length",
+        "d_model",
+        "num_layers",
+        "num_heads",
+        "feedforward_dim",
+        "rope_theta",
+        "batch_size",
+        "grad_accum_steps",
+        "learning_rate",
+        "weight_decay",
+        "schedule",
+        "decay_to",
+        "patience",
+        "min_delta",
+        "checkpoint_every",
+        "tokenizer_min_frequency",
+        "samples_per_prompt",
+        "tokenizer_cache_dir",
+        "resume_from",
+        "sample_prompts",
+    )
+    # Each flag keeps the plan field's own name, so an unset flag stays unset rather than becoming an
+    # explicit default the operator did not ask for.
+    overrides = {
+        field: value for field in named if (value := getattr(args, field, None)) is not None
+    }
+    if args.experiment is not None:
+        overrides["experiment_id"] = args.experiment
+    if args.no_character_baseline:
+        overrides["character_baseline"] = False
     plan = ExperimentPlan(
-        root=args.root,
-        work_dir=args.work_dir,
-        max_steps=max_steps,
-        eval_every=args.eval_every if args.eval_every is not None else base.eval_every,
-        warmup_steps=(
-            args.warmup_steps
-            if args.warmup_steps is not None
-            else min(base.warmup_steps, max_steps)
-        ),
-        seed=args.seed if args.seed is not None else base.seed,
-        split_seed=args.split_seed,
-        corpus_snapshot=args.corpus_snapshot,
-        expected_corpus_fingerprint=args.expected_corpus_fingerprint,
-        overwrite_artifacts=args.overwrite,
+        **{
+            "root": args.root,
+            "work_dir": args.work_dir,
+            "max_steps": max_steps,
+            "eval_every": args.eval_every if args.eval_every is not None else base.eval_every,
+            "warmup_steps": (
+                args.warmup_steps
+                if args.warmup_steps is not None
+                else min(base.warmup_steps, max_steps)
+            ),
+            "seed": args.seed if args.seed is not None else base.seed,
+            "split_seed": args.split_seed,
+            "corpus_snapshot": args.corpus_snapshot,
+            "expected_corpus_fingerprint": args.expected_corpus_fingerprint,
+            "overwrite_artifacts": args.overwrite,
+        },
+        **overrides,
     )
     try:
         report = run_experiment(plan, verbose=args.verbose)

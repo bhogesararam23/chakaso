@@ -97,6 +97,9 @@ CHARACTER_CONTEXT = 16
 _VALIDATION_FRACTION = 0.15
 _TEST_FRACTION = 0.15
 _FAMILIES = frozenset({"transformer", "decoder"})
+_PROMPT_SOURCES = frozenset({"repository", "held_out"})
+#: Characters taken from the start of a held-out document to form a prompt.
+_HELD_OUT_PROMPT_CHARACTERS = 64
 _SCHEDULES = frozenset({"constant", "cosine"})
 _PROMPTS = (
     "# Chakaso\n\nChakaso is a",
@@ -214,6 +217,11 @@ class ExperimentPlan:
     character_eval_every: int = 200
     character_learning_rate: float = 2e-2
     samples_per_prompt: int = 96
+    #: Where the recorded generation prompts come from. ``repository`` is the set E2605 to E2606 sampled with;
+    #: ``held_out`` takes prompts from documents on this corpus's own test side, which is what a comparison
+    #: on external text needs — a prompt quoting Chakaso's section titles measures memorization of a corpus
+    #: the model never saw, not behaviour on the corpus it trained on.
+    sample_prompts: str = "repository"
     #: A snapshot of the corpus, read through :func:`chakaso.training.manifest.read_snapshot`, which
     #: re-checks every document digest. Given, the run trains on those bytes and never touches the tracked
     #: files; absent, the run prepares from the tree, writes a snapshot beside its manifest, and a later run
@@ -243,6 +251,10 @@ class ExperimentPlan:
     #: corpus of tens of millions of characters it costs more memory than this project's machine has; a run
     #: that skips it says so in its report rather than pretending the number was measured.
     character_baseline: bool = True
+    #: Where a fitted tokenizer is cached. Defaults to the run's own work directory; a seed study points
+    #: every seed at one directory, because the vocabulary depends on the corpus and the split and the
+    #: study fixes both, so retraining it per seed would be paying the same cost for the same answer.
+    tokenizer_cache_dir: Path | None = None
     #: A resume point written by an earlier pass of *this* run. Verified against the plan's corpus,
     #: architecture, tokenizer and configuration before a single step is taken.
     resume_from: Path | None = None
@@ -268,6 +280,11 @@ class ExperimentPlan:
             raise ValueError(message)
         if isinstance(self.grad_accum_steps, bool) or self.grad_accum_steps < 1:
             message = f"grad_accum_steps must be >= 1, got {self.grad_accum_steps!r}"
+            raise ValueError(message)
+        if self.sample_prompts not in _PROMPT_SOURCES:
+            message = (
+                f"sample_prompts {self.sample_prompts!r} is not one of {sorted(_PROMPT_SOURCES)}"
+            )
             raise ValueError(message)
         if isinstance(self.checkpoint_every, bool) or self.checkpoint_every < 0:
             message = f"checkpoint_every must be >= 0, got {self.checkpoint_every!r}"
@@ -521,7 +538,8 @@ def _fit_or_reuse_vocabulary(
         target_size=plan.vocab_size,
         min_frequency=plan.tokenizer_min_frequency,
     )
-    path = work / f"{manifest.name}-tokenizer-{identity}.json"
+    cache = plan.tokenizer_cache_dir if plan.tokenizer_cache_dir is not None else work
+    path = cache / f"{manifest.name}-tokenizer-{identity}.json"
     if path.is_file():
         # SubwordVocabulary.load re-checks the file's own checksum and merge-table invariants, so a cached
         # tokenizer that was edited or truncated is refused here rather than trusted because of its name.
@@ -761,11 +779,38 @@ def baseline_metrics(prepared: PreparedCorpus) -> dict[str, Any]:
     }
 
 
+def _prompt_set(plan: ExperimentPlan, prepared: PreparedCorpus) -> tuple[tuple[str, str], ...]:
+    """The prompts a run samples generations from, chosen before any generation happens.
+
+    ``held_out`` takes the opening of the first few test-side documents, in document order: the choice is a
+    function of the split, not of what the model produced, and the identifiers are recorded so a reader can
+    see exactly which text was used.
+    """
+    if plan.sample_prompts != "held_out":
+        return tuple(("chakaso-repo-text-v1", prompt) for prompt in _PROMPTS)
+    taken: list[tuple[str, str]] = []
+    for unit in prepared.split.test:
+        cleaned = " ".join(unit.text.split())
+        if len(cleaned) >= _HELD_OUT_PROMPT_CHARACTERS:
+            taken.append((unit.identifier, cleaned[:_HELD_OUT_PROMPT_CHARACTERS]))
+        if len(taken) == len(_PROMPTS):
+            break
+    if not taken:
+        message = (
+            "the run asked for held-out prompts but no test-side document is long enough to supply one; "
+            "the comparison would be against nothing"
+        )
+        raise ValueError(message)
+    return tuple(taken)
+
+
 def score_transformer(
-    model: TrainedModel, batch: PackedBatch, vocabulary: SubwordVocabulary
+    model: TrainedModel, batch: PackedBatch, vocabulary: SubwordVocabulary, *, plan: ExperimentPlan
 ) -> ModelMetrics:
     """Score a trained model on one packed side of the split, through the shared arithmetic."""
-    nats, targets, predictions = score_model_on_examples(model, batch.examples)
+    nats, targets, predictions = score_model_on_examples(
+        model, batch.examples, batch_size=plan.batch_size
+    )
     return _metrics(nats, targets, predictions, vocabulary)
 
 
@@ -862,8 +907,10 @@ def run_experiment(plan: ExperimentPlan, *, verbose: bool = False) -> dict[str, 
 
     artifact = outcome.artifact()
     model = artifact.to_model()
-    test_metrics = score_transformer(model, prepared.test, prepared.vocabulary)
-    validation_metrics = score_transformer(model, prepared.validation, prepared.vocabulary)
+    test_metrics = score_transformer(model, prepared.test, prepared.vocabulary, plan=plan)
+    validation_metrics = score_transformer(
+        model, prepared.validation, prepared.vocabulary, plan=plan
+    )
     artifact_path = work / checkpoint_filename(plan.experiment_id, plan.model_family)
     save_artifact(artifact, artifact_path, allow_overwrite=plan.overwrite_artifacts)
 
@@ -875,11 +922,12 @@ def run_experiment(plan: ExperimentPlan, *, verbose: bool = False) -> dict[str, 
     inference = load_model(artifact_path)
     params = GenerationParams(max_new_tokens=plan.samples_per_prompt, temperature=0.0)
     samples = []
-    for prompt in _PROMPTS:
+    for source, prompt in _prompt_set(plan, prepared):
         result = inference.generate([Message(role=Role.USER, content=prompt)], params)
         samples.append(
             {
                 "prompt": prompt,
+                "prompt_source": source,
                 "text": result.text,
                 "finish_reason": result.finish_reason.value,
                 "model_id": result.model_id,
@@ -1038,7 +1086,11 @@ def summarise(report: dict[str, Any]) -> str:
             f"test bits/char {transformer['bits_per_character']:.4f}, "
             f"perplexity {transformer['perplexity']:.2f} at step {budget['best_step']} "
             f"(early stopped: {budget['stopped_early']})",
-            f"character test bits/char {character['bits_per_character']:.4f}",
+            (
+                f"character test bits/char {character['bits_per_character']:.4f}"
+                if character is not None
+                else "character baseline skipped (see the report's reason)"
+            ),
             f"unigram {unigram['bits_per_character']:.4f}",
             f"uniform {uniform['bits_per_character']:.4f}",
         )

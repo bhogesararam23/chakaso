@@ -8,6 +8,7 @@ not counted as text — and the same value the loop's own evaluation produced.
 from __future__ import annotations
 
 import math
+from dataclasses import dataclass
 from pathlib import Path
 
 import pytest
@@ -15,7 +16,10 @@ import pytest
 torch = pytest.importorskip("torch")
 
 from chakaso.training.data import TextUnit  # noqa: E402
-from chakaso.training.errors import TrainingError  # noqa: E402
+from chakaso.training.errors import (  # noqa: E402
+    TrainingError,
+    TrainingScheduleError,
+)
 from chakaso.training.nn_evaluation import (  # noqa: E402
     evaluate_artifact,
     evaluate_model,
@@ -161,3 +165,58 @@ def test_an_artifact_is_scored_with_the_tokenizer_bound_inside_it(tmp_path: Path
     assert evaluate_artifact(reloaded, examples).loss_nats == pytest.approx(
         evaluate_model(model, examples, _VOCABULARY).loss_nats, abs=1e-9
     )
+
+
+@dataclass(frozen=True, slots=True)
+class _Row:
+    """A packed example of a chosen width, for the ragged-batch case packing never produces."""
+
+    input_ids: tuple[int, ...]
+    targets: tuple[int, ...]
+
+
+def test_batched_scoring_returns_the_same_numbers_row_by_row() -> None:
+    """Batching is a speed change only: identical model, identical examples, identical per-position output.
+
+    If this ever fails, every held-out number measured after the batching was introduced is a different
+    measurement from the ones before it — which is why it is asserted directly rather than assumed.
+    """
+    model = _model()
+    examples = _examples("the quick red fox ran over the dry sand and the quiet owl slept")
+
+    one_at_a_time = score_model_on_examples(model, examples, batch_size=1)
+    batched = score_model_on_examples(model, examples, batch_size=len(examples))
+
+    assert [round(value, 9) for value in batched[0]] == [
+        round(value, 9) for value in one_at_a_time[0]
+    ]
+    assert batched[1] == one_at_a_time[1]
+    assert batched[2] == one_at_a_time[2]
+
+
+def test_a_ragged_set_of_examples_is_scored_without_padding_any_row() -> None:
+    model = _model()
+    rows = _examples("the quick red fox ran over the dry sand and the quiet owl slept")
+    wide = rows[0]
+    narrow = _Row(input_ids=wide.input_ids[:4], targets=wide.targets[:4])
+    narrow_nats, narrow_targets, _ = score_model_on_examples(model, [narrow], batch_size=8)
+
+    together, targets, predictions = score_model_on_examples(
+        model, [wide, narrow, rows[1]], batch_size=8
+    )
+
+    assert len(narrow_nats) == 4
+    assert targets[: len(wide.targets)] == list(wide.targets)
+    assert targets[len(wide.targets) :][:4] == list(narrow_targets)
+    assert len(together) == len(wide.targets) + 4 + len(rows[1].targets)
+    assert len(predictions) == len(together)
+
+
+def test_an_unusable_batch_size_is_refused() -> None:
+    model = _model()
+    examples = _examples("the quick red fox ran over the dry sand")
+
+    with pytest.raises(TrainingScheduleError, match="batch_size"):
+        score_model_on_examples(model, examples, batch_size=0)
+    with pytest.raises(TrainingScheduleError, match="zero examples"):
+        score_model_on_examples(model, [], batch_size=8)

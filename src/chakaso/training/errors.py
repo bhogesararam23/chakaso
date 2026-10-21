@@ -17,6 +17,7 @@ __all__ = [
     "IncompatibleCheckpointError",
     "StudyProtocolError",
     "TrainingError",
+    "TrainingScheduleError",
 ]
 
 
@@ -34,6 +35,15 @@ class CorruptedCheckpointError(CheckpointError):
 
 class IncompatibleCheckpointError(CheckpointError):
     """The checkpoint is well-formed but speaks a schema or shape this code cannot load."""
+
+
+class TrainingScheduleError(TrainingError):
+    """A training request cannot be scheduled: empty data, or a configuration that cannot make progress.
+
+    Distinct from a numerical failure because the remedy is different — the caller has to change the
+    request, not the environment. It also names the cases a resume must refuse: a checkpoint from another
+    corpus, architecture or tokenizer is not a schedule this run can continue.
+    """
 
 
 class CorpusError(TrainingError):

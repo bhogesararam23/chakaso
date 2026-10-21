@@ -208,6 +208,10 @@ class SeedStudy:
             self.plan,
             seed=seed,
             work_dir=self.run_dir(seed),
+            # The tokenizer is a function of the corpus and the split, and a study fixes both. Pointing every
+            # seed at one cache directory is what stops a five-seed study from paying the same eight-minute
+            # merge search five times, and each seed still gets its own checkpoint, report and samples.
+            tokenizer_cache_dir=self.plan.work_dir,
             experiment_id=self.experiment,
             overwrite_artifacts=True,
         )

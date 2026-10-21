@@ -28,7 +28,7 @@ only one backend understands does not belong here.
 
 from __future__ import annotations
 
-from collections.abc import Mapping, Sequence
+from collections.abc import Iterator, Mapping, Sequence
 from dataclasses import dataclass, field
 from enum import StrEnum
 from typing import Protocol, runtime_checkable
@@ -38,12 +38,14 @@ from chakaso.models.errors import ModelError, UnsupportedCapabilityError
 __all__ = [
     "Capability",
     "FinishReason",
+    "GenerationChunk",
     "GenerationParams",
     "GenerationResult",
     "LanguageModel",
     "Message",
     "ModelMetadata",
     "Role",
+    "StreamingGenerator",
     "StructuredGenerator",
     "StructuredResult",
     "Tokenizer",
@@ -81,6 +83,7 @@ class Capability(StrEnum):
     """Something a model may be able to do beyond generating text."""
 
     TOKENIZE = "tokenize"
+    STREAMING = "streaming"
     STRUCTURED_GENERATION = "structured_generation"
 
 
@@ -90,10 +93,15 @@ class FinishReason(StrEnum):
     ``LENGTH`` means the output was cut off by the token ceiling, which is a
     different situation from a model that finished its answer, and a caller that
     cannot tell them apart will present a truncated answer as a complete one.
+    ``CONTEXT`` is the third case that matters: the model's own window filled, so
+    the run cannot continue no matter what the caller asked for. ``CANCELLED``
+    means the caller stopped a stream.
     """
 
     STOP = "stop"
     LENGTH = "length"
+    CONTEXT = "context"
+    CANCELLED = "cancelled"
 
 
 @dataclass(frozen=True, slots=True)
@@ -103,10 +111,35 @@ class GenerationParams:
     Passed as one object rather than as keyword arguments so that adding a
     parameter later does not change the signature of every implementation, and so
     that validation happens once here instead of once per adapter.
+
+    Every field except the first two defaults to what the measured runs used — greedy, no truncation of the
+    candidate set, no stop sequences beyond the model's own separator — so a caller that changes nothing gets
+    the behaviour an existing report describes.
+
+    Attributes:
+        max_new_tokens: Ceiling on tokens this call may produce.
+        temperature: 0.0 is greedy. Above it, candidates are drawn from the scaled distribution; the value
+            is not a knob that makes a model better, and a repetition rate is measured, not implied by it.
+        top_k: Keep only the k most likely candidates before sampling.
+        top_p: Nucleus threshold — keep the smallest set whose cumulative probability reaches it.
+        seed: Makes a sampling run reproducible. Left as ``None`` the draw is reproducible per request
+            rather than per process, which is what the boundary has always promised.
+        stop_sequences: Text that ends generation when it appears *in the output*.
+        stop_token_ids: Identifier that ends generation when the model emits it, in addition to whatever
+            the checkpoint's own separator means.
+        repeat_penalty: Multiplicative penalty on logits of tokens already produced. Offered because a
+            degenerate model needs it to be measured, not because it fixes one: a repetition penalty that
+            makes looping text look varied is a disguise, so the diagnostics stay reported either way.
     """
 
     max_new_tokens: int = 256
     temperature: float = 0.0
+    top_k: int | None = None
+    top_p: float | None = None
+    seed: int | None = None
+    stop_sequences: tuple[str, ...] = ()
+    stop_token_ids: tuple[int, ...] = ()
+    repeat_penalty: float = 1.0
 
     def __post_init__(self) -> None:
         # bool is a subclass of int, so True would otherwise be accepted as 1.
@@ -127,6 +160,47 @@ class GenerationParams:
             raise ValueError(message)
         if self.temperature < 0:
             message = f"temperature must not be negative, got {self.temperature}"
+            raise ValueError(message)
+        if self.top_k is not None and (
+            isinstance(self.top_k, bool) or not isinstance(self.top_k, int) or self.top_k < 1
+        ):
+            message = f"top_k must be an integer >= 1 or None, got {self.top_k!r}"
+            raise ValueError(message)
+        if self.top_p is not None:
+            if isinstance(self.top_p, bool) or not isinstance(self.top_p, (int, float)):
+                message = f"top_p must be a number or None, got {self.top_p!r}"
+                raise ValueError(message)
+            if not 0.0 < float(self.top_p) <= 1.0:
+                message = f"top_p must be in (0, 1], got {self.top_p}"
+                raise ValueError(message)
+        if self.seed is not None and (
+            isinstance(self.seed, bool) or not isinstance(self.seed, int)
+        ):
+            message = f"seed must be an integer or None, got {self.seed!r}"
+            raise ValueError(message)
+        for name, value in (
+            ("stop_sequences", self.stop_sequences),
+            ("stop_token_ids", self.stop_token_ids),
+        ):
+            if not isinstance(value, tuple):
+                message = f"{name} must be a tuple, got {type(value).__name__}"
+                raise ValueError(message)
+        if any(not isinstance(item, str) or not item for item in self.stop_sequences):
+            message = f"stop_sequences must be non-empty strings, got {self.stop_sequences!r}"
+            raise ValueError(message)
+        if any(
+            isinstance(item, bool) or not isinstance(item, int) or item < 0
+            for item in self.stop_token_ids
+        ):
+            message = f"stop_token_ids must be non-negative integers, got {self.stop_token_ids!r}"
+            raise ValueError(message)
+        if isinstance(self.repeat_penalty, bool) or not isinstance(
+            self.repeat_penalty, (int, float)
+        ):
+            message = f"repeat_penalty must be a number, got {self.repeat_penalty!r}"
+            raise ValueError(message)
+        if not 0.5 <= float(self.repeat_penalty) <= 3.0:
+            message = f"repeat_penalty must be in [0.5, 3.0], got {self.repeat_penalty}"
             raise ValueError(message)
 
 
@@ -167,11 +241,69 @@ class ModelMetadata:
 
 @dataclass(frozen=True, slots=True)
 class GenerationResult:
-    """Generated text and the little that must be known about how it was produced."""
+    """Generated text and what must be known about how it was produced.
+
+    The token counts and identifiers are part of the result rather than a bonus because a caller building a
+    product needs to charge, budget and truncate in tokens, and because diagnostics on a degenerate model
+    ("it produced 64 tokens, 61 of them repeats of one block") are only possible from the ids. ``truncated``
+    says whether the *prompt* was cut to fit the window: a caller that cannot tell will present an answer to
+    a question the model never saw.
+    """
 
     text: str
     model_id: str
     finish_reason: FinishReason = FinishReason.STOP
+    token_ids: tuple[int, ...] = ()
+    new_tokens: int = 0
+    prompt_tokens: int = 0
+    truncated: bool = False
+    stopped_by: str | None = None
+
+    def __post_init__(self) -> None:
+        if self.new_tokens != len(self.token_ids) and self.token_ids:
+            message = (
+                f"new_tokens ({self.new_tokens}) disagrees with the {len(self.token_ids)} identifiers "
+                "the result carries"
+            )
+            raise ValueError(message)
+
+
+@dataclass(frozen=True, slots=True)
+class GenerationChunk:
+    """One streamed piece of a generation.
+
+    Attributes:
+        text: The decoded text of this step, which may be an incomplete multi-byte sequence's replacement
+            when a token ends mid-character; a caller that renders chunk-by-chunk should keep the previous
+            text and re-render rather than trusting one chunk.
+        token_id: The identifier just produced.
+        final: Set on the last chunk, which also carries the finish reason.
+        finish_reason: Only meaningful when ``final`` is true.
+    """
+
+    text: str
+    token_id: int
+    final: bool = False
+    finish_reason: FinishReason | None = None
+
+
+@runtime_checkable
+class StreamingGenerator(Protocol):
+    """Implemented by models that can yield a generation as it is produced."""
+
+    def stream(
+        self,
+        messages: Sequence[Message],
+        params: GenerationParams,
+        *,
+        signal: object | None = None,
+    ) -> Iterator[GenerationChunk]:
+        """Yield chunks until the run stops, a ceiling is reached, or ``signal`` is aborted.
+
+        Raises:
+            ModelError: the request cannot be served.
+        """
+        ...
 
 
 @dataclass(frozen=True, slots=True)
