@@ -333,6 +333,7 @@ TORCH_IMPORT_MODULES = frozenset(
     {
         "src/chakaso/training/transformer.py",
         "src/chakaso/training/nn_training.py",
+        "src/chakaso/training/nn_evaluation.py",
         "src/chakaso/training/nn_checkpoint.py",
         "src/chakaso/training/subword_experiment.py",
         "src/chakaso/models/nntransformer.py",

@@ -103,8 +103,13 @@ how it refuses to be loaded as something it is not.
 
 ## Consequences
 
-- `chakaso.training.nn_checkpoint` owns the format, and `chakaso.training.nn_training` writes resumable
-  artifacts through it. Both import `torch`, and both are on ADR-0034's allowlist.
+- `chakaso.training.nn_checkpoint` owns the format, `chakaso.training.nn_training` writes resumable
+  artifacts through it, and `chakaso.training.nn_evaluation` scores an artifact with the tokenizer bound
+  inside it. All three import `torch`, and all three are added to
+  [ADR-0034](ADR-0034-optional-pytorch-model-extra.md)'s permitted-module list: that record enumerated the
+  modules it could see when it was written, and evaluation of a saved artifact is part of the same admitted
+  responsibility. The hygiene test that reads the list is what forces this to be written down rather than
+  slipped in — it failed on `nn_evaluation` before the list was updated.
 - An inference adapter over this format becomes possible, which is what
   [ADR-0033](ADR-0033-model-centred-product-contract.md)'s Python-API rule requires; it must not fall back
   to the development double when the extra or the file is missing.
