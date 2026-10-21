@@ -14,6 +14,7 @@ corpus would need mini-batching, which is a different experiment.
 
 from __future__ import annotations
 
+import random
 from dataclasses import dataclass
 
 import numpy as np
@@ -23,7 +24,7 @@ from chakaso.training.data import Split, character_windows, dataset_fingerprint,
 from chakaso.training.model import CharCausalMLP, Params, batches_from_examples
 from chakaso.training.optimizer import Adam
 
-__all__ = ["EvaluationPoint", "TrainingResult", "run_training"]
+__all__ = ["EvaluationPoint", "TrainingResult", "run_minibatch_training", "run_training"]
 
 
 @dataclass(frozen=True, slots=True)
@@ -119,6 +120,100 @@ def run_training(split: Split, config: TrainingConfig) -> TrainingResult:
             train_loss = model.forward(params, train_contexts, train_targets)
             validation_loss = model.forward(params, validation_contexts, validation_targets)
             curve.append(EvaluationPoint(step, train_loss, validation_loss))
+
+    return TrainingResult(
+        config=config,
+        vocab_fingerprint=vocabulary.fingerprint,
+        dataset_digest=dataset_fingerprint(split, context_size=config.context_size),
+        parameter_count=model.parameter_count,
+        train_tokens=len(train_examples),
+        validation_tokens=len(validation_examples),
+        curve=tuple(curve),
+        final_params=params,
+    )
+
+
+def run_minibatch_training(
+    split: Split,
+    config: TrainingConfig,
+    *,
+    batch_size: int,
+    max_steps: int,
+    eval_every: int,
+    seed: int,
+) -> TrainingResult:
+    """Train the character model with mini-batches, for a corpus a full batch cannot hold.
+
+    E2601 could afford full-batch steps because its corpus was 344 tokens. On a real text the same design
+    materializes a ``(positions x vocabulary)`` probability array for the whole corpus at every step, so
+    mini-batching is required before the character model can be used as a baseline at all — and it is the
+    same model, the same optimizer and the same hand-derived gradient, only fed a slice of the data per
+    step. ``seed`` drives the per-epoch shuffle, so the step sequence is reproducible.
+
+    Raises:
+        ValueError: a schedule argument is not a positive integer, the batch exceeds the whole training
+            set (which would make the schedule a lie), or either side yields no windows.
+    """
+    for name, value in (
+        ("batch_size", batch_size),
+        ("max_steps", max_steps),
+        ("eval_every", eval_every),
+    ):
+        if isinstance(value, bool) or not isinstance(value, int) or value < 1:
+            message = f"{name} must be an integer >= 1, got {value!r}"
+            raise ValueError(message)
+    if isinstance(seed, bool) or not isinstance(seed, int):
+        message = f"seed must be an integer, got {seed!r}"
+        raise ValueError(message)
+
+    vocabulary = fit_vocabulary(split)
+    train_examples = character_windows(split.train_text, vocabulary, config.context_size)
+    validation_examples = character_windows(split.validation_text, vocabulary, config.context_size)
+    if not train_examples or not validation_examples:
+        message = "mini-batch training needs windows on both sides of the split"
+        raise ValueError(message)
+    if batch_size > len(train_examples):
+        message = f"batch_size {batch_size} exceeds the {len(train_examples)} training windows"
+        raise ValueError(message)
+
+    contexts, targets = batches_from_examples(train_examples, config.context_size)
+    validation_contexts, validation_targets = batches_from_examples(
+        validation_examples, config.context_size
+    )
+
+    model = CharCausalMLP(
+        vocab_size=vocabulary.size,
+        context_size=config.context_size,
+        embed_dim=config.embed_dim,
+        hidden_dim=config.hidden_dim,
+    )
+    params = model.initialize(np.random.default_rng(config.seed))
+    optimizer = Adam(learning_rate=config.learning_rate)
+
+    initial_train = model.forward(params, contexts[:batch_size], targets[:batch_size])
+    initial_validation = model.forward(params, validation_contexts, validation_targets)
+    curve: list[EvaluationPoint] = [EvaluationPoint(0, initial_train, initial_validation)]
+
+    order = list(range(len(train_examples)))
+    steps_per_epoch = -(-len(train_examples) // batch_size)
+    for step in range(1, max_steps + 1):
+        index = step - 1
+        if index % steps_per_epoch == 0:
+            random.Random(seed + index // steps_per_epoch).shuffle(order)
+        position = (index % steps_per_epoch) * batch_size
+        batch = order[position : position + batch_size]
+        batch_array = contexts[batch]
+        batch_targets = targets[batch]
+        params = optimizer.step(params, model.gradient(params, batch_array, batch_targets))
+
+        if step % eval_every == 0 or step == max_steps:
+            curve.append(
+                EvaluationPoint(
+                    step,
+                    model.forward(params, batch_array, batch_targets),
+                    model.forward(params, validation_contexts, validation_targets),
+                )
+            )
 
     return TrainingResult(
         config=config,
