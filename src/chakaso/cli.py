@@ -1896,6 +1896,7 @@ def _run_model_study(args: argparse.Namespace) -> int:
                 seeds=seeds,
                 reference=reference,
                 reference_seed=args.reference_seed,
+                study=study,
             )
         else:
             aggregate = run_seed_study(

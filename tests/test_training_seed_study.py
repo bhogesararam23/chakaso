@@ -460,6 +460,54 @@ def test_a_reused_report_must_belong_to_this_study(tmp_path: Path) -> None:
         run_seed_study(study)
 
 
+def test_collecting_with_a_study_checks_its_declaration_not_only_agreement(tmp_path: Path) -> None:
+    """Five runs that share a *different* protocol still agree with each other.
+
+    Cross-run agreement alone would happily aggregate them, so a collection made against a declared study
+    has to check each report against what that study says its runs must look like.
+    """
+    plan = _study_plan(tmp_path)
+    study = SeedStudy(experiment="E2698", plan=plan, seeds=(7,))
+    run_seed_study(study)
+
+    rebuilt = build_study_report(
+        experiment="E2698", work_dir=plan.work_dir, seeds=[7], study=study
+    )
+    assert rebuilt["completed_seeds"] == [7]
+
+    wider = SeedStudy(
+        experiment="E2698",
+        plan=replace(plan, max_steps=plan.max_steps + 60),
+        seeds=(7,),
+    )
+    with pytest.raises(StudyProtocolError, match="max_steps"):
+        build_study_report(experiment="E2698", work_dir=plan.work_dir, seeds=[7], study=wider)
+
+
+def test_rerunning_over_recorded_reports_needs_an_explicit_declaration(tmp_path: Path) -> None:
+    plan = _study_plan(tmp_path)
+    study = SeedStudy(experiment="E2698", plan=plan, seeds=(7,))
+    run_seed_study(study)
+
+    with pytest.raises(StudyProtocolError, match="already have a completed report"):
+        run_seed_study(study, reuse_completed=False)
+
+    declared = SeedStudy(
+        experiment="E2698", plan=replace(plan, overwrite_artifacts=True), seeds=(7,)
+    )
+    rerun = run_seed_study(declared, reuse_completed=False)
+    assert rerun["completed_seeds"] == [7]
+    assert rerun["runs"][0]["reused"] is False
+
+
+def test_a_rerun_can_replace_the_artifacts_in_its_own_seed_directory(tmp_path: Path) -> None:
+    """The report is what makes a run recorded, so a seed with no report has nothing to clobber."""
+    study = SeedStudy(experiment="E2698", plan=_study_plan(tmp_path), seeds=(7,))
+
+    assert study.plan_for(7).overwrite_artifacts is True
+    assert study.plan.overwrite_artifacts is False
+
+
 def test_a_reused_report_must_have_used_the_seed_its_directory_claims(tmp_path: Path) -> None:
     plan = _study_plan(tmp_path)
     study = SeedStudy(experiment="E2698", plan=plan, seeds=(7,))

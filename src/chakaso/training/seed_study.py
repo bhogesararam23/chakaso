@@ -196,12 +196,20 @@ class SeedStudy:
         return self.plan.work_dir / self.experiment / f"seed-{seed}"
 
     def plan_for(self, seed: int) -> ExperimentPlan:
-        """The protocol with one seed applied and its own output directory."""
+        """The protocol with one seed applied and its own output directory.
+
+        ``overwrite_artifacts`` is forced on inside a seed's own directory, because the report — not the
+        checkpoint — is what makes a run recorded: a directory with no report holds nothing authoritative,
+        and a rerun that refuses to write over its own half-finished checkpoint would make the preregistered
+        retry policy impossible. A run that *does* have a report is never reached here; it is reused, or the
+        operator has declared a rerun with ``overwrite_artifacts``.
+        """
         return replace(
             self.plan,
             seed=seed,
             work_dir=self.run_dir(seed),
             experiment_id=self.experiment,
+            overwrite_artifacts=True,
         )
 
 
@@ -280,6 +288,20 @@ def run_seed_study(
         The study report from :func:`build_study_report`, whose per-run numbers were read back off disk.
     """
     outcomes: list[RunOutcome] = []
+    if not reuse_completed and not study.plan.overwrite_artifacts:
+        recorded = sorted(
+            seed
+            for seed in study.seeds
+            if (study.run_dir(seed) / "report.json").is_file()
+        )
+        if recorded:
+            message = (
+                f"seeds {recorded} already have a completed report in {str(study.plan.work_dir)!r}; rerunning "
+                "them would replace a recorded result, which needs overwrite_artifacts=True (or leave reuse "
+                "on, which is the point of writing the reports)"
+            )
+            raise StudyProtocolError(message)
+
     for seed in study.seeds:
         directory = study.run_dir(seed)
         report_path = directory / "report.json"
@@ -338,6 +360,7 @@ def run_seed_study(
         outcomes=outcomes,
         reference=reference,
         reference_seed=reference_seed,
+        study=study,
     )
 
 
@@ -483,6 +506,7 @@ def build_study_report(
     metrics: Mapping[str, tuple[str, ...]] = DEFAULT_METRICS,
     reference: Mapping[str, Any] | None = None,
     reference_seed: int | None = None,
+    study: SeedStudy | None = None,
 ) -> dict[str, Any]:
     """Rebuild the study's aggregate from the reports on disk, without running anything.
 
@@ -492,12 +516,19 @@ def build_study_report(
     Args:
         reference: A recorded report to reproduce against, and ``reference_seed``: which of this study's runs
             is the reproduction of it. Both are optional; a study with no reference only reports its spread.
+        study: When given, every report on disk is also checked against what this study declares its runs
+            must look like — the budget, the split seed and the corpus included. Cross-run agreement alone
+            cannot catch a directory of five runs that all share a *different* protocol from the one being
+            collected, which is how a rebuilt aggregate would quietly describe another experiment.
 
     Raises:
-        StudyProtocolError: a run on disk speaks a different protocol than its siblings, or a reference is
-            declared for a seed that has no report.
+        StudyProtocolError: a run on disk speaks a different protocol than its siblings, or than the declared
+            study, or a reference is declared for a seed that has no report.
     """
     reports, missing = collect_run_reports(experiment=experiment, work_dir=work_dir, seeds=seeds)
+    if study is not None:
+        for seed, report in reports.items():
+            _require_same_protocol(report, study.expected_identity(seed), seed)
     agreement = protocol_agreement(reports)
     if agreement["disagreements"]:
         message = (
