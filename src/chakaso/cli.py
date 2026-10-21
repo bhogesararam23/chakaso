@@ -538,6 +538,69 @@ def _build_parsers() -> tuple[argparse.ArgumentParser, argparse.ArgumentParser]:
         help="print a progress line per evaluation while the Transformer trains",
     )
 
+    corpus_parser = subparsers.add_parser(
+        "corpus",
+        help="recover or verify the pinned corpus a recorded experiment trained on",
+        description=(
+            "Corpus provenance for reproduction (ADR-0036). A recorded experiment names a corpus manifest and "
+            "the revision its text came from; 'restore' reads those bytes out of history and writes a "
+            "checksum-verified snapshot, and 'verify' checks a snapshot or a working tree against a pinned "
+            "manifest. Both are local and offline: nothing is downloaded, and a revision this clone does not "
+            "hold is reported as missing rather than replaced with whatever the tree says."
+        ),
+    )
+    corpus_subparsers = corpus_parser.add_subparsers(dest="corpus_command", metavar="ACTION")
+    corpus_restore = corpus_subparsers.add_parser(
+        "restore",
+        help="recover a pinned corpus from a recorded revision and write its snapshot",
+        description=(
+            "Materialize the named revision's tracked files, verify them against the pinned manifest, and "
+            "write a snapshot an experiment can train from."
+        ),
+    )
+    corpus_restore.add_argument(
+        "--manifest", type=Path, required=True, help="the pinned corpus manifest to recover"
+    )
+    corpus_restore.add_argument(
+        "--revision",
+        required=True,
+        help="the revision that recorded this corpus, named in the experiment record",
+    )
+    corpus_restore.add_argument(
+        "--output", type=Path, required=True, help="where to write the snapshot (under data/)"
+    )
+    corpus_restore.add_argument(
+        "--root",
+        type=Path,
+        default=Path(),
+        help="the repository to read history from (default: the current directory)",
+    )
+    corpus_restore.add_argument(
+        "--overwrite", action="store_true", help="replace an existing snapshot at --output"
+    )
+    corpus_verify = corpus_subparsers.add_parser(
+        "verify",
+        help="check a corpus snapshot or the working tree against a pinned manifest",
+        description=(
+            "Re-hash every document and report the fingerprint, or name the documents that no longer match."
+        ),
+    )
+    corpus_verify.add_argument(
+        "--manifest", type=Path, required=True, help="the pinned corpus manifest to check against"
+    )
+    corpus_verify.add_argument(
+        "--snapshot",
+        type=Path,
+        default=None,
+        help="verify this snapshot's bytes instead of the files under --root",
+    )
+    corpus_verify.add_argument(
+        "--root",
+        type=Path,
+        default=Path(),
+        help="the repository whose tracked files are checked (default: the current directory)",
+    )
+
     storage_parser = subparsers.add_parser(
         "storage",
         help="check or migrate a durable answer store",
@@ -744,6 +807,9 @@ def main(argv: Sequence[str] | None = None) -> int:
 
     if args.command == "experiment":
         return _run_experiment_command(args)
+
+    if args.command == "corpus":
+        return _run_corpus_command(args)
 
     if args.command == "storage":
         return _run_storage(args)
@@ -1612,6 +1678,7 @@ def _run_model_experiment(args: argparse.Namespace) -> int:
     name instead of silently running something smaller.
     """
     try:
+        from chakaso.training.errors import TrainingError
         from chakaso.training.subword_experiment import ExperimentPlan, run_experiment, summarise
         from chakaso.training.subword_experiment import write_report as write_model_report
     except ImportError as exc:  # pragma: no cover - depends on the environment lacking the extras
@@ -1646,7 +1713,10 @@ def _run_model_experiment(args: argparse.Namespace) -> int:
     )
     try:
         report = run_experiment(plan, verbose=args.verbose)
-    except (ValueError, ChakasoError) as exc:
+    except (ValueError, ChakasoError, TrainingError) as exc:
+        # TrainingError is not a ChakasoError: the corpus layers raise their own typed failures (drift,
+        # corruption, a refused overwrite), and a refusal the operator can act on must be reported as one
+        # rather than escaping as a traceback.
         print(f"{PROGRAM}: {exc}", file=sys.stderr)
         return 1
 
@@ -1667,6 +1737,68 @@ def _run_model_experiment(args: argparse.Namespace) -> int:
         file=sys.stderr,
     )
     return 0
+
+
+def _run_corpus_command(args: argparse.Namespace) -> int:
+    """Recover or verify a recorded corpus through the library API. No corpus logic lives here.
+
+    The training package is imported inside the action for the same reason the model experiment is: the CLI's
+    default paths stay free of it, and a missing extra or an unreadable history is reported by name rather
+    than half-done.
+    """
+    from chakaso.training.errors import TrainingError
+    from chakaso.training.manifest import read_manifest, read_snapshot, verify_corpus
+    from chakaso.training.snapshot import GitRevisionReader, restore_corpus_snapshot
+
+    if args.corpus_command is None:
+        print(f"{PROGRAM}: choose a corpus action: 'restore' or 'verify'", file=sys.stderr)
+        return 1
+
+    try:
+        if args.corpus_command == "restore":
+            snapshot = restore_corpus_snapshot(
+                manifest=args.manifest,
+                revision=args.revision,
+                destination=args.output,
+                reader=GitRevisionReader(args.root),
+                allow_overwrite=args.overwrite,
+            )
+            print(
+                f"snapshot {str(args.output)!r} holds fingerprint {snapshot.fingerprint} — "
+                f"{len(snapshot.manifest.documents)} document(s), "
+                f"{snapshot.manifest.char_count:,} characters, checksum {snapshot.checksum}"
+            )
+            print(
+                f"recovered from revision {snapshot.acquisition['resolved_revision']} "
+                f"by {snapshot.acquisition['method']}",
+                file=sys.stderr,
+            )
+            return 0
+
+        pinned = read_manifest(args.manifest)
+        if args.snapshot is not None:
+            loaded = read_snapshot(args.snapshot)
+            if loaded.fingerprint != pinned.fingerprint:
+                print(
+                    f"{PROGRAM}: snapshot {str(args.snapshot)!r} pins {loaded.fingerprint}, the manifest "
+                    f"{str(args.manifest)!r} pins {pinned.fingerprint}",
+                    file=sys.stderr,
+                )
+                return 1
+            print(
+                f"snapshot {str(args.snapshot)!r} verifies against {pinned.fingerprint} — "
+                f"{len(loaded.manifest.documents)} document(s), {loaded.manifest.char_count:,} characters"
+            )
+            return 0
+        verified = verify_corpus(pinned, args.root)
+        print(
+            f"tracked files under {str(args.root)!r} verify against {pinned.fingerprint} — "
+            f"{len(verified.documents)} document(s), {verified.char_count:,} characters"
+        )
+        return 0
+    except (OSError, TrainingError, ValueError) as exc:
+        print(f"{PROGRAM}: {exc}", file=sys.stderr)
+        return 1
 
 
 def _run_storage(args: argparse.Namespace) -> int:

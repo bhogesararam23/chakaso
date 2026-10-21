@@ -10,7 +10,9 @@ from __future__ import annotations
 import io
 import json
 import platform
+import shutil
 import sqlite3
+import subprocess
 import sys
 from collections.abc import Sequence
 from datetime import UTC, datetime
@@ -739,13 +741,13 @@ def test_experiment_model_requires_a_work_directory() -> None:
     __import__("importlib").util.find_spec("torch") is None,
     reason="the model experiment lives behind [train] and [nn]",
 )
-def test_experiment_model_runs_the_pipeline_through_the_library_api(
-    tmp_path: Path, capsys: pytest.CaptureFixture[str]
-) -> None:
-    """End to end through the CLI: the handler must delegate, not reimplement."""
+def _model_experiment_root(tmp_path: Path) -> Path:
+    """A synthetic repository the model driver can train on.
+
+    Big enough that the default 128-token context yields at least one packed block per side, which is what
+    the driver's packing layer refuses to do silently if it does not.
+    """
     root = tmp_path / "repo"
-    # Big enough that the default 128-token context yields at least one packed block per side, which is
-    # what the driver's packing layer refuses to do silently if it does not.
     for index in range(40):
         target = root / "docs" / f"doc{index}.md"
         target.parent.mkdir(parents=True, exist_ok=True)
@@ -763,38 +765,320 @@ def test_experiment_model_runs_the_pipeline_through_the_library_api(
         "# Notes\n\nShort notes that repeat about the repository.\n", encoding="utf-8"
     )
     (root / "LICENSE").write_text("Apache License 2.0\n", encoding="utf-8")
+    return root
+
+
+def _short_model_run_arguments(root: Path, work: Path, *extra: str) -> list[str]:
+    return [
+        "experiment",
+        "model",
+        "--root",
+        str(root),
+        "--work-dir",
+        str(work),
+        "--max-steps",
+        "12",
+        "--eval-every",
+        "4",
+        "--warmup-steps",
+        "2",
+        "--seed",
+        "5",
+        *extra,
+    ]
+
+
+@pytest.mark.skipif(
+    __import__("importlib").util.find_spec("torch") is None,
+    reason="the model experiment lives behind [train] and [nn]",
+)
+def test_experiment_model_runs_the_pipeline_through_the_library_api(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """End to end through the CLI: the handler must delegate, not reimplement."""
+    root = _model_experiment_root(tmp_path)
     work = tmp_path / "work"
     report_path = tmp_path / "results.json"
 
-    assert (
-        main(
-            [
-                "experiment",
-                "model",
-                "--root",
-                str(root),
-                "--work-dir",
-                str(work),
-                "--max-steps",
-                "12",
-                "--eval-every",
-                "4",
-                "--warmup-steps",
-                "2",
-                "--seed",
-                "5",
-                "--write-report",
-                str(report_path),
-            ]
-        )
-        == 0
-    )
+    assert main(_short_model_run_arguments(root, work, "--write-report", str(report_path))) == 0
 
     out = capsys.readouterr()
     assert "bits/char" in out.out
     assert "not language capability" in out.err
     assert report_path.is_file()
     assert "report digest" in out.err
+    # A measured run leaves its input behind, or the next checkout cannot rerun it.
+    assert (work / "chakaso-repo-text-v1-snapshot.json").is_file()
+
+
+@pytest.mark.skipif(
+    __import__("importlib").util.find_spec("torch") is None,
+    reason="the model experiment lives behind [train] and [nn]",
+)
+def test_experiment_model_trains_on_the_snapshot_it_is_given(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """`--corpus-snapshot` is the reproduction path: the run reads those bytes, not the tracked files."""
+    from chakaso.training.manifest import build_manifest, write_snapshot
+
+    root = _model_experiment_root(tmp_path)
+    pinned = build_manifest(
+        root,
+        name="chakaso-repo-text-v1",
+        version="1.0.0",
+        licence="Apache-2.0",
+        source="built by tests",
+        include=("docs/", "*.md"),
+        extensions=(".md",),
+        exact_paths=("LICENSE", "AGENTS.md"),
+    )
+    snapshot = tmp_path / "recorded-snapshot.json"
+    write_snapshot(pinned, snapshot)
+    capsys.readouterr()
+
+    assert (
+        main(
+            _short_model_run_arguments(
+                root,
+                tmp_path / "work",
+                "--corpus-snapshot",
+                str(snapshot),
+                "--expected-corpus-fingerprint",
+                pinned.fingerprint,
+                "--split-seed",
+                "3",
+            )
+        )
+        == 0
+    )
+
+    # The declared snapshot is what ran, and no second copy of it was written into the work directory.
+    assert not (tmp_path / "work" / "chakaso-repo-text-v1-snapshot.json").exists()
+    assert (tmp_path / "work" / "chakaso-repo-text-v1-manifest.json").is_file()
+
+
+@pytest.mark.skipif(
+    __import__("importlib").util.find_spec("torch") is None,
+    reason="the model experiment lives behind [train] and [nn]",
+)
+def test_experiment_model_refuses_a_corpus_it_was_not_given(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """A declared fingerprint is a requirement, checked before any training step is taken."""
+    assert (
+        main(
+            _short_model_run_arguments(
+                _model_experiment_root(tmp_path),
+                tmp_path / "work",
+                "--expected-corpus-fingerprint",
+                "0" * 16,
+            )
+        )
+        == 1
+    )
+
+    err = capsys.readouterr().err
+    assert "requires corpus" in err
+    assert not (tmp_path / "work" / "E2605-transformer.pt").exists()
+
+
+# ---------------------------------------------------------------------------
+# corpus
+# ---------------------------------------------------------------------------
+
+
+def _corpus_repository(root: Path) -> str:
+    """Build a throwaway repository holding one pinned corpus, and return its first commit."""
+    for name, text in (
+        ("docs/a.md", "Alpha document.\n"),
+        ("docs/b.md", "Beta document, longer than alpha.\n"),
+    ):
+        target = root / name
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_text(text, encoding="utf-8")
+    (root / "LICENSE").write_text("Apache License 2.0\n", encoding="utf-8")
+    (root / "AGENTS.md").write_text("# Notes\n\nShort notes.\n", encoding="utf-8")
+    for arguments in (
+        ["init", "-q", "-b", "main"],
+        ["config", "user.email", "test@example.invalid"],
+        ["config", "user.name", "Corpus test"],
+        ["config", "core.autocrlf", "false"],
+        ["add", "."],
+        ["commit", "-q", "-m", "the corpus as pinned"],
+    ):
+        subprocess.run(["git", *arguments], cwd=str(root), check=True, capture_output=True)
+    head = subprocess.run(
+        ["git", "rev-parse", "HEAD"], cwd=str(root), check=True, capture_output=True, text=True
+    ).stdout.strip()
+    (root / "docs/a.md").write_text("Alpha document, edited afterwards.\n", encoding="utf-8")
+    subprocess.run(["git", "commit", "-aqm", "a documentation edit"], cwd=str(root), check=True)
+    return head
+
+
+@pytest.fixture()
+def corpus_cli(tmp_path: Path) -> tuple[Path, Path, str]:
+    """A pinned manifest, the repository it was built from, and the revision that recorded it."""
+    if shutil.which("git") is None:  # pragma: no cover - every supported runner has git
+        pytest.skip("corpus acquisition reads history, and git is not on PATH")
+    from chakaso.training.manifest import build_manifest, save_manifest
+
+    root = tmp_path / "repo"
+    recorded = _corpus_repository(root)
+    manifest = build_manifest(
+        root,
+        name="cli-corpus",
+        version="1.0.0",
+        licence="Apache-2.0",
+        source="built by tests",
+        include=("docs/", "*.md"),
+        extensions=(".md",),
+        exact_paths=("LICENSE", "AGENTS.md"),
+    )
+    # Pin the manifest as the *recorded* revision held it, not as the edited tree holds it: that is the
+    # situation the command exists for.
+    archive = tmp_path / "as-recorded"
+    for relative in ("docs/a.md", "docs/b.md", "LICENSE", "AGENTS.md"):
+        blob = subprocess.run(
+            ["git", "show", f"{recorded}:{relative}"],
+            cwd=str(root),
+            check=True,
+            capture_output=True,
+        ).stdout
+        outlet = archive / relative
+        outlet.parent.mkdir(parents=True, exist_ok=True)
+        outlet.write_bytes(blob)
+    pinned = build_manifest(
+        archive,
+        name="cli-corpus",
+        version="1.0.0",
+        licence="Apache-2.0",
+        source="built by tests",
+        include=("docs/", "*.md"),
+        extensions=(".md",),
+        exact_paths=("LICENSE", "AGENTS.md"),
+    )
+    manifest_path = tmp_path / "corpus-manifest.json"
+    save_manifest(pinned, manifest_path)
+    return root, manifest_path, recorded
+
+
+def test_corpus_without_an_action_fails_loudly(capsys: pytest.CaptureFixture[str]) -> None:
+    assert main(["corpus"]) == 1
+    assert "choose a corpus action" in capsys.readouterr().err
+
+
+def test_corpus_restore_writes_a_snapshot_the_manifest_verifies(
+    corpus_cli: tuple[Path, Path, str], tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    root, manifest_path, recorded = corpus_cli
+    output = tmp_path / "data" / "cli-corpus-snapshot.json"
+
+    assert (
+        main(
+            [
+                "corpus",
+                "restore",
+                "--manifest",
+                str(manifest_path),
+                "--revision",
+                recorded,
+                "--root",
+                str(root),
+                "--output",
+                str(output),
+            ]
+        )
+        == 0
+    )
+
+    err = capsys.readouterr()
+    assert "chakaso-git-revision" in err.err
+    assert output.is_file()
+    assert (
+        main(["corpus", "verify", "--manifest", str(manifest_path), "--snapshot", str(output)]) == 0
+    )
+    assert "verifies against" in capsys.readouterr().out
+
+
+def test_corpus_restore_names_the_revision_it_cannot_read(
+    corpus_cli: tuple[Path, Path, str], tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    root, manifest_path, _ = corpus_cli
+
+    assert (
+        main(
+            [
+                "corpus",
+                "restore",
+                "--manifest",
+                str(manifest_path),
+                "--revision",
+                "0" * 40,
+                "--root",
+                str(root),
+                "--output",
+                str(tmp_path / "s.json"),
+            ]
+        )
+        == 1
+    )
+
+    assert "is not available in" in capsys.readouterr().err
+
+
+def test_corpus_verify_refuses_a_moved_tree_and_a_mismatched_snapshot(
+    corpus_cli: tuple[Path, Path, str], tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    from chakaso.training.manifest import build_manifest, save_manifest
+
+    root, manifest_path, recorded = corpus_cli
+
+    assert main(["corpus", "verify", "--manifest", str(manifest_path), "--root", str(root)]) == 1
+    assert "content changed" in capsys.readouterr().err
+
+    other = tmp_path / "other.json"
+    assert (
+        main(
+            [
+                "corpus",
+                "restore",
+                "--manifest",
+                str(manifest_path),
+                "--revision",
+                recorded,
+                "--root",
+                str(root),
+                "--output",
+                str(other),
+            ]
+        )
+        == 0
+    )
+    capsys.readouterr()
+
+    # A manifest pinned from the moved tree is a different corpus, so the recorded snapshot no longer
+    # answers for it: verify has to say so instead of reporting a fingerprint match.
+    moved = build_manifest(
+        root,
+        name="cli-corpus",
+        version="1.0.0",
+        licence="Apache-2.0",
+        source="built by tests",
+        include=("docs/", "*.md"),
+        extensions=(".md",),
+        exact_paths=("LICENSE", "AGENTS.md"),
+    )
+    foreign = tmp_path / "foreign-manifest.json"
+    save_manifest(moved, foreign)
+
+    assert main(["corpus", "verify", "--manifest", str(foreign), "--snapshot", str(other)]) == 1
+    assert "the manifest" in capsys.readouterr().err
+
+
+def test_corpus_restore_requires_its_three_arguments() -> None:
+    with pytest.raises(SystemExit) as caught:
+        main(["corpus", "restore", "--manifest", "x"])
+    assert caught.value.code == 2
 
 
 # ---------------------------------------------------------------------------
