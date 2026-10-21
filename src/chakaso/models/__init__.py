@@ -38,8 +38,14 @@ from chakaso.models.base import (
     tokenize,
 )
 from chakaso.models.deterministic import DETERMINISTIC_MODEL_ID, DeterministicModel
-from chakaso.models.errors import ModelError, UnknownModelError, UnsupportedCapabilityError
-from chakaso.models.load import load_model
+from chakaso.models.errors import (
+    CorruptedReleaseError,
+    IncompatibleReleaseError,
+    ModelError,
+    UnknownModelError,
+    UnsupportedCapabilityError,
+)
+from chakaso.models.load import load_model, resolve_checkpoint
 from chakaso.models.registry import (
     SUBWORD_TRANSFORMER_MODEL_ID,
     TRAINED_CHAR_MODEL_ID,
@@ -49,34 +55,49 @@ from chakaso.models.registry import (
     create_model,
     default_registry,
 )
+from chakaso.models.release import (
+    ModelRelease,
+    build_release,
+    load_model_release,
+    load_release,
+    write_release,
+)
 
 __all__ = [
     "DETERMINISTIC_MODEL_ID",
     "SUBWORD_TRANSFORMER_MODEL_ID",
     "TRAINED_CHAR_MODEL_ID",
     "Capability",
+    "CorruptedReleaseError",
     "DeterministicModel",
     "FinishReason",
     "GenerationParams",
     "GenerationResult",
+    "IncompatibleReleaseError",
     "LanguageModel",
     "Message",
     "ModelError",
     "ModelFactory",
     "ModelMetadata",
     "ModelRegistry",
+    "ModelRelease",
     "Role",
     "StructuredGenerator",
     "StructuredResult",
     "Tokenizer",
     "UnknownModelError",
     "UnsupportedCapabilityError",
+    "build_release",
     "create_adapter",
     "create_model",
     "default_registry",
     "generate_structured",
     "load_model",
+    "load_model_release",
+    "load_release",
     "require_capability",
     "require_messages",
+    "resolve_checkpoint",
     "tokenize",
+    "write_release",
 ]

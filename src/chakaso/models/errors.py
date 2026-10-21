@@ -4,11 +4,30 @@ from __future__ import annotations
 
 from chakaso.core.errors import ChakasoError
 
-__all__ = ["ModelError", "UnknownModelError", "UnsupportedCapabilityError"]
+__all__ = [
+    "CorruptedReleaseError",
+    "IncompatibleReleaseError",
+    "ModelError",
+    "UnknownModelError",
+    "UnsupportedCapabilityError",
+]
 
 
 class ModelError(ChakasoError):
     """Base class for failures at the language-model boundary."""
+
+
+class CorruptedReleaseError(ModelError):
+    """A release document is unreadable, incomplete, or does not match its own checksum."""
+
+
+class IncompatibleReleaseError(ModelError):
+    """The release speaks a schema this code does not implement, or names an artifact it cannot honour.
+
+    A missing statement (no licence, no limitations, no checkpoint) and a checkpoint that hashes to
+    different bytes than the contract declares are the same class of failure: the directory is not the
+    release it claims to be, so loading it must stop rather than proceed on assumption.
+    """
 
 
 class UnknownModelError(ModelError, LookupError):

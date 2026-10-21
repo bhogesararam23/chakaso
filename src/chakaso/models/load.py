@@ -50,6 +50,24 @@ CHAR_CHECKPOINT_SUFFIXES = frozenset({".json"})
 TRANSPORT_SUFFIXES = frozenset({".pt"})
 
 
+def resolve_checkpoint(path: Path) -> Path:
+    """The checkpoint file a path names, following a release directory to the artifact it declares.
+
+    A released model is a directory: the contract is verified first, so the file the loader goes on to read
+    is the file the release says it is. A bare checkpoint path is returned unchanged.
+
+    Raises:
+        ModelError: the directory holds no release document, or its checksum, its named file, or the file's
+            bytes do not agree with the contract.
+    """
+    if path.is_dir():
+        from chakaso.models.release import load_release
+
+        release = load_release(path)
+        return path / str(release.checkpoint["file"])
+    return path
+
+
 def select_adapter_for(path: Path) -> str:
     """Which adapter can read ``path``, decided from the artifact rather than from a filename alone.
 
@@ -57,6 +75,7 @@ def select_adapter_for(path: Path) -> str:
         ModelError: the path is not a file, its extension is not a checkpoint format this loader knows, or
             a JSON artifact declares a schema this code does not implement.
     """
+    path = resolve_checkpoint(path)
     if not path.is_file():
         message = f"no checkpoint file at {str(path)!r}"
         raise ModelError(message)
@@ -90,6 +109,10 @@ def select_adapter_for(path: Path) -> str:
 def load_model(path: str | Path, *, adapter: str | None = None) -> LanguageModel:
     """Load a trained Chakaso checkpoint and return it as a :class:`LanguageModel`.
 
+    ``path`` is either a checkpoint file or a **release directory** — one holding the ``model.json``
+    contract this package writes. A release is verified before anything is read: the named file must exist
+    and hash to the digest the contract declares, so the model you get is the model that was signed off.
+
     Pass ``adapter`` to override the format detection (``"subword_transformer"`` or
     ``"trained_char"``); omit it to have the artifact's own declared schema choose. The returned object
     carries the metadata that states what it is — ``development_double`` is always false here, because a
@@ -98,9 +121,9 @@ def load_model(path: str | Path, *, adapter: str | None = None) -> LanguageModel
 
     Raises:
         ModelError: the path is missing or unreadable, the format is not recognized, the artifact is
-            corrupt or incompatible, or the adapter needs an optional extra that is not installed. Nothing
-            is substituted, and no development double is returned.
+            corrupt or incompatible, the release does not verify, or the adapter needs an optional extra
+            that is not installed. Nothing is substituted, and no development double is returned.
     """
-    target = Path(path)
+    target = resolve_checkpoint(Path(path))
     name = adapter or select_adapter_for(target)
     return create_adapter(name, checkpoint_path=str(target))
