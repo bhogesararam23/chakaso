@@ -16,6 +16,7 @@ import pytest
 
 torch = pytest.importorskip("torch")
 
+from chakaso.training.decoder import ChakasoDecoder, DecoderConfig  # noqa: E402
 from chakaso.training.errors import (  # noqa: E402
     CheckpointError,
     CorruptedCheckpointError,
@@ -368,3 +369,124 @@ def test_a_negative_step_is_refused() -> None:
             corpus_fingerprint="x",
             step=-1,
         )
+
+
+# ------------------------------------------------------------------ the decoder family
+DECODER_CONFIG = DecoderConfig(
+    vocab_size=260,
+    context_length=6,
+    d_model=8,
+    num_layers=1,
+    num_heads=2,
+    feedforward_dim=16,
+)
+
+
+def _decoder_artifact(step: int = 4, *, corpus: str = "abc123") -> ModelArtifact:
+    torch.manual_seed(1)
+    model = ChakasoDecoder(DECODER_CONFIG)
+    return ModelArtifact(
+        config=DECODER_CONFIG,
+        state={name: tensor.clone() for name, tensor in model.state_dict().items()},
+        vocabulary=VOCABULARY,
+        corpus_fingerprint=corpus,
+        run_metadata={"kind": "usable", "best_step": step},
+        step=step,
+    )
+
+
+def test_a_decoder_artifact_round_trips_as_the_model_it_was_saved_as(tmp_path: Path) -> None:
+    artifact = _decoder_artifact()
+    path = tmp_path / "decoder.pt"
+    save_artifact(artifact, path)
+
+    loaded = load_artifact(path)
+    model = loaded.to_model()
+
+    assert isinstance(model, ChakasoDecoder)
+    assert loaded.config == DECODER_CONFIG
+    assert loaded.checksum() == artifact.checksum()
+    assert (
+        json.loads(loaded.metadata_document())["schema_version"] == "chakaso-decoder-checkpoint/1"
+    )
+
+
+def test_a_decoder_checkpoint_records_the_rotary_base_it_was_built_with(tmp_path: Path) -> None:
+    artifact = _decoder_artifact()
+    path = tmp_path / "decoder.pt"
+    save_artifact(artifact, path)
+
+    recorded = json.loads(load_artifact(path).metadata_document())
+
+    assert recorded["config"]["rope_theta"] == DECODER_CONFIG.rope_theta
+    assert recorded["config"]["context_length"] == DECODER_CONFIG.context_length
+
+
+def test_the_two_families_cannot_be_read_as_each_other(tmp_path: Path) -> None:
+    # A transformer configuration happens to be a subset of a decoder one (rope_theta is optional), so a
+    # swapped schema tag survives the configuration and is refused where it must be: the tensors. The
+    # reverse swap is caught earlier, because a decoder configuration names a field the transformer code
+    # does not have. Either way the file cannot produce a model that is not the one that was saved.
+    transformer_path = tmp_path / "swapped-decoder.pt"
+    save_artifact(_artifact(), transformer_path)
+    payload = torch.load(transformer_path, map_location="cpu", weights_only=True)
+    payload["schema_version"] = "chakaso-decoder-checkpoint/1"
+    torch.save(payload, transformer_path)
+
+    with pytest.raises(IncompatibleCheckpointError, match="tensors do not match"):
+        load_artifact(transformer_path).to_model()
+
+    decoder_path = tmp_path / "swapped-transformer.pt"
+    save_artifact(_decoder_artifact(), decoder_path)
+    payload = torch.load(decoder_path, map_location="cpu", weights_only=True)
+    payload["schema_version"] = "chakaso-transformer-checkpoint/1"
+    torch.save(payload, decoder_path)
+
+    with pytest.raises(IncompatibleCheckpointError, match="cannot build"):
+        load_artifact(decoder_path)
+
+
+def test_an_unsupported_schema_version_is_named_and_refused(tmp_path: Path) -> None:
+    artifact = _decoder_artifact()
+    path = tmp_path / "future.pt"
+    save_artifact(artifact, path)
+    payload = torch.load(path, map_location="cpu", weights_only=True)
+    payload["schema_version"] = "chakaso-decoder-checkpoint/9"
+    torch.save(payload, path)
+
+    with pytest.raises(IncompatibleCheckpointError, match="unsupported artifact schema"):
+        load_artifact(path)
+
+
+def test_a_checkpoint_of_the_wrong_dtype_is_refused_before_it_is_written() -> None:
+    artifact = _decoder_artifact()
+    doubled = {name: tensor.double() for name, tensor in artifact.state.items()}
+    wrong_dtype = ModelArtifact(
+        config=artifact.config,
+        state=doubled,
+        vocabulary=artifact.vocabulary,
+        corpus_fingerprint=artifact.corpus_fingerprint,
+        step=artifact.step,
+    )
+
+    with pytest.raises(IncompatibleCheckpointError, match="dtype disagreement"):
+        save_artifact(wrong_dtype, Path("never-written.pt"))
+
+
+def test_a_transformer_artifact_still_loads_under_its_own_schema(tmp_path: Path) -> None:
+    path = tmp_path / "transformer.pt"
+    save_artifact(_artifact(), path)
+
+    loaded = load_artifact(path)
+
+    assert isinstance(loaded.to_model(), CausalTransformer)
+    assert json.loads(loaded.metadata_document())["schema_version"] == (
+        "chakaso-transformer-checkpoint/1"
+    )
+
+
+def test_an_artifact_file_name_names_its_family() -> None:
+    assert checkpoint_filename("E2608") == "E2608-transformer.pt"
+    assert checkpoint_filename("E2608", "decoder") == "E2608-decoder.pt"
+    with pytest.raises(IncompatibleCheckpointError, match="no artifact family"):
+        checkpoint_filename("E2608", "mamba")

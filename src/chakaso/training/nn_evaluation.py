@@ -18,22 +18,25 @@ from collections.abc import Sequence
 import torch
 
 from chakaso.training.model_metrics import ModelMetrics, metrics_from_scores
-from chakaso.training.nn_checkpoint import ModelArtifact
+from chakaso.training.nn_checkpoint import ModelArtifact, TrainedModel
 from chakaso.training.packing import PackedExample
 from chakaso.training.subword import SubwordVocabulary
-from chakaso.training.transformer import CausalTransformer
 
 __all__ = ["evaluate_artifact", "evaluate_model", "score_model_on_examples"]
 
 
 def score_model_on_examples(
-    model: CausalTransformer,
+    model: TrainedModel,
     examples: Sequence[PackedExample],
 ) -> tuple[list[float], list[int], list[int]]:
     """Return per-position cross-entropies, target identifiers and predicted identifiers.
 
     Positions come out in block order, so the concatenation of the targets is the scored token stream —
     which is what makes the bits-per-character denominator the decoded length of *that* text.
+
+    The per-block arithmetic is vectorized (a gather over the target column and one argmax) rather than a
+    Python loop over positions: on a corpus of millions of characters the loop was the evaluation, not the
+    model. A test asserts the gathered loss and the per-position softmax values agree with each other.
     """
     model.eval()
     nats: list[float] = []
@@ -42,18 +45,19 @@ def score_model_on_examples(
     with torch.no_grad():
         for example in examples:
             inputs = torch.tensor([list(example.input_ids)], dtype=torch.int64)
+            target_row = torch.tensor([list(example.targets)], dtype=torch.int64)
             logits, _ = model(inputs)
-            probabilities = torch.log_softmax(logits[0], dim=-1)
-            for position, target in enumerate(example.targets):
-                token = int(target)
-                nats.append(-float(probabilities[position, token]))
-                targets.append(token)
-                predictions.append(int(probabilities[position].argmax()))
+            log_probabilities = torch.log_softmax(logits, dim=-1)
+            selected = log_probabilities.gather(-1, target_row.unsqueeze(-1)).squeeze(-1)
+            nats.extend(-value for value in selected[0].tolist())
+            target_values = target_row[0].tolist()
+            targets.extend(int(value) for value in target_values)
+            predictions.extend(int(value) for value in logits[0].argmax(dim=-1).tolist())
     return nats, targets, predictions
 
 
 def evaluate_model(
-    model: CausalTransformer,
+    model: TrainedModel,
     examples: Sequence[PackedExample],
     vocabulary: SubwordVocabulary,
 ) -> ModelMetrics:

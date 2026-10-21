@@ -36,6 +36,7 @@ from typing import Any
 import torch
 
 from chakaso.core.atomic import staged_write
+from chakaso.training.decoder import ChakasoDecoder, DecoderConfig
 from chakaso.training.errors import (
     CheckpointError,
     CorruptedCheckpointError,
@@ -46,25 +47,48 @@ from chakaso.training.transformer import CausalTransformer, TransformerConfig
 
 __all__ = [
     "ModelArtifact",
+    "TrainedModel",
     "checkpoint_filename",
     "describe_environment",
     "load_artifact",
     "save_artifact",
 ]
 
-_SCHEMA_VERSION = "chakaso-transformer-checkpoint/1"
+#: The two architectures this format can carry. A checkpoint names its own; nothing here guesses.
+TransformerModel = CausalTransformer
+DecoderModel = ChakasoDecoder
+TrainedModel = TransformerModel | DecoderModel
+Architecture = TransformerConfig | DecoderConfig
+
+_TRANSFORMER_SCHEMA = "chakaso-transformer-checkpoint/1"
+_DECODER_SCHEMA = "chakaso-decoder-checkpoint/1"
+_SCHEMA_BY_FAMILY: dict[str, str] = {
+    "transformer": _TRANSFORMER_SCHEMA,
+    "decoder": _DECODER_SCHEMA,
+}
+_FAMILY_BY_SCHEMA = {version: family for family, version in _SCHEMA_BY_FAMILY.items()}
 
 
-def checkpoint_filename(experiment_id: str) -> str:
-    """The conventional file name for one experiment's Transformer artifact."""
-    return f"{experiment_id}-transformer.pt"
+def family_of(config: Architecture) -> str:
+    """Which architecture family a configuration belongs to, named rather than inferred from a field."""
+    return "decoder" if isinstance(config, DecoderConfig) else "transformer"
+
+
+def checkpoint_filename(experiment_id: str, family: str = "transformer") -> str:
+    """The conventional file name for one experiment's artifact of one family."""
+    if family not in _SCHEMA_BY_FAMILY:
+        message = (
+            f"no artifact family named {family!r}; known families: {sorted(_SCHEMA_BY_FAMILY)}"
+        )
+        raise IncompatibleCheckpointError(message)
+    return f"{experiment_id}-{family}.pt"
 
 
 @dataclass(frozen=True, slots=True)
 class ModelArtifact:
     """A trained model and everything required to reproduce its inference."""
 
-    config: TransformerConfig
+    config: Architecture
     state: Mapping[str, torch.Tensor]
     vocabulary: SubwordVocabulary
     corpus_fingerprint: str
@@ -108,7 +132,7 @@ class ModelArtifact:
         """The canonical JSON the checksum covers: architecture, identity, environment, step."""
         return json.dumps(
             {
-                "schema_version": _SCHEMA_VERSION,
+                "schema_version": _SCHEMA_BY_FAMILY[family_of(self.config)],
                 "config": self.config.as_dict(),
                 "tokenizer_fingerprint": self.vocabulary.fingerprint,
                 "tokenizer_size": self.vocabulary.size,
@@ -123,15 +147,24 @@ class ModelArtifact:
             separators=(",", ":"),
         )
 
-    def to_model(self) -> CausalTransformer:
+    def to_model(self) -> TrainedModel:
         """Rebuild the model this artifact describes, loading the stored tensors into it.
 
+        Names, shapes *and* dtypes are checked against a freshly built model before anything is loaded, so a
+        checkpoint written by a float64 build, a renamed tensor or a shape the declared configuration does not
+        produce is refused rather than quietly coerced.
+
         Raises:
-            IncompatibleCheckpointError: a tensor is missing, extra, or has a shape the declared
+            IncompatibleCheckpointError: a tensor is missing, extra, or has a shape or dtype the declared
                 configuration does not produce.
         """
-        model = CausalTransformer(self.config)
-        expected = {name: tuple(tensor.shape) for name, tensor in model.state_dict().items()}
+        config = self.config
+        model: TrainedModel
+        if isinstance(config, DecoderConfig):
+            model = ChakasoDecoder(config)
+        else:
+            model = CausalTransformer(config)
+        expected = dict(model.state_dict())
         stored = dict(self.state)
 
         missing = sorted(set(expected) - set(stored))
@@ -139,9 +172,14 @@ class ModelArtifact:
         mismatched = sorted(
             name
             for name in set(expected) & set(stored)
-            if tuple(stored[name].shape) != expected[name]
+            if tuple(stored[name].shape) != tuple(expected[name].shape)
         )
-        if missing or extra or mismatched:
+        wrong_dtype = sorted(
+            name
+            for name in set(expected) & set(stored)
+            if stored[name].dtype != expected[name].dtype
+        )
+        if missing or extra or mismatched or wrong_dtype:
             details = []
             if missing:
                 details.append(f"missing tensors: {missing}")
@@ -151,14 +189,19 @@ class ModelArtifact:
                 details.append(
                     f"shape disagreement: {[(name, tuple(stored[name].shape)) for name in mismatched]}"
                 )
+            if wrong_dtype:
+                details.append(
+                    f"dtype disagreement: "
+                    f"{[(name, str(stored[name].dtype)) for name in wrong_dtype]}"
+                )
             message = (
                 "the stored tensors do not match the architecture the artifact declares "
                 f"({self.config.as_dict()}) — " + "; ".join(details)
             )
             raise IncompatibleCheckpointError(message)
         # Tied embeddings make `head.weight` and `token_embedding.weight` the same object, so loading a
-        # state dict that carries both under one name is expected; strict=False here is about accepting
-        # that sharing, not about tolerating a genuine mismatch, which the check above already refused.
+        # state dict that carries both under one name is expected; strict=True still refuses a genuine
+        # mismatch, which the check above has already named.
         model.load_state_dict(stored, strict=True)
         model.eval()
         return model
@@ -188,7 +231,7 @@ def save_artifact(artifact: ModelArtifact, path: Path, *, allow_overwrite: bool 
     with staged_write(target) as staged:
         torch.save(
             {
-                "schema_version": _SCHEMA_VERSION,
+                "schema_version": _SCHEMA_BY_FAMILY[family_of(artifact.config)],
                 "metadata": artifact.metadata_document(),
                 "checksum": artifact.checksum(),
                 "tensors": {
@@ -232,9 +275,13 @@ def load_artifact(path: Path) -> ModelArtifact:
         details = f"missing blocks {missing}" if missing else f"unexpected blocks {unexpected}"
         message = f"checkpoint at {str(path)!r} is not a Chakaso artifact payload: {details}"
         raise IncompatibleCheckpointError(message)
-    if raw["schema_version"] != _SCHEMA_VERSION:
-        message = f"unsupported artifact schema {raw['schema_version']!r}"
+    schema = raw["schema_version"]
+    if schema not in _FAMILY_BY_SCHEMA:
+        message = (
+            f"unsupported artifact schema {schema!r}; this build reads {sorted(_FAMILY_BY_SCHEMA)}"
+        )
         raise IncompatibleCheckpointError(message)
+    family = _FAMILY_BY_SCHEMA[schema]
 
     metadata = raw["metadata"]
     checksum = raw["checksum"]
@@ -271,7 +318,10 @@ def load_artifact(path: Path) -> ModelArtifact:
         raise CorruptedCheckpointError(message)
 
     try:
-        config = TransformerConfig.from_mapping(recorded["config"])
+        config_class: type[Architecture] = (
+            DecoderConfig if family == "decoder" else TransformerConfig
+        )
+        config = config_class.from_mapping(recorded["config"])
         vocabulary = SubwordVocabulary(
             merges=tuple((int(pair[0]), int(pair[1])) for pair in recorded["tokenizer_merges"])
         )

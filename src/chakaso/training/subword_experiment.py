@@ -56,13 +56,17 @@ from chakaso.training.manifest import (
 )
 from chakaso.training.model import CharCausalMLP, batches_from_examples
 from chakaso.training.model_metrics import ModelMetrics, metrics_from_scores
-from chakaso.training.nn_checkpoint import checkpoint_filename, save_artifact
+from chakaso.training.nn_checkpoint import (
+    TrainedModel,
+    checkpoint_filename,
+    save_artifact,
+)
 from chakaso.training.nn_evaluation import score_model_on_examples
 from chakaso.training.nn_training import TransformerTrainingConfig, train_transformer
 from chakaso.training.packing import PackedBatch, pack_units
 from chakaso.training.subword import SubwordVocabulary, train_subword_vocabulary
 from chakaso.training.tokenizer import UNK_ID, CharVocabulary
-from chakaso.training.transformer import CausalTransformer, TransformerConfig
+from chakaso.training.transformer import TransformerConfig
 
 __all__ = [
     "CHARACTER_CONTEXT",
@@ -608,9 +612,9 @@ def baseline_metrics(prepared: PreparedCorpus) -> dict[str, Any]:
 
 
 def score_transformer(
-    model: CausalTransformer, batch: PackedBatch, vocabulary: SubwordVocabulary
+    model: TrainedModel, batch: PackedBatch, vocabulary: SubwordVocabulary
 ) -> ModelMetrics:
-    """Score a Transformer on one packed side of the split, through the shared arithmetic."""
+    """Score a trained model on one packed side of the split, through the shared arithmetic."""
     nats, targets, predictions = score_model_on_examples(model, batch.examples)
     return _metrics(nats, targets, predictions, vocabulary)
 
