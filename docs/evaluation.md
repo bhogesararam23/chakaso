@@ -203,7 +203,52 @@ held-out documents only): **1.8657** bits per character for the subword Transfor
 2.6936 nats/token, perplexity 14.79, token accuracy 0.4501), **3.1343** for the character model E2601
 measured (44,084 parameters, 2.1724 nats/token, 8.78, 0.4059), 3.3224 for the unigram and 4.8010 for the
 uniform predictor of the Transformer's own identifier space. One seed, one author's prose, no error bar:
-these are measurements of a training path and a distribution, not of language ability.
+these are measurements of a training path and a distribution, not of language ability. E2606 is the study
+that puts a spread on those numbers, and E2607 the one that asks whether they survive on somebody else's
+text.
+
+### How a multi-seed result is reported
+
+A single run is one draw, and a comparison built on one draw cannot be told apart from the luck of that
+draw. [E2602](../experiments/E2602/record.md) established the format for the character model and
+`chakaso.training.seed_study` is its general form, with four rules that are not negotiable here:
+
+- **Seeds are declared before any run**, by a stated rule, and never added, dropped or replaced after a
+  score is seen. `E2606`'s are 7, 11, 13, 17 and 19 — E2605's own seed then the next four primes — and the
+  rule is in the record, not the results.
+- **Only the seed moves.** The document split is drawn with its own seed and held fixed across the study;
+  varying one master seed would re-deal the held-out documents too, and the runs would then differ in their
+  *data*, which is a different experiment averaged into the wrong one.
+- **Report the spread, not an interval.** Mean, sample standard deviation, median, min, max and range over
+  the runs that completed, with the count stated. A standard deviation is a description of those five
+  observations; calling it a confidence interval would imply a sampling distribution nobody established, so
+  no interval is published and the reason is in the record.
+- **A failed or missing run appears as failed or missing.** Aggregation is rebuilt from the per-run reports
+  on disk, which is also how anyone else re-checks the summary. A run is retried only for an infrastructure
+  cause at the same seed and configuration, and a completed run with a bad score is never dropped.
+
+### Generation is evaluated separately from loss
+
+Held-out loss measures next-token prediction. It does not measure what the model produces when asked to
+continue, and the two must not be reported as one number. `chakaso.training.generation_eval` runs fixed
+continuation prompts and hostile inputs through the `LanguageModel` boundary — so the same suite is runnable
+against the development double, the character checkpoint and the Transformer — and records per sample:
+emitted characters, termination reason and whether the length bound was what stopped it, bigram and trigram
+repetition ratios, the longest repeated block, the longest *consecutive* cycle anywhere in the sample, a
+periodic-tail test, and the raw text itself.
+
+What those numbers are not is part of the payload: `interpretation_limit` states that every one of them is a
+surface statistic and that no semantic quality, usefulness or groundedness is measured or implied. Judging
+whether a continuation means anything is a human act, kept separate from the metrics, and the raw samples are
+recorded rather than curated — an experiment that publishes only its impressive generations has not measured
+the model.
+
+The two loop measures disagree by design, and the disagreement is informative. E2605's checkpoint repeats
+`" grounded"` eight times in the middle of one sample and then moves on: the tail rule reports no loop, the
+whole-output rule reports a cycle of eight. Both are recorded, because "did the decode settle into a cycle"
+and "is there a cycle in this text" are different questions. An empty prompt is refused with a typed
+`ModelError` naming the model and the reason — that is correct behaviour and is reported as a refusal, not
+silently skipped.
 
 **What model evaluation is not.** The retrieval and correction benchmarks, the semantic
 scorer, the grounded-answer evaluation workload and the evidence-sufficiency policy measure
