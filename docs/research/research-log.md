@@ -447,3 +447,90 @@ No model; no real corpus; K-001 stands. No statistical claim (deterministic, tin
 measures perfectly on the workload it was designed against, and honestly flags that "measures perfectly here"
 is a weak claim. The next unit (P29) is to test whether it survives calibration and a harder, extended
 workload — or to record, truthfully, that this corpus is too small to calibrate it at all.
+
+---
+
+## 2026-10-21 — The repository's shape is measured, and it is not the project's stated shape
+
+**Observation.** Counted rather than remembered: 131 modules and 20,697 lines under `src/chakaso/`, 93
+test modules, 32 decision records of which exactly one concerns training, 11 top-level CLI commands, and
+two implementations behind `LanguageModel` — a development double and an adapter over a measured
+984-parameter character model. Two of the four committed experiments are about a model.
+([`../internal/engineering/model-centred-audit.md`](../internal/engineering/model-centred-audit.md))
+
+**Interpretation.** The founding goal is to train Chakaso's own model, so this is a statement about
+priorities rather than a bug report: the centre of mass was in the layers that serve a model which does
+not exist. Two consequences made the drift load-bearing rather than cosmetic — application milestones
+P4/P5/P10 cannot be completed without a model that generates, and every model decision kept being sized by
+what the application left over.
+
+**Conclusion.** The product contract is written down as
+[ADR-0033](../decisions/ADR-0033-model-centred-product-contract.md): the model is the product, the Python
+library is the primary interface, the CLI is a secondary utility whose handlers stay thin, and model
+evaluation is kept separate from harness evaluation. It defers P29 and P32 by decision, not by drift.
+
+---
+
+## 2026-10-21 — The environment P22 assessed is not this environment
+
+**Observation.** Re-inspected on 2026-10-21 (`[`next-model-experiment.md`](next-model-experiment.md)` has
+the commands): 18 logical CPUs, 16.57 GB RAM with 3.70 GB free, no CUDA device, `torch` 2.13.0+cpu already
+importable with 14 intra-op threads, `numpy` 2.4.0, ~168 GB free disk. P22's record of ~1.4 GB free and no
+ML library installed was accurate on 2026-10-15 and is superseded as a *current* observation, not corrected.
+
+**Result (measured).** A decoder-only Transformer at batch 32 × context 128 costs 0.444 s per optimizer step
+with 774,656 parameters and 1.252 s with 3,190,784 — 9,230 and 3,271 tokens per second, CPU only. The
+existing full-batch character loop costs 0.230 s per step at a 20,000-example batch and 1.868 s at 100,000,
+and materializes a `(batch × vocabulary)` probability array: ~1.04 GB float64 at 650,000 positions.
+
+**Result (measured, and it argues against the intuition).** Same shape, same dtype: 20 ×
+(8192×256 @ 256×256) took 0.159 s in NumPy float32 and 0.137 s in torch float32. A framework buys 1.16×
+on array multiplication on this machine. Cold import: `numpy` 0.25 s, `torch` 2.96 s.
+
+**Limitation.** Peak process memory could not be measured: `K32GetProcessMemoryInfo`,
+`GetProcessWorkingSetSize` and `tasklist` PID filtering all returned nothing from this session's shell, so
+no RSS figure appears anywhere in this repository, and the claim is restricted to "the run completed on this
+machine" rather than "it fit in N bytes".
+
+---
+
+## 2026-10-21 — The dependency decision is re-made on its own reopen conditions
+
+**Observation.** [ADR-0030](../decisions/ADR-0030-minimal-optional-training-dependency.md) rejected
+PyTorch "for now" and listed when to revisit it, including *a concrete workload a larger model would
+improve* and *hand-derived gradients becoming a correctness risk*. Both now hold, on measurements: the
+corpus is 69 tracked documents and 754,789 characters (counted here), which the full-batch loop cannot
+train on; and verifying every scalar of a Transformer backward pass by central differences extrapolates to
+~45 hours at the measured forward cost (984 scalars took ~1.13 s on the character model), against ~42 s for
+a 200-scalar sample.
+
+**Conclusion.** [ADR-0034](../decisions/ADR-0034-optional-pytorch-model-extra.md) admits `torch` as a
+separate optional `[nn]` extra, leaves `[train]` carrying exactly numpy, confines torch imports to a named
+module list enforced by test, pins checkpoint loading to `weights_only=True`, and scopes reproducibility to
+this interpreter and CPU build rather than claiming cross-version bit-identity. The honest bookkeeping
+matters as much as the decision: the speed argument did **not** survive measurement, and the accepted
+verification guarantee is weaker than the character model's — sampled finite differences instead of every
+scalar — which is written into the record and into the ADR rather than glossed.
+
+---
+
+## 2026-10-21 — The data layer is dependency-free on purpose, and the corpus is pinned by content
+
+**Observation.** The model path's first three layers — `chakaso.training.manifest` (per-document SHA-256
+over normalized text, licence, source, drift refusal), `split_text_units` (whole documents, deduplicated by
+content *before* selection) and `chakaso.training.subword` (byte-level BPE with a named pre-tokenizer,
+deterministic tie-breaking and a self-describing checksum-verified record) — import neither numpy nor
+torch, so all 98 of their tests run in the dependency-free CI matrix instead of inheriting K-009's gap.
+
+**Result (measured).** Preparation of the real corpus: 69 documents, 754,789 characters, manifest
+fingerprint `0f9f7d2f57644a4d`, a 49/10/10 document split with no duplicate content, and a 1,024-entry
+vocabulary trained in 20.3 s over 178,252 pieces that compresses the training side to 234,960 tokens at
+2.12 characters per token, with 82,663 validation and 38,982 test tokens.
+
+**Interpretation.** Two properties are what make a later model number mean anything: the corpus cannot move
+silently (a changed, deleted or newly-matching file is a typed refusal), and the held-out sides cannot leak
+(a duplicate document is dropped before selection because otherwise it both trains twice and straddles the
+boundary; a leakage test with per-document unique markers runs over 24 seeds and counts violations).
+
+**Limitation.** The corpus is one author's technical prose about one project, so every number measured on it
+describes that distribution — including the house style, which a model can memorize and still be useless.
