@@ -148,4 +148,4 @@ for the first time, and the counts will differ slightly because the working tree
 It still does not prove the model is good at anything. **CI verifies the code path; it does not train a
 model, and no experiment in this repository becomes a measured result by running in CI.** The experiment
 records stay where they are, with their own per-run timings and fingerprints, and
-[K-001](../KNOWN_ISSUES.md) stays open for the reason it is open.
+[K-001](../../agent/KNOWN_ISSUES.md) stays open for the reason it is open.

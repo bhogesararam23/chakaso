@@ -133,12 +133,92 @@ number obtained that way is worse than no number, because it will be trusted.
 | Preference pairs | Teach better response behaviour |
 | Domain examples | Later specialization |
 
-No dataset has been collected. Whether any specific corpus is usable depends on
-its licence, which will be recorded when it is chosen.
+### What is actually pinned today
+
+Two corpora exist, both named by content rather than described, and the licence column is filled in from
+what each source states about itself:
+
+| Corpus | Documents | Characters | Licence | Used by |
+| --- | --- | --- | --- | --- |
+| `chakaso-repo-text-v1` | 71 | 780,223 | Apache-2.0, the project's own licence; the text is authored for Chakaso | E2605, E2606 |
+| `gutenberg-english-prose-v1` | 105 | 1,660,274 | Public domain in the United States, distributed under the Project Gutenberg License, whose own preamble tells users outside the United States to check local law | E2607 |
+
+The instruction, grounded-QA, correction-pair, abstention and preference rows above are still **no dataset
+collected**, and nothing in this table suggests otherwise: neither pinned corpus contains a question and an
+answer grounded in evidence. The second one is 19th-century prose and a classical epic in English, chosen
+because it is somebody else's text, not because it is training data for an assistant.
+
+## Reproducing a recorded run
+
+The corpus a result was measured on is not the corpus that happens to be on disk. Once a repository edits
+its own documentation, the drift guard in `chakaso.training.manifest` refuses to re-prepare a pinned corpus —
+correctly, because re-preparing it would silently move the data under a saved number. Reproduction therefore
+recovers the bytes from the revision that recorded them ([ADR-0036](decisions/ADR-0036-corpus-snapshot-recovery-from-history.md)),
+and every later run reads the recovered snapshot instead of the tree. Nothing is downloaded, and the
+`git archive` stays local to this clone.
+
+```bash
+# 1. the tier the model path needs
+python -m pip install -e ".[dev,train,nn]"
+
+# 2. recover E2605's exact corpus from the revision its record names, and prove it
+chakaso corpus restore \
+  --manifest experiments/E2605/corpus-manifest.json \
+  --revision 9b8a478 \
+  --output data/experiments/E2605/chakaso-repo-text-v1-snapshot.json
+chakaso corpus verify \
+  --manifest experiments/E2605/corpus-manifest.json \
+  --snapshot data/experiments/E2605/chakaso-repo-text-v1-snapshot.json
+
+# 3. re-run E2605 against the recovered bytes and the corpus it names
+chakaso experiment model \
+  --work-dir data/experiments/E2605-repro \
+  --corpus-snapshot data/experiments/E2605/chakaso-repo-text-v1-snapshot.json \
+  --expected-corpus-fingerprint e45993f9badf706c \
+  --split-seed 7 --seed 7 --write-report data/experiments/E2605-repro/results.json
+
+# 4. the five-seed study, and its aggregate rebuilt from the reports on disk
+chakaso experiment study --work-dir data/experiments/E2606 --experiment E2606 \
+  --seeds 7,11,13,17,19 --split-seed 7 \
+  --corpus-snapshot data/experiments/E2605/chakaso-repo-text-v1-snapshot.json \
+  --expected-corpus-fingerprint e45993f9badf706c \
+  --reference experiments/E2605/results.json --reference-seed 7 \
+  --write-report data/experiments/E2606/study.json
+chakaso experiment study --work-dir data/experiments/E2606 --experiment E2606 \
+  --seeds 7,11,13,17,19 --split-seed 7 --expected-corpus-fingerprint e45993f9badf706c --collect-only
+
+# 5. generate from a saved checkpoint through the library, with no terminal and no config file
+python -c "
+from pathlib import Path
+from chakaso.models import load_model
+model = load_model(Path('data/experiments/E2605/E2605-transformer.pt'))
+print(model.sample('Chakaso is a', max_new_tokens=24).text)
+print(model.score(Path('docs/training.md').read_text(encoding='utf-8')))
+"
+```
+
+Three rules make those commands mean something, and the code enforces them rather than recommending them:
+
+- **A run that names a corpus trains on that corpus.** `--expected-corpus-fingerprint` is checked before any
+  step is taken; a snapshot of a different corpus is a refusal, not a substitution.
+- **A recorded artifact is not overwritten by accident.** Manifests, snapshots, checkpoints and reports all
+  refuse to replace an existing file unless `--overwrite` says so, and writes are staged so a run that dies
+  mid-write leaves no half artifact to be mistaken for a result.
+- **A re-run either refuses or reproduces.** `verify_corpus` checks changed, missing and newly-selected
+  documents against the pinned digests; a snapshot restored from a revision one edit away from the pin is
+  rejected by the same function a stale working tree is rejected by.
+
+The external corpus is pinned the same way but from a download rather than from history: the three Project
+Gutenberg texts are named by URL and byte digest in
+[`experiments/E2607/record.md`](../experiments/E2607/record.md), `chakaso.training.source_corpus` cuts them
+by the source's own wrapper markers and chunks them at whole-paragraph boundaries, and the resulting
+snapshot — not the repository's text — is what those runs load. The corpus bytes are not committed;
+[ADR-0020](decisions/ADR-0020-experiment-artifacts.md) keeps them in `data/`, and the record says how to
+rebuild them.
 
 ## Training records
 
-Every run will record:
+Every run records the following, and does so as a machine-readable file rather than a note:
 
 ```text
 ExperimentRecord
@@ -148,6 +228,14 @@ ExperimentRecord
     checkpoint_path, training_steps,
     validation_metrics, notes
 ```
+
+That shape is what `chakaso.training.subword_experiment.run_experiment` now returns, and
+`write_report` writes it: the corpus block carries the name, version, licence, source, discovery rules,
+fingerprint, the snapshot's checksum and acquisition, the split fingerprint and both seed roles; the
+tokenizer block its fingerprint, size and merges; the model blocks their architecture, parameter count,
+budget, validation curve, held-out metrics and artifact checksum; and the environment block the torch and
+numpy versions, the platform, the device and the thread count the run actually used. The digest of the
+report is cited in the experiment record, so a reader can confirm the file without regenerating a run.
 
 A run whose configuration cannot be reconstructed is not reproducible, and a
 result that is not reproducible is not a result.
@@ -175,15 +263,16 @@ something nobody defined.
 
 | Item | Status |
 | --- | --- |
-| Corpus and provenance | Implemented — `chakaso.training.corpus` (the self-authored toy text) and `chakaso.training.manifest`, which pins a real document set by path and content digest and refuses drift. E2605 trained on the pinned repository text: 71 documents, 780,223 characters, fingerprint `e45993f9badf706c` |
+| Corpus and provenance | Implemented — `chakaso.training.corpus` (the self-authored toy text), `chakaso.training.manifest` (pins a real document set by path and content digest and refuses drift), `chakaso.training.snapshot` (recovers a pinned corpus from the revision that recorded it and writes a checksum-verified snapshot), and `chakaso.training.source_corpus` (turns a downloaded external text into a pinned corpus offline). E2605 trained on the pinned repository text: 71 documents, 780,223 characters, fingerprint `e45993f9badf706c`; E2607 trains on 105 documents of Project Gutenberg prose, fingerprint `931b07a635ca5a0c` |
 | Tokenizer | Implemented — a deterministic character vocabulary (`chakaso.training.tokenizer`, used by E2601/E2602) and a learned byte-pair subword vocabulary (`chakaso.training.subword`, dependency-free, total over Unicode, self-describing and checksum-verified on load) |
-| Dataset pipeline | Implemented — document-level three-way split with deduplication before selection (`chakaso.training.data.split_text_units`), sequence packing with per-position targets (`chakaso.training.packing`), and split/manifest fingerprints |
+| Dataset pipeline | Implemented — document-level three-way split with deduplication before selection (`chakaso.training.data.split_text_units`), sequence packing with per-position targets (`chakaso.training.packing`), split/manifest fingerprints, and a split seed separate from the model seed so a study can vary initialization without moving the held-out documents |
 | Model code | Implemented and measured — the character MLP (E2601, 984 parameters, every gradient finite-difference verified) and the decoder-only causal Transformer (`chakaso.training.transformer`, 643,840 parameters in E2605, autograd gradients cross-checked against hand-computed losses and sampled finite differences per ADR-0034) |
 | Training loop | Implemented and measured — full-batch Adam over the character model (E2601/E2602) and mini-batch AdamW with warmup, gradient clipping, validation-selected early stopping and bit-identical resume for the Transformer (`chakaso.training.nn_training`) |
 | Checkpoints | Implemented — character JSON schema/2 (checksum-verified, vocabulary embedded) and `chakaso-transformer-checkpoint/1` (ADR-0035): one file, checksum over tensors plus metadata, tokenizer inline, `weights_only=True`, incompatible artifacts refused by name, usable and resumable kinds distinguished |
-| Model evaluation | Implemented and measured — `chakaso.training.model_metrics` reports nats per identifier, perplexity and **bits per character** through one arithmetic for any identifier space, with uniform and unigram baselines scored the same way |
+| Model evaluation | Implemented and measured — `chakaso.training.model_metrics` reports nats per identifier, perplexity and **bits per character** through one arithmetic for any identifier space, with uniform and unigram baselines scored the same way; `chakaso.training.generation_eval` measures what a model emits over the boundary (repetition ratios, longest repeated block, cycles anywhere in the sample and periodic tails, length and termination, refusal on empty input) and carries its own interpretation limit, because none of it measures meaning |
+| Seed studies | Implemented — `chakaso.training.seed_study` runs a declared seed list over one fixed protocol, one directory per run, and rebuilds its aggregate from the reports on disk: mean, sample standard deviation, median, range, with no confidence interval published and the reason stated. A reused report is accepted only after its configuration, corpus fingerprint and seed match the study |
 | Using a trained model | Implemented — `chakaso.models.load_model(path)` returns a `LanguageModel` from a checkpoint with no terminal, no config and no application import; the runtime's own default adapter is still the development double |
-| Experiments | E2601, E2602 and E2605 are measured results; nothing has been measured on a real workload or an external corpus (K-001), and no measured model is useful |
+| Experiments | E2601, E2602, E2603, E2604 and E2605 are measured results; E2606 (five seeds on the internal corpus) and E2607 (three seeds on external prose) are preregistered and running. Nothing has been measured on a real *workload* (K-001), and no measured model is useful |
 
 The two halves of this table used to contradict each other — the header cited a measured E2601 while the
 rows below said the tokenizer, model code, training loop and checkpoints did not exist. They were written
