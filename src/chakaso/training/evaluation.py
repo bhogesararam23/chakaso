@@ -20,7 +20,7 @@ from numpy import typing as npt
 
 from chakaso.training.model import CharCausalMLP, Params
 
-__all__ = ["HeldOutMetrics", "evaluate"]
+__all__ = ["HeldOutMetrics", "evaluate", "per_position_cross_entropies"]
 
 I64 = npt.NDArray[np.int64]
 _LN2 = math.log(2.0)
@@ -67,4 +67,20 @@ def evaluate(params: Params, model: CharCausalMLP, contexts: I64, targets: I64) 
         accuracy=accuracy,
         bits_per_char=loss / _LN2,
         token_count=int(contexts.shape[0]),
+    )
+
+
+def per_position_cross_entropies(
+    params: Params, model: CharCausalMLP, contexts: I64, targets: I64
+) -> tuple[float, ...]:
+    """``-ln p(target)`` for each row, so the character model is scored by the shared metric arithmetic.
+
+    :func:`evaluate` reports aggregated numbers; the comparison in E2605 needs the per-position series
+    because bits per character is a *total* description length divided by a *total* character count. One
+    arithmetic for both tokenizations is the honesty requirement, and returning the same quantity torch
+    returns is how that is met without a second implementation.
+    """
+    probabilities = model.probabilities(params, contexts)
+    return tuple(
+        float(-math.log(probabilities[index, int(targets[index])])) for index in range(len(targets))
     )

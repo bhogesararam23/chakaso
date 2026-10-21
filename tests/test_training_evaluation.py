@@ -105,3 +105,44 @@ def test_the_public_evaluator_reproduces_the_loop_heldout_loss() -> None:
 
     assert metrics.loss == pytest.approx(result.final_validation_loss, rel=1e-9)
     assert metrics.token_count == len(validation_examples)
+
+
+def test_per_position_entropies_aggregate_to_the_reported_mean_loss() -> None:
+    """The character model must be scoreable by the same arithmetic a subword model is scored by.
+
+    ``per_position_cross_entropies`` returns the series ``metrics_from_scores`` consumes; if its entries did
+    not average back to the aggregate loss the evaluator already reports, E2605 would be comparing two
+    different measurements and calling them one table.
+    """
+    from chakaso.training.data import fit_vocabulary
+    from chakaso.training.evaluation import per_position_cross_entropies
+
+    config = TrainingConfig(
+        context_size=3,
+        embed_dim=4,
+        hidden_dim=5,
+        learning_rate=0.05,
+        seed=11,
+        steps=2,
+        eval_every=1,
+    )
+    split = split_corpus(CORPUS.text, validation_fraction=0.2, seed=11)
+    result = run_training(split, config)
+
+    vocabulary = fit_vocabulary(split)
+    examples = character_windows(split.validation_text, vocabulary, config.context_size)
+    contexts, targets = batches_from_examples(examples, config.context_size)
+    model = CharCausalMLP(
+        vocab_size=vocabulary.size,
+        context_size=config.context_size,
+        embed_dim=config.embed_dim,
+        hidden_dim=config.hidden_dim,
+    )
+
+    nats = per_position_cross_entropies(result.final_params, model, contexts, targets)
+
+    assert len(nats) == len(examples) == int(contexts.shape[0])
+    assert all(value >= 0.0 for value in nats)
+    assert sum(nats) / len(nats) == pytest.approx(
+        evaluate(result.final_params, model, contexts, targets).loss, rel=1e-9
+    )

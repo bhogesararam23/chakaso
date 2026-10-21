@@ -121,6 +121,11 @@ class SubwordVocabulary:
         return FIRST_MERGED_ID + len(self.merges)
 
     @property
+    def document_end_id(self) -> int:
+        """The reserved separator identifier this vocabulary always uses."""
+        return RESERVED_DOCUMENT_END_ID
+
+    @property
     def merge_count(self) -> int:
         """How many merges were learned."""
         return len(self.merges)
