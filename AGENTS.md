@@ -126,8 +126,11 @@ substitute for the four:
 python -m pip install -e ".[dev,train]"        # numpy: the character model and its tests
 python -m pip install -e ".[dev,train,nn]"     # + torch: the Transformer path
 python -m pytest                               # now runs the gated modules instead of skipping them
-python -m mypy src --exclude '_never_match_'   # now type-checks the numerical modules too
+python -m mypy --config-file configs/mypy-model-path.toml   # now type-checks every module
 ```
+
+`--exclude` on the command line *adds* to the exclusion configured in `pyproject.toml`, so it cannot lift
+it; the second configuration file is what checks the model path, and it needs both extras installed.
 
 On Linux, install the CPU wheel index explicitly (`--extra-index-url
 https://download.pytorch.org/whl/cpu`); PyPI's default `torch` wheel is not the CPU build

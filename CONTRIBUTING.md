@@ -65,6 +65,19 @@ python -m mypy src
 CI runs the same commands. If you cannot run them locally, say so in the pull
 request rather than assuming.
 
+Those four are the dependency-free matrix. `numpy` and `torch` are optional extras (ADR-0030, ADR-0034), so
+in that matrix the numerical and Transformer tests skip and `mypy src` excludes the modules whose types
+resolve through them. A change that touches the model path is also run with the extras installed:
+
+```bash
+python -m pip install -e ".[dev,train,nn]"
+python -m pytest                                          # the gated modules run, not skip
+python -m mypy --config-file configs/mypy-model-path.toml # every module, same strictness
+```
+
+The second mypy command is the only one that type-checks the model path: a command-line `--exclude` adds to
+the exclusion configured in `pyproject.toml` instead of lifting it.
+
 ## What a change should contain
 
 | Change | Required |

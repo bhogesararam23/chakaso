@@ -57,10 +57,23 @@ capability is implemented or still planned.
   --json --write-report …]`, which delegates to the library and prints what the run measured. Heavy
   dependencies are imported lazily, so the dependency-free install reports what is missing instead of
   failing at import.
-- **Test totals measured on 2026-10-21**: 1,405 collected in the dependency-free matrix (1,389 passed, 16
-  skipped — up from 1,276 collected before this work), 1,477 with `[train]` (1,470 passed, 7 skipped) and
-  1,604 with `[train,nn]` (1,603 passed, 1 skipped). The torch-gated ones inherit K-009's gap — they skip in
+- **Test totals measured on 2026-10-21**: 1,407 collected in the dependency-free matrix (1,391 passed, 16
+  skipped — up from 1,276 collected before this work), 1,479 with `[train]` (1,472 passed, 7 skipped) and
+  1,606 with `[train,nn]` (1,605 passed, 1 skipped). The torch-gated ones inherit K-009's gap — they skip in
   the dependency-free matrix that CI runs, and no CI job installs `torch`.
+
+**Fixed — the model path had never been type-checked, and now it is**
+
+- `pyproject.toml` excludes the optional-dependency modules from `mypy src` so the dependency-free matrix
+  stays green, and the documented way of checking them anyway — `mypy src --exclude '_never_match_'` — does
+  not work: mypy appends a command-line exclusion rather than replacing the configured one, and directory
+  arguments are subject to it too. So 27 modules — the entire `[train]` and `[nn]` path — were unchecked in
+  every environment, including this project's own gate runs. Checking them for real reported three dead
+  `# type: ignore` comments and one genuine typing hole in the byte-pair encoder's pair selection (a value
+  only the code guaranteed to be an `int`), both corrected. `configs/mypy-model-path.toml` is now the command
+  that type-checks all 142 source files under the project's strict settings — clean where both extras are
+  installed, an honest `import-not-found` failure where torch is absent — and two hygiene tests keep the two
+  configurations' strictness identical and pin the exclusion list to the modules it names.
 
 **Measured**
 

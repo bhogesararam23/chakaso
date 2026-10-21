@@ -174,10 +174,13 @@ pretty = true
 # numpy is an optional [train] dependency (ADR-0030) and torch an optional [nn] one (ADR-0034), and the
 # dependency-free core CI matrix installs only .[dev] — so both are absent when the default `mypy src`
 # runs, and the modules that import them cannot resolve their types. Excluding them keeps the documented
-# `mypy src` command green on a dependency-free machine without editing CI workflow files; the numerical
-# and model path is fully type-checked where the extras actually are installed, via
-# `mypy src --exclude '_never_match_'`. This is a scoping decision about optional dependencies, not a
-# weakening of any real check: every dependency-free module remains under full strict type checking.
+# `mypy src` command green on a dependency-free machine without editing CI workflow files.
+#
+# The exclusion is scoping, not exemption: those modules are type-checked too, by
+# `mypy --config-file configs/mypy-model-path.toml` run where both extras are installed. A `--exclude` on
+# the command line *adds* to this list rather than replacing it, so that file — not a flag — is how the
+# full package is checked. A hygiene test keeps the two configurations' strictness identical and fails if
+# this exclusion grows beyond the modules whose dependency it names.
 exclude = ['chakaso/training', 'chakaso/models/trainedchar', 'chakaso/models/nntransformer']
 
 # When numpy is present this is a real typed library; when it is absent mypy must not fail to resolve

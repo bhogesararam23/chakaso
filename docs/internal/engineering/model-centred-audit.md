@@ -197,17 +197,29 @@ format exists, not before.
 | numpy-gated training tests | run locally under `[train]`; **not** in remote CI — K-009 |
 
 **measured.** The same gates after the model path landed, all three run on 2026-10-21 against the working
-tree at `00cbd78` on this machine:
+tree at `8c5feff` on this machine:
 
 | Gate | Result |
 | --- | --- |
-| `python -m pytest` (dependency-free `.venv`) | 1,389 passed, 16 skipped in 13.85 s (1,405 collected; the skips are the numpy- and torch-gated modules) |
-| `python -m pytest` (`.venv-train`, `.[dev,train]`) | 1,470 passed, 7 skipped in 24.06 s |
-| `python -m pytest` (`.venv-nn`, `.[dev,train,nn]`) | 1,603 passed, 1 skipped in 64.61 s (1,604 collected) |
-| `mypy src` (dependency-free) | clean, with the three optional-dependency paths excluded as `pyproject.toml` documents |
-| `mypy src --exclude '_never_match_'` (`[train]` and `[nn]`) | **no issues in 117 source files** in both — the whole package, torch modules included, under the same strict settings |
+| `python -m pytest` (dependency-free `.venv`) | 1,391 passed, 16 skipped in 13.74 s (1,407 collected; the skips are the numpy- and torch-gated modules) |
+| `python -m pytest` (`.venv-train`, `.[dev,train]`) | 1,472 passed, 7 skipped in 17.34 s |
+| `python -m pytest` (`.venv-nn`, `.[dev,train,nn]`) | 1,605 passed, 1 skipped in 56.66 s (1,606 collected) |
+| `mypy src` (dependency-free) | clean over 117 files, with `chakaso/training` and the two trained adapters excluded as `pyproject.toml` documents |
+| `mypy --config-file configs/mypy-model-path.toml` (`[nn]`) | **no issues in 142 source files** — the whole package, numpy and torch modules included, under the same strict settings. In `[train]` the same command reports 7 torch `import-not-found` errors, which is the correct answer: it requires both extras |
 | `ruff check .` / `ruff format --check .` | clean, 317 files formatted |
 | `.github/workflows/ci.yml` | unchanged: installs `.[dev]` only, so the two extra matrices above are still not run remotely |
+
+**found while checking the gates, and it is a defect that was fixed.** `pyproject.toml` excluded the
+optional-dependency modules from `mypy src`, and the documented way of checking them anyway —
+`mypy src --exclude '_never_match_'` — does not work: mypy *appends* a command-line exclude to the
+configured list, and a directory argument is subject to it too. The result was that 27 modules — the whole
+`[train]` and `[nn]` path — had never been type-checked in any environment, in this session's runs included.
+Type-checking them for real reported three dead `# type: ignore` comments and one genuine typing hole in the
+byte-pair encoder's pair selection. The fix is `configs/mypy-model-path.toml` (same strictness, no
+exclusions, requires both extras) plus two hygiene tests that keep the configurations from drifting and stop
+the exclusion list changing shape quietly. It is recorded here rather than smoothed over because the previous
+sentence in this document's plan — "mypy src is clean" — was, in the narrow sense, true and in the important
+sense misleading.
 
 **verified.** K-009's cause is still true and still binds this work: the session's GitHub credential has
 scopes `gist, read:org, repo` and no `workflow` scope, so any commit touching

@@ -419,6 +419,56 @@ def test_torch_is_declared_only_in_the_optional_nn_extra() -> None:
     assert "<3" in torch_spec, f"{torch_spec!r} must bound the major version"
 
 
+def test_the_two_mypy_configurations_check_the_same_strictness() -> None:
+    # `mypy src` excludes the optional-dependency path because the dependency-free CI matrix cannot resolve
+    # numpy or torch. That is only honest if those modules are actually checked somewhere, and a command-line
+    # --exclude *adds* to the configured list instead of replacing it — so the escape hatch is a second
+    # config file, and this test is what stops it drifting into a weaker one.
+    default = tomllib.loads((REPO_ROOT / "pyproject.toml").read_text(encoding="utf-8"))["tool"][
+        "mypy"
+    ]
+    model_path = tomllib.loads(
+        (REPO_ROOT / "configs" / "mypy-model-path.toml").read_text(encoding="utf-8")
+    )["tool"]["mypy"]
+
+    for flag in (
+        "strict",
+        "warn_unused_ignores",
+        "warn_redundant_casts",
+        "show_error_codes",
+        "pretty",
+    ):
+        assert model_path.get(flag) == default.get(flag), (
+            f"{flag} differs between the configurations"
+        )
+
+    assert model_path["exclude"] == [], "the model-path configuration must not exclude anything"
+    assert model_path["files"] == ["src"], model_path["files"]
+
+
+def test_the_mypy_exclusion_names_only_optional_dependency_modules() -> None:
+    default = tomllib.loads((REPO_ROOT / "pyproject.toml").read_text(encoding="utf-8"))["tool"][
+        "mypy"
+    ]
+
+    assert sorted(default["exclude"]) == [
+        "chakaso/models/nntransformer",
+        "chakaso/models/trainedchar",
+        "chakaso/training",
+    ], (
+        "these are the modules whose types resolve through [train] or [nn]; adding one here hides it from "
+        "`mypy src` silently, and removing one without removing its dependency breaks the dependency-free matrix"
+    )
+    for entry in default["exclude"]:
+        target = REPO_ROOT / "src" / Path(*entry.split("/"))
+        if target.is_dir():
+            checked = list(target.rglob("*.py"))
+        else:
+            module = target.with_suffix(".py")
+            checked = [module] if module.is_file() else []
+        assert checked, f"{entry!r} excludes nothing that exists — the exclusion is stale"
+
+
 def test_decision_records_are_numbered_contiguously() -> None:
     records = sorted((REPO_ROOT / "docs" / "decisions").glob("ADR-*.md"))
     numbers = []

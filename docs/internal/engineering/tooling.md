@@ -59,6 +59,23 @@ Configuration: strict mode with `disallow_untyped_defs`,
 Third-party modules without stubs are handled per-module rather than by disabling
 checking globally.
 
+**Two configurations, one package.** `pyproject.toml` excludes `chakaso/training`,
+`chakaso/models/trainedchar` and `chakaso/models/nntransformer` so the dependency-free CI matrix stays green
+without numpy or torch installed. That exclusion is scoping, not exemption: `configs/mypy-model-path.toml`
+runs the same strictness over all 142 source files with no exclusions, and it is the command that checks the
+model path (`mypy --config-file configs/mypy-model-path.toml`, in an environment with `.[dev,train,nn]`).
+A `--exclude` flag on the command line *adds* to the configured list, so no flag lifts it — the mistake was
+made and corrected here, and a hygiene test keeps the two configurations' strictness identical and fails if
+the exclusion list changes shape.
+
+The correction is worth recording because it is the reason the second file exists: when the model path was
+type-checked for the first time, three `# type: ignore` comments turned out to be dead (they suppress errors
+`warn_unused_ignores` would have reported, had anything ever run) and one real typing hole turned out to be
+latent in the byte-pair encoder's pair selection — a value mypy could only see as `int | None` where the code
+guaranteed otherwise. The fix was to carry the pair and its rank as one optional tuple rather than two, which
+says what is true. Nothing about the behaviour changed, and the whole package now reports no issues in 142
+source files where both extras are present.
+
 ## Build backend: setuptools
 
 `pyproject.toml` only, no `setup.py`. Setuptools was chosen over hatchling and

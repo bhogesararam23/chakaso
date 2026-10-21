@@ -163,12 +163,22 @@ and model metrics — run in the core matrix as ordinary tests. Only the numpy- 
 skip. The torch import surface is confined by a hygiene test to a named module list, so the gap is bounded
 and visible rather than spread through the package.
 
+**Type checking had the same gap, and it is now closed.** `pyproject.toml` excludes the optional-dependency
+modules from `mypy src`, and the previously documented escape — `mypy src --exclude '_never_match_'` — does
+not work: a command-line exclude is *appended* to the configured list, and directory arguments are subject to
+it as well. So the `[train]` and `[nn]` path (27 modules) had never been type-checked anywhere. Checking it
+properly found three dead `# type: ignore` comments and one real typing hole in the byte-pair encoder's pair
+selection, both fixed, and `configs/mypy-model-path.toml` is now the command that checks all 142 source files
+under the same strict settings — clean where both extras are installed, and an honest `import-not-found`
+failure where torch is absent. Two hygiene tests keep the two configurations' strictness identical and pin
+the exclusion list to the modules whose dependency it names.
+
 **Re-verified this session (2026-10-21, P31/E2605).** The token's scopes were checked again: `gist, read:org,
 repo` — no `workflow` — so the gap is still not something this session can close. Locally, all three matrices
-run: **1,389 passed / 16 skipped** dependency-free (1,405 collected), **1,470 passed / 7 skipped** with
-`[train]`, and **1,603 passed / 1 skipped** with `[train,nn]` (1,604 collected). Strict typing passes with the
-extras present: `mypy src --exclude '_never_match_'` reports **no issues in 117 source files** in both the
-`[train]` and the `[train,nn]` environment, which is every module in the package including the torch path. E2605
+run: **1,391 passed / 16 skipped** dependency-free (1,407 collected), **1,472 passed / 7 skipped** with
+`[train]`, and **1,605 passed / 1 skipped** with `[train,nn]` (1,606 collected). Strict typing passes over
+every module in the `[train,nn]` environment (`mypy --config-file configs/mypy-model-path.toml`, 142 source
+files, no issues). E2605
 itself ran in that environment and is measured, recorded and committed
 ([`../../experiments/E2605/record.md`](../../experiments/E2605/record.md)), so the artifact is verified where
 it was produced — but no remote job has ever run any of it.

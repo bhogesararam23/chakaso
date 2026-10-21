@@ -15,9 +15,10 @@ evaluation separate and cites the measured figures; K-001 and K-009 are re-verif
 matrices and rewritten to what is actually still open; no document claims a capability E2605 did not measure.
 
 **Definition of done (L).** `pytest` passes in the dependency-free, `[train]` and `[train,nn]` matrices;
-`ruff check`, `ruff format --check` and `mypy src` pass, with `mypy src --exclude '_never_match_'` clean where
-the extras are installed; the package builds and imports from a clean install; the commit history reads as a
-deliverable (each subject matching its diff, no rewritten pushed history); the work is pushed to `main` and
+`ruff check`, `ruff format --check` and `mypy src` pass, and `mypy --config-file
+configs/mypy-model-path.toml` passes over all 142 source files where both extras are installed; the package
+builds and imports from a clean install; the commit history reads as a deliverable (each subject matching its
+diff, no rewritten pushed history); the work is pushed to `main` and
 the remote SHA verified; CI status is read from the runner, not inferred. No `.github/workflows/*` file is
 touched: the session's credential has no `workflow` scope, so that gap is recorded, not claimed away.
 
@@ -295,9 +296,11 @@ capability claim.
   untouched and remains the frontier of the whole project.
 - K-009: the numpy- and torch-gated tests do not run in remote CI, because the session's GitHub token
   lacks the `workflow` scope and the `[train]`/`[nn]` CI jobs cannot be pushed. Verified locally instead, in
-  all three matrices: 1,389 passed / 16 skipped dependency-free, 1,470 with `[train]`, 1,603 with
-  `[train,nn]`, and `mypy src --exclude '_never_match_'` clean over all 117 source files in both extra
-  environments. ADR-0034's `[nn]` tests inherit the gap by construction; no CI job for them is claimed.
+  all three matrices: 1,391 passed / 16 skipped dependency-free, 1,472 with `[train]`, 1,605 with
+  `[train,nn]`, and strict typing clean over all 142 source files in the `[train,nn]` environment. ADR-0034's
+  `[nn]` tests inherit the gap by construction; no CI job for them is claimed. The type-checking half of this
+  gap was closed as a defect found during delivery: the documented way of lifting the mypy exclusion did not
+  work, so 27 modules had never been checked — see `configs/mypy-model-path.toml` and K-009.
 - K-006: the invented-reference condition is persisted per answer, but nothing aggregates it into a
   rate, and it is only durable when the SQLite backend is selected.
 - K-008: the fetcher's destination screen is partial; any acquisition work must confirm no default path

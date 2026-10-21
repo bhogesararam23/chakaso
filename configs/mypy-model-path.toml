@@ -1,0 +1,25 @@
+# Type-check the modules `mypy src` scopes out.
+#
+# `pyproject.toml` excludes the optional-dependency path (numpy in `[train]`, torch in `[nn]`, per
+# ADR-0030/ADR-0034) because the dependency-free CI matrix cannot resolve those types. That exclusion is a
+# scoping decision, not a licence to leave the model path untyped — and a CLI `--exclude` *adds* to the
+# configured list rather than replacing it, so `mypy src --exclude '_never_match_'` does not lift it either.
+# This file is the command that does: same strictness as the project default, no exclusions.
+#
+# Run it where every dependency is present:
+#
+#     python -m mypy --config-file configs/mypy-model-path.toml
+#
+# It needs both extras installed (`.[dev,train,nn]`). Without them mypy reports the missing modules rather
+# than checking a weaker version of the code, which is the point of keeping this configuration separate.
+#
+# `tests/test_repository_hygiene.py` fails if this file's strictness flags drift from `pyproject.toml`'s.
+
+[tool.mypy]
+strict = true
+warn_unused_ignores = true
+warn_redundant_casts = true
+show_error_codes = true
+pretty = true
+files = ["src"]
+exclude = []
