@@ -290,9 +290,7 @@ def run_seed_study(
     outcomes: list[RunOutcome] = []
     if not reuse_completed and not study.plan.overwrite_artifacts:
         recorded = sorted(
-            seed
-            for seed in study.seeds
-            if (study.run_dir(seed) / "report.json").is_file()
+            seed for seed in study.seeds if (study.run_dir(seed) / "report.json").is_file()
         )
         if recorded:
             message = (

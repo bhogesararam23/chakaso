@@ -135,6 +135,7 @@ def test_an_interrupted_artifact_write_leaves_nothing_behind(
     The artifact is what a record cites, and a half-written one is worse than a missing one: it has the
     right name, the right extension and a plausible size, and only verification would expose it.
     """
+
     def _interrupt(*_ignored: object, **_also_ignored: object) -> None:
         failure = "device out of space"
         raise OSError(failure)

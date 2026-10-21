@@ -470,9 +470,7 @@ def test_collecting_with_a_study_checks_its_declaration_not_only_agreement(tmp_p
     study = SeedStudy(experiment="E2698", plan=plan, seeds=(7,))
     run_seed_study(study)
 
-    rebuilt = build_study_report(
-        experiment="E2698", work_dir=plan.work_dir, seeds=[7], study=study
-    )
+    rebuilt = build_study_report(experiment="E2698", work_dir=plan.work_dir, seeds=[7], study=study)
     assert rebuilt["completed_seeds"] == [7]
 
     wider = SeedStudy(
