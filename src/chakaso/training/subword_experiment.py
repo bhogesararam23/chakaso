@@ -33,6 +33,7 @@ from typing import Any
 import numpy as np
 import torch
 
+from chakaso.core.atomic import write_text_atomically
 from chakaso.core.hashing import sha256_hex
 from chakaso.training.baselines import UnigramBaseline, uniform_next_token_loss
 from chakaso.training.config import TrainingConfig
@@ -42,8 +43,17 @@ from chakaso.training.data import (
     character_windows,
     split_text_units,
 )
+from chakaso.training.errors import CorpusDriftError, CorpusError
 from chakaso.training.loop import run_minibatch_training
-from chakaso.training.manifest import CorpusManifest, build_manifest, save_manifest, verify_corpus
+from chakaso.training.manifest import (
+    CorpusManifest,
+    CorpusSnapshot,
+    build_manifest,
+    read_snapshot,
+    save_manifest,
+    verify_corpus,
+    write_snapshot,
+)
 from chakaso.training.model import CharCausalMLP, batches_from_examples
 from chakaso.training.model_metrics import ModelMetrics, metrics_from_scores
 from chakaso.training.nn_checkpoint import checkpoint_filename, save_artifact
@@ -58,6 +68,8 @@ __all__ = [
     "CHARACTER_CONTEXT",
     "CORPUS_NAME",
     "EXPERIMENT_ID",
+    "REPO_TEXT_CORPUS",
+    "CorpusSpec",
     "ExperimentPlan",
     "PreparedCorpus",
     "prepare_corpus",
@@ -82,12 +94,63 @@ _PROMPTS = (
 
 
 @dataclass(frozen=True, slots=True)
+class CorpusSpec:
+    """What corpus a run may train on, and where its artifacts live.
+
+    Attributes:
+        name/version/licence/source: The provenance a record cites. Licence and source are required
+            because "we trained on some markdown" is not provenance.
+        include/extensions/exact_paths: The discovery rule, passed to
+            :func:`chakaso.training.manifest.build_manifest` unchanged.
+    """
+
+    name: str
+    version: str
+    licence: str
+    source: str
+    include: tuple[str, ...] = ("docs/", "*.md")
+    extensions: tuple[str, ...] = (".md",)
+    exact_paths: tuple[str, ...] = ("LICENSE", "AGENTS.md")
+
+    def __post_init__(self) -> None:
+        for field_name in ("name", "version", "licence", "source"):
+            value = getattr(self, field_name)
+            if not isinstance(value, str) or not value.strip():
+                message = f"corpus spec field {field_name!r} must be a non-empty string"
+                raise ValueError(message)
+        if "/" in self.name or "\\" in self.name:
+            message = f"corpus name {self.name!r} cannot be used as a file name"
+            raise ValueError(message)
+
+    def manifest_path(self, work: Path) -> Path:
+        return work / f"{self.name}-manifest.json"
+
+    def snapshot_path(self, work: Path) -> Path:
+        return work / f"{self.name}-snapshot.json"
+
+    def tokenizer_path(self, work: Path) -> Path:
+        return work / f"{self.name}-tokenizer.json"
+
+
+#: The corpus E2605 measured: this repository's own tracked prose, discovered from the repository root.
+REPO_TEXT_CORPUS = CorpusSpec(
+    name=CORPUS_NAME,
+    version="1.0.0",
+    licence="Apache-2.0 (the project's own licence; the text is authored for Chakaso)",
+    source="Chakaso's tracked markdown and LICENSE files, discovered from the include spec on this plan.",
+)
+
+
+@dataclass(frozen=True, slots=True)
 class ExperimentPlan:
     """Every knob of one run, validated on construction.
 
     Attributes:
         root: Repository root the corpus is prepared from.
         work_dir: Where the snapshot, tokenizer and checkpoints are written (never committed).
+        experiment_id: Names this run's artifacts and the report's ``experiment`` field. A study gives each
+            experiment its own so an E2606 checkpoint is never mistaken for the E2605 one.
+        corpus: Which corpus the run is allowed to train on, and how it is discovered.
         vocab_size: Target subword vocabulary size, including the byte base and reserved separator.
         context_length: Transformer context, in tokens.
         batch_size: Sequences per optimizer step.
@@ -97,13 +160,16 @@ class ExperimentPlan:
         patience: Evaluations without improvement before early stopping.
         min_delta: Held-out improvement that counts against patience, in nats.
         learning_rate/weight_decay/warmup_steps/gradient_clip_norm: Optimization settings.
-        seed: Master seed for initialization, batching and the document split.
+        seed: Master seed for initialization and batching. split_seed: the seed the document split uses.
         character_*: The character baseline's own geometry and budget.
         samples_per_prompt: Tokens generated for each qualitative sample.
+        corpus_snapshot/expected_corpus_fingerprint: Which corpus this run is allowed to train on.
     """
 
     root: Path
     work_dir: Path
+    experiment_id: str = EXPERIMENT_ID
+    corpus: CorpusSpec = REPO_TEXT_CORPUS
     vocab_size: int = 1024
     context_length: int = 128
     batch_size: int = 32
@@ -120,6 +186,11 @@ class ExperimentPlan:
     warmup_steps: int = 60
     gradient_clip_norm: float = 1.0
     seed: int = 7
+    #: The seed the document split is drawn with, separately from the model's. A study that varies seeds
+    #: fixes the split, or the runs would differ in their data as well as their initialization — and the
+    #: held-out documents would no longer be the same documents. Left unset it is ``seed``, which is what
+    #: E2605 measured.
+    split_seed: int | None = None
     character_context: int = CHARACTER_CONTEXT
     character_embed_dim: int = 32
     character_hidden_dim: int = 64
@@ -128,6 +199,14 @@ class ExperimentPlan:
     character_eval_every: int = 200
     character_learning_rate: float = 2e-2
     samples_per_prompt: int = 96
+    #: A snapshot of the corpus, read through :func:`chakaso.training.manifest.read_snapshot`, which
+    #: re-checks every document digest. Given, the run trains on those bytes and never touches the tracked
+    #: files; absent, the run prepares from the tree, writes a snapshot beside its manifest, and a later run
+    #: in the same directory picks it up. Either way the corpus the report names is the corpus that ran.
+    corpus_snapshot: Path | None = None
+    #: The corpus fingerprint this run is required to use. Declared by a reproduction or a seed study, so
+    #: that loading *a* snapshot is never the same as loading *the* snapshot.
+    expected_corpus_fingerprint: str | None = None
     #: An experiment run rewrites its own artifact only when told to. Re-running into a directory that
     #: already holds a measured run's artifact is how a result gets silently replaced by a different one,
     #: so ADR-0035's overwrite guard applies here too.
@@ -136,6 +215,9 @@ class ExperimentPlan:
     def __post_init__(self) -> None:
         if not self.root.is_dir():
             message = f"experiment root {str(self.root)!r} is not a directory"
+            raise ValueError(message)
+        if not self.experiment_id or "/" in self.experiment_id or "\\" in self.experiment_id:
+            message = f"experiment_id {self.experiment_id!r} cannot be used as a file name"
             raise ValueError(message)
         if self.vocab_size < 258:
             message = f"vocab_size must be >= 258 (byte base + separator + one merge), got {self.vocab_size}"
@@ -149,6 +231,28 @@ class ExperimentPlan:
         if self.character_batch_windows < 1 or self.character_context < 1:
             message = "the character baseline needs a positive window and batch"
             raise ValueError(message)
+        if (
+            self.expected_corpus_fingerprint is not None
+            and len(self.expected_corpus_fingerprint) != 16
+        ):
+            message = (
+                "expected_corpus_fingerprint must be the 16 hexadecimal characters a manifest fingerprint "
+                f"has, got {self.expected_corpus_fingerprint!r}"
+            )
+            raise ValueError(message)
+
+    @property
+    def effective_split_seed(self) -> int:
+        """The seed the document split uses: the declared one, or the run's master seed."""
+        return self.seed if self.split_seed is None else self.split_seed
+
+    def snapshot_path(self) -> Path:
+        """Where this run's corpus snapshot is read from and written to."""
+        return (
+            self.corpus_snapshot
+            if self.corpus_snapshot is not None
+            else self.corpus.snapshot_path(self.work_dir)
+        )
 
     def character_evaluation_interval(self) -> int:
         """The character baseline's validation interval, clamped to its own budget.
@@ -173,6 +277,8 @@ class PreparedCorpus:
     test: PackedBatch
     char_windows: dict[str, tuple[np.ndarray, np.ndarray]]
     timings: dict[str, float]
+    corpus_origin: str = "working tree"
+    snapshot: CorpusSnapshot | None = None
 
     @property
     def tokens(self) -> dict[str, int]:
@@ -212,47 +318,115 @@ class _CharacterDecoder:
         return self._vocabulary.decode(list(identifiers))
 
 
+def _resolve_manifest(
+    plan: ExperimentPlan, work: Path
+) -> tuple[CorpusManifest, str, CorpusSnapshot | None]:
+    """Decide which corpus this run trains on, and keep its bytes for the next one.
+
+    Three cases, in the order a reader would ask about them:
+
+    * a **declared snapshot** — the run trains on exactly those bytes, and the working tree is not read;
+    * a **snapshot the directory already holds** — the run that wrote it pinned this corpus, so a re-run
+      trains on the measured bytes instead of whatever the documentation has since become;
+    * **no snapshot** — prepare from the tracked files under the manifest the directory pins, then write a
+      snapshot so this run's input outlives the next documentation edit.
+
+    A pinned manifest and a loaded snapshot must name the same corpus; if they do not, that is drift and the
+    run stops.
+
+    Raises:
+        CorpusDriftError: the working tree no longer matches the pinned manifest, or the directory's manifest
+            pins a different corpus than the snapshot it was given.
+    """
+    manifest_path = plan.corpus.manifest_path(work)
+    snapshot_path = plan.snapshot_path()
+
+    def pinned_record() -> CorpusManifest | None:
+        if not manifest_path.is_file():
+            return None
+        return CorpusManifest.from_document(json.loads(manifest_path.read_text(encoding="utf-8")))
+
+    if snapshot_path.is_file():
+        snapshot = read_snapshot(snapshot_path)
+        origin = (
+            "declared snapshot"
+            if plan.corpus_snapshot is not None
+            else "snapshot from this work dir"
+        )
+        declared = pinned_record()
+        if declared is None:
+            save_manifest(snapshot.manifest, manifest_path)
+        elif declared.fingerprint != snapshot.fingerprint:
+            message = (
+                f"the corpus snapshot at {str(snapshot_path)!r} pins fingerprint "
+                f"{snapshot.fingerprint!r} but {str(manifest_path)!r} pins {declared.fingerprint!r}; a "
+                "run must not be pointed at one corpus while its directory records another"
+            )
+            raise CorpusDriftError(message)
+        return snapshot.manifest, origin, snapshot
+
+    corpus = plan.corpus
+    manifest = build_manifest(
+        plan.root,
+        name=corpus.name,
+        version=corpus.version,
+        licence=corpus.licence,
+        source=corpus.source,
+        include=corpus.include,
+        extensions=corpus.extensions,
+        exact_paths=corpus.exact_paths,
+    )
+    declared = pinned_record()
+    if declared is not None and declared.fingerprint != manifest.fingerprint:
+        # The recorded manifest wins: an experiment's corpus is fixed by what it pinned, and a
+        # documentation edit must not move the data under a saved run. verify_corpus still checks the
+        # files against those digests.
+        manifest = verify_corpus(declared, plan.root)
+    elif declared is None:
+        save_manifest(manifest, manifest_path)
+
+    # Writing the snapshot is what makes this run reproducible later: the manifest pins the digests, and
+    # these are the bytes that produced them.
+    write_snapshot(manifest, snapshot_path, acquisition={"method": "chakaso-working-tree"})
+    return manifest, "working tree", read_snapshot(snapshot_path)
+
+
 def prepare_corpus(plan: ExperimentPlan) -> PreparedCorpus:
     """Pin the corpus, split it once by document, and train both tokenizations on the training side only.
 
     Raises:
         CorpusDriftError: a manifest already recorded for this experiment pins different content than the
-            tracked files now hold, which would make this a different dataset than the one measured.
+            tracked files now hold, or the corpus this run was pointed at is not the one its directory
+            records.
+        CorpusError: the plan declares an expected corpus fingerprint and the corpus it resolved is not that
+            one — a study must not train on *a* pinned corpus once it has named the one it means.
     """
     started = time.perf_counter()
     work = plan.work_dir
     work.mkdir(parents=True, exist_ok=True)
-    manifest_path = work / f"{CORPUS_NAME}-manifest.json"
 
-    manifest = build_manifest(
-        plan.root,
-        name=CORPUS_NAME,
-        version="1.0.0",
-        licence="Apache-2.0 (the project's own licence; the text is authored for Chakaso)",
-        source="Chakaso's tracked markdown and LICENSE files, discovered from the include spec on this plan.",
-        include=("docs/", "*.md"),
-        extensions=(".md",),
-        exact_paths=("LICENSE", "AGENTS.md"),
-    )
-    if manifest_path.is_file():
-        pinned = CorpusManifest.from_document(json.loads(manifest_path.read_text(encoding="utf-8")))
-        if pinned.fingerprint != manifest.fingerprint:
-            # The recorded manifest wins: an experiment's corpus is fixed by what it pinned, and a
-            # documentation edit must not move the data under a saved run. verify_corpus still checks the
-            # files against those digests.
-            manifest = verify_corpus(pinned, plan.root)
-    save_manifest(manifest, manifest_path)
+    manifest, origin, snapshot = _resolve_manifest(plan, work)
+    if (
+        plan.expected_corpus_fingerprint is not None
+        and manifest.fingerprint != plan.expected_corpus_fingerprint
+    ):
+        message = (
+            f"this run requires corpus {plan.expected_corpus_fingerprint!r} and resolved "
+            f"{manifest.fingerprint!r} from {origin}; the protocol names a corpus, so the run stops here "
+            "rather than training on a different one"
+        )
+        raise CorpusError(message)
 
     split = split_text_units(
         manifest.text_units(),
         validation_fraction=_VALIDATION_FRACTION,
         test_fraction=_TEST_FRACTION,
-        seed=plan.seed,
+        seed=plan.effective_split_seed,
     )
     vocabulary = train_subword_vocabulary(
         (unit.text for unit in split.train), target_size=plan.vocab_size, min_frequency=3
     )
-    vocabulary.save(work / f"{CORPUS_NAME}-tokenizer.json")
+    vocabulary.save(plan.corpus.tokenizer_path(work))
     char_vocabulary = CharVocabulary(tuple(unit.text for unit in split.train))
 
     char_windows = {
@@ -274,6 +448,8 @@ def prepare_corpus(plan: ExperimentPlan) -> PreparedCorpus:
         test=pack_units(split.test, vocabulary, context_length=plan.context_length),
         char_windows=char_windows,
         timings={"prepare_seconds": round(time.perf_counter() - started, 2)},
+        corpus_origin=origin,
+        snapshot=snapshot,
     )
 
 
@@ -476,7 +652,7 @@ def run_experiment(plan: ExperimentPlan, *, verbose: bool = False) -> dict[str, 
         ),
         corpus_fingerprint=prepared.manifest.fingerprint,
         on_step=on_step,
-        checkpoint_path=work / f"{EXPERIMENT_ID}-resumable.pt",
+        checkpoint_path=work / f"{plan.experiment_id}-resumable.pt",
     )
     wall = time.perf_counter() - started
 
@@ -484,7 +660,7 @@ def run_experiment(plan: ExperimentPlan, *, verbose: bool = False) -> dict[str, 
     model = artifact.to_model()
     test_metrics = score_transformer(model, prepared.test, prepared.vocabulary)
     validation_metrics = score_transformer(model, prepared.validation, prepared.vocabulary)
-    artifact_path = work / checkpoint_filename(EXPERIMENT_ID)
+    artifact_path = work / checkpoint_filename(plan.experiment_id)
     save_artifact(artifact, artifact_path, allow_overwrite=plan.overwrite_artifacts)
 
     # Generation goes through the boundary, not the adapter class: the experiment is a consumer of the
@@ -508,17 +684,31 @@ def run_experiment(plan: ExperimentPlan, *, verbose: bool = False) -> dict[str, 
 
     targets = [token for example in prepared.test.examples for token in example.targets]
     return {
-        "experiment": EXPERIMENT_ID,
+        "experiment": plan.experiment_id,
         "corpus": {
             "name": prepared.manifest.name,
             "version": prepared.manifest.version,
             "licence": prepared.manifest.licence,
             "source": prepared.manifest.source,
+            "include": list(prepared.manifest.include),
+            "extensions": list(prepared.manifest.extensions),
+            "exact_paths": list(prepared.manifest.exact_paths),
             "fingerprint": prepared.manifest.fingerprint,
+            "prepared_from": prepared.corpus_origin,
+            "snapshot": (
+                None
+                if prepared.snapshot is None
+                else {
+                    "path": plan.snapshot_path().name,
+                    "checksum": prepared.snapshot.checksum,
+                    "acquisition": dict(prepared.snapshot.acquisition),
+                }
+            ),
             "documents": len(prepared.manifest.documents),
             "characters": prepared.manifest.char_count,
             "duplicate_groups": [list(group) for group in prepared.manifest.duplicate_paths],
-            "split_seed": plan.seed,
+            "split_seed": plan.effective_split_seed,
+            "model_seed": plan.seed,
             "split_fingerprint": prepared.split.fingerprint,
             "documents_per_side": {
                 "train": len(prepared.split.train),
@@ -595,15 +785,29 @@ def run_experiment(plan: ExperimentPlan, *, verbose: bool = False) -> dict[str, 
     }
 
 
-def write_report(report: dict[str, Any], destination: Path) -> str:
+def write_report(
+    report: dict[str, Any], destination: Path, *, allow_overwrite: bool = False
+) -> str:
     """Write the machine-readable report deterministically and return its digest.
 
-    The digest is what the record cites: a reader who regenerates the report can compare hashes without
-    reading every number in it.
+    The digest is what the record cites, so a reader who regenerates the report can compare hashes without
+    reading every number in it. That only works if the file's bytes are the text that was hashed: the
+    payload is indented, and a write in default text mode would translate its newlines on Windows and
+    hand back a digest nobody else can reproduce. ``allow_overwrite`` exists because a re-run pointed at a
+    recorded run's report path would otherwise replace the evidence the record names.
+
+    Raises:
+        ValueError: a file already occupies ``destination`` and ``allow_overwrite`` was not passed.
     """
+    target = Path(destination)
+    if target.exists() and not allow_overwrite:
+        message = (
+            f"{str(target)!r} already holds a report; pass allow_overwrite=True to replace it, or choose "
+            "a distinct path so the earlier run stays recoverable"
+        )
+        raise ValueError(message)
     payload = json.dumps(report, indent=2, sort_keys=True, default=str)
-    destination.parent.mkdir(parents=True, exist_ok=True)
-    destination.write_text(payload, encoding="utf-8")
+    write_text_atomically(payload, target)
     return sha256_hex(payload)
 
 

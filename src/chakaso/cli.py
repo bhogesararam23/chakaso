@@ -485,6 +485,31 @@ def _build_parsers() -> tuple[argparse.ArgumentParser, argparse.ArgumentParser]:
         "--seed", type=int, default=None, help="override the experiment's master seed"
     )
     experiment_model.add_argument(
+        "--split-seed",
+        type=int,
+        default=None,
+        help="draw the document split with this seed instead of the master one",
+    )
+    experiment_model.add_argument(
+        "--corpus-snapshot",
+        type=Path,
+        default=None,
+        help=(
+            "train on this verified corpus snapshot instead of the tracked files; produced by "
+            "'chakaso corpus restore' or by an earlier run's work directory"
+        ),
+    )
+    experiment_model.add_argument(
+        "--expected-corpus-fingerprint",
+        default=None,
+        help="refuse to run unless the corpus resolves to this 16-character manifest fingerprint",
+    )
+    experiment_model.add_argument(
+        "--overwrite",
+        action="store_true",
+        help="replace artifacts already in the work directory (the default is to refuse)",
+    )
+    experiment_model.add_argument(
         "--eval-every",
         type=int,
         default=None,
@@ -1614,6 +1639,10 @@ def _run_model_experiment(args: argparse.Namespace) -> int:
             else min(base.warmup_steps, max_steps)
         ),
         seed=args.seed if args.seed is not None else base.seed,
+        split_seed=args.split_seed,
+        corpus_snapshot=args.corpus_snapshot,
+        expected_corpus_fingerprint=args.expected_corpus_fingerprint,
+        overwrite_artifacts=args.overwrite,
     )
     try:
         report = run_experiment(plan, verbose=args.verbose)
@@ -1622,7 +1651,11 @@ def _run_model_experiment(args: argparse.Namespace) -> int:
         return 1
 
     if args.write_report is not None:
-        digest = write_model_report(report, args.write_report)
+        try:
+            digest = write_model_report(report, args.write_report, allow_overwrite=args.overwrite)
+        except ValueError as exc:
+            print(f"{PROGRAM}: {exc}", file=sys.stderr)
+            return 1
         print(f"report digest {digest}", file=sys.stderr)
     if args.json:
         print(json.dumps(report, sort_keys=True, indent=2, ensure_ascii=False, default=str))

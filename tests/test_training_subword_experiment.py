@@ -12,6 +12,7 @@ character baseline.
 from __future__ import annotations
 
 import json
+import shutil
 from dataclasses import replace
 from math import log2
 from pathlib import Path
@@ -21,8 +22,10 @@ import pytest
 pytest.importorskip("torch")
 pytest.importorskip("numpy")
 
-from chakaso.training.errors import CheckpointError, CorpusDriftError
+from chakaso.core.hashing import sha256_hex
+from chakaso.training.errors import CheckpointError, CorpusDriftError, CorpusError
 from chakaso.training.subword_experiment import (
+    CorpusSpec,
     ExperimentPlan,
     prepare_corpus,
     run_experiment,
@@ -59,8 +62,8 @@ def _root(tmp_path: Path) -> Path:
     return root
 
 
-def _plan(root: Path, work: Path) -> ExperimentPlan:
-    return ExperimentPlan(
+def _plan(root: Path, work: Path, **overrides: object) -> ExperimentPlan:
+    plan = ExperimentPlan(
         root=root,
         work_dir=work,
         vocab_size=268,
@@ -83,6 +86,30 @@ def _plan(root: Path, work: Path) -> ExperimentPlan:
         character_eval_every=20,
         samples_per_prompt=8,
     )
+    return plan if not overrides else replace(plan, **overrides)
+
+
+def _other_root(tmp_path: Path) -> Path:
+    """A second repository whose tracked text is a different corpus."""
+    root = tmp_path / "other-repo"
+    documents = {
+        "docs/one.md": "# One\n\nHarbour cranes unload coal while the fog holds the quay.\n",
+        "docs/two.md": "# Two\n\nA ledger of tonnage, tar and rope is kept in the office.\n",
+        "docs/three.md": "# Three\n\nThe pilot signs for the tide and the bell buoy sounds twice.\n",
+        "docs/four.md": "# Four\n\nCranes, coal and fog again, in a report the harbour also files.\n",
+        "docs/five.md": "# Five\n\nTarred rope and a ledger of tonnage, kept by the same office.\n",
+        "docs/six.md": "# Six\n\nThe quay is quiet when the fog lifts and the cranes stand still.\n",
+    }
+    for relative, text in documents.items():
+        target = root / relative
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_text(text, encoding="utf-8")
+    (root / "README.md").write_text(
+        "# Harbour\n\nA reader document about cranes and fog.\n", encoding="utf-8"
+    )
+    (root / "AGENTS.md").write_text("# Notes\n\nShort harbour notes.\n", encoding="utf-8")
+    (root / "LICENSE").write_text("Apache License 2.0\n", encoding="utf-8")
+    return root
 
 
 def test_prepare_corpus_pins_documents_and_trains_both_tokenizations(tmp_path: Path) -> None:
@@ -111,16 +138,86 @@ def test_the_document_split_sides_are_disjoint_for_both_tokenizations(tmp_path: 
     assert prepared.char_windows["train"][0].shape[0] > 0
 
 
-def test_a_second_run_refuses_a_corpus_whose_files_have_moved(tmp_path: Path) -> None:
+def test_a_second_run_with_only_the_tree_refuses_a_corpus_whose_files_have_moved(
+    tmp_path: Path,
+) -> None:
+    """The pre-P33 refusal still stands when there is no snapshot to fall back on."""
     root = _root(tmp_path)
     plan = _plan(root, tmp_path / "work")
     prepare_corpus(plan)
+    plan.snapshot_path().unlink()
     (root / "docs" / "alpha.md").write_text(
         "# Alpha\n\nRewritten after the manifest was pinned.\n", encoding="utf-8"
     )
 
     with pytest.raises(CorpusDriftError, match="content changed"):
         prepare_corpus(plan)
+
+
+def test_a_second_run_trains_on_the_pinned_bytes_after_the_text_moves(tmp_path: Path) -> None:
+    """A recorded run's snapshot is the corpus its directory pins, so the drift guard has something to read.
+
+    This is the whole point of writing a snapshot: the tracked text moves, and the run keeps training on the
+    bytes the record names instead of refusing or, worse, silently re-targeting the newer text.
+    """
+    root = _root(tmp_path)
+    plan = _plan(root, tmp_path / "work")
+    first = prepare_corpus(plan)
+    (root / "docs" / "alpha.md").write_text(
+        "# Alpha\n\nRewritten after the manifest was pinned.\n", encoding="utf-8"
+    )
+
+    second = prepare_corpus(plan)
+
+    assert second.corpus_origin == "snapshot from this work dir"
+    assert second.manifest.fingerprint == first.manifest.fingerprint
+    assert second.manifest.combined_text() == first.manifest.combined_text()
+    assert "Rewritten after the manifest was pinned" not in second.manifest.combined_text()
+
+
+def test_a_declared_snapshot_is_used_without_reading_the_tracked_tree(tmp_path: Path) -> None:
+    root = _root(tmp_path)
+    source = tmp_path / "work"
+    prepare_corpus(_plan(root, source))
+    snapshot = source / "chakaso-repo-text-v1-snapshot.json"
+    assert snapshot.is_file()
+
+    # A root that has moved on in a way the original pin cannot match, and a fresh work directory with no
+    # manifest of its own: only the declared snapshot can supply the corpus here.
+    (root / "docs" / "alpha.md").write_text("# Alpha\n\nDifferent now.\n", encoding="utf-8")
+    elsewhere = _plan(root, tmp_path / "other", corpus_snapshot=snapshot, split_seed=3)
+
+    prepared = prepare_corpus(elsewhere)
+
+    assert prepared.corpus_origin == "declared snapshot"
+    assert prepared.split.fingerprint != prepare_corpus(_plan(root, source)).split.fingerprint
+
+
+def test_a_run_refuses_a_corpus_that_is_not_the_one_its_protocol_names(tmp_path: Path) -> None:
+    root = _root(tmp_path)
+    plan = _plan(root, tmp_path / "work")
+    prepared = prepare_corpus(plan)
+    other = _plan(
+        root,
+        tmp_path / "other",
+        expected_corpus_fingerprint="0" * 16,
+    )
+
+    assert prepared.manifest.fingerprint != "0" * 16
+    with pytest.raises(CorpusError, match="requires corpus"):
+        prepare_corpus(other)
+
+
+def test_a_snapshot_that_disagrees_with_its_directorys_pin_is_refused(tmp_path: Path) -> None:
+    root = _root(tmp_path)
+    prepare_corpus(_plan(root, tmp_path / "work"))
+    foreign = _plan(_other_root(tmp_path), tmp_path / "foreign")
+    prepare_corpus(foreign)
+    work = tmp_path / "work"
+    shutil.copy(foreign.snapshot_path(), work / "chakaso-repo-text-v1-snapshot.json")
+
+    with pytest.raises(CorpusDriftError, match="must not be pointed at one corpus"):
+        prepare_corpus(_plan(root, work))
 
 
 def test_run_experiment_produces_a_wellformed_measured_report(tmp_path: Path) -> None:
@@ -183,7 +280,22 @@ def test_the_report_is_deterministic_json_and_carries_its_own_digest(tmp_path: P
 
     assert reloaded["experiment"] == "E2605"
     assert len(digest) == 64
+    # A record cites this digest so a reader can check it without rerunning anything, which only works if
+    # the bytes on disk are the text that was hashed.
+    assert b"\r\n" not in target.read_bytes()
+    assert sha256_hex(target.read_bytes().decode("utf-8")) == digest
     assert digest == write_report(reloaded, tmp_path / "again.json")
+
+
+def test_a_report_does_not_replace_a_recorded_one_unasked(tmp_path: Path) -> None:
+    report = run_experiment(_plan(_root(tmp_path), tmp_path / "work"))
+    target = tmp_path / "results.json"
+    write_report(report, target)
+
+    with pytest.raises(ValueError, match="already holds a report"):
+        write_report(report, target)
+
+    assert write_report(report, target, allow_overwrite=True)
 
 
 def test_the_summary_names_every_model_and_both_baselines(tmp_path: Path) -> None:
@@ -194,6 +306,56 @@ def test_the_summary_names_every_model_and_both_baselines(tmp_path: Path) -> Non
     assert "unigram" in line
     assert "uniform" in line
     assert "bits/char" in line
+
+
+def test_a_run_names_its_artifacts_after_its_experiment_and_its_corpus(tmp_path: Path) -> None:
+    """One driver serves several experiments and corpora, so nothing may be named by a module constant."""
+    plan = _plan(
+        _root(tmp_path),
+        tmp_path / "work",
+        experiment_id="E2699",
+        corpus=CorpusSpec(
+            name="harbour-text",
+            version="1.0.0",
+            licence="Apache-2.0",
+            source="built by tests",
+            include=("docs/",),
+            extensions=(".md",),
+            exact_paths=(),
+        ),
+    )
+
+    report = run_experiment(plan)
+
+    assert report["experiment"] == "E2699"
+    assert report["corpus"]["name"] == "harbour-text"
+    assert report["corpus"]["include"] == ["docs/"]
+    written = sorted(path.name for path in (tmp_path / "work").iterdir())
+    assert written == [
+        "E2699-resumable.pt",
+        "E2699-transformer.pt",
+        "harbour-text-manifest.json",
+        "harbour-text-snapshot.json",
+        "harbour-text-tokenizer.json",
+    ]
+    assert report["corpus"]["snapshot"]["acquisition"] == {"method": "chakaso-working-tree"}
+
+
+def test_a_plan_that_cannot_name_its_artifacts_is_refused(tmp_path: Path) -> None:
+    root = _root(tmp_path)
+
+    with pytest.raises(ValueError, match="experiment_id"):
+        _plan(root, tmp_path / "work", experiment_id="")
+    with pytest.raises(ValueError, match="experiment_id"):
+        _plan(root, tmp_path / "work", experiment_id="nested/E2606")
+    with pytest.raises(ValueError, match="corpus name"):
+        _plan(
+            root,
+            tmp_path / "work",
+            corpus=CorpusSpec(name="a/b", version="1", licence="Apache-2.0", source="tests"),
+        )
+    with pytest.raises(ValueError, match="expected_corpus_fingerprint"):
+        _plan(root, tmp_path / "work", expected_corpus_fingerprint="too-short")
 
 
 def test_a_second_run_into_the_same_directory_is_refused(tmp_path: Path) -> None:
