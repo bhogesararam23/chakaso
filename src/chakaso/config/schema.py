@@ -95,10 +95,11 @@ SPECS: tuple[FieldSpec, ...] = (
     FieldSpec(
         key="model.adapter",
         kind=str,
-        # The only adapter that exists is the development double in
-        # chakaso.models.deterministic. There is no trained Chakaso model and no
-        # local inference adapter yet; when one lands, this default and
-        # configs/default.toml change together, and a test enforces that.
+        # The default is the development double in chakaso.models.deterministic. Two trained
+        # adapters are registered — trained_char behind [train] and subword_transformer behind
+        # [nn] — and neither is ever the default: both are measured to generate looping text, and
+        # selecting one without its extra or its checkpoint is a typed error, not a fallback.
+        # Changing this default is a product decision, not a configuration convenience.
         default="deterministic",
         description="Registered language-model adapter to use (ADR-0002)",
         pattern=ADAPTER_NAME_PATTERN,
@@ -122,10 +123,10 @@ SPECS: tuple[FieldSpec, ...] = (
     FieldSpec(
         key="model.max_context_turns",
         kind=int,
-        # A stopgap, and chosen as one. A real bound needs a token count, which
-        # needs a tokenizer, which does not exist; until then a turn ceiling is the
-        # only thing that stops a long conversation growing without limit. The value
-        # is not a measured optimum and is not presented as one.
+        # A stopgap, and chosen as one. The model adapter clips its own window, but the
+        # conversation layer holds no tokenizer, so a turn ceiling is the only bound this
+        # configuration can express. The value is not a measured optimum and is not presented
+        # as one.
         default=40,
         description="Maximum recent turns projected into one model request",
         minimum=1,
@@ -134,10 +135,12 @@ SPECS: tuple[FieldSpec, ...] = (
     FieldSpec(
         key="model.checkpoint_path",
         kind=str,
-        # Path to a trained model checkpoint, used only by the optional trained-char
-        # adapter (P25, ADR-0030). Empty by default so nothing is loaded and the base
-        # configuration never requires the [train] extra; the adapter fails explicitly
-        # when it is selected without a path rather than silently falling back.
+        # Path to a trained model checkpoint, read by the two trained adapters: the
+        # character checkpoint (trained_char, [train]) and the subword Transformer
+        # artifact (subword_transformer, [nn]) — the format decides the adapter when
+        # load_model() is used. Empty by default so nothing is loaded and the base
+        # configuration never requires an optional extra; an adapter selected without a
+        # usable path fails explicitly rather than silently falling back.
         default="",
         description="Checkpoint path for a trained model adapter; unused by the double",
     ),

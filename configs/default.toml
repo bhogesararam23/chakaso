@@ -19,9 +19,10 @@
 #
 # "deterministic" is a development double, not a language model: it produces fixed
 # text so that conversation, evidence and citation logic can be tested without
-# weights, a GPU or a download. There is no trained Chakaso model and no local
-# inference adapter yet. When one exists, this value changes, and so does the
-# default in schema.py.
+# weights, a GPU or a download. Two trained adapters are registered behind optional
+# extras (trained_char behind [train], subword_transformer behind [nn]) and both are
+# measured to generate looping text, so neither is ever the default here; selecting
+# one without its extra or its checkpoint is a typed error, not a silent fallback.
 adapter = "deterministic"
 
 # Ceiling on generated tokens for one response, before the model's own context
@@ -31,17 +32,18 @@ max_new_tokens = 256
 # 0.0 means greedy decoding. Sampling is a deliberate choice, not a default.
 temperature = 0.0
 
-# How many of the most recent turns are projected into a model request. A stopgap
-# until token counting exists: it bounds growth, it is not a token budget, and it
-# cannot be described as fitting the model's context window. The value is a
-# deliberately conservative placeholder rather than a measured optimum.
+# How many of the most recent turns are projected into a model request. A stopgap:
+# the conversation layer holds no tokenizer (the model adapter clips its own window),
+# so this bounds growth, it is not a token budget, and it cannot be described as
+# fitting the model's context window. The value is a deliberately conservative
+# placeholder rather than a measured optimum.
 max_context_turns = 40
 
-# Path to a trained model checkpoint, used only by the optional "trained_char"
-# adapter (P25, ADR-0030) — which requires the [train] extra and is never selected by
-# default. Empty here so the shipped configuration loads no weights and the base
-# install stays dependency-free; the trained_char adapter refuses an empty or missing
-# path rather than falling back to the double.
+# Path to a trained model checkpoint, read by the two trained adapters: "trained_char"
+# (which requires the [train] extra) and "subword_transformer" (which requires [nn]).
+# Neither is ever selected by default. Empty here so the shipped configuration loads no
+# weights and the base install stays dependency-free; a trained adapter refuses an empty
+# or missing path rather than falling back to the double.
 checkpoint_path = ""
 
 [storage]

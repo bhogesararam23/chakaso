@@ -321,17 +321,15 @@ A private planning note is never evidence that something is implemented.
   `--json` output is not passed through it — the serializer keeps the exact bytes. This is a
   display-boundary guarantee, not a claim a model resists prompt injection.
 
-**No language model is present in the runtime.** The only implementation of the
-model boundary is a development double declared as such in its own metadata, so a
-conversation can be held but nothing intelligent is produced by it. Nothing is
-retrieved, and no citation resolves unless a caller supplies evidence. A shell that
-replies fluently invites the wrong conclusion, so `chat` says what it is before it
-says anything else. **Since E2601 a real model has been trained and measured** — a
-984-parameter character LM that beats trivial baselines on held-out next-token loss —
-but it lives in `chakaso.training` as an *experiment*, is not a `LanguageModel`
-adapter, generates nothing usable, and is not wired into any runtime path. Training a
-toy model is not the same as the product having a language model, and this file is
-careful to keep those apart.
+**The runtime's default model is still a development double.** Three implementations sit behind the model
+boundary: `deterministic` (declared as a double in its own metadata, and the default in `configs/default.toml`),
+`trained_char` behind `[train]`, and `subword_transformer` behind `[nn]`, the last two loaded by
+`chakaso.models.load_model(path)`. Neither trained adapter is ever a default, neither falls back to the double,
+and both generate text that loops and means nothing — so a conversation can still be held, but nothing
+intelligent is produced by it, nothing is retrieved unless a caller supplies evidence, and no citation resolves
+on its own. A shell that replies fluently invites the wrong conclusion, so `chat` says what it is before it says
+anything else. Training a toy model is not the same as the product having a useful language model, and this file
+keeps those apart.
 
 ## What is tested
 
@@ -404,12 +402,14 @@ guarantee than the character model's every-scalar check, and no CI job installs 
   repository's own text, and every harness number is over synthetic fixtures that check structure, not
   meaning.
 - Training and model code *beyond the measured scale*: `chakaso.training` has two tokenizers (character
-  and learned byte-pair subword), a content-pinned corpus manifest, a document-level split, sequence
-  packing, a character MLP and a decoder-causal Transformer, a full-batch and a mini-batch loop with warmup,
-  clipping, early stopping and resume, and two checkpoint formats — and E2605 measured them end to end on
-  the repository's own 780 KB of text. What is *not* built: any training on an external corpus, gradient
-  accumulation, distributed or GPU execution, and any model at a scale where a number could be called
-  capability.
+  and learned byte-pair subword), a content-pinned corpus manifest, a checksummed corpus snapshot that can be
+  recovered from the revision that pinned it, a document-level split, sequence packing, a character MLP and a
+  decoder-causal Transformer, a full-batch and a mini-batch loop with warmup, clipping, early stopping and
+  resume, and two checkpoint formats — and E2605 measured them end to end on the repository's own 780 KB of
+  text, E2606 across five seeds, E2607 on an external licensed corpus. What is *not* built: gradient
+  accumulation in a production path (resume is wired into tests, not into an experiment run), distributed or GPU
+  execution, a key/value cache during decoding, streaming generation, and any model at a scale where a number
+  could be called capability.
 - A *useful* inference model, and committed/released model weights: none. Two trained adapters exist behind
   the boundary — `chakaso.models.trainedchar` (an E2601-class character checkpoint, behind `[train]`) and
   `chakaso.models.nntransformer` (E2605's subword Transformer, behind `[nn]`, loaded by

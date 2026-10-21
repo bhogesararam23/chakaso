@@ -168,16 +168,25 @@ modules from `mypy src`, and the previously documented escape — `mypy src --ex
 not work: a command-line exclude is *appended* to the configured list, and directory arguments are subject to
 it as well. So the `[train]` and `[nn]` path (27 modules) had never been type-checked anywhere. Checking it
 properly found three dead `# type: ignore` comments and one real typing hole in the byte-pair encoder's pair
-selection, both fixed, and `configs/mypy-model-path.toml` is now the command that checks all 142 source files
+selection, both fixed, and `configs/mypy-model-path.toml` is now the command that checks all 147 source files
 under the same strict settings — clean where both extras are installed, and an honest `import-not-found`
 failure where torch is absent. Two hygiene tests keep the two configurations' strictness identical and pin
 the exclusion list to the modules whose dependency it names.
 
-**Re-verified again (2026-10-21, P33–P36).** The token's scopes are still `gist, read:org, repo` — no
-`workflow` — so a push that touches `.github/workflows/*` is still refused (GitHub refuses the *whole* push,
-naming the file, which is why the prepared matrix is delivered as a document rather than committed as a
+**Re-verified again (2026-10-21, P33–P36).** The token's scopes were `gist, read:org, repo` — no
+`workflow` — so a push that touches `.github/workflows/*` was refused (GitHub refuses the *whole* push,
+naming the file, which is why the prepared matrix was delivered as a document rather than committed as a
 workflow: it would block every other commit in the same push). Checked while at it: `main` is **not**
-protected, and Actions is enabled with `allowed_actions: all` — the missing scope is the only blocker.
+protected, and Actions is enabled with `allowed_actions: all` — the missing scope was the only blocker.
+
+**The scope blocker is gone (measured 2026-10-22).** `gh auth status` now reports `gist, read:org, repo,
+workflow`, so this entry's premise changed under the documentation that repeated it. Every statement above this
+paragraph was true of the credential that existed when it was written and is kept as dated history; the earlier
+sessions' refusals were real, and the prepared matrix was written against a token that could not apply it. What
+still has not happened is the thing that actually closes K-009: a workflow file carrying the `[train]` and `[nn]`
+tiers **pushed and read back from the runner**. The scope is evidence that it is now possible, not evidence that
+it passed — and applying the matrix still needs the decision ADR-0034 left open, whether a runner should fetch
+the torch CPU wheel index on every push.
 
 Locally all three matrices still run, and the counts grew with the new tests: **1,479 pass / 21 skip**
 dependency-free, **1,560 pass / 12 skip** with `[train]`, and **1,739 pass / 1 skip** with `[train,nn]`;

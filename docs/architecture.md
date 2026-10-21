@@ -214,9 +214,12 @@ that parameter later would touch every call site, and every call site is a place
 citation rule could be forgotten.
 
 **Context projection.** The manager bounds a request by a number of recent turns
-(`model.max_context_turns`). This is a stopgap, not a token budget. Measuring tokens
-requires a tokenizer, which does not exist, so nothing here can honestly claim to fit
-a model's context window.
+(`model.max_context_turns`). This is a stopgap, not a token budget. A tokenizer does
+now exist (`chakaso.training.subword`, with the subword vocabulary a trained artifact
+carries inline), but the conversation layer does not hold one: token counting lives on
+the model adapter, which right-clips its own window, so a turn ceiling is still the
+only bound the runtime applies and nothing here can honestly claim to fit a model's
+context window.
 
 ## Interfaces
 

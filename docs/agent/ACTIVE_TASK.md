@@ -1,6 +1,98 @@
 # Active task
 
-## Current unit: complete — nodes A–N delivered (P33–P36)
+## Current unit: nodes A–R — Chakaso Scratch LM Foundation v0.1
+
+**Goal.** Turn the measured research implementation into a complete, versioned, integration-ready
+language-model foundation: an artifact contract, a config-driven training engine, a Python inference runtime
+with bounded and streaming decoding, a versioned prompt-formatting contract, an optional local HTTP interface,
+a generation-quality suite that separates training / language-model / behavioural evidence, one reproducible
+reference model trained from random initialization on verified licensed data, and an honest release gate.
+Domain-specific development is deliberately deferred to the handoff (node Q).
+
+**Environment, measured 2026-10-22 at `a664477`.** Python 3.13.5; `torch 2.13.0+cpu` (14 threads), `numpy
+2.4.0`; 18 logical CPUs; **no CUDA device**; 166.8 GB free disk; **16.6 GB RAM with 1.5 GB free (91 % load)**
+— the last number is the binding constraint, so the new data path must not materialise a corpus as Python
+objects the way the present one does. Disk free and RAM were read from the OS (`shutil.disk_usage`,
+`GlobalMemoryStatusEx`); `psutil` is not installed and no RSS figure is claimed anywhere in this repository.
+
+**The starting audit found four things that change what this unit can promise.**
+
+1. **The `workflow` scope is present on this session's credential** (`gh auth status`: `gist, read:org, repo,
+   workflow`). K-009 records the opposite, and every doc since repeats it. The `[train]` / `[nn]` / serving CI
+   matrix is therefore landable here — node M changes from "design and record the gap" to "land it and read the
+   result from the runner". K-009 stays open until the pushed workflow actually runs the tiers.
+2. **`CURRENT_STATE.md` still says no language model exists in the runtime** (`:324-333`), and
+   `docs/architecture.md:217-219` / `config/schema.py:127-129` / `configs/default.toml:33-36` still say a
+   tokenizer "does not exist". Both are false: three adapters are registered, `load_model` is public, and the
+   subword tokenizer has a versioned serialisation with a fingerprint. The residual truth is that the *default*
+   adapter is still the double and no trained checkpoint produces useful text.
+3. **What is genuinely missing** (verified against the code, not assumed): no KV cache — `forward()` re-runs the
+   whole prefix per token; no `ignore_index`, so padding is unrepresentable and only dense packed blocks train;
+   no streaming anywhere; `GenerationParams` has no top-p, no stop sequences and no seed, and `top_k` is
+   stranded as a constructor argument the registry never passes; `GenerationResult` carries no token ids; no
+   chat/prompt template exists (the adapter joins message contents with `"\n"`, unversioned); no HTTP server
+   (no `fastapi|starlette|uvicorn|http.server` match anywhere); no experiment-level resume —
+   `resume_state_from` has no production caller; no tokens/s metric; `seed_study.RunOutcome.status` is a
+   two-value free string, so "ran / failed / hit the ceiling / converged / improved-loss-but-degenerate" is not
+   a recorded distinction; `generation_eval` is never invoked by a run, so no report has a generation section.
+4. **The LR schedule has warmup and nothing after it** (`nn_training._learning_rate`), and E2607's three runs
+   all selected the step ceiling. A decaying schedule is a first-class hypothesis for "the budget did not
+   finish", not a side effect to hope for.
+
+**Corrections owed by this unit, recorded here so they are not lost** (each lands in the workstream that
+resolves it, per the brief): the stale-model and stale-tokenizer claims above; `AGENTS.md:75-81` and `:180`
+("four records, E2601–E2604" — there are seven, and E2607's data is not self-authored);
+`docs/agent/CURRENT_STATE.md:77` (five records → seven), `:92` (142 → 147 source files), `:410` ("no training on
+an external corpus"), `:43`/`:65` (`benchmark grounded` missing); `KNOWN_ISSUES.md:30` (K-001 narrowing),
+`:88-89` (K-002 lists implemented components as absent), `:171` (142 → 147); `README.md:23`/`:25`/`:29-30`/
+`:129-130`/`:185` (record statuses, test counts, "one author's prose", 11 → 12 commands, ADR-0036 missing);
+`docs/roadmap.md:144-146` (test counts), `:214-218` (first two "next" steps are measured); `docs/training.md:7`
+and `:275` (E2606/E2607 are measured, not "running"), `:42` (stage M0 "In progress");
+`docs/evaluation.md:205-208` and `:332-335` (error bars now exist; `1.8657` is the best of five draws and must
+be quoted with the mean); `docs/research/README.md:42`/`:59`/`:61-62`; `docs/README.md:54`;
+`docs/internal/experiments/README.md:1-3`; `docs/research/next-model-experiment.md:131-144`/`:195` (future tense
+over completed studies); `ADR-0033.md:32-34` and `ADR-0036.md:12` (13 → 19 drifted documents);
+`docs/architecture.md:174`/`:178`/`:225-247`/`:315` (model boundary under-documents `load_model`, `sample`,
+`score`, seed study; "no prompt template" is now a rule to honour rather than a fact); and
+`experiments/E2606/record.md:197` (E2605 selected step 1,380, not 1,440 — historical records otherwise stay
+immutable, this one is a transcription error against E2605's own table).
+
+**Definition of done.** Nodes B–L delivered as tested code, node G executed on verified licensed data with its
+preregistration written before the run, node M's CI matrix landed and its remote result read from the runner,
+node N's vertical slice reproduced from a clean installed environment, node O's release level awarded on
+evidence only, nodes P–Q shipped as model card / data card / recipe / roadmap, and node R's full gate set green
+in every applicable matrix with the pushed head and CI state independently verified. A checkpoint's weights must
+originate from random initialization; no pretrained weights, hosted model API or remote inference provider may
+stand in for the trained model. If generations still loop, Level 3 is recorded as **not achieved** and the
+loops stay visible.
+
+## Mission ledger — Chakaso Scratch LM Foundation v0.1 (nodes A–R)
+
+| Node | Task | Depends on | Owns | Status | Evidence / commit | Tests |
+| --- | --- | --- | --- | --- | --- | --- |
+| A | Live audit, reconcile, environment measurement | — | `docs/agent/ACTIVE_TASK.md` | in_progress | this section; `gh auth status` scope list; OS memory/disk reads | baseline gates re-run below |
+| B | Model artifact release contract | A | `models/artifact.py` (new), `training/nn_checkpoint.py` | pending | — | — |
+| C | Measured compute budget and architecture decision | A | `experiments/E2608/`, ADR-0037 | pending | — | — |
+| D | Data pipeline and a broader licensed corpus | A | `training/source_corpus.py`, `training/dataset_card.py` | pending | — | — |
+| E | Tokenizer and model path (special tokens, KV cache, `ignore_index`) | B, D | `training/subword.py`, `training/transformer.py` | pending | — | — |
+| F | Reusable training engine (config, decay, accumulation, resume, throughput) | E | `training/nn_training.py`, `configs/*.toml` | pending | — | — |
+| G | Reference model trained from random initialization | F | `experiments/E2608/` | pending | — | — |
+| H | Checkpoint lifecycle: verify, load, resume, export | B, G | `models/`, `training/nn_checkpoint.py` | pending | — | — |
+| I | Inference runtime and decoding controls | B, H | `models/base.py`, `models/nntransformer.py` | pending | — | — |
+| J | Streaming and versioned prompt formatting | I | `models/formatting.py` (new) | pending | — | — |
+| K | Optional local HTTP serving adapter | I, J | `serve/` (new) | pending | — | — |
+| L | Generation-quality evaluation wired into a run | G, I | `training/generation_eval.py`, report shape | pending | — | — |
+| M | CI dependency matrix (`[train]`, `[nn]`, serving) | K | `.github/workflows/ci.yml` | pending | — | — |
+| N | End-to-end vertical slice from a clean environment | G, K | integration tests | pending | — | — |
+| O | Release gate level awarded on evidence | N, L | `MODEL_CARD.md` | pending | — | — |
+| P | Packaging, model card, data card, recipe, release note | O | `docs/`, `CHANGELOG.md` | pending | — | — |
+| Q | Handoff roadmap, phases 0–6 | P | `docs/roadmap.md` | pending | — | — |
+| R | Final gates, history review, push, remote verification | A–Q | — | pending | — | — |
+
+A node moves to complete only when its acceptance criteria are evidenced here. Nothing in this table is marked
+from the existence of a file.
+
+## Previous unit (delivered): nodes A–N — reproducibility, multi-seed validation and generalization (P33–P36)
 
 **Goal.** The reproducibility arc is built, measured and recorded: E2605 is reproducible from a corpus
 recovered out of git history and its five-seed study (E2606) is measured. What remains in this unit is the last

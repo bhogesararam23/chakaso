@@ -72,13 +72,16 @@ are in [`docs/README.md`](docs/README.md). A change that implements something
 updates that status in the same commit.
 
 **Do not invent numbers, datasets, citations or experiments.** If it was not
-measured, it is not written down. The only measured results in this repository are
+measured, it is not written down. The measured results in this repository are
 executed comparisons over small synthetic or self-authored development fixtures — the retrieval-strategy
 measurement E-001, E2601 and E2602 (a tiny character LM whose held-out next-token loss beats uniform and
 unigram baselines, recorded in
-[`experiments/E2601/record.md`](experiments/E2601/record.md)), and E2603/E2604 (retrieval and
-evidence-sufficiency measurements over a self-authored workload). All of them check the shape of a
-mechanism or a learning loop on a hand-built toy, never meaning on a real workload. There
+[`experiments/E2601/record.md`](experiments/E2601/record.md)), E2603/E2604 (retrieval and
+evidence-sufficiency measurements over a self-authored workload), and E2605/E2606/E2607 (a 643,840-parameter
+subword Transformer trained from random initialization: E2605 on this repository's own pinned prose, E2606 the
+same protocol across five pre-declared seeds, reproducing E2605 exactly, and E2607 on an externally licensed
+Project Gutenberg corpus). All of them check the shape of a mechanism or a learning loop on hand-built or
+public-domain text, never meaning on a real workload. There
 is no measurement of a real workload and no result from any *useful* language model —
 the trained artifact is an experiment, not a deployed model — and it should stay obvious
 that this is true. Implementing a training loop is not a measured run; a measured run on a toy is not
@@ -177,7 +180,7 @@ docs/agent/         this directory's context: current state, conventions, active
 docs/internal/      engineering notes that are not for external readers
 ```
 
-Experiment records live at `experiments/<experiment-id>/record.md`; four are committed (E2601–E2604) and
+Experiment records live at `experiments/<experiment-id>/record.md`; seven are committed (E2601–E2607) and
 they are the project's only measured results. The format is defined in
 [`docs/internal/experiments/README.md`](docs/internal/experiments/README.md), which requires the record to
 be written **before** the run. Generated artifacts — corpora, checkpoints, logs — belong in `data/` and are
