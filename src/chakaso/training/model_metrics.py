@@ -51,7 +51,8 @@ class IdentifierDecoder(Protocol):
     score two different tokenizations, which is the whole point of reporting bits per character.
     """
 
-    document_end_id: int
+    @property
+    def document_end_id(self) -> int: ...
 
     def decode(self, identifiers: Sequence[int]) -> str: ...
 

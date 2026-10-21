@@ -20,13 +20,27 @@ from chakaso.models.base import LanguageModel
 from chakaso.models.deterministic import DETERMINISTIC_MODEL_ID, DeterministicModel
 from chakaso.models.errors import ModelError, UnknownModelError
 
-__all__ = ["ModelFactory", "ModelRegistry", "create_model", "default_registry"]
+__all__ = [
+    "SUBWORD_TRANSFORMER_MODEL_ID",
+    "TRAINED_CHAR_MODEL_ID",
+    "ModelFactory",
+    "ModelRegistry",
+    "create_adapter",
+    "create_model",
+    "default_registry",
+]
 
 #: The registry name for the trained character adapter (P25, ADR-0030). It mirrors
 #: ``chakaso.models.trainedchar.TRAINED_CHAR_MODEL_ID``; a test asserts the two agree, and it is kept
 #: as a literal here because the module it names is imported lazily (it needs the optional `[train]`
 #: dependency), and this registry must stay importable on a dependency-free install.
 TRAINED_CHAR_MODEL_ID = "trained_char"
+
+#: The registry name for the trained subword-Transformer adapter (P31, ADR-0034/ADR-0035). Mirrors
+#: ``chakaso.models.nntransformer.SUBWORD_TRANSFORMER_MODEL_ID``; a test asserts the two agree, and the
+#: value is written here because the module it names is imported lazily and this registry must stay
+#: importable on a dependency-free install.
+SUBWORD_TRANSFORMER_MODEL_ID = "subword_transformer"
 
 #: A factory takes the model section of the resolved configuration and returns a
 #: ready model. It takes configuration rather than nothing so that adding an
@@ -99,6 +113,21 @@ def _build_deterministic(_config: ModelConfig) -> LanguageModel:
     return DeterministicModel()
 
 
+def _build_subword_transformer(config: ModelConfig) -> LanguageModel:
+    # Imported lazily for the same reason as the character adapter: selecting this adapter requires the
+    # optional [nn] extra, and a missing dependency is a named failure, never a fall back to the double.
+    try:
+        from chakaso.models.nntransformer import SubwordTransformerModel
+    except ImportError as exc:  # pragma: no cover - depends on the environment lacking torch
+        message = (
+            "the 'subword_transformer' adapter requires the optional [nn] extra "
+            '(pip install -e ".[dev,train,nn]"), which is not installed in this environment'
+        )
+        raise ModelError(message) from exc
+    model: LanguageModel = SubwordTransformerModel(checkpoint_path=config.checkpoint_path)
+    return model
+
+
 def _build_trained_char(config: ModelConfig) -> LanguageModel:
     # Imported lazily so that a dependency-free install never pulls numpy by reading the registry.
     # Only selecting this adapter requires the optional [train] extra; a missing dependency is a
@@ -131,6 +160,7 @@ def default_registry() -> ModelRegistry:
         {
             DETERMINISTIC_MODEL_ID: _build_deterministic,
             TRAINED_CHAR_MODEL_ID: _build_trained_char,
+            SUBWORD_TRANSFORMER_MODEL_ID: _build_subword_transformer,
         }
     )
 
@@ -143,3 +173,39 @@ def create_model(config: Config, *, registry: ModelRegistry | None = None) -> La
     """
     target = registry if registry is not None else default_registry()
     return target.create(config.model)
+
+
+def create_adapter(
+    name: str,
+    *,
+    checkpoint_path: str,
+    registry: ModelRegistry | None = None,
+) -> LanguageModel:
+    """Build a named adapter from a checkpoint path, for a caller with no resolved ``Config``.
+
+    This stays inside the registry because ADR-0002 requires that the mapping from a name to a concrete
+    implementation exist in exactly one place: a Python user loading a checkpoint still goes through the
+    same selection point the application does, and cannot accidentally grow a second one.
+
+    The other ``ModelConfig`` fields describe how the *runtime* uses a model — how much of a conversation it
+    projects and what it generates by default. A direct checkpoint load has no conversation state, so those
+    take the boundary's own defaults (:class:`chakaso.models.GenerationParams`) with a single turn of
+    context; generation parameters for a call are supplied per call, which is what makes them meaningful.
+
+    Raises:
+        UnknownModelError: nothing is registered under ``name``.
+        ModelError: the adapter needs a dependency or an artifact this environment cannot provide.
+    """
+    from chakaso.config.schema import ModelConfig
+    from chakaso.models.base import GenerationParams
+
+    defaults = GenerationParams()
+    config = ModelConfig(
+        adapter=name,
+        max_new_tokens=defaults.max_new_tokens,
+        temperature=defaults.temperature,
+        max_context_turns=1,
+        checkpoint_path=checkpoint_path,
+    )
+    target = registry if registry is not None else default_registry()
+    return target.create(config)
