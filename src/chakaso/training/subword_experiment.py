@@ -34,7 +34,7 @@ import numpy as np
 import torch
 
 from chakaso.core.atomic import write_text_atomically
-from chakaso.core.hashing import sha256_hex
+from chakaso.core.hashing import join_parts, sha256_hex
 from chakaso.training.baselines import UnigramBaseline, uniform_next_token_loss
 from chakaso.training.config import TrainingConfig
 from chakaso.training.data import (
@@ -182,6 +182,10 @@ class ExperimentPlan:
     experiment_id: str = EXPERIMENT_ID
     corpus: CorpusSpec = REPO_TEXT_CORPUS
     vocab_size: int = 1024
+    #: The frequency floor the byte-pair merge search uses. It is a plan field rather than a constant
+    #: because the tokenizer cache is keyed by it: a run that changed the floor while naming the same
+    #: vocabulary size would otherwise be able to read a tokenizer fitted under different rules.
+    tokenizer_min_frequency: int = 3
     context_length: int = 128
     batch_size: int = 32
     d_model: int = 128
@@ -258,6 +262,9 @@ class ExperimentPlan:
             raise ValueError(message)
         if isinstance(self.decay_to, bool) or not 0.0 <= self.decay_to < 1.0:
             message = f"decay_to must be in [0, 1), got {self.decay_to!r}"
+            raise ValueError(message)
+        if isinstance(self.tokenizer_min_frequency, bool) or self.tokenizer_min_frequency < 1:
+            message = f"tokenizer_min_frequency must be >= 1, got {self.tokenizer_min_frequency!r}"
             raise ValueError(message)
         if isinstance(self.grad_accum_steps, bool) or self.grad_accum_steps < 1:
             message = f"grad_accum_steps must be >= 1, got {self.grad_accum_steps!r}"
@@ -338,6 +345,10 @@ class PreparedCorpus:
     timings: dict[str, float]
     corpus_origin: str = "working tree"
     snapshot: CorpusSnapshot | None = None
+    #: Whether this run fitted the tokenizer or reused the one an earlier run fitted from identical inputs.
+    #: Recorded because a seed study pays the tokenizer's cost once rather than once per seed, and a reader
+    #: of a single run's report should be able to tell which happened.
+    tokenizer_reused: bool = False
 
     @property
     def tokens(self) -> dict[str, int]:
@@ -474,6 +485,69 @@ def _resolve_manifest(
     return manifest, "working tree", read_snapshot(snapshot_path)
 
 
+def _tokenizer_identity(
+    manifest: CorpusManifest, split: UnitSplit, *, target_size: int, min_frequency: int
+) -> str:
+    """The digest a fitted tokenizer is cached under: everything its rule sequence can depend on.
+
+    A byte-pair vocabulary is a pure function of the training text, the target size and the frequency floor,
+    and the training text is a pure function of the pinned corpus and the split. Naming all four means a
+    reused file cannot be a tokenizer fitted on different data — which is the one mistake that would make two
+    runs in one directory incomparable while both reports looked self-consistent.
+    """
+    payload = join_parts(
+        manifest.fingerprint,
+        split.fingerprint,
+        str(target_size),
+        str(min_frequency),
+    )
+    return sha256_hex(payload)[:16]
+
+
+def _fit_or_reuse_vocabulary(
+    plan: ExperimentPlan, work: Path, manifest: CorpusManifest, split: UnitSplit
+) -> tuple[SubwordVocabulary, bool]:
+    """Fit the subword vocabulary on the training side, or reuse the one already fitted from these inputs.
+
+    Returns:
+        The vocabulary and whether it came off disk.
+
+    Raises:
+        CorpusError: the cached file exists but is not the vocabulary its name claims.
+    """
+    identity = _tokenizer_identity(
+        manifest,
+        split,
+        target_size=plan.vocab_size,
+        min_frequency=plan.tokenizer_min_frequency,
+    )
+    path = work / f"{manifest.name}-tokenizer-{identity}.json"
+    if path.is_file():
+        # SubwordVocabulary.load re-checks the file's own checksum and merge-table invariants, so a cached
+        # tokenizer that was edited or truncated is refused here rather than trusted because of its name.
+        stored = SubwordVocabulary.load(path)
+        if stored.size != plan.vocab_size:
+            message = (
+                f"cached tokenizer {str(path)!r} holds {stored.size} identifiers, not the "
+                f"{plan.vocab_size} this plan declares"
+            )
+            raise CorpusError(message)
+        if stored.min_frequency != plan.tokenizer_min_frequency:
+            message = (
+                f"cached tokenizer {str(path)!r} was fitted at min_frequency "
+                f"{stored.min_frequency}, this plan declares {plan.tokenizer_min_frequency}"
+            )
+            raise CorpusError(message)
+        return stored, True
+    fitted = train_subword_vocabulary(
+        (unit.text for unit in split.train),
+        target_size=plan.vocab_size,
+        min_frequency=plan.tokenizer_min_frequency,
+    )
+    fitted.save(path)
+    return fitted, False
+
+
 def prepare_corpus(plan: ExperimentPlan) -> PreparedCorpus:
     """Pin the corpus, split it once by document, and train both tokenizations on the training side only.
 
@@ -506,10 +580,7 @@ def prepare_corpus(plan: ExperimentPlan) -> PreparedCorpus:
         test_fraction=_TEST_FRACTION,
         seed=plan.effective_split_seed,
     )
-    vocabulary = train_subword_vocabulary(
-        (unit.text for unit in split.train), target_size=plan.vocab_size, min_frequency=3
-    )
-    vocabulary.save(work / f"{manifest.name}-tokenizer.json")
+    vocabulary, tokenizer_reused = _fit_or_reuse_vocabulary(plan, work, manifest, split)
     char_vocabulary = CharVocabulary(tuple(unit.text for unit in split.train))
 
     # One window per character position of every side: on the repository's own 780 KB that is affordable,
@@ -538,6 +609,7 @@ def prepare_corpus(plan: ExperimentPlan) -> PreparedCorpus:
         timings={"prepare_seconds": round(time.perf_counter() - started, 2)},
         corpus_origin=origin,
         snapshot=snapshot,
+        tokenizer_reused=tokenizer_reused,
     )
 
 
@@ -859,6 +931,7 @@ def run_experiment(plan: ExperimentPlan, *, verbose: bool = False) -> dict[str, 
             "merges": prepared.vocabulary.merge_count,
             "fingerprint": prepared.vocabulary.fingerprint,
             "min_frequency": prepared.vocabulary.min_frequency,
+            "reused_from_cache": prepared.tokenizer_reused,
             "tokens_per_side": prepared.tokens,
             "test_characters_decoded": len(prepared.vocabulary.decode(targets)),
             "characters_per_token_test": round(

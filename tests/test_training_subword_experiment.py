@@ -23,7 +23,12 @@ pytest.importorskip("torch")
 pytest.importorskip("numpy")
 
 from chakaso.core.hashing import sha256_hex
-from chakaso.training.errors import CheckpointError, CorpusDriftError, CorpusError
+from chakaso.training.errors import (
+    CheckpointError,
+    CorpusDriftError,
+    CorpusError,
+    CorruptedCorpusArtifactError,
+)
 from chakaso.training.nn_training import TrainingScheduleError
 from chakaso.training.subword_experiment import (
     CorpusSpec,
@@ -122,7 +127,13 @@ def test_prepare_corpus_pins_documents_and_trains_both_tokenizations(tmp_path: P
     assert prepared.tokens["train"] > 0
     assert prepared.char_vocabulary.size > 1
     assert (tmp_path / "work" / "chakaso-repo-text-v1-manifest.json").is_file()
-    assert (tmp_path / "work" / "chakaso-repo-text-v1-tokenizer.json").is_file()
+    # The tokenizer is cached under the identity of the inputs it was fitted from, so a reuse can never be
+    # a tokenizer fitted on different data.
+    cached = list((tmp_path / "work").glob("chakaso-repo-text-v1-tokenizer-*.json"))
+    assert len(cached) == 1
+    identity = cached[0].stem.rsplit("-", 1)[1]
+    assert len(identity) == 16 and all(character in "0123456789abcdef" for character in identity)
+    assert not prepared.tokenizer_reused
 
 
 def test_the_document_split_sides_are_disjoint_for_both_tokenizations(tmp_path: Path) -> None:
@@ -334,13 +345,13 @@ def test_a_run_names_its_artifacts_after_its_experiment_and_its_corpus(tmp_path:
     written = sorted(path.name for path in (tmp_path / "work").iterdir())
     # The resumable file carries the family in its name, so a checkpoint written by one architecture can
     # never be picked up as the resume point of the other by a directory convention alone.
-    assert written == [
+    assert [name for name in written if not name.startswith("harbour-text-tokenizer-")] == [
         "E2699-transformer-resumable.pt",
         "E2699-transformer.pt",
         "harbour-text-manifest.json",
         "harbour-text-snapshot.json",
-        "harbour-text-tokenizer.json",
     ]
+    assert len([name for name in written if name.startswith("harbour-text-tokenizer-")]) == 1
     assert report["corpus"]["snapshot"]["acquisition"] == {"method": "chakaso-working-tree"}
 
 
@@ -412,10 +423,10 @@ def test_a_snapshot_of_another_corpus_is_recorded_under_its_own_name(tmp_path: P
 
     assert prepared.manifest.name == "harbour-text"
     written = sorted(path.name for path in work.iterdir())
-    assert written == [
+    assert [name for name in written if not name.startswith("harbour-text-tokenizer-")] == [
         "harbour-text-manifest.json",
-        "harbour-text-tokenizer.json",
     ]
+    assert len([name for name in written if name.startswith("harbour-text-tokenizer-")]) == 1
 
 
 def test_a_second_run_into_the_same_directory_is_refused(tmp_path: Path) -> None:
@@ -544,3 +555,44 @@ def test_a_verified_resume_continues_from_the_step_it_stopped_at(tmp_path: Path)
     assert curve[0]["step"] == 8
     assert curve[-1]["step"] == 12
     assert report["transformer"]["budget"]["records"] == len(curve)
+
+
+def test_a_second_run_reuses_the_tokenizer_a_previous_run_fitted(tmp_path: Path) -> None:
+    root = _root(tmp_path)
+    work = tmp_path / "work-tokenizer-cache"
+
+    first = prepare_corpus(_plan(root, work))
+    second = prepare_corpus(_plan(root, work))
+
+    assert not first.tokenizer_reused
+    assert second.tokenizer_reused
+    assert second.vocabulary.fingerprint == first.vocabulary.fingerprint
+    assert len(list(work.glob("*-tokenizer-*.json"))) == 1
+
+
+def test_a_different_split_seed_fits_a_new_tokenizer_rather_than_reusing_one(
+    tmp_path: Path,
+) -> None:
+    root = _root(tmp_path)
+    work = tmp_path / "work-tokenizer-seeds"
+    prepare_corpus(_plan(root, work))
+
+    other = prepare_corpus(_plan(root, work, split_seed=11))
+
+    assert not other.tokenizer_reused
+    assert len(list(work.glob("*-tokenizer-*.json"))) == 2
+
+
+def test_a_tampered_cached_tokenizer_is_refused_rather_than_trusted(tmp_path: Path) -> None:
+    # The cache is keyed by identity, so a plan asking for a different size simply fits a new tokenizer.
+    # The failure worth guarding is a file whose bytes no longer match its own record: that is refused.
+    root = _root(tmp_path)
+    work = tmp_path / "work-tokenizer-tamper"
+    prepare_corpus(_plan(root, work))
+    cached = next(iter(work.glob("*-tokenizer-*.json")))
+    document = json.loads(cached.read_text(encoding="utf-8"))
+    document["merges"] = document["merges"][:2]
+    cached.write_text(json.dumps(document), encoding="utf-8")
+
+    with pytest.raises(CorruptedCorpusArtifactError, match="checksum"):
+        prepare_corpus(_plan(root, work))
