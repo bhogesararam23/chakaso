@@ -21,6 +21,7 @@ from chakaso.training.generation_eval import (
     GenerationProbe,
     detect_loop,
     evaluate_generation,
+    longest_periodic_run,
     longest_repeated_block,
     ngram_repetition_ratio,
     summarise_generation_evaluation,
@@ -89,6 +90,40 @@ def test_a_repeated_phrase_inside_varied_text_is_not_reported_as_a_loop() -> Non
     assert (
         longest_repeated_block(text)[1] >= 2
     )  # the repetition is real, and it is still not a loop
+
+
+def test_the_periodic_run_finds_a_cycle_in_the_middle_that_the_tail_rule_misses() -> None:
+    """Measured on E2605's own output, which reports no tail loop and is nonetheless one."""
+    text = "grounded grounded grounded and then a heading ## Consequences"
+
+    assert detect_loop(text).looping is False
+    assert longest_periodic_run(text) == ("grounded ", 3)
+
+
+def test_the_periodic_run_reports_no_cycle_as_one_repeat_of_nothing() -> None:
+    assert longest_periodic_run("solo text here") == ("", 1)
+    assert longest_periodic_run("") == ("", 1)
+    assert longest_periodic_run("aaaa") == ("a", 4)
+    assert longest_periodic_run("abcabcabc") == ("abc", 3)
+
+
+def test_the_periodic_run_refuses_a_non_positive_period() -> None:
+    with pytest.raises(ValueError, match="min_period must be at least 1"):
+        longest_periodic_run("aaaa", min_period=0)
+
+
+def test_the_suite_records_both_the_cycle_and_the_tail_verdict() -> None:
+    model = _ScriptedModel({"p": "grounded grounded grounded tail"})
+
+    report = evaluate_generation(
+        model, probes=(GenerationProbe(label="mid", prompt="p", max_new_tokens=64),), edge_probes=()
+    )
+
+    sample = report["samples"][0]
+    assert sample["longest_periodic_run"] == "grounded "
+    assert sample["longest_periodic_run_repeats"] == 3
+    assert sample["loop"]["looping"] is False
+    assert report["automated_summary"]["periodic_run_samples"] == ["mid"]
 
 
 def test_loop_detection_needs_two_repeats_and_a_positive_period() -> None:

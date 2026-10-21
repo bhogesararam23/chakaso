@@ -35,6 +35,7 @@ __all__ = [
     "GenerationProbe",
     "detect_loop",
     "evaluate_generation",
+    "longest_periodic_run",
     "longest_repeated_block",
     "ngram_repetition_ratio",
     "summarise_generation_evaluation",
@@ -236,6 +237,36 @@ def detect_loop(text: str, *, min_period: int = 1, min_repeats: int = 3) -> Loop
     return LoopFinding(looping=False, period=0, block="", repeats=0)
 
 
+def longest_periodic_run(text: str, *, min_period: int = 1) -> tuple[str, int]:
+    """The longest block that repeats consecutively anywhere in ``text``, and how many times it repeats.
+
+    This exists because the tail rule below was measured against E2605's own outputs and missed the case it
+    is supposed to catch: a sample whose middle is ``grounded grounded grounded`` and whose end is a heading
+    is repetitive, and reports no tail loop. The two numbers answer different questions — *did the decode
+    settle into a cycle* (tail) versus *is there a cycle in this text at all* (here) — so both are recorded.
+
+    One occurrence counts as a repeat of 1, so the pair ``("", 1)`` means no consecutive repetition of any
+    block at all.
+    """
+    if min_period < 1:
+        message = f"min_period must be at least 1, got {min_period}"
+        raise ValueError(message)
+    best_block, best_repeats = "", 1
+    for start in range(len(text)):
+        for period in range(min_period, (len(text) - start) // 2 + 1):
+            block = text[start : start + period]
+            repeats = 1
+            cursor = start + period
+            while text[cursor : cursor + period] == block:
+                repeats += 1
+                cursor += period
+            if repeats < 2:
+                continue  # one occurrence is not a cycle, and the longest such block means nothing
+            if repeats > best_repeats or (repeats == best_repeats and len(block) > len(best_block)):
+                best_block, best_repeats = block, repeats
+    return best_block, best_repeats
+
+
 def _run_probe(
     model: LanguageModel, probe: GenerationProbe, *, sampler: Callable[..., Any] | None = None
 ) -> dict[str, Any]:
@@ -259,6 +290,7 @@ def _run_probe(
         return {**record, "status": "raised", "error": f"{type(exc).__name__}: {exc}"}
     text = result.text
     block, times = longest_repeated_block(text)
+    run_block, run_repeats = longest_periodic_run(text)
     return {
         **record,
         "status": "generated",
@@ -271,6 +303,8 @@ def _run_probe(
         "trigram_repetition": ngram_repetition_ratio(text, 3),
         "longest_repeated_block": block,
         "longest_repeated_block_count": times,
+        "longest_periodic_run": run_block,
+        "longest_periodic_run_repeats": run_repeats,
         "loop": detect_loop(text).as_dict(),
         "empty_output": text == "",
     }
@@ -325,6 +359,11 @@ def evaluate_generation(
             "samples_generated": len(generated),
             "samples_raised": sum(1 for sample in all_samples if sample["status"] == "raised"),
             "looping_samples": [sample["label"] for sample in loops],
+            "periodic_run_samples": [
+                sample["label"]
+                for sample in generated
+                if sample["longest_periodic_run_repeats"] >= 3
+            ],
             "looping_fraction": round(len(loops) / len(generated), 4) if generated else None,
             "mean_bigram_repetition": round(sum(ratios) / len(ratios), 6) if ratios else None,
             "empty_outputs": [
@@ -339,15 +378,22 @@ def evaluate_generation(
 
 
 def summarise_generation_evaluation(report: dict[str, Any]) -> str:
-    """One line: how many samples looped, and what the repetition statistics averaged."""
+    """One line: how many samples loop, how many repeat a cycle anywhere, and what repetition averaged.
+
+    Both loop numbers are printed because they disagree, and the disagreement is the finding: a sample can
+    repeat a block eight times in its middle and still end on something else, which the tail rule reports as
+    no loop and the whole-output rule reports as a cycle.
+    """
     summary = report["automated_summary"]
     looping = summary["looping_samples"]
+    periodic = summary.get("periodic_run_samples", [])
     fraction = summary["looping_fraction"]
     mean = summary["mean_bigram_repetition"]
     return (
         f"{summary['samples_generated']} samples, "
-        f"{len(looping)} looping"
+        f"{len(looping)} tail-looping"
         f"{f' ({fraction:.0%})' if fraction is not None else ''}, "
+        f"{len(periodic)} with a periodic run of 3 or more, "
         f"mean bigram repetition {mean if mean is not None else 'undefined'}, "
         f"{len(summary['empty_outputs'])} empty"
     )
