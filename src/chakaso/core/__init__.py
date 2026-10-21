@@ -1,4 +1,4 @@
-"""Shared primitives: identifiers, content hashing, terminal-safe rendering and the error base.
+"""Shared primitives: identifiers, content hashing, staged writes, terminal-safe rendering and the error base.
 
 Modules live here when they are used by more than one component and belong to no
 single one. Everything in :mod:`chakaso.core` is standard-library only.
@@ -6,6 +6,7 @@ single one. Everything in :mod:`chakaso.core` is standard-library only.
 
 from __future__ import annotations
 
+from chakaso.core.atomic import staged_write, write_text_atomically
 from chakaso.core.errors import ChakasoError, IdentifierError
 from chakaso.core.hashing import SHA256_HEX_LENGTH, sha256_hex, short_sha256_hex
 from chakaso.core.identifiers import (
@@ -33,4 +34,6 @@ __all__ = [
     "safe_for_terminal",
     "sha256_hex",
     "short_sha256_hex",
+    "staged_write",
+    "write_text_atomically",
 ]

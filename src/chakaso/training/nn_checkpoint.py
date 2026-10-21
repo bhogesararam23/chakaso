@@ -34,6 +34,7 @@ from typing import Any
 
 import torch
 
+from chakaso.core.atomic import staged_write
 from chakaso.training.errors import (
     CheckpointError,
     CorruptedCheckpointError,
@@ -183,19 +184,20 @@ def save_artifact(artifact: ModelArtifact, path: Path, *, allow_overwrite: bool 
             "choose a distinct path so the earlier run stays recoverable"
         )
         raise CheckpointError(message)
-    target.parent.mkdir(parents=True, exist_ok=True)
-    torch.save(
-        {
-            "schema_version": _SCHEMA_VERSION,
-            "metadata": artifact.metadata_document(),
-            "checksum": artifact.checksum(),
-            "tensors": {
-                name: tensor.detach().cpu().contiguous() for name, tensor in artifact.state.items()
+    with staged_write(target) as staged:
+        torch.save(
+            {
+                "schema_version": _SCHEMA_VERSION,
+                "metadata": artifact.metadata_document(),
+                "checksum": artifact.checksum(),
+                "tensors": {
+                    name: tensor.detach().cpu().contiguous()
+                    for name, tensor in artifact.state.items()
+                },
+                "optimizer": artifact.optimizer_state,
             },
-            "optimizer": artifact.optimizer_state,
-        },
-        target,
-    )
+            staged,
+        )
 
 
 def load_artifact(path: Path) -> ModelArtifact:

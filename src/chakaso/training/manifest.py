@@ -29,13 +29,12 @@ from __future__ import annotations
 
 import fnmatch
 import json
-import os
-import tempfile
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass, field
 from pathlib import Path, PurePosixPath
 from typing import Any
 
+from chakaso.core.atomic import write_text_atomically
 from chakaso.core.hashing import is_sha256_hex, join_parts, sha256_hex
 from chakaso.training.data import TextUnit
 from chakaso.training.errors import (
@@ -539,11 +538,11 @@ def verify_corpus(manifest: CorpusManifest, root: Path) -> CorpusManifest:
 def _atomic_write_text(payload: str, target: Path, *, allow_overwrite: bool, label: str) -> None:
     """Write ``payload`` so a reader never sees half a file, and refuse to clobber unless told.
 
-    A temporary file in the destination's own directory plus ``os.replace`` is an all-or-nothing swap on
-    every platform this project runs on; a corpus artifact truncated by an interrupted write would
-    otherwise be indistinguishable from a corpus that was altered on purpose. The overwrite guard is
-    ADR-0035's rule applied to corpus artifacts: the file a measured run cites is not something a later run
-    gets to replace silently.
+    The swap is :func:`chakaso.core.atomic.write_text_atomically`, which also guarantees that the bytes on
+    disk are the characters the digest was computed over. The guard is ADR-0035's rule applied to corpus
+    artifacts: the file a measured run cites is not something a later run gets to replace silently, and a
+    corpus artifact truncated by an interrupted write would otherwise be indistinguishable from one that was
+    altered on purpose.
     """
     if target.exists() and not allow_overwrite:
         message = (
@@ -551,23 +550,7 @@ def _atomic_write_text(payload: str, target: Path, *, allow_overwrite: bool, lab
             "unless the caller passes allow_overwrite=True"
         )
         raise CorpusError(message)
-    target.parent.mkdir(parents=True, exist_ok=True)
-    descriptor, temporary = tempfile.mkstemp(
-        dir=target.parent, prefix=f".{target.name}.", suffix=".partial"
-    )
-    partial = Path(temporary)
-    try:
-        with os.fdopen(descriptor, "w", encoding="utf-8", newline="") as handle:
-            handle.write(payload)
-            handle.flush()
-            os.fsync(handle.fileno())
-        # newline="" above is what makes the file's bytes equal the string that was hashed. Written in text
-        # mode on Windows, an indented JSON payload would gain CRLF endings and its own checksum would no
-        # longer be verifiable from the bytes a reader holds.
-        partial.replace(target)
-    except BaseException:
-        partial.unlink(missing_ok=True)
-        raise
+    write_text_atomically(payload, target)
 
 
 def save_manifest(manifest: CorpusManifest, path: Path, *, allow_overwrite: bool = False) -> None:

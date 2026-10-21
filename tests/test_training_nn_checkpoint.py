@@ -126,6 +126,30 @@ def test_saving_creates_a_missing_parent_directory(tmp_path: Path) -> None:
     assert target.is_file()
 
 
+def test_an_interrupted_artifact_write_leaves_nothing_behind(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """A run that dies mid-save must not leave a file that reads like an artifact.
+
+    The artifact is what a record cites, and a half-written one is worse than a missing one: it has the
+    right name, the right extension and a plausible size, and only verification would expose it.
+    """
+    import torch
+
+    def _interrupt(*_ignored: object, **_also_ignored: object) -> None:
+        failure = "device out of space"
+        raise OSError(failure)
+
+    target = tmp_path / "artifact.pt"
+    monkeypatch.setattr(torch, "save", _interrupt)
+
+    with pytest.raises(OSError, match="out of space"):
+        save_artifact(_artifact(), target)
+
+    assert not target.exists()
+    assert [path.name for path in tmp_path.iterdir()] == []
+
+
 def test_an_artifact_reports_the_architectures_parameter_count() -> None:
     artifact = _artifact()
     model = artifact.to_model()
