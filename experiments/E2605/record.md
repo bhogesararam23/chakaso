@@ -283,10 +283,25 @@ Believed, at the strength the evidence supports:
    expected effect, because E2602 showed a point estimate of this kind moves by 0.18 nats (sample SD) across
    seeds on a far smaller problem. *(Certain.)*
 
+**Reproduction, and what it needs.** Re-preparing this corpus in this checkout now refuses: the pinned
+manifest is re-verified against the live tree (`verify_corpus`), and 13 of the 71 documents — including this
+record, which was part of the corpus in its pre-run form — have changed since the pin. That is the drift
+refusal doing its job: a saved result cannot be restated against text the model never saw. A fresh work
+directory re-pins the *current* text, which is a different corpus and therefore a different experiment, and
+it is exactly what a reader must not mistake for a reproduction. Closing the gap is a unit of work, not a
+flag: the driver must write a snapshot of the pinned text beside the manifest (`write_snapshot` exists and is
+tested, but the driver never called it), and `prepare_corpus` must accept a snapshot as its source.
+
 ## Follow-up
 
 The branch was fixed in advance and the first branch applies. In order:
 
+0. **Make a measured result reproducible after the repository moves on**: write the corpus snapshot beside the
+   manifest and let the preparation consume it, so a re-run can train on the pinned bytes rather than either
+   refusing or silently retargeting a newer corpus. The Reproducibility section above, written before the
+   run, said the committed manifest lets the same commit reprepare the same data "even after later
+   documentation edits" — the same *commit* does; a later one refuses or re-pins something else. That was
+   imprecise, and it is recorded rather than quietly corrected.
 1. **Reproduce E2605 across pre-declared seeds** (the E2602 discipline) so the bits-per-character gap
    carries a spread rather than being a point estimate.
 2. **An external corpus with a recorded licence**, prepared from a manifest that pins content digests, so
