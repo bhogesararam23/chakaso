@@ -131,7 +131,7 @@ class TransformerConfig:
         if missing:
             message = f"transformer configuration is missing fields: {missing}"
             raise ValueError(message)
-        return cls(**{key: values[key] for key in known if key in values})  # type: ignore[arg-type]
+        return cls(**{key: values[key] for key in known if key in values})
 
     @property
     def head_width(self) -> int:

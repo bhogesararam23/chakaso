@@ -205,16 +205,15 @@ class SubwordVocabulary:
     def _encode_piece(self, piece: str, ranks: dict[tuple[int, int], int]) -> tuple[int, ...]:
         symbols = list(piece.encode("utf-8"))
         while len(symbols) > 1:
-            best_pair: tuple[int, int] | None = None
-            best_rank: int | None = None
+            best: tuple[tuple[int, int], int] | None = None
             for index in range(len(symbols) - 1):
                 pair = (symbols[index], symbols[index + 1])
                 rank = ranks.get(pair)
-                if rank is not None and (best_rank is None or rank < best_rank):
-                    best_pair, best_rank = pair, rank
-            if best_pair is None:
+                if rank is not None and (best is None or rank < best[1]):
+                    best = (pair, rank)
+            if best is None:
                 break
-            symbols = self._apply(symbols, best_pair, FIRST_MERGED_ID + best_rank)
+            symbols = self._apply(symbols, best[0], FIRST_MERGED_ID + best[1])
         return tuple(symbols)
 
     @staticmethod
@@ -331,11 +330,8 @@ class SubwordVocabulary:
             raise CorpusError(message)
 
         try:
-            merges = tuple(
-                (int(pair[0]), int(pair[1]))
-                for pair in content["merges"]  # type: ignore[index]
-            )
-            declared_size = int(content["vocab_size"])  # type: ignore[arg-type]
+            merges = tuple((int(pair[0]), int(pair[1])) for pair in content["merges"])
+            declared_size = int(content["vocab_size"])
             min_frequency = int(content["min_frequency"])
         except (KeyError, TypeError, ValueError) as exc:
             message = f"subword vocabulary is missing or mis-typed a required field: {exc}"
