@@ -20,11 +20,15 @@ three-tier matrix ships as a tested document instead and the gap stays recorded 
 means a smaller gap there has two candidate causes — the data, or the under-scaled budget — and the record says
 so rather than picking after the fact.
 
-**Delivery record (2026-10-21).** The arc began with `HEAD` == `origin/main` == `35e40f7` and a clean tree, and
-ends at `1ded45b67e9fe0c6d534dd3655bcfddba3d8de14`, which `git rev-parse origin/main` confirms after a fetch.
-Thirty-two commits, all pushed normally: no force-push, no branch deleted, no published history rewritten, no
-hook bypassed, no `.github/workflows/*` file touched. Remote CI run `39632675804` completed **success** on
-Python 3.11, 3.12 and 3.13 — the three jobs of the dependency-free matrix, which is still the only matrix CI
+**Delivery record (2026-10-21).** The arc began with `HEAD` == `origin/main` == `35e40f7` and a clean tree. Its
+content head is `470bb5dc2253714b9bd9000063491174c135e21a`: thirty-three commits, the number `git rev-list
+--count 35e40f7..470bb5d` returns, all pushed normally — no force-push, no branch deleted, no published history
+rewritten, no hook bypassed, no `.github/workflows/*` file touched. One bookkeeping commit follows it, the
+correction that names `470bb5d` as the content head: an earlier version of this paragraph named `1ded45b` and
+counted thirty-two, which was true until the commit writing it landed. A ledger cannot be the last line of the
+delivery it counts, so read the range between the two endpoints rather than `HEAD`.
+Remote CI run `39633056951` completed **success** on Python 3.11, 3.12 and 3.13 for `470bb5d`, as did run
+`39632675804` for `1ded45b` — the three jobs of the dependency-free matrix, which is still the only matrix CI
 has (K-009), so the model path's two tiers remain locally verified and remotely untested. The commit count is
 what the work supported: a snapshot format, its recovery, the leakage tests, the driver and CLI changes, the
 seed study, the ingestion module, the generation suite, the atomic writer, two executed studies and the
@@ -53,10 +57,10 @@ its acceptance criteria are met and evidenced here.
 | H | E2607 executed | E, G | `experiments/E2607/` | measured | `b765d37` (preregistration, before the runs); the results land in this same commit's record | 3/3 seeds, mean 2.0176 ± 0.0118 bits/char against 3.2218 ± 0.0153 (gap 1.2042 vs 1.2143 internally); no run early-stopped, all selected the 2,400-step ceiling |
 | I | Generation and generalization evaluation | D | `training/generation_eval.py` | pushed | `3654f92`, `0ad1604` | 22 dependency-free tests; all five E2606 and all three E2607 checkpoints measured with raw samples retained (external prompts taken from held-out documents of that corpus) |
 | J | Correctness, security, resource discipline | B–G | `core/atomic.py`, `nn_checkpoint.py`, tests | pushed | `0a48ca8` (staged writes), `d2051ac` (environment block) | interrupted-write, corruption, path-traversal and revision-shape tests; wall clock recorded per run, peak memory not measurable from this shell (stated, not guessed) |
-| K | Documentation and research integrity | B–J | `README.md`, `docs/*`, `CHANGELOG.md`, `docs/agent/*` | in_progress | `53896b8`, `74a2a04`, `c3923e6`, `bbd350f`, `c0c9ae5`, `d057bfe` | link + status hygiene (23 tests) |
+| K | Documentation and research integrity | B–J | `README.md`, `docs/*`, `CHANGELOG.md`, `docs/agent/*` | pushed | `53896b8`, `74a2a04`, `c3923e6`, `bbd350f`, `c0c9ae5`, `d057bfe`, `1ded45b`, `470bb5d` | link + status hygiene (23 tests) |
 | L | Optional-dependency CI design | J | `docs/internal/engineering/optional-dependency-ci-matrix.md` | blocked (scope) | `9b47724` | 4 hygiene tests assert the matrix's parity with the documented commands and that the shipped workflow still covers only `.[dev]` |
 | M | Full regression and package verification | K | whole tree | validated | gates recorded below | three matrices, both mypy configs, wheel build, clean-interpreter import, checkpoint load from the installed copy |
-| N | Delivery | M | — | pushed | `1ded45b67e9fe0c6d534dd3655bcfddba3d8de14` == `origin/main` (fast-forward from `35e40f7`, 32 commits, nothing forced or rewritten); CI run `39632675804` completed **success** on Python 3.11, 3.12 and 3.13 | the dependency-free matrix only (K-009) |
+| N | Delivery | M | — | pushed | content head `470bb5dc2253714b9bd9000063491174c135e21a` (fast-forward from `35e40f7`, 33 commits, nothing forced or rewritten), followed by the one ledger correction this row is part of; CI run `39633056951` completed **success** on Python 3.11, 3.12 and 3.13 | the dependency-free matrix only (K-009) |
 
 **Gate and package record for row M (measured 2026-10-21 against this tree).**
 
