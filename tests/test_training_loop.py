@@ -94,6 +94,7 @@ def test_a_split_with_no_windows_is_refused_not_reported_as_zero_loss() -> None:
 # Mini-batch training: the shape a real corpus needs.
 # ---------------------------------------------------------------------------
 
+
 def _mini_config(**settings: object) -> TrainingConfig:
     values: dict[str, object] = {
         "context_size": 4,
@@ -142,9 +143,15 @@ def test_the_schedule_is_reproducible_and_the_shuffle_seed_changes_it() -> None:
     config = _mini_config()
     split = split_corpus(CORPUS.text, validation_fraction=0.2, seed=config.seed)
 
-    first = run_minibatch_training(split, config, batch_size=16, max_steps=40, eval_every=20, seed=11)
-    second = run_minibatch_training(split, config, batch_size=16, max_steps=40, eval_every=20, seed=11)
-    other = run_minibatch_training(split, config, batch_size=16, max_steps=40, eval_every=20, seed=12)
+    first = run_minibatch_training(
+        split, config, batch_size=16, max_steps=40, eval_every=20, seed=11
+    )
+    second = run_minibatch_training(
+        split, config, batch_size=16, max_steps=40, eval_every=20, seed=11
+    )
+    other = run_minibatch_training(
+        split, config, batch_size=16, max_steps=40, eval_every=20, seed=12
+    )
 
     assert [point.validation_loss for point in first.curve] == [
         point.validation_loss for point in second.curve
@@ -160,7 +167,9 @@ def test_a_full_batch_mini_run_reproduces_the_original_loop() -> None:
     # a step-ordering or seeding bug.
     config = _mini_config(steps=40, eval_every=10)
     split = split_corpus(CORPUS.text, validation_fraction=0.2, seed=config.seed)
-    train_windows = len(character_windows(split.train_text, fit_vocabulary(split), config.context_size))
+    train_windows = len(
+        character_windows(split.train_text, fit_vocabulary(split), config.context_size)
+    )
 
     full = run_training(split, config)
     as_mini = run_minibatch_training(
@@ -178,7 +187,9 @@ def test_an_impossible_batch_is_refused(batch_size: int) -> None:
     split = split_corpus(CORPUS.text, validation_fraction=0.2, seed=config.seed)
 
     with pytest.raises(ValueError, match="batch_size"):
-        run_minibatch_training(split, config, batch_size=batch_size, max_steps=5, eval_every=1, seed=1)
+        run_minibatch_training(
+            split, config, batch_size=batch_size, max_steps=5, eval_every=1, seed=1
+        )
 
 
 def test_an_impossible_schedule_or_seed_is_refused() -> None:
