@@ -60,7 +60,15 @@ acceptance criteria are met and recorded here). Statuses: `pending`, `ready`, `i
 | I | Model evaluation and baselines | E, G | `chakaso.training.model_metrics`, `nn_evaluation` | committed | `3fa9f12`, `625f08a` | 10 hand-computable metric tests + 7 evaluation tests |
 | J | Experiment E2605, measured | E–I | `experiments/E2605/` | committed | driver `0cbed79`, CLI `d878828`, pre-run record `9b8a478`, `bcdfa7d`, measured record `490ac1f`, reproduction note `00cbd78` | 11 driver tests; the run itself measured 513.6 s + 69.9 s + 13.2 s |
 | K | Subsystem reassessment + documentation | J | `README.md`, `docs/*`, `CHANGELOG.md`, `docs/agent/*` | committed | audit §11 re-reads the subsystem verdicts against the delivered tree; `760af7a`, `2470af6`, `691a319`, `adc9e77`, `cc816af`, `6fa370a`, `e59a8bd`, `e183a87` | hygiene 19 passed (links + status guards), and the dependency direction re-checked by grep |
-| L | Full regression, review, push | K | whole tree | validated (pending push) | gates recorded below | three matrices green, both mypy configurations green, wheel built and smoke-tested |
+| L | Full regression, review, push | K | whole tree | pushed | gates recorded below; delivered by `e183a87` and `9701bc7` | three matrices green, both mypy configurations green, wheel built and smoke-tested, CI green |
+
+**Delivery record (2026-10-21).** Every row above is `pushed`: the arc began at `eaee98d`, its first 36
+commits reach `9701bc7b841018245b09d35c257463df65bded17` on `origin/main`, and the commit that records this
+line follows it onto the same branch (it is the only commit that post-dates the SHA it names). Remote CI run
+`39544651281`
+completed success on Python 3.11, 3.12 and 3.13 — the dependency-free matrix, which is the only matrix CI
+has (K-009). No branch was forced, deleted or rewritten, and no `.github/workflows/*` file was touched.
+Next eligible node: **P33** (corpus snapshot reproducibility), then **P34** (E2606 across pre-declared seeds).
 
 **Brief-node mapping.** The delivery brief numbers its own nodes; this ledger's rows are the same work at a
 finer grain. Brief A (inspect the repository) → row A. Brief B (model-centred target architecture) → rows B
