@@ -2,7 +2,18 @@
 
 ## What you can actually run
 
-Several things, all local and offline: `chakaso chat`, a conversation shell that grounds each turn
+**A trained model, from Python.** `chakaso.models.load_model(path)` loads a checkpoint this project
+trained — the character toy of E2601, or the subword Transformer of E2605 — and `model.sample(...)`
+generates from it. That path needs the optional extras (`.[train]`, `.[nn]`); the base install stays
+dependency-free, and the trained model is a small one measured on this repository's own text, which its
+own metadata says out loud.
+
+**The training path itself**, as a library call and as a thin command: `chakaso.training.manifest`,
+`.subword`, `.packing`, `.transformer`, `.nn_training`, `.nn_evaluation` and
+`chakaso.training.subword_experiment.run_experiment`, or `python -m chakaso experiment model
+--work-dir ...` for the whole E2605 comparison.
+
+**Several local, offline commands:** `chakaso chat`, a conversation shell that grounds each turn
 through the retrieval-aware runtime; `chakaso retrieve`, which ingests named local documents and runs
 lexical retrieval over them (and `--source` restricts a query to named sources); `chakaso sources
 list|show` and `chakaso evidence show`, which inventory and inspect the in-memory corpus of sources
@@ -13,12 +24,13 @@ run the development benchmarks and print their reports; `chakaso experiment run 
 produces a reproducible experiment result; `chakaso storage check` / `chakaso storage migrate`, which
 inspect or initialize a durable answer store; and `chakaso config show` / `chakaso --version`.
 
-**There is no language model in Chakaso.** The only implementation of the model
-boundary is a deterministic development double, which returns fixed text describing
-the request it received. It does not answer questions, and the shell says so before
-it produces anything. The reply is evidence that the conversation boundary works —
-context projection, the model call, validation, evidence and citation recording —
-not an answer.
+**There is no useful language model, and no model in the default runtime path.** The default
+implementation of the model boundary is a deterministic development double that returns fixed text
+describing the request it received; it does not answer questions, and the shell says so before it produces
+anything. What the trained adapters do produce is measured: a 984-parameter character model (E2601/E2602)
+and a subword Transformer of roughly 0.6M parameters (E2605), both trained on this repository's own
+documentation on CPU. They beat the uniform and unigram baselines on held-out text and they do not
+constitute a capable assistant — that distinction is the point of the experiment records.
 
 Retrieval exists but is **local**: it reads the files you name, normalizes and chunks
 them, and ranks them for a query. `chakaso retrieve` ranks lexically (BM25 — shared words,
@@ -27,8 +39,10 @@ hybrid retriever, but their only embedding is a deterministic **non-semantic** f
 (ADR-0023/ADR-0024), so no strategy here retrieves by meaning. Below it, claim/citation/grounding evaluation, a correction decision rule with
 reassessment, an answer store (in-memory and, since ADR-0021, a durable SQLite backend that
 survives a process restart) and reproducible experiment records exist as tested code —
-but there is still no language model, no web fetching on any default path (the fetcher is opt-in),
-no automatic correction loop, no tokenizer and no training code. The benchmark and experiment
+but there is still no model that answers a grounded question, no web fetching on any default path (the
+fetcher is opt-in) and no automatic correction loop. Tokenizers (character and byte-pair subword), a
+document-pinned corpus, a Transformer, mini-batch training, checkpoints and held-out model metrics all
+exist and are tested; none of it has met a real workload (K-001). The benchmark and experiment
 commands report development metrics computed over small synthetic fixtures, not model-quality or
 real-world results. `chakaso config show` inspects configuration, and `chakaso --version` verifies an
 install.
@@ -42,7 +56,8 @@ the system does, and it will not describe anything that does not exist.
   library `tomllib`, which arrived in 3.11. See
   [`decisions/ADR-0006`](decisions/ADR-0006-toml-configuration.md).)
 - `git`
-- No GPU. Nothing in the test suite requires one, and CI does not have one.
+- No GPU. Nothing in the test suite requires one, and CI does not have one. Training the Transformer is
+  CPU-only work: the recorded E2605 run completes in under half an hour on 18 logical CPUs.
 
 ## Setup
 
@@ -72,7 +87,26 @@ python -m pip install -e ".[dev]"
 
 `.[dev]` installs the runtime dependencies plus the tools used by CI: `pytest`,
 `ruff` and `mypy`. Nothing else is required, and no dependency is a commercial
-inference or search provider.
+inference or search provider. The base install declares **no** runtime dependency at all.
+
+For the model path, add the optional tiers ([ADR-0030](decisions/ADR-0030-minimal-optional-training-dependency.md)
+for numpy, [ADR-0034](decisions/ADR-0034-optional-pytorch-model-extra.md) for torch):
+
+```bash
+python -m pip install -e ".[dev,train]"        # the character model and its tests
+python -m pip install -e ".[dev,train,nn]"     # + the Transformer path
+```
+
+On Linux, point pip at the CPU wheel index — PyPI's default `torch` wheel is not the CPU build:
+
+```bash
+python -m pip install "torch>=2.6,<3" --extra-index-url https://download.pytorch.org/whl/cpu
+python -m pip install -e ".[dev,train]"
+```
+
+`import chakaso`, `import chakaso.models` and `import chakaso.training` must keep working with neither
+extra installed; selecting a trained adapter is what requires one, and it fails by name instead of
+quietly substituting the double.
 
 ## Verify the install
 
@@ -89,6 +123,43 @@ caches under `.mypy_cache/`.
 
 The test suite is designed to run offline. If a test needs the network, it is
 marked and skipped by default.
+
+### The three matrices
+
+| Extras installed | What runs | What skips |
+| --- | --- | --- |
+| `.[dev]` (the CI matrix) | every dependency-free module, the application layer, the corpus manifest, both tokenizers, packing, the model metrics arithmetic | the numpy character model, the Transformer, its training, checkpoint and evaluation tests |
+| `.[dev,train]` | + the character model, its hand-derived gradients verified against finite differences, its checkpoint and held-out evaluation | the torch modules |
+| `.[dev,train,nn]` | everything, including the Transformer, mini-batch training, artifacts, evaluation and the inference adapter | nothing |
+
+The skips are deliberate and are the same gate on every machine: `pytest.importorskip`. Because this
+session's GitHub credential has no `workflow` scope, the `[train]` and `[nn]` jobs cannot be added to CI
+(K-009), so the extras tiers are run locally and the gap is recorded rather than claimed away.
+
+## Load and use a trained checkpoint
+
+```bash
+python -m pip install -e ".[dev,train,nn]"
+python -m chakaso experiment model --work-dir data/experiments/E2605   --write-report experiments/E2605/results.json     # trains; see experiments/E2605/record.md
+```
+
+```python
+from chakaso.models import load_model
+
+model = load_model("data/experiments/E2605/E2605-transformer.pt")
+result = model.sample("The retrieval layer owns", max_new_tokens=64)
+
+print(result.text)
+print(model.metadata.development_double)          # False: a trained checkpoint, stated
+print(model.artifact.corpus_fingerprint)          # which pinned corpus produced it
+print(model.score(open("docs/training.md").read()))  # held-out cross-entropy, in nats
+```
+
+`load_model` reads the artifact's own declared schema to choose the adapter and never falls back: a
+missing extra, an absent file or a corrupt checkpoint is a `ModelError` naming the path, because a silent
+substitution of the double would turn a configuration mistake into a result that looks like a model
+answered. The loaded object is a `LanguageModel`, so `model.generate(messages, params)` works through the
+same boundary the application uses.
 
 ### Testing the declared Python floor
 
