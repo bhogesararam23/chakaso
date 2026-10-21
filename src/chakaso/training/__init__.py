@@ -11,11 +11,12 @@ importing `chakaso` requires neither.
 
 The layers split by what they need:
 
-* **Dependency-free** — the corpus manifest that pins a real document set by content digest, the
-  document-level split, the character vocabulary, the learned byte-pair subword vocabulary, and sequence
-  packing. These install, import, type-check and run their tests in the dependency-free CI matrix, because
-  how text becomes identifiers is a decision that must be reviewable without a numerical framework in the
-  way.
+* **Dependency-free** — the corpus manifest that pins a real document set by content digest, the snapshot
+  that carries a run's exact bytes (and the history read that recovers them once the tracked text has
+  moved), the document-level split, the character vocabulary, the learned byte-pair subword vocabulary, and
+  sequence packing. These install, import, type-check and run their tests in the dependency-free CI matrix,
+  because how text becomes identifiers is a decision that must be reviewable without a numerical framework
+  in the way.
 * **Numerical (`[train]`)** — the character model, its hand-derived gradients, the optimizer, the training
   loop, the checkpoint format and held-out evaluation.
 * **`torch` (`[nn]`)** — the Transformer, its training and its checkpoints, in the modules ADR-0034 names.
@@ -46,6 +47,7 @@ from chakaso.training.data import (
 from chakaso.training.manifest import (
     CorpusDocument,
     CorpusManifest,
+    CorpusSnapshot,
     build_manifest,
     normalize_text,
     read_manifest,
@@ -61,6 +63,13 @@ from chakaso.training.packing import (
     pack_units,
     token_stream,
 )
+from chakaso.training.snapshot import (
+    AcquisitionRecord,
+    GitRevisionReader,
+    RevisionReader,
+    materialize_revision,
+    restore_corpus_snapshot,
+)
 from chakaso.training.subword import (
     DOCUMENT_END,
     SubwordVocabulary,
@@ -73,13 +82,17 @@ __all__ = [
     "CORPUS",
     "DOCUMENT_END",
     "UNK_ID",
+    "AcquisitionRecord",
     "CharVocabulary",
     "Corpus",
     "CorpusDocument",
     "CorpusManifest",
+    "CorpusSnapshot",
     "Example",
+    "GitRevisionReader",
     "PackedBatch",
     "PackedExample",
+    "RevisionReader",
     "Split",
     "SubwordVocabulary",
     "TextUnit",
@@ -93,11 +106,13 @@ __all__ = [
     "count_tokens",
     "dataset_fingerprint",
     "fit_vocabulary",
+    "materialize_revision",
     "normalize_text",
     "pack_units",
     "pre_tokenize",
     "read_manifest",
     "read_snapshot",
+    "restore_corpus_snapshot",
     "save_manifest",
     "split_corpus",
     "split_text_units",
