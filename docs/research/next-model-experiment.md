@@ -128,6 +128,25 @@ unmeasured estimate is for, and why the record quotes the manifest's own numbers
 repository text is legally usable and reproducible offline; it is also one author's technical prose about
 one project, which bounds what any model trained on it can establish.
 
+**Addendum, 2026-10-21 (E2606/E2607 preregistered).** That bound is what this note's own conclusion ran
+into: E2605 measured one seed on one author's prose, and the paragraph above is the reason the number cannot
+be read as anything more. Two experiments are now preregistered against it, each committed before its runs
+([`../../experiments/E2606/record.md`](../../experiments/E2606/record.md),
+[`../../experiments/E2607/record.md`](../../experiments/E2607/record.md)):
+
+- **E2606** asks how much of the measured gap is the seed — five declared seeds, with the document split held
+  fixed so only initialization and batch order move — and reproduces E2605 itself as its seed-7 run, against
+  a snapshot recovered from the revision that pinned the corpus
+  ([ADR-0036](../decisions/ADR-0036-corpus-snapshot-recovery-from-history.md)).
+- **E2607** asks whether the same protocol beats the same baselines on prose that is not this project's, on a
+  pinned external corpus (three Project Gutenberg texts, 105 documents, licence and byte digests recorded)
+  ingested offline by `chakaso.training.source_corpus`. The corpus bytes are still not committed; the
+  acquisition is, which is what "legally usable and reproducible offline" has to mean for external data.
+
+Neither answers the workload question this note ends on. A lower held-out loss on somebody else's 19th-century
+prose would say the model learns statistical structure in text it was not written about; it would not say a
+model can answer a question or ground a claim, and K-001 stays open for exactly that reason.
+
 ## Candidate comparison
 
 | Dimension | C1 character model | C2 subword + Transformer (torch) | C3 subword + Transformer (NumPy) | C4 pretrained reference |
