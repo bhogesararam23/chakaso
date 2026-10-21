@@ -8,6 +8,7 @@ would silently ignore, or a file that tries to carry a Python object.
 
 from __future__ import annotations
 
+import importlib.metadata
 import json
 from pathlib import Path
 
@@ -134,8 +135,6 @@ def test_an_interrupted_artifact_write_leaves_nothing_behind(
     The artifact is what a record cites, and a half-written one is worse than a missing one: it has the
     right name, the right extension and a plausible size, and only verification would expose it.
     """
-    import torch
-
     def _interrupt(*_ignored: object, **_also_ignored: object) -> None:
         failure = "device out of space"
         raise OSError(failure)
@@ -148,6 +147,25 @@ def test_an_interrupted_artifact_write_leaves_nothing_behind(
 
     assert not target.exists()
     assert [path.name for path in tmp_path.iterdir()] == []
+
+
+def test_the_environment_block_records_what_a_reproduction_needs_to_compare() -> None:
+    """Versions and thread count as observed, because those are the inputs a number can disagree over."""
+    environment = describe_environment()
+
+    assert set(environment) == {
+        "torch",
+        "numpy",
+        "python",
+        "platform",
+        "device",
+        "torch_threads",
+    }
+    assert environment["device"] == "cpu"
+    assert environment["torch"] == torch.__version__
+    assert int(environment["torch_threads"]) >= 1
+    # An absent optional dependency is reported as absent, never as a version this machine does not have.
+    assert environment["numpy"] == importlib.metadata.version("numpy")
 
 
 def test_an_artifact_reports_the_architectures_parameter_count() -> None:

@@ -25,6 +25,7 @@ records it for this format.
 from __future__ import annotations
 
 import hashlib
+import importlib.metadata
 import json
 import platform
 from collections.abc import Mapping
@@ -307,10 +308,25 @@ def load_artifact(path: Path) -> ModelArtifact:
 
 
 def describe_environment() -> dict[str, str]:
-    """The environment block an artifact records: versions as observed, not claims about reproducibility."""
+    """The environment block an artifact records: versions as observed, not claims about reproducibility.
+
+    The thread count is in here because torch reduces matmuls over them, so a run on 8 threads and a run on
+    18 are not the same numerical procedure even when every declared number matches. A reproduction that
+    differs by more than its declared tolerance is explained by this block or it is not explained.
+    """
     return {
         "torch": torch.__version__,
+        "numpy": _installed_version("numpy"),
         "python": platform.python_version(),
         "platform": platform.platform(),
         "device": "cpu",
+        "torch_threads": str(torch.get_num_threads()),
     }
+
+
+def _installed_version(distribution: str) -> str:
+    """The version of an optional dependency as installed here, or ``absent`` — never a guess."""
+    try:
+        return importlib.metadata.version(distribution)
+    except importlib.metadata.PackageNotFoundError:
+        return "absent"
