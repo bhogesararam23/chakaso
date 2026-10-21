@@ -1,6 +1,6 @@
 # Active task
 
-## Current unit: nodes N–O — E2607's result, the full regression, and delivery
+## Current unit: complete — nodes A–N delivered (P33–P36)
 
 **Goal.** The reproducibility arc is built, measured and recorded: E2605 is reproducible from a corpus
 recovered out of git history and its five-seed study (E2606) is measured. What remains in this unit is the last
@@ -19,6 +19,22 @@ three-tier matrix ships as a tested document instead and the gap stays recorded 
 **What this unit is not.** Not a bigger model. E2607's budget stays at E2605's 2,400 steps deliberately, which
 means a smaller gap there has two candidate causes — the data, or the under-scaled budget — and the record says
 so rather than picking after the fact.
+
+**Delivery record (2026-10-21).** The arc began with `HEAD` == `origin/main` == `35e40f7` and a clean tree, and
+ends at `1ded45b67e9fe0c6d534dd3655bcfddba3d8de14`, which `git rev-parse origin/main` confirms after a fetch.
+Thirty-two commits, all pushed normally: no force-push, no branch deleted, no published history rewritten, no
+hook bypassed, no `.github/workflows/*` file touched. Remote CI run `39632675804` completed **success** on
+Python 3.11, 3.12 and 3.13 — the three jobs of the dependency-free matrix, which is still the only matrix CI
+has (K-009), so the model path's two tiers remain locally verified and remotely untested. The commit count is
+what the work supported: a snapshot format, its recovery, the leakage tests, the driver and CLI changes, the
+seed study, the ingestion module, the generation suite, the atomic writer, two executed studies and the
+documentation that describes them, each landed as one reviewable change rather than split to reach a number.
+
+Two measurement notes that belong with the delivery, not in a footnote. E2605's corpus had to be recovered
+from git history because the repository has since edited 19 of the documents it pinned — which is the drift
+guard working, and the reason ADR-0036 exists. And E2607's three runs never early-stopped: on 2.13× the data
+the declared 2,400-step budget truncates the curve, so its reported loss is a floor rather than a converged
+level, stated in the record rather than smoothed.
 
 ## Mission ledger — reproducibility, multi-seed validation and generalization (P33–P36)
 
@@ -40,7 +56,7 @@ its acceptance criteria are met and evidenced here.
 | K | Documentation and research integrity | B–J | `README.md`, `docs/*`, `CHANGELOG.md`, `docs/agent/*` | in_progress | `53896b8`, `74a2a04`, `c3923e6`, `bbd350f`, `c0c9ae5`, `d057bfe` | link + status hygiene (23 tests) |
 | L | Optional-dependency CI design | J | `docs/internal/engineering/optional-dependency-ci-matrix.md` | blocked (scope) | `9b47724` | 4 hygiene tests assert the matrix's parity with the documented commands and that the shipped workflow still covers only `.[dev]` |
 | M | Full regression and package verification | K | whole tree | validated | gates recorded below | three matrices, both mypy configs, wheel build, clean-interpreter import, checkpoint load from the installed copy |
-| N | Delivery | M | — | pending | — | push to `main`, verify the remote SHA, read the CI status |
+| N | Delivery | M | — | pushed | `1ded45b67e9fe0c6d534dd3655bcfddba3d8de14` == `origin/main` (fast-forward from `35e40f7`, 32 commits, nothing forced or rewritten); CI run `39632675804` completed **success** on Python 3.11, 3.12 and 3.13 | the dependency-free matrix only (K-009) |
 
 **Gate and package record for row M (measured 2026-10-21 against this tree).**
 
