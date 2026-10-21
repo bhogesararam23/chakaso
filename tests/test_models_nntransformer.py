@@ -45,6 +45,11 @@ _TEXT = (
 _CONTEXT = 8
 
 
+def _messages(text: str = _TEXT) -> list[Message]:
+    """The single-user-message request the boundary tests sample with."""
+    return [Message(role=Role.USER, content=text)]
+
+
 def _checkpoint(directory: Path) -> Path:
     """Train a genuinely tiny model through the real pipeline and save its artifact.
 
@@ -335,3 +340,156 @@ def test_the_adapter_is_never_the_default_of_the_shipped_configuration() -> None
     assert loaded.config.model.adapter != SUBWORD_TRANSFORMER_MODEL_ID
     model = create_model(loaded.config)
     assert model.metadata.development_double is True
+
+
+# ------------------------------------------------------------------ streaming and decoding controls
+def test_streaming_yields_one_chunk_per_token_and_ends_with_the_finish_reason(
+    checkpoint: Path,
+) -> None:
+    from chakaso.models.base import GenerationParams
+    from chakaso.models.decoding import AbortSignal
+
+    model = SubwordTransformerModel(str(checkpoint))
+    params = GenerationParams(max_new_tokens=6, temperature=0.0)
+
+    chunks = list(model.stream(_messages(), params, signal=AbortSignal()))
+    content = [chunk for chunk in chunks if not chunk.final]
+
+    assert len(content) == 6
+    assert chunks[-1].final and chunks[-1].finish_reason is not None
+    assert not any(chunk.final for chunk in content)
+    assert "".join(chunk.text for chunk in content) == model.generate(_messages(), params).text
+
+
+def test_an_aborted_stream_stops_early_and_says_so(checkpoint: Path) -> None:
+    from chakaso.models.base import FinishReason, GenerationParams
+    from chakaso.models.decoding import AbortSignal
+
+    model = SubwordTransformerModel(str(checkpoint))
+    signal = AbortSignal()
+    params = GenerationParams(max_new_tokens=24, temperature=0.0)
+
+    collected = []
+    for chunk in model.stream(_messages(), params, signal=signal):
+        collected.append(chunk)
+        signal.abort()
+
+    # One token out, then the caller's abort is seen at the next step boundary: two chunks, the second one
+    # the marker that says why the run ended.
+    assert len(collected) == 2
+    assert collected[0].final is False and collected[0].text
+    assert collected[1].final and collected[1].finish_reason is FinishReason.CANCELLED
+
+
+def test_a_stop_sequence_ends_generation_and_is_reported(checkpoint: Path) -> None:
+    from chakaso.models.base import FinishReason, GenerationParams
+
+    model = SubwordTransformerModel(str(checkpoint))
+    greedy = model.generate(_messages(), GenerationParams(max_new_tokens=12, temperature=0.0))
+    first_character = greedy.text[:1]
+
+    stopped = model.generate(
+        _messages(),
+        GenerationParams(max_new_tokens=12, temperature=0.0, stop_sequences=(first_character,)),
+    )
+
+    assert stopped.finish_reason is FinishReason.STOP
+    assert stopped.stopped_by == first_character
+    assert len(stopped.token_ids) < len(greedy.token_ids)
+
+
+def test_a_stop_token_identifier_ends_generation(checkpoint: Path) -> None:
+    from chakaso.models.base import FinishReason, GenerationParams
+
+    model = SubwordTransformerModel(str(checkpoint))
+    greedy = model.generate(_messages(), GenerationParams(max_new_tokens=8, temperature=0.0))
+    assert greedy.token_ids
+
+    target = greedy.token_ids[-1]
+    stopped = model.generate(
+        _messages(),
+        GenerationParams(max_new_tokens=8, temperature=0.0, stop_token_ids=(target,)),
+    )
+
+    assert stopped.finish_reason is FinishReason.STOP
+    assert stopped.stopped_by == f"token:{target}"
+    # A model that repeats the same identifier can hit the declared stop earlier than the run that chose it
+    # as "last"; the guarantee is that the identifier ends the generation, not where it ends it.
+    assert 0 < len(stopped.token_ids) <= len(greedy.token_ids)
+
+
+def test_generation_reports_prompt_and_new_token_counts_and_truncation(checkpoint: Path) -> None:
+
+    model = SubwordTransformerModel(str(checkpoint))
+    long_prompt = " ".join(["the quick red fox"] * 60)
+
+    result = model.sample(long_prompt, max_new_tokens=4)
+
+    assert result.new_tokens == len(result.token_ids) == 4
+    assert result.prompt_tokens == model.metadata.context_window
+    assert result.truncated is True
+
+
+def test_an_invalid_parameter_set_is_refused_once_at_the_parameter_type(
+    checkpoint: Path,
+) -> None:
+    from chakaso.models.base import GenerationParams
+
+    model = SubwordTransformerModel(str(checkpoint))
+
+    with pytest.raises(ValueError, match="top_p must be in"):
+        GenerationParams(temperature=1.0, top_p=0.0)
+    with pytest.raises(ValueError, match="repeat_penalty must be in"):
+        GenerationParams(repeat_penalty=9.0)
+    with pytest.raises(ValueError, match="stop_sequences must be non-empty strings"):
+        GenerationParams(stop_sequences=("",))
+    with pytest.raises(ModelError, match="at least one message"):
+        model.generate([], GenerationParams())
+
+
+def test_the_repetition_penalty_changes_a_greedy_sample_without_changing_the_greedy_rule(
+    checkpoint: Path,
+) -> None:
+    from chakaso.models.base import GenerationParams
+
+    model = SubwordTransformerModel(str(checkpoint))
+    plain = model.generate(_messages(), GenerationParams(max_new_tokens=8, temperature=0.0))
+    penalised = model.generate(
+        _messages(),
+        GenerationParams(max_new_tokens=8, temperature=0.0, repeat_penalty=2.0),
+    )
+
+    assert plain.text != penalised.text
+    # The penalty changes which token is best; it does not change the rule that the best token is taken.
+    assert penalised.finish_reason == plain.finish_reason
+
+
+def test_the_prompt_template_is_part_of_the_runtime_description(checkpoint: Path) -> None:
+    from chakaso.models.formatting import ROLE_LABELLED_CHAT
+
+    plain = SubwordTransformerModel(str(checkpoint))
+    chat = SubwordTransformerModel(str(checkpoint), prompt_template=ROLE_LABELLED_CHAT.version)
+
+    assert plain.describe()["prompt_template"] == "chakaso-plain-v1"
+    assert chat.describe()["prompt_template"] == "chakaso-role-labelled-v1"
+    assert chat.describe()["family"] == "transformer"
+    assert chat.describe()["development_double"] is False
+
+
+def test_a_chat_template_reaches_the_model_as_labelled_text(checkpoint: Path) -> None:
+    from chakaso.models.base import GenerationParams
+    from chakaso.models.formatting import ROLE_LABELLED_CHAT
+
+    plain = SubwordTransformerModel(str(checkpoint))
+    chat = SubwordTransformerModel(str(checkpoint), prompt_template=ROLE_LABELLED_CHAT.version)
+    params = GenerationParams(max_new_tokens=2, temperature=0.0)
+
+    labelled = chat.generate(_messages("hello there"), params)
+    unlabelled = plain.generate(_messages("hello there"), params)
+
+    # Observable end to end, without reaching into the adapter: the fixture checkpoint's window is 8
+    # identifiers, and the labelled transcript ("user: hello there\nassistant: ") overflows it while the
+    # plain one does not. The template the model was fed is therefore the one that was configured.
+    assert labelled.truncated is True
+    assert unlabelled.truncated is False
+    assert labelled.prompt_tokens == unlabelled.prompt_tokens == 8
