@@ -2,22 +2,26 @@
 
 Chakaso intends to train its own language model from randomly initialised
 parameters. This document describes that plan, and is explicit about what has and
-has not been executed. As of 2026-10-19 the training pipeline exists
-(`chakaso.training`, gated by [ADR-0030](decisions/ADR-0030-minimal-optional-training-dependency.md))
-and experiment [E2601](../experiments/E2601/record.md) trained and **measured** a from-scratch
-character model that beats trivial baselines on held-out loss; no useful model and no Transformer has
-been produced, and that distinction is what the rest of this document keeps honest.
+has not been executed. As of 2026-10-21 the training pipeline exists
+(`chakaso.training`, gated by [ADR-0030](decisions/ADR-0030-minimal-optional-training-dependency.md)
+and, for the model itself, [ADR-0034](decisions/ADR-0034-optional-pytorch-model-extra.md)) and two
+experiments have measured from-scratch training: [E2601](../experiments/E2601/record.md) trained a
+984-parameter character model that beats trivial baselines on held-out loss, and
+[E2605](../experiments/E2605/record.md) trained a 643,840-parameter subword causal Transformer that beats it,
+in bits per character, on held-out documents. Neither is a useful model, and that distinction is what the
+rest of this document keeps honest.
 
 ## Strategy
 
-The system and the model are separate efforts inside one repository. The system is
-built first, around a replaceable model, so that the eventual Chakaso model can
-replace the initial one without redesigning retrieval, conversation, evaluation or
-the interfaces around them ([ADR-0002](decisions/ADR-0002-language-model-boundary.md)).
+The model is the product ([ADR-0033](decisions/ADR-0033-model-centred-product-contract.md)); the system
+around it exists so the model can be measured, reproduced and eventually replaced by a better one.
+Retrieval, conversation, evaluation and the interfaces between them were built first and are kept, because
+they are what makes a model number checkable — but no further application capability is allowed to stand in
+front of a model result, and that ordering is what changed in 2026-10-21.
 
-Building the system first is not a detour. Evaluation infrastructure, evidence
-handling and correction behaviour all have to exist before a trained model can be
-judged, and a model judged by nothing is a model nobody can improve.
+Building the system first was not a detour. Evaluation infrastructure, evidence handling and correction
+behaviour all had to exist before a trained model could be judged, and a model judged by nothing is a model
+nobody can improve. What they could not do was close the gap the model itself has to close.
 
 ## What "scratch-trained" means here
 
@@ -37,18 +41,20 @@ the project's central claim false.
 | --- | --- | --- | --- |
 | M0 | Train nothing; validate the system architecture | Web-grounded prototype | In progress |
 | M1 | Train a tokenizer on a controlled corpus | Versioned tokenizer | **Done for both tokenizations** — a deterministic character vocabulary (used by E2601/E2602) and, since P30, a learned byte-pair subword vocabulary trained on pinned training-split text (`chakaso.training.subword`, ADR-0033's model-centred contract) |
-| M2 | Train a tiny Transformer from random initialisation | Chakaso-0 checkpoint | In progress — E2601 trained a 984-parameter *non-Transformer* character MLP as a precursor; P30 delivered its prerequisites (manifest, document split, subword tokenizer, sequence packing) and the Transformer itself is P31 |
+| M2 | Train a tiny Transformer from random initialisation | Chakaso-0 checkpoint | **Done** — [E2605](../experiments/E2605/record.md) trained a 643,840-parameter subword causal Transformer from random initialization on the pinned corpus and measured 1.8657 bits per character on held-out documents, against 3.1343 for the character architecture. The artifact is `E2605-transformer.pt`: an experiment result, not a release, and not named Chakaso-0 |
 | M3 | Pretrain a small useful base model | Chakaso Base | Planned |
 | M4 | Instruction tune | Chakaso Instruct | Planned |
 | M5 | Teach grounding and correction behaviour | Chakaso Grounded | Planned |
 | M6 | Preference optimization, if justified | Aligned variant | Research |
 | M7 | Domain adaptation after niche selection | Domain model | Research |
 
-No stage past M0 has produced a *useful* model. E2601 wrote a checkpoint and trained a 984-parameter
-character model from random initialization — the project's first measured training result, and a precursor
-to M2 rather than Chakaso-0. That checkpoint is reproducible from the seed and config and is recorded by
-fingerprint, **not** committed to the repository; there are no released weights, and no Transformer has
-been trained. A language model is still not wired behind the runtime's `LanguageModel` boundary.
+No stage past M2 has produced a *useful* model. E2601 wrote a checkpoint and trained a 984-parameter
+character model from random initialization — the project's first measured training result, and a precursor to
+M2. E2605 then trained the Transformer itself and measured it against that precursor and against trivial
+predictors of both identifier spaces. Both checkpoints are reproducible from the seed, config and pinned
+corpus manifest, and **neither is committed to the repository**; there are no released weights. A model that
+answers a grounded question still does not exist: the trained checkpoint is loadable through the
+`LanguageModel` boundary from Python, and no runtime path uses it as a default.
 
 ## Sizing policy
 
@@ -169,15 +175,17 @@ something nobody defined.
 
 | Item | Status |
 | --- | --- |
-| Corpus and provenance | Implemented — `chakaso.training.corpus` (the self-authored toy text) and, since P30, `chakaso.training.manifest`, which pins a real document set by path and content digest and refuses drift |
+| Corpus and provenance | Implemented — `chakaso.training.corpus` (the self-authored toy text) and `chakaso.training.manifest`, which pins a real document set by path and content digest and refuses drift. E2605 trained on the pinned repository text: 71 documents, 780,223 characters, fingerprint `e45993f9badf706c` |
 | Tokenizer | Implemented — a deterministic character vocabulary (`chakaso.training.tokenizer`, used by E2601/E2602) and a learned byte-pair subword vocabulary (`chakaso.training.subword`, dependency-free, total over Unicode, self-describing and checksum-verified on load) |
 | Dataset pipeline | Implemented — document-level three-way split with deduplication before selection (`chakaso.training.data.split_text_units`), sequence packing with per-position targets (`chakaso.training.packing`), and split/manifest fingerprints |
-| Model code | Experimental — the character MLP is implemented and measured (E2601); the Transformer is P31 |
-| Training loop | Experimental — full-batch Adam over the character model is implemented and measured; mini-batching arrives with P31 |
-| Checkpoints | Implemented for the character model (JSON schema/2, checksum-verified, vocabulary embedded); a versioned Transformer format is P31 |
-| Experiments | E2601 and E2602 are measured results on a toy corpus; nothing has been measured on a real workload (K-001) |
+| Model code | Implemented and measured — the character MLP (E2601, 984 parameters, every gradient finite-difference verified) and the decoder-only causal Transformer (`chakaso.training.transformer`, 643,840 parameters in E2605, autograd gradients cross-checked against hand-computed losses and sampled finite differences per ADR-0034) |
+| Training loop | Implemented and measured — full-batch Adam over the character model (E2601/E2602) and mini-batch AdamW with warmup, gradient clipping, validation-selected early stopping and bit-identical resume for the Transformer (`chakaso.training.nn_training`) |
+| Checkpoints | Implemented — character JSON schema/2 (checksum-verified, vocabulary embedded) and `chakaso-transformer-checkpoint/1` (ADR-0035): one file, checksum over tensors plus metadata, tokenizer inline, `weights_only=True`, incompatible artifacts refused by name, usable and resumable kinds distinguished |
+| Model evaluation | Implemented and measured — `chakaso.training.model_metrics` reports nats per identifier, perplexity and **bits per character** through one arithmetic for any identifier space, with uniform and unigram baselines scored the same way |
+| Using a trained model | Implemented — `chakaso.models.load_model(path)` returns a `LanguageModel` from a checkpoint with no terminal, no config and no application import; the runtime's own default adapter is still the development double |
+| Experiments | E2601, E2602 and E2605 are measured results; nothing has been measured on a real workload or an external corpus (K-001), and no measured model is useful |
 
 The two halves of this table used to contradict each other — the header cited a measured E2601 while the
 rows below said the tokenizer, model code, training loop and checkpoints did not exist. They were written
-before any of it ran. The rows now state what is implemented, what is experimental, and what is still P31;
-the substance has not changed, only the accuracy of the description.
+before any of it ran. The rows now state what is implemented and what has been measured, with the experiment
+that measured it named; the substance has changed only where a number arrived.

@@ -161,7 +161,14 @@ Each component owns one thing and must not grow into its neighbour.
 | Ranker | Order candidate evidence | Generate the answer | Planned |
 | Evidence Store | Persist source and chunk records, metadata and hashes | Produce user-facing prose | Planned |
 | Answer Store | Persist answer records and their correction lineage, append-only | Produce prose; own the correction decision | Implemented (in-memory default **and** a durable SQLite backend that survives a process restart, ADR-0018/0021) |
-| Model Adapter | Uniform interface to any local or future model | Search | Implemented (boundary and registry; no trained model) |
+| Model Adapter | Uniform interface to any local or future model | Search | Implemented (boundary and registry, with three adapters: the development double that answers every configured turn, a character model behind `[train]`, and a trained subword Transformer behind `[nn]` loadable from a checkpoint through `chakaso.models.load_model`; the runtime's default is still the double — E2605's checkpoint is an experiment, not a wired dependency) |
+| Corpus Provenance | Name a training corpus by document path and content digest, record its licence, refuse a corpus that drifted | Tokenize; split; train | Implemented (`chakaso.training.manifest`, dependency-free; ADR-0033's data layer) |
+| Tokenizer | Learn or fix an identifier space, encode reversibly, describe itself on load | Rank; chunk; decide what is evidence | Implemented (deterministic character vocabulary `chakaso.training.tokenizer`; learned byte-pair subword `chakaso.training.subword`, both dependency-free) |
+| Dataset Pipeline | Split at whole-document boundaries after deduplicating by content, pack into next-token targets | See a corpus it did not pin | Implemented (`chakaso.training.data.split_text_units`, `chakaso.training.packing`) |
+| Model Architecture | Define parameters and a forward pass that predicts the next identifier | Read a checkpoint; know about a CLI | Implemented (`chakaso.training.transformer`, decoder-only causal; `chakaso.training.model.CharCausalMLP`, measured by E2601) |
+| Training Loop | Update parameters from data under a stated schedule, select on validation, record the curve | Read test data as if unseen; report training loss as held-out | Implemented (`chakaso.training.loop` full-batch character; `chakaso.training.nn_training` mini-batch Transformer with warmup, clipping, early stopping and resume; `[train]`/`[nn]`) |
+| Checkpoint Format | Carry weights, tokenizer, architecture and environment in one verifiable file, and refuse what does not match | Be silently replaced by a different model | Implemented (`chakaso.training.checkpoint` schema/2 for the character model; `chakaso.training.nn_checkpoint` for `chakaso-transformer-checkpoint/1`, ADR-0035) |
+| Model Evaluation | Express a model's held-out loss in units comparable across identifier spaces | Judge answer quality; replace the harness benchmarks | Implemented (`chakaso.training.model_metrics` bits-per-character/nats/perplexity with uniform and unigram baselines; `chakaso.training.nn_evaluation`; measured by E2605) |
 | Grounding / Citation Validator | Check that every cited identifier exists and, structurally, whether cited evidence bears on the claim | Rewrite the user's request | Implemented (structural: `chakaso.citation` presence + `chakaso.grounding` supported/unsupported, ADR-0015). A semantic grounding boundary exists (ADR-0019/ADR-0027) with evaluator version and an explicit error outcome, but its only judge is a caller-supplied fixture — capability detection reports no real semantic support checking |
 | Reassessment Engine | Compare previous claims with new evidence and decide retain/qualify/correct | Silently rewrite history | Implemented (structural foundation: decide / reassess / record / metrics, ADR-0016; produces no revised prose — there is no model — and is not wired into an automatic turn) |
 | Evaluation | Measure behaviour and detect regressions | Change production behaviour | Implemented (metric functions; retrieval and correction development benchmarks; structural claim/citation/grounding/answer evaluation; reproducible experiment records with a deterministic regression baseline, ADR-0020; a real grounded-answer benchmark and model-quality measurement planned) |
@@ -175,8 +182,9 @@ records, a deterministic query planner (ADR-0022), a retrieval-aware runtime (AD
 application composition root that wires them and drives `chakaso chat` (ADR-0026) are
 implemented;
 [`agent/CURRENT_STATE.md`](agent/CURRENT_STATE.md) is the authority, including on
-the fact that the only implementation of the model boundary is a development double
-rather than a language model, and that the grounding and citation checks are structural.
+the fact that the model the runtime answers with is still a development double — a trained checkpoint
+exists (E2605's subword Transformer) and is loadable from Python, but no runtime path uses it as a default —
+and that the grounding and citation checks are structural.
 
 ### What the conversation manager does, and what it does not
 
@@ -242,8 +250,11 @@ correction foundation, an answer store (in-memory and durable SQLite, ADR-0021),
 semantic grounding boundary, the experiment records, the deterministic query planner (ADR-0022), the
 retrieval-aware runtime (ADR-0025) and the application composition root that assembles them and drives
 `chakaso chat` (ADR-0026) are
-implemented; fetching exists only behind the opt-in bounded fetcher, so a default
-run neither fetches nor reaches the network, and there is still no trained model.
+implemented, and so is the model path beneath them — corpus manifest, document split, byte-pair subword
+tokenizer, sequence packing, Transformer, mini-batch training, checkpoint format, model metrics and a
+`load_model` entry point (ADR-0033/0034/0035, measured by E2605). Fetching exists only behind the opt-in
+bounded fetcher, so a default run neither fetches nor reaches the network, and the model a default run
+answers with is still the development double.
 
 ### The model boundary
 

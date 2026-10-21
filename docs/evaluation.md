@@ -174,7 +174,7 @@ A language model is measured against held-out text, and the metric that makes tw
 tokenizations comparable is **bits per character**: the total description length of a
 scored stream in bits, divided by the characters those tokens decode to. Per-token
 cross-entropy and perplexity are reported beside it and labelled as tokenizer-bound — a
-1,024-entry subword vocabulary and a 90-character one do not mean the same thing by
+1,024-entry subword vocabulary and a 116-symbol character one do not mean the same thing by
 `ln(V)`, so neither number may be used to compare the two. The denominator is the decoded
 whole stream rather than a per-token character count, because a multi-byte character split
 across byte tokens contributes its characters at the completion, not at each byte.
@@ -197,6 +197,13 @@ full pass over the evaluation side, recombined by position count so a short fina
 cannot tilt it. And the same metric function scores both architectures and both baselines,
 so a comparison in an experiment record is one measurement applied four times rather than
 four measurements that happen to be printed together.
+
+**Measured on 2026-10-21** ([E2605](../experiments/E2605/record.md), over the pinned 71-document corpus,
+held-out documents only): **1.8657** bits per character for the subword Transformer (643,840 parameters,
+2.6936 nats/token, perplexity 14.79, token accuracy 0.4501), **3.1343** for the character model E2601
+measured (44,084 parameters, 2.1724 nats/token, 8.78, 0.4059), 3.3224 for the unigram and 4.8010 for the
+uniform predictor of the Transformer's own identifier space. One seed, one author's prose, no error bar:
+these are measurements of a training path and a distribution, not of language ability.
 
 **What model evaluation is not.** The retrieval and correction benchmarks, the semantic
 scorer, the grounded-answer evaluation workload and the evidence-sufficiency policy measure

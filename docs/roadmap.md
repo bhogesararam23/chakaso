@@ -21,8 +21,8 @@ are written so a phase cannot declare itself done.
 | P4 | Web-grounded answers | Permitted public retrieval produces source-linked answers with verified citations | Partial — bounded opt-in fetcher and narrow HTML ingestion exist; no default path fetches, and no model turns retrieved evidence into a cited answer |
 | P5 | Correction loop | Challenge → reassessment → correction works on fixed tests | Partial — the decision rule, reassessment over a stored answer, an explicit identifier trigger and a correction development benchmark pass on synthetic tests; no revised prose (no model) and no autonomous loop |
 | P6 | Evaluation harness | Automated grounding, citation, retrieval and conversation benchmarks | Partial — retrieval, correction, strategy-comparison and semantic-evaluation development benchmarks plus structural claim/citation/grounding/answer evaluation exist over synthetic fixtures; no real-workload or model-quality benchmark |
-| P7 | Training pipeline | Tokenizer, data, configuration and checkpoint pipeline runs end to end | Partial — E2601 ran a character tokenizer, a leak-free split, a validated config, an optimizer, a checkpoint format and a training loop end to end on a 344-token synthetic corpus. Since P30 the data half is built for a real corpus: a content-pinned manifest, a document-level split, a learned byte-pair subword tokenizer and sequence packing (dependency-free, in the core CI matrix). A Transformer, mini-batching and scale are P31 |
-| P8 | Chakaso-0 | Tiny model trains from random initialisation and learns a controlled corpus | Achieved as a measured experiment — E2601 trained a 984-parameter character model from random init that lowers held-out loss below uniform/unigram baselines; it is a learning-loop demonstration, not a useful model, and the single-seed high-variance result is flagged as such |
+| P7 | Training pipeline | Tokenizer, data, configuration and checkpoint pipeline runs end to end | **Done** — E2605 ran the whole pipeline end to end on a real, content-pinned corpus (71 documents): manifest → document split → learned byte-pair subword tokenizer → sequence packing → Transformer → mini-batch AdamW with warmup, clipping, early stopping and bit-identical resume → checksummed checkpoint → held-out metrics → `load_model`. What it does *not* include is scale: the corpus is one author's prose and the run was one seed |
+| P8 | Chakaso-0 | Tiny model trains from random initialisation and learns a controlled corpus | Achieved as a measured experiment, twice over — E2601 trained a 984-parameter character model from random init that lowers held-out loss below uniform/unigram baselines, and E2605 trained a 643,840-parameter subword Transformer that reaches 1.8657 bits per character on held-out documents against 3.1343 for the character model. Both are learning-loop demonstrations, not useful models, and both are single-corpus results without an error bar |
 | P9 | Chakaso Base | Small model reaches useful language-model baselines | Not started |
 | P10 | Chakaso Grounded | Instruction, grounding and correction behaviour improve on internal benchmarks | Not started |
 | P11 | Domain selection | A defensible niche is chosen using explicit criteria | Not started |
@@ -74,12 +74,18 @@ as fully met.
   strategy-comparison and semantic-evaluation development benchmarks and the structural
   evaluation primitives all run and are reproducible (`chakaso.experiments`,
   `chakaso benchmark`). They measure mechanisms over hand-built fixtures; the exit
-  criterion's "conversation benchmark" against a real model and real evidence is not met
-  because neither exists (K-001).
-- **P7 — Not started, correctly.** No tokenizer, data pipeline, model definition or
-  checkpoint pipeline exists. This is the milestone the current active task (P23, the
-  dependency decision) gates, and it must not be marked started before that ADR is
-  accepted.
+  criterion's "conversation benchmark" against real evidence is not met, and no model
+  produces an answer in any default path to benchmark (K-001). Model evaluation is now a
+  separate instrument with its own measured numbers (`chakaso.training.model_metrics`,
+  E2605), which is exactly the distinction ADR-0033 rule 5 requires.
+- **P7 — Done, and only after its own dependency decision was re-made on measurements.**
+  When this line read "Not started, correctly" there was no tokenizer, model definition or
+  checkpoint pipeline. There are now two of each, plus a content-pinned corpus manifest and
+  a training loop that resumes bit-identically, and E2605 ran all of it end to end on real
+  text. The gate it waited on — [ADR-0030](decisions/ADR-0030-minimal-optional-training-dependency.md)'s
+  revisit conditions — was met and re-decided as
+  [ADR-0034](decisions/ADR-0034-optional-pytorch-model-extra.md) and
+  [ADR-0035](decisions/ADR-0035-transformer-checkpoint-format.md) rather than assumed away.
 
 ## P1 detail: what "foundation" means
 
@@ -115,10 +121,13 @@ The founding work list, now assessed against what actually shipped:
 1. Configuration system with typed, validated configuration. — **Done.**
 2. Core primitives: identifiers, content hashing, errors. — **Done.**
 3. `LanguageModel` interface, capability declaration, registry. — **Done** (interface and
-   registry; the only implementation is the development double).
-4. One local model adapter, chosen for being runnable on CPU. — **Done in the honest
-   sense only:** a CPU-runnable adapter exists behind the boundary, but it is the
-   deterministic double, not a language model. A *trained* adapter is P7/P8.
+   registry, with three adapters behind it: the development double, a character model and a
+   trained subword Transformer).
+4. One local model adapter, chosen for being runnable on CPU. — **Done.** A CPU-runnable
+   adapter exists behind the boundary and it is still the deterministic double on every default
+   path; a *trained* adapter now exists too (P31, the continuation of P7/P8 —
+   `chakaso.models.load_model` over E2605's checkpoint), it is measured rather than useful,
+   and nothing wires it into a turn.
 5. Conversation state and the Conversation Manager. — **Done** (transactional, append-only).
 6. Source and evidence records with URL normalization. — **Done** (typed references, ADR-0011).
 7. Citation resolution with rejection of unknown identifiers. — **Done** (ADR-0009).
@@ -127,11 +136,14 @@ The founding work list, now assessed against what actually shipped:
    API. — **Partial:** a bounded, opt-in fetcher exists (ADR-0012) and never runs on a
    default path; deciding *which* URLs to fetch (query planning for web discovery) is open.
 10. Answer generation with source-identifier citations. — **Not done:** the plumbing
-    records citations, but no model generates an answer to cite into. Gated on P7/P8.
+    records citations, and no turn generates an answer to cite into. A trained adapter that
+    *could* generate exists behind `load_model`; wiring it into the runtime is P32, which
+    ADR-0033 deliberately leaves after the model's own measurement.
 11. Reassessment entry point. — **Done** (application-level reassessment over a stored
     answer; explicit identifier trigger, ADR-0029).
-12. Unit and integration tests for all of the above. — **Done** (see `tests/`, 1258 at
-    the current head; 1250 in the dependency-free matrix, 8 numpy-gated).
+12. Unit and integration tests for all of the above. — **Done** (see `tests/`, 1,405 tests
+    collected at the current head; 1,389 pass in the dependency-free matrix, 16 skip there,
+    and 1,603 pass with `[train,nn]` installed).
 13. A hand-built evaluation set of modest size, with unacceptable-evidence fields. —
     **Done for development fixtures** (synthetic retrieval and correction benchmarks with
     forbidden-evidence fields) and, since P27, for a **grounded-answer evaluation workload**
@@ -160,13 +172,50 @@ what E2601 actually did ([`../experiments/E2601/record.md`](../experiments/E2601
 5. Train a small experiment with a held-out split. — **Done** (leak-free split, held-out curve recorded).
 6. Log loss, throughput, memory and checkpoints. — **Partial**: loss curve and a fingerprinted checkpoint
    are recorded; throughput/peak-memory were not measured to a stated precision, so none is claimed.
+   Re-measured later with the same honesty: E2605 records per-step curves, wall clock per stage and the
+   checkpoint checksum, and peak memory is *still* not measured, because the process-memory APIs return
+   nothing from this shell.
 7. Compare against a trivial baseline (a uniform or unigram predictor). — **Done**: held-out loss beats
    both baselines.
 
 Scaling happens after reproducibility, not before. The first experiment demonstrated the learning loop and
 produced the project's first genuinely measured number; it is not a step toward a useful chatbot, and the
 measured overfitting is itself the evidence that justifies the next, controlled experiment (early
-stopping / capacity, multiple seeds).
+stopping / capacity, multiple seeds). That experiment ran: E2602 reproduced the result across five
+pre-declared seeds with a proper test split (1.80 ± 0.18 nats, below both baselines on every seed).
+
+## The model path (P30, P31) and the first Transformer (E2605)
+
+[ADR-0033](decisions/ADR-0033-model-centred-product-contract.md) replaced "system before model" with
+"the model is the product", and this is the sprint that acted on it rather than restated it.
+
+1. **P30 — the data layer, dependency-free on purpose.** `chakaso.training.manifest` (per-document SHA-256
+   over normalized text, licence, source, typed drift refusal), `split_text_units` (whole documents,
+   deduplicated by content *before* selection), `chakaso.training.subword` (byte-level BPE, named
+   pre-tokenizer, deterministic tie-breaking, self-describing checksum-verified record) and
+   `chakaso.training.packing` (fixed-length next-token examples, dropped tail reported). All of their tests
+   run in the dependency-free CI matrix, so they do not inherit K-009's gap.
+2. **P31 — the model, admitted by measurement.** [ADR-0034](decisions/ADR-0034-optional-pytorch-model-extra.md)
+   re-opened ADR-0030 on its own revisit conditions and admitted `torch` as a separate `[nn]` extra,
+   recording that the speed argument did not survive measurement (1.16× on a same-shape matmul) and that
+   the gradient guarantee became sampled rather than exhaustive.
+   `chakaso.training.transformer`, `nn_training`, `nn_checkpoint`
+   ([ADR-0035](decisions/ADR-0035-transformer-checkpoint-format.md)) and `model_metrics` followed.
+3. **The interface first, not last.** `chakaso.models.load_model(checkpoint)` returns a `LanguageModel`
+   from a checkpoint with no terminal, no config file and no application import — the concrete adapter is
+   reached through the registry's single selection point, so ADR-0002 held while the model changed under it.
+4. **Measured, with the comparison unit chosen before the run.** E2605
+   ([`../experiments/E2605/record.md`](../experiments/E2605/record.md)) trained a 643,840-parameter subword
+   Transformer from random initialization on the pinned 71-document corpus and reported **1.8657 bits per
+   character** on held-out documents against **3.1343** for E2601's character architecture, 3.3224 unigram
+   and 4.8010 uniform. Early stopping selected step 1380 of 2400; the un-stopped model was 0.1434 nats worse.
+   The committed generations loop.
+
+What follows is fixed by the record, in this order: reproduce E2605 across pre-declared seeds so the gap
+carries a spread; obtain an external corpus with a recorded licence, because one author's prose bounds every
+number above; only then ask a capacity question. **P29** (calibrating the retrieval sufficiency policy) and
+**P32** (runtime consumption of that decision) stay deferred — ADR-0033's ordering puts a measured model
+ahead of both, and nothing in E2605 changes their content.
 
 ## Grounded-answer evaluation workload (P27)
 

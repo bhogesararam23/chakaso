@@ -322,8 +322,8 @@ python -m chakaso experiment run correction --json
 These run the same library code the tests cover. Every report labels itself a **development**
 instrument: the corpora are small and synthetic, the numbers are computed over those fixtures at run
 time, and none is a claim about real-world retrieval, grounding, correction or model quality. Output
-is deterministic and offline. Because there is no language model, the correction benchmark scores a
-decision rule over labelled cases, not generated answers, and an experiment result is a
+is deterministic and offline. Because the model in that path is a development double, the correction
+benchmark scores a decision rule over labelled cases, not generated answers, and an experiment result is a
 reproducible record of that measurement.
 
 ## Inspecting durable storage

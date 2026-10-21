@@ -30,10 +30,20 @@ workload is self-authored and tiny, and E2603 scored it through an *oracle* and 
 provider — not a model that answers. No real corpus and no useful answering model exist, so the
 underlying gap is unchanged: nothing has been executed against a real workload by a model.
 
+**Narrowed again, still open, on 2026-10-21 (P31/E2605).** There is now a trained Transformer behind the
+`LanguageModel` boundary, measured on a real corpus — 71 documents and 780,223 characters of this
+repository's own prose, pinned by content digest — and it beats both trivial baselines and the project's
+previous architecture on held-out documents (1.8657 against 3.1343 bits per character). So "no model has ever
+been trained or measured" is no longer true. What is still true is the stronger claim in the title: that
+corpus is one author's technical writing about this project, no question was asked of the model, no answer was
+grounded in retrieved evidence, and no turn used it. The gap K-001 names is a *workload*, and a measured
+language model on self-authored text is not one.
+
 **What would close it:** a run against a real corpus or a useful model that produces and grounds an
 answer. A local retrieval implementation, a synthetic development benchmark, the evaluation / correction
-foundations, and now a measured from-scratch training loop all exist and are exercised in tests or in a
-committed experiment; none of them is a real workload with a real answer, so the underlying gap remains.
+foundations, a measured from-scratch training loop and a trained subword Transformer that loads from Python
+all exist and are exercised in tests or in a committed experiment; none of them is a real workload with a real
+answer, so the underlying gap remains.
 
 **Not a defect to fix now.** It is recorded so that no document reads as though the
 architecture has been validated.
@@ -127,38 +137,44 @@ opt-in.
 **What would close it:** IP-pinned resolution in the transport, plus a politeness layer
 (robots, per-host spacing) before the fetcher is used against the live web.
 
-### K-009 — The training tests do not run in remote CI
+### K-009 — The training and model-path tests do not run in remote CI
 
-**Impact:** Medium, and it is a coverage gap rather than a correctness one.
+**Impact:** Medium, and it is a coverage gap rather than a correctness one — but it is now the largest gap in
+the repository, because the model path is the product.
 
-`chakaso.training` depends on `numpy`, which is an optional `[train]` extra (ADR-0030). The core CI
-matrix installs only `.[dev]`, so the numerical tests `pytest.importorskip("numpy")` and **skip** there;
-`mypy src` also skips `chakaso.training` in that matrix (its type aliases resolve through numpy). The
-tests and the strict type-check of the training package therefore run only where the extra is installed
-(locally, and by any maintainer who runs `.[dev,train]`) — not on every push in CI.
+`chakaso.training` splits across two optional extras: `numpy` in `[train]` (ADR-0030) and `torch` in `[nn]`
+(ADR-0034). The core CI matrix installs only `.[dev]`, so the numerical and model tests
+`pytest.importorskip("numpy")` / `("torch")` and **skip** there; `mypy src` excludes the modules that import
+them in that matrix (their types resolve through the absent package). The tests and the strict type-check of
+the training and model packages therefore run only where the extras are installed — locally, and by any
+maintainer who runs `.[dev,train,nn]` — not on every push in CI.
 
-**Why it is not closed in the obvious way.** The clean fix is a dedicated CI job that installs
-`.[dev,train]` and runs the full suite and `mypy src`; the code for it exists but **cannot be pushed**
-because the session's GitHub credentials are an OAuth app without the `workflow` scope, and GitHub
-refuses to let it create or update `.github/workflows/*`. ADR-0030's testing strategy anticipates that
-job; delivering it needs a token with the `workflow` scope (or a human applying the one-job change).
+**Why it is not closed in the obvious way.** The clean fix is dedicated CI jobs installing `.[dev,train]` and
+`.[dev,train,nn]` and running the full suite plus `mypy src --exclude '_never_match_'`; the commands exist but
+the workflow **cannot be pushed** because the session's GitHub credentials are an OAuth app without the
+`workflow` scope, and GitHub refuses to let it create or update `.github/workflows/*`. ADR-0030's testing
+strategy anticipated that job and ADR-0034 inherited the gap. Delivering it needs a token with the `workflow`
+scope (or a human applying the job change), and a `torch` wheel download in CI, which the offline-CI rule
+wants reviewed first.
 
-**Mitigation in place now:** the dependency-free parts of the training layer (corpus, tokenizer, split,
-config, baselines) run in the core matrix as ordinary tests; only the numpy-requiring modules skip. The
-numerics are verified locally and the whole training package is clean under strict `mypy` with numpy
-present.
+**Mitigation in place now:** the dependency-free parts of both layers — corpus, character tokenizer, split,
+config, baselines, and now the corpus manifest, document split, byte-pair subword tokenizer, sequence packing
+and model metrics — run in the core matrix as ordinary tests. Only the numpy- and torch-requiring modules
+skip. The torch import surface is confined by a hygiene test to a named module list, so the gap is bounded
+and visible rather than spread through the package.
 
-**Re-verified this session (2026-10-19, P27).** The current session's credentials were checked directly:
-the active GitHub token's scopes are `gist, read:org, repo` — no `workflow` scope — so pushing a `[train]`
-job to `.github/workflows/ci.yml` is refused by GitHub, and the gap is not something this session can
-close (adding it would mean bypassing a branch-protection mechanism, which is forbidden). Locally, with
-the `[train]` extra installed, the full suite runs **1322 passed, 0 skipped** (the 8 numpy-gated
-training/adapter modules execute instead of skipping) and `mypy src` is clean over all modules including
-`chakaso.training`. The core dependency-free matrix (1250 passed, 8 skipped) is what CI enforces on every
-push.
+**Re-verified this session (2026-10-21, P31/E2605).** The token's scopes were checked again: `gist, read:org,
+repo` — no `workflow` — so the gap is still not something this session can close. Locally, all three matrices
+run: **1,389 passed / 16 skipped** dependency-free (1,405 collected), **1,470 passed / 7 skipped** with
+`[train]`, and **1,603 passed / 1 skipped** with `[train,nn]` (1,604 collected). Strict typing passes with the
+extras present: `mypy src --exclude '_never_match_'` reports **no issues in 117 source files** in both the
+`[train]` and the `[train,nn]` environment, which is every module in the package including the torch path. E2605
+itself ran in that environment and is measured, recorded and committed
+([`../../experiments/E2605/record.md`](../../experiments/E2605/record.md)), so the artifact is verified where
+it was produced — but no remote job has ever run any of it.
 
-**What would close it:** a CI workflow change (one extra job installing `.[dev,train]`) made with a
-credential that has the `workflow` scope.
+**What would close it:** a CI workflow change (jobs installing `.[dev,train]` and `.[dev,train,nn]`) made with
+a credential that has the `workflow` scope, plus a decision on fetching the CPU wheel index in CI.
 
 ### K-006 — The invented-reference condition is persisted; the rate is not yet aggregated
 

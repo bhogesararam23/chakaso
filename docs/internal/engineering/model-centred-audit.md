@@ -196,11 +196,24 @@ format exists, not before.
 | `.github/workflows/ci.yml` | installs `.[dev]` only; format, lint, types, tests, entry-point check |
 | numpy-gated training tests | run locally under `[train]`; **not** in remote CI — K-009 |
 
+**measured.** The same gates after the model path landed, all three run on 2026-10-21 against the working
+tree at `00cbd78` on this machine:
+
+| Gate | Result |
+| --- | --- |
+| `python -m pytest` (dependency-free `.venv`) | 1,389 passed, 16 skipped in 13.85 s (1,405 collected; the skips are the numpy- and torch-gated modules) |
+| `python -m pytest` (`.venv-train`, `.[dev,train]`) | 1,470 passed, 7 skipped in 24.06 s |
+| `python -m pytest` (`.venv-nn`, `.[dev,train,nn]`) | 1,603 passed, 1 skipped in 64.61 s (1,604 collected) |
+| `mypy src` (dependency-free) | clean, with the three optional-dependency paths excluded as `pyproject.toml` documents |
+| `mypy src --exclude '_never_match_'` (`[train]` and `[nn]`) | **no issues in 117 source files** in both — the whole package, torch modules included, under the same strict settings |
+| `ruff check .` / `ruff format --check .` | clean, 317 files formatted |
+| `.github/workflows/ci.yml` | unchanged: installs `.[dev]` only, so the two extra matrices above are still not run remotely |
+
 **verified.** K-009's cause is still true and still binds this work: the session's GitHub credential has
 scopes `gist, read:org, repo` and no `workflow` scope, so any commit touching
-`.github/workflows/*` is refused by GitHub. Nothing in this realignment may claim a CI job that cannot be
-pushed; new optional-dependency tests are gated by `importorskip` and their non-execution in remote CI is
-recorded, not hidden.
+`.github/workflows/*` is refused by GitHub — re-checked on 2026-10-21 against `gh api user`. Nothing in this
+realignment may claim a CI job that cannot be pushed; new optional-dependency tests are gated by
+`importorskip` and their non-execution in remote CI is recorded, not hidden.
 
 **measured.** Local environment for the next model step, observed the same day (and re-inspected rather
 than recalled from P22, which observed a different state):
@@ -242,12 +255,17 @@ documented workflow actually uses it.
 | Development doubles and fixtures (`models/deterministic`, `retrieval/embeddings` fixture, benchmark fixtures) | Development-only fixtures | tests, default runtime | Keep, and keep them visibly labelled as doubles |
 | Semantic judge (`grounding/semantic`) | Research proposal, boundary only | tests, benchmark | Keep as documented scaffolding; no new scaffolding before a model exists |
 
-**verified.** No module is currently dead: the only cross-layer edge is
-`models/trainedchar → training`, which is the intended adapter direction. No dependency inversion is
-needed to make training independent of the application — it already is. The realignment therefore adds a
-model path rather than rewiring the existing one, and the coupling guard is a test, not a refactor.
+**verified.** No module is currently dead. The cross-layer edges were
+`models/trainedchar → training` (the intended adapter direction) when this was first written, and after P31
+they are `models/trainedchar`, `models/nntransformer` and `models/registry` → `training`, plus a lazy import
+inside the CLI's model handler — all of them pointing the one way the contract allows. No dependency
+inversion is needed to make training independent of the application — it already is (§11 re-checks this with
+the command). The realignment therefore adds a model path rather than rewiring the existing one, and the
+coupling guard is a test, not a refactor.
 
 ## 10. What this audit changes
+
+As written on 2026-10-21 before any of it existed. §11 records what was delivered and what was not.
 
 1. The product contract becomes enforceable text: ADR-0033 (model-centred product, library API primary,
    CLI secondary), reflected in `AGENTS.md`, the README and `docs/architecture.md`.
@@ -261,3 +279,32 @@ model path rather than rewiring the existing one, and the coupling guard is a te
    number is tokenizer-independent.
 5. Documentation states what exists at the strength the evidence supports, including the parts that stay
    toy, and the parts this realignment does not deliver.
+
+## 11. Delivered state, read back against this audit (2026-10-21)
+
+The audit's §10 list is now history rather than a plan, and the two claims it made about the existing tree
+were re-checked rather than trusted:
+
+- **verified.** `grep -rl "chakaso.training" src/chakaso/` names exactly four non-training modules:
+  `models/trainedchar.py`, `models/nntransformer.py`, `models/registry.py` and `cli.py`. The first three are
+  the intended adapter direction (ADR-0002's single selection point imports lazily behind it); `cli.py`
+  imports the experiment driver *inside* the handler, so a dependency-free install never loads torch. No
+  application module — `app`, `runtime`, `conversation`, `retrieval`, `evidence`, `answers`, `correction`,
+  `evaluation`, `benchmark` — imports the training package, and no training module imports application code
+  in either direction. The model layer and the harness layer are independent, and the §9 verdicts
+  ("Keep", "Keep as optional", "Keep thin") hold unchanged: nothing was deleted by this realignment, and the
+  subsystems it classified as optional application capability are still exactly that.
+- **verified, and it is a limitation rather than a win.** §5's drift list is repaired in the sense that the
+  documents now describe the code, but the drift the manifest was built to catch has recurred one level up:
+  the corpus E2605 pinned is 71 documents of *this* documentation, and filling in the record and re-aligning
+  the docs after the run changed 13 of them. `verify_corpus` refuses to re-prepare that corpus against the
+  current tree, which is the designed behaviour and is recorded in the experiment record — with the follow-up
+  it exposes: the driver must write the snapshot it can be re-trained from. A project that trains on its own
+  documentation has to treat that documentation as a dataset version, not as a living file, and this
+  repository does not yet have that discipline.
+- **not delivered by this realignment, and not claimed:** any use of the trained checkpoint by the runtime
+  (P32), an external corpus, multi-seed reproduction (P33/P34), a CI job for the optional extras (K-009, and
+  the credential that prevents it), a peak-memory figure for any run, and any capability claim. The single
+  measured model result is 1.8657 bits per character on one author's prose, with the generations that loop
+  committed beside it.
+

@@ -1,32 +1,38 @@
 # Active task
 
-## Current unit: P30 — the model path's data layer
+## Current unit: nodes K–L — documentation realignment, then full regression and delivery
 
-**Goal.** Give the model something real and reproducible to learn from, and give the project a tokenizer it
-trained itself. P30 builds the three dependency-free layers the Transformer experiment cannot start
-without: a **content-verified corpus manifest** (the repository's own tracked text as data, with per-file
-hashes, licence and a stable dataset fingerprint, refusing silent drift), a **learned byte-pair subword
-vocabulary** (trained on training-split text only, serializable, round-trip exact, with documented unknown
-and boundary behaviour), and **sequence packing** with correct context-window bounds and no
-train/validation/test leakage. ADR-0033 makes this the next unit precisely because it is model-path work:
-nothing in it is an application feature.
+**Goal.** The model path is built, tested and measured (P30 delivered the data layer, P31 the model, its
+training path, its checkpoint, its Python interface and the E2605 comparison). What is in flight now is the
+last two nodes of the realignment: make every document describe the code that exists (K), then run every
+gate in every dependency matrix, review the history as a deliverable and push it (L).
 
-**Scope.** `chakaso.training.manifest`, `chakaso.training.subword`, `chakaso.training.packing`, a
-document-level three-way split, and tests for every failure path named in
-[`ADR-0033`](../decisions/ADR-0033-model-centred-product-contract.md)'s data rules. These layers are pure
-standard library on purpose: they then run in the dependency-free CI matrix instead of inheriting K-009's
-gap, and a tokenizer's segmentation must be reviewable without a numerical framework.
+**Definition of done (K).** Every status label matches the thing it describes: `CURRENT_STATE.md` names the
+model path and E2605's measured numbers as the authority it is; the roadmap's P7/P8 rows and `docs/training.md`
+say what has been *measured* rather than what is planned; `docs/architecture.md` carries the model-path
+components and the normative dependency direction; `docs/evaluation.md` keeps model evaluation and harness
+evaluation separate and cites the measured figures; K-001 and K-009 are re-verified against the token and the
+matrices and rewritten to what is actually still open; no document claims a capability E2605 did not measure.
 
-**Definition of done.** Manifest rejects a changed, missing or extra file against its pinned hashes and
-fingerprints the corpus; split keeps every document wholly on one side and is deterministic under a seed;
-tokenizer is trained from training text only, is byte-exact on save/load round trip, refuses a
-fingerprint mismatch, and its encode/decode round trip is proven on controlled examples; packing produces
-fixed-length windows with a correct target offset and never crosses a document boundary unannounced;
-all four gates pass, with the new modules covered in the dependency-free matrix.
+**Definition of done (L).** `pytest` passes in the dependency-free, `[train]` and `[train,nn]` matrices;
+`ruff check`, `ruff format --check` and `mypy src` pass, with `mypy src --exclude '_never_match_'` clean where
+the extras are installed; the package builds and imports from a clean install; the commit history reads as a
+deliverable (each subject matching its diff, no rewritten pushed history); the work is pushed to `main` and
+the remote SHA verified; CI status is read from the runner, not inferred. No `.github/workflows/*` file is
+touched: the session's credential has no `workflow` scope, so that gap is recorded, not claimed away.
 
-**What this unit is not.** Not a model, not a training run, not a claim about capability. It produces the
-first measured *data* numbers (token counts, compression rate, split sizes) — the measured *model* number
-is E2605 in P31.
+**What this unit is not.** Not a bigger model, not a second run dressed up as the first, and not a
+capability claim. E2605's generations loop; nothing here makes the trained checkpoint a runtime dependency.
+
+**The next units, in order, each gated on the one before it.**
+1. **P33 — a measured corpus must stay trainable.** The driver writes a snapshot of the pinned text beside
+   its manifest and `prepare_corpus` can consume it, so re-running a recorded experiment either trains on the
+   bytes it names or refuses. Today it refuses in this checkout, because the repository text moved on after
+   the pin (E2605's record documents exactly that).
+2. **P34 — E2606: reproduce E2605 across pre-declared seeds**, reporting mean ± sample SD bits per character
+   for both architectures and both baselines, so the 1.8657 gap becomes an effect with a spread.
+3. **An external corpus with a recorded licence**, pinned by the same manifest machinery, before any capacity
+   question is worth asking.
 
 **Deferred by this realignment, deliberately.** P29 (calibrating the retrieval evidence-sufficiency policy)
 and P32 (runtime consumption of that decision) remain exactly as P28 left them: valid, bounded, and now
@@ -42,18 +48,18 @@ acceptance criteria are met and recorded here). Statuses: `pending`, `ready`, `i
 
 | Node | Task | Depends on | Owns | Status | Evidence / commit | Tests |
 | --- | --- | --- | --- | --- | --- | --- |
-| A | Repository + architecture audit | — | `docs/internal/engineering/` | committed | `538a47d` | hygiene 14 passed |
-| B | Product contract decision | A | `docs/decisions/`, `AGENTS.md` | committed | `033edde` (ADR-0033), `760af7a` (AGENTS.md, `.gitignore`) | hygiene 14 passed |
+| A | Repository + architecture audit | — | `docs/internal/engineering/` | committed | `538a47d` | hygiene 14 passed then; 17 at this head |
+| B | Product contract decision | A | `docs/decisions/`, `AGENTS.md` | committed | `033edde` (ADR-0033), `760af7a` (AGENTS.md, `.gitignore`) | hygiene 14 passed then; 17 at this head |
 | C | Model + compute feasibility, measured | A | `docs/research/` | committed | `1c4172d` (measurements), `a75cccc` (ADR-0034) | executed probes |
-| D | Target architecture + dependency decision | B, C | `docs/decisions/`, `pyproject.toml` | in_progress | ADR-0034 committed; `[nn]` extra + isolation tests next | — |
-| E | Data and tokenization (P30) | D | `chakaso.training.{manifest,subword,packing,data}` | ready | — | planned: dependency-free |
-| F | Model architecture and initialization | D, E | `chakaso.training.transformer` | pending | — | torch-gated |
-| G | Training, optimization, checkpoints | F | `chakaso.training.nn_*` | pending | — | torch-gated |
-| H | Inference and Python API | G | `chakaso.models` | pending | — | contract suite + CLI-free |
-| I | Model evaluation and baselines | E, G | `chakaso.training.nn_evaluation` | pending | — | hand-computable metrics |
-| J | Experiment E2605, measured | E–I | `experiments/E2605/` | pending | — | executed run |
-| K | Subsystem reassessment + documentation | J | `README.md`, `docs/*`, `CHANGELOG.md` | pending | — | link + status checks |
-| L | Full regression, review, push | K | whole tree | pending | — | four gates, both matrices |
+| D | Target architecture + dependency decision | B, C | `docs/decisions/`, `pyproject.toml`, `docs/architecture.md` | committed | `a75cccc` (ADR-0034), `bb885d7` (`[nn]` extra + isolation tests), `ed3e156` (normative dependency direction) | hygiene gates the torch surface |
+| E | Data and tokenization (P30) | D | `chakaso.training.{manifest,subword,packing,data}` | committed | `dcf8355`, `5a01714`, `ed97d55`, `eddb3e3`, `c1225d8` | dependency-free: 38 + 10 + 31 + 17 tests |
+| F | Model architecture and initialization | D, E | `chakaso.training.transformer` | committed | `232f673` | 39 torch-gated tests, incl. parameter-count agreement |
+| G | Training, optimization, checkpoints | F | `chakaso.training.nn_*`, `training.loop` | committed | `1219c3c` (checkpoint), `ac46cf6` (training + resume), `875477f` (mini-batch character) | 20 + 28 torch-gated tests |
+| H | Inference and Python API | G | `chakaso.models` | committed | `c0e5f64` (`load_model` + adapter), `625f08a` (artifact scoring) | 12 + 30 tests, adapter inherits the contract suite |
+| I | Model evaluation and baselines | E, G | `chakaso.training.model_metrics`, `nn_evaluation` | committed | `3fa9f12`, `625f08a` | 10 hand-computable metric tests + 7 evaluation tests |
+| J | Experiment E2605, measured | E–I | `experiments/E2605/` | committed | driver `0cbed79`, CLI `d878828`, pre-run record `9b8a478`, `bcdfa7d`, measured record `490ac1f`, reproduction note `00cbd78` | 11 driver tests; the run itself measured 513.6 s + 69.9 s + 13.2 s |
+| K | Subsystem reassessment + documentation | J | `README.md`, `docs/*`, `CHANGELOG.md`, `docs/agent/*` | in_progress | `760af7a`, `2470af6`, `691a319`, `adc9e77`, `cc816af`, `6fa370a`, plus the agent-state commit | link + status checks (`test_repository_hygiene`) |
+| L | Full regression, review, push | K | whole tree | pending | — | four gates across three matrices, then push and verify the remote |
 
 **Blockers and standing constraints.** Remote CI cannot gain a `[train]`/`[nn]` job: this session's GitHub
 credential has scopes `gist, read:org, repo` and no `workflow` scope (K-009, re-verified 2026-10-21), so CI
@@ -61,6 +67,39 @@ files stay untouched and the gap is recorded rather than claimed away. Peak proc
 measurable from this shell (the Windows process-memory APIs and `tasklist` filtering return nothing), so no
 RSS number is stated anywhere. Starting `HEAD` for this arc was `eaee98d`; work is on `main`, which was
 ahead of `origin/main` by one commit before this arc began.
+
+## What the units before this completed (P30 and P31 — the model path, measured)
+
+Decided (ADR-0033/0034/0035), built, tested, run and recorded (E2605). The model path is now: pinned corpus →
+document split → learned subword tokenizer → packed next-token examples → decoder-only causal Transformer →
+mini-batch training with validation-selected early stopping and bit-identical resume → one checksummed,
+self-describing checkpoint → bits-per-character metrics → `chakaso.models.load_model`.
+
+- [x] **P30, dependency-free:** `training.manifest` (per-document SHA-256 over normalized text, licence,
+      source, typed `CorpusDriftError`), `data.split_text_units` (whole-document three-way split, deduplicated
+      by content before selection), `training.subword` (byte-level BPE, named pre-tokenizer, deterministic
+      tie-breaking, self-describing checksum-verified record), `training.packing` (targets shifted by one,
+      dropped tail reported) and `training.model_metrics` (bits per character / nats / perplexity / accuracy
+      through one arithmetic, with an `IdentifierDecoder` protocol so two architectures and two baselines are
+      measured the same way). All of it runs in the dependency-free CI matrix.
+- [x] **P31, behind `[nn]`:** `training.transformer` (parameter count derived from the configuration and
+      cross-checked against the built model), `training.nn_training` (`plan_batch` as a pure function so a
+      resumed run replays its batches; the loop's incremental selection is checked against
+      `choose_validation_best` and refuses to return if they disagree), `training.nn_checkpoint`
+      (ADR-0035), `training.nn_evaluation`, `models.load_model` + `models.nntransformer` (adapter inherits the
+      shared `LanguageModel` contract; sampling is seeded from the request), and `chakaso experiment model`
+      as a thin handler that imports torch lazily.
+- [x] **E2605 measured result** ([`../../experiments/E2605/record.md`](../../experiments/E2605/record.md),
+      written and committed *before* the run, with `results.json` and the corpus manifest committed after it):
+      held-out **1.8657 bits per character** for the 643,840-parameter Transformer against **3.1343** for
+      E2601's character architecture, **3.3224** unigram and **4.8010** uniform on the same positions;
+      early stopping selected step 1380 of 2400 and the un-stopped model was **0.1434 nats worse**; three
+      committed generations loop, and the record says that is the point. Single seed, single author's prose,
+      no error bar, no runtime wiring.
+- [x] **The honest residue, recorded rather than smoothed over:** the pre-run record's corpus figure
+      (754,789 characters) was superseded by the run's own pin (780,223) and that is written into the record;
+      re-preparing the pinned corpus in this checkout now refuses because the tree moved on, so reproducibility
+      needs a snapshot the driver does not yet write (that is **P33**).
 
 ## What the previous unit completed (P28 — the retrieval evidence-sufficiency decision)
 
@@ -217,7 +256,7 @@ Implemented, tested, documented and green on Python 3.11–3.13 (recorded in
       follow-up into reassessment and reports the decision honestly, and surfaces each recorded answer's
       identifier so a later turn can name it. The original `AnswerRecord` and its historical provenance
       are never rewritten; a reassessment is a distinct append-only `CorrectionRecord`; no revised prose
-      is generated (there is no model).
+      is generated (the model in that path is a development double).
 
 **What P21 did not do (and will not pretend to):** no autonomous decision (nothing revises an answer
 *unbidden*), no revised wording, no correction record auto-persisted to disk, and the development double
@@ -225,31 +264,40 @@ gained no capability.
 
 ## Ordering after this unit
 
-1. **P31 — the model itself:** a typed `TransformerConfig`, a decoder-only causal Transformer, a mini-batch
-   training loop with validation-driven early stopping, a versioned `torch` checkpoint that refuses an
-   incompatible tokenizer/architecture/configuration, and `load_model` as the public Python entry point
-   (ADR-0033's rule 2, ADR-0034's isolation and security rules).
-2. **P31's measurement — E2605:** character model vs subword Transformer on the identical corpus, split and
-   budget, reported in bits per character against uniform and unigram baselines, with generation samples
-   for qualitative inspection and the overfitting reported where it appears.
-3. **Then, and only then,** the application-side items this realignment deferred: P32 (the runtime acting on
-   the sufficiency decision), a real `SemanticJudge`, and a grounded answer produced by a model rather than
-   an oracle. Each is gated on its own dependency-feasibility decision, and none of them substitutes for
-   the model path again.
+1. **P31 — the model itself: done.** `TransformerConfig`, the decoder-only causal Transformer, the
+   mini-batch loop with validation-driven early stopping and bit-identical resume, `chakaso-transformer-checkpoint/1`
+   (ADR-0035) and `chakaso.models.load_model` all exist, are tested in the `[nn]` matrix and were exercised by
+   the run that produced the project's first Transformer measurement.
+2. **P31's measurement — E2605: done and measured.** 1.8657 bits per character against 3.1343 for the
+   character model, 3.3224 unigram and 4.8010 uniform on the same held-out documents, early stopping
+   load-bearing, overfitting reported where it appeared, generations quoted because they loop.
+3. **P33 — reproducibility of a pinned corpus.** A measured result must be trainable again: the driver writes
+   the corpus snapshot beside the manifest, and preparation can consume it. Without this, a later commit
+   either refuses or silently retargets a newer corpus.
+4. **P34 — E2606: E2605 across pre-declared seeds**, mean ± sample SD, so the gap has an error bar.
+5. **An external corpus with a recorded licence** — the data decision that bounds everything above — and only
+   after it a capacity question.
+6. **Then, and only then,** the application-side items this realignment deferred: P32 (the runtime acting on
+   the sufficiency decision), a real `SemanticJudge`, and a grounded answer produced by a model rather than an
+   oracle. Each is gated on its own dependency-feasibility decision, and none of them substitutes for the
+   model path again.
 
 All of it stays behind the existing boundaries. K-001 — that nothing has met a real workload — still stands
-and is the reason E2605 is designed as a bounded comparison on documented self-authored text rather than a
+and is the reason E2605 was designed as a bounded comparison on documented self-authored text rather than a
 capability claim.
 
 ## Known gaps that bound this unit
 
 - K-001: offline and synthetic; a *useful* model on a real workload has still not been run. E2601 trained
-  and measured a real (but toy) model, narrowing the training-loop half of this gap, but the project has
-  still met no real corpus or real question — the frontier of the whole project.
-- K-009: the numpy-gated training tests do not run in remote CI, because the session's GitHub token
-  lacks the `workflow` scope and the `[train]` CI job cannot be pushed. Verified locally instead. ADR-0034's
-  `[nn]` tests inherit the same gap by construction: they are `importorskip`-gated, run locally with the
-  extra installed, and no CI job for them is claimed.
+  and measured a real (but toy) model, and E2605 trained and measured a 643,840-parameter Transformer on a
+  real corpus — this repository's own 780,223 characters of pinned prose — which narrows the training half
+  further. No real question was asked and no answer was grounded by a model, so the workload half is
+  untouched and remains the frontier of the whole project.
+- K-009: the numpy- and torch-gated tests do not run in remote CI, because the session's GitHub token
+  lacks the `workflow` scope and the `[train]`/`[nn]` CI jobs cannot be pushed. Verified locally instead, in
+  all three matrices: 1,389 passed / 16 skipped dependency-free, 1,470 with `[train]`, 1,603 with
+  `[train,nn]`, and `mypy src --exclude '_never_match_'` clean over all 117 source files in both extra
+  environments. ADR-0034's `[nn]` tests inherit the gap by construction; no CI job for them is claimed.
 - K-006: the invented-reference condition is persisted per answer, but nothing aggregates it into a
   rate, and it is only durable when the SQLite backend is selected.
 - K-008: the fetcher's destination screen is partial; any acquisition work must confirm no default path

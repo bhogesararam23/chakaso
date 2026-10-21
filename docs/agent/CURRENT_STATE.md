@@ -1,15 +1,21 @@
 # Current state
 
-Last updated: 2026-10-19, at the commit recording E2604 — the retrieval evidence-sufficiency decision
-(P28, ADR-0032). Since the P27 evaluation workload the project shipped the correctness response E2603's
-baseline demanded: a deterministic, offline, additive `chakaso.retrieval.sufficiency` policy that tells
-"no adequate evidence" apart from "k candidates", measured end to end in the grounded evaluation and
-reported as a separate dimension. E2604 shows it is 100% accurate on the self-authored workload with zero
-cost to recall, and is equally clear that the win is narrow, corpus-specific, not yet consumed by the
-runtime (P32), and does not touch retrieval's own over-return. The runtime's default model is still the
-development double, the trained model is still a measured toy, and **no model answers a grounded question**.
-The next real unit is P29: stress-test whether the sufficiency policy survives calibration and a harder,
-extended workload — or record honestly that this corpus is too small to calibrate it.
+Last updated: 2026-10-21, at the commit recording E2605 — the first Transformer this project trained and
+measured (P31, ADR-0033/0034/0035). Since E2604 the project re-ordered itself around the model
+(ADR-0033: the product is a trained model plus the machinery that makes its result reproducible; the Python
+library is the primary interface and the CLI a secondary developer utility), built the whole model path
+underneath it, and measured it: a 643,840-parameter subword causal Transformer trained from random
+initialization on the repository's own pinned 71-document corpus reaches **1.8657 bits per character** on
+held-out documents, against **3.1343** for E2601's character architecture and 3.3224 / 4.8010 for the
+unigram and uniform predictors of the same identifier space. `chakaso.models.load_model(checkpoint)` returns
+that model as a `LanguageModel` with no terminal, no config file and no application import.
+
+What that does **not** change: the runtime's default model is still the development double, no model answers
+a grounded question (K-001), E2605 is one seed on one author's prose with no error bar and its committed
+generations loop, and P29 (calibration) and P32 (runtime consumption of the sufficiency decision) remain
+deferred by the same ADR that deferred them. The next real unit is set by E2605's own follow-up section:
+reproduce it across pre-declared seeds, then obtain an external corpus with a recorded licence — not a bigger
+model.
 
 This file is the authority on what exists. If it disagrees with any other
 document, this file is right and the other document is a defect.
@@ -23,16 +29,16 @@ A private planning note is never evidence that something is implemented.
 | Repository conventions | `.gitignore`, `.gitattributes`, `.editorconfig` | Private docx pack excluded by `.gitignore` and guarded by a test |
 | License | `LICENSE` | Apache-2.0; rationale in ADR-0004 |
 | Public documentation | `README.md`, `docs/*.md`, `docs/research/` | Specifications with mandatory status labels |
-| Decision records | `docs/decisions/` | ADR-0001 to ADR-0030 |
+| Decision records | `docs/decisions/` | ADR-0001 to ADR-0035 |
 | Contribution guide | `CONTRIBUTING.md` | |
 | Agent contract | `AGENTS.md`, `docs/agent/` | |
 | Python package | `src/chakaso/` | Installs; typed; `py.typed` ships |
-| CLI | `src/chakaso/cli.py` | `--version`, `info`, `capabilities`, `config show`, `chat`, `retrieve` (with `--source` to scope a query), `sources list|show`, `evidence show`, `benchmark retrieval|correction|strategies|semantic`, `experiment run`, `storage check|migrate`, `answers list|show|lineage`; `chat` builds its graph through `chakaso.app` and drives the runtime, and a follow-up that explicitly names a stored `ans_…` identifier routes into a reassessment rather than an ordinary reply (ADR-0029); after each recorded turn the shell prints the answer's identifier on stderr so a later turn can name it; `sources`/`evidence` inspect the in-memory corpus built from `--file` documents and are explicit that no durable source index exists. Untrusted document text is rendered inert on the human-readable paths via `chakaso.core.safe_for_terminal` |
+| CLI | `src/chakaso/cli.py` | `--version`, `info`, `capabilities`, `config show`, `chat`, `retrieve` (with `--source` to scope a query), `sources list|show`, `evidence show`, `benchmark retrieval|correction|strategies|semantic`, `experiment run`, `experiment model` (the last needs the optional `[train,nn]` extras and is a thin handler over `chakaso.training.subword_experiment`, importing torch lazily so a dependency-free install reports what is missing instead of failing at import), `storage check|migrate`, `answers list|show|lineage`; `chat` builds its graph through `chakaso.app` and drives the runtime, and a follow-up that explicitly names a stored `ans_…` identifier routes into a reassessment rather than an ordinary reply (ADR-0029); after each recorded turn the shell prints the answer's identifier on stderr so a later turn can name it; `sources`/`evidence` inspect the in-memory corpus built from `--file` documents and are explicit that no durable source index exists. Untrusted document text is rendered inert on the human-readable paths via `chakaso.core.safe_for_terminal` |
 | Application composition | `src/chakaso/app.py` | `build_application(loaded, …)` is the single place a resolved `Config` becomes the runtime's dependencies: model via the registry, the configured answer store (`memory` or durable `sqlite`, never a silent downgrade), retrieval services over a corpus, the planner at the configured strategy/limits, and the manager. Since ADR-0029 the application also composes a deterministic reassessment trigger with the existing reassessment boundary (`Application.reassess_followup`), gathering a follow-up's evidence read-only through the runtime; a named-but-unknown or ambiguous target raises the boundary's typed errors. Every dependency is injectable for tests (ADR-0026) |
 | Configuration | `src/chakaso/config/`, `configs/default.toml` | Typed schema in sections (`model`, `storage`, `retrieval`), explicit loading, per-value provenance; `model` selects the adapter and (for the trained adapter) a `checkpoint_path` that defaults to empty so nothing loads by default; storage defaults to the in-memory backend so nothing is written; `retrieval` selects the strategy (`lexical`/`dense`/`hybrid`), `top_k`, hybrid fusion knobs and an ingest size bound, and whether grounding is on at all |
 | Core primitives | `src/chakaso/core/` | Content-derived identifiers, SHA-256 hashing, terminal-safe rendering of untrusted text (`safe_for_terminal`), error base |
-| Model boundary | `src/chakaso/models/` | `LanguageModel` protocol, capabilities, a registry that selects an adapter by name in one place, and a shared contract suite that every adapter inherits. Two adapters exist: the default development double and, behind the optional `[train]` extra, the trained-character adapter (P25) — imported lazily so the boundary itself never requires numpy |
-| Model implementations | `src/chakaso/models/deterministic.py`, `src/chakaso/models/trainedchar.py` | Two adapters behind the boundary. `deterministic`: a development double only — the default and the only one selected by `configs/default.toml`. `trained_char` (P25): loads an E2601-class trained character checkpoint, rebuilds its bound vocabulary, generates greedily within `max_new_tokens`, and declares `development_double=False` with a real `TOKENIZE` capability — but its model is a tiny toy (incoherent output), it is never the default, and it lives behind the optional `[train]` extra (the registry imports it lazily, so `import chakaso.models` stays dependency-free; a missing extra or checkpoint is a named `ModelError`, never a silent fall back to the double). **No useful language model exists.** |
+| Model boundary | `src/chakaso/models/` | `LanguageModel` protocol, capabilities, a registry that selects an adapter by name (and, for a trained one, by checkpoint) in one place, `chakaso.models.load_model(path)` for the library-first entry point ADR-0033 requires, and a shared contract suite that every adapter inherits. Three adapters exist: the default development double, the trained-character adapter behind the optional `[train]` extra (P25), and the subword Transformer adapter behind `[nn]` (P31) — both trained ones imported lazily, so the boundary itself never requires numpy or torch |
+| Model implementations | `src/chakaso/models/deterministic.py`, `trainedchar.py`, `nntransformer.py` | Three adapters behind the boundary. `deterministic`: a development double only — the default and the only one selected by `configs/default.toml`. `trained_char` (P25): loads an E2601-class trained character checkpoint, rebuilds its bound vocabulary, generates greedily within `max_new_tokens`, declares `development_double=False` with a real `TOKENIZE` capability, and its model is a 984-parameter toy. `subword_transformer` (P31): loads a `chakaso-transformer-checkpoint/1` artifact through `chakaso.models.load_model`, decodes with the tokenizer stored inside that artifact, generates greedily or by temperature/top-k sampling, stops on the document separator, scores a text in nats, and declares itself not the double; its model is E2605's 643,840-parameter Transformer, whose committed generations loop. Both trained adapters are opt-in behind their extras (lazy registry imports, so `import chakaso.models` stays dependency-free; a missing extra or an incompatible checkpoint is a named `ModelError`, never a silent fall back to the double). **No useful language model exists.** |
 | Evidence records | `src/chakaso/evidence/` | `SourceRecord`, `EvidenceChunk`, `EvidencePack`, typed source references (web/file/text, ADR-0011), URL canonicalization, citation resolution |
 | Normalization | `src/chakaso/retrieval/normalize.py` | Deterministic representation normalization (line endings, Unicode NFC, blank lines) before chunking |
 | Chunking | `src/chakaso/retrieval/chunking.py` | Document text to evidence chunks: section-bounded, non-overlapping, deterministic (ADR-0010) |
@@ -60,11 +66,11 @@ A private planning note is never evidence that something is implemented.
 | Answers & persistence | `src/chakaso/answers/` | `AnswerId` is a per-event typed identifier, not a content hash (ADR-0017). An immutable `AnswerRecord` ties turn + model + evidence + claims + evaluation + a `correction_of` link by reference, and now persists a typed, immutable `evaluation_provenance` snapshot — the citation/grounding/reference outcomes and evaluator name+version the turn itself reached (ADR-0028) — while the live `AnswerEvaluation` stays recomputed and unpersisted. `AnswerStore` boundary with two append-only, integrity-checked backends: in-memory `InMemoryAnswerStore` (the default) and a durable `SQLiteAnswerStore` built on the standard library (ADR-0018, ADR-0021). The durable store is proven by a test to survive a process restart, and is opt-in, so nothing writes to disk unless it is selected |
 | Correction foundation | `src/chakaso/correction/` | The reassessment decision rule (retain / qualify / correct / abstain / needs_review, ADR-0016), `reassess` over the grounding boundary, an append-only `CorrectionRecord`, structural correction metrics, a follow-up helper (`reassess_followup`), an application-level `reassess_stored_answer` / `reassess_and_record` over a stored answer, and a deterministic `DeterministicReassessmentTrigger` that reads a follow-up for an explicit `ans_…` reference (intent only — it never reassesses anything itself, ADR-0029). Decides and records; produces no revised prose (there is no model) and is not an autonomous loop — a follow-up must name a stored answer, and the composition is explicit |
 | Experiments | `src/chakaso/experiments/` | `Experiment` (hypothesis + benchmark + configuration) and a content-fingerprinted, environment-separated `ExperimentResult`; `run_experiment` drives a development benchmark (the retrieval runner honours a configured `retriever` strategy); `compare_results` is a deterministic regression baseline that refuses incompatible versions, and `compare_retrieval_strategies` measures lexical vs dense vs hybrid over the same fixtures (ADR-0020). No tracker, no database, no model |
-| Training (experimental) | `src/chakaso/training/` | The from-scratch training pipeline ADR-0005 reserved. Dependency-free layers: a self-authored corpus (`chakaso-toy-char-v1`, Apache-2.0), a deterministic character vocabulary (codepoint-ordered ids, reserved unknown id, content fingerprint), a leak-free line-unit split (two-way `split_corpus` and a three-way `split_three_way` for selection-honest protocols) with a train-only vocabulary and a content digest, a validated `TrainingConfig`, and uniform/unigram baselines. Numpy layers (the optional `[train]` extra, ADR-0030 — **not** re-exported, so `import chakaso.training` stays numpy-free): a tiny causal character model with hand-derived gradients, an Adam step, a full-batch training loop that records a held-out curve, a content-checksummed JSON checkpoint that refuses corruption/incompatibility, held-out evaluation (loss/perplexity/bits/accuracy), the `E2601` experiment driver, and the `E2602` controlled multi-seed early-stopping protocol (`controlled.run_controlled_experiment`). It trains a toy model; the training package itself is not a `LanguageModel` adapter and no application logic imports it — only the optional `trained_char` adapter (`chakaso.models.trainedchar`, P25) reads its checkpoint format |
-| Experiment records | `experiments/E2601/record.md`, `experiments/E2602/record.md`, `experiments/E2603/record.md`, `experiments/E2604/record.md` | Four committed experiments and the project's only measured results. E2601: a randomly-initialised 984-parameter character model whose held-out next-char cross-entropy beats both uniform (3.3322) and unigram (3.0531) baselines — 1.6650 nats best, 2.4946 final — recorded honestly with the overfitting after step 50. E2602: the same protocol across five seeds with a three-way split and early stopping selected on validation → mean test loss **1.7978 ± 0.1767 nats**, below both baselines on every seed, and the step-300 final loss (mean 2.7804) worse on every seed — confirming the overfitting is systematic, not one lucky partition. E2603: the first grounded-answer evaluation baseline over the self-authored P27 workload — retrieval recall@k 0.8182 / MRR 0.8636 with the reference oracle over all 14 cases (held-out recall@k 1.0), zero stage failures, and honest negative findings (3 forbidden hits, 3 false retrievals on abstention cases); it measures the harness and retrieval, never a model, since no model answers. E2604: the P28 evidence-sufficiency decision measured against the E2603 baseline — **100% accurate on the workload** (all 3 unanswerable cases judged insufficient, **0** answerable cases wrongly abstained → recall preserved) with retrieval's own metrics intentionally unchanged, and a documented narrow corpus-specific threshold band (~0.23–0.31). Format per `docs/internal/experiments/README.md` |
-| Tests | `tests/` | 1276 tests at the current head (1268 run in the dependency-free matrix; 8 numpy-gated training/adapter tests skip there and run where `[train]` is installed — K-009): package, CLI (incl. `retrieve`, `benchmark` and `experiment`, and the retrieval-aware `chat` wiring — corpus grounding, `--no-retrieval`, strategy/top-k overrides, durable-store recording, and `benchmark grounded` across providers/splits/`--sufficiency` with JSON determinism), configuration (incl. the `retrieval` section: defaults, strategy pattern, numeric limits, boolean `enabled`, provenance), application composition (`chakaso.app`: the configured store is used and never silently downgraded, strategy/top-k/enabled change real runtime behaviour, SQLite-backed answers survive a reopen, sqlite-without-path is refused, corpus building bounds file size, close is idempotent), identifiers and hashing, source identity, model boundary, evidence, normalization, chunking, ingestion, corpus, lexical retrieval, **retrieval evidence sufficiency** (ADR-0032: discriminating-term policy over empty/single-doc/all-stopword/morphology-miss cases, protocol conformance, and a read-only-ness check that it never mutates the pack), dense retrieval (embedding double, exact index, retriever), hybrid retrieval (reciprocal-rank fusion, per-component provenance), retrieval orchestration, end-to-end pipeline, fetch policy and netguard, HTML/web ingestion, cache, evaluation metrics and answer evaluation, benchmark identity/cases/loader/fixtures/runner/report and the correction benchmark, claims/extract/links, citation validation, grounding and the semantic boundary, correction decision/reassess/record/metrics/follow-up/service, answer identity/record/store/serialization and the durable SQLite store (restart, rollback, schema, integrity) with a two-backend conformance suite and conversation integration, experiments (model/runner/compare), security/determinism/reproducibility regressions (the no-network import guard covers `chakaso.app`), conversation state and manager, query planning (mode/normalization/plan invariants/deterministic rules), retrieval-aware runtime (plan→retrieve→record, atomicity, provenance), retrieval-strategy comparison (measured, deterministic lexical/dense/hybrid), end-to-end grounded-turn + restart integration and untrusted-content security checks, the explicit reassessment trigger (deterministic intent detection over valid / none / ambiguous / malformed references) and the composed `Application.reassess_followup` (valid, unknown-target, ordinary-follow-up and ambiguous routes; append-only integrity where the original answer is never mutated; SQLite restart conformance) and its reachability from `chakaso chat`, the grounded-answer evaluation workload (schema invariants, provenance refusal, dataset integrity and split-leakage, the pinned workload content fingerprint, strict-loader validation, hand-checkable metric primitives, runner pass/abstain/fail paths incl. per-stage failure classification and the answered-cases-only coverage denominator, evidence-sufficiency measurement, deterministic reports, and CLI integration), the training pipeline (dependency-free corpus/tokenizer/split/config/baselines, and numpy-gated model/finite-difference-gradient/checkpoint/evaluation/loop/experiment incl. that a trained model reproducibly beats both baselines), repository hygiene. The count ages; `python -m pytest` does not. |
+| Training (experimental) | `src/chakaso/training/` | The from-scratch training pipeline ADR-0005 reserved, in three dependency tiers. **Dependency-free**: a self-authored corpus (`chakaso-toy-char-v1`), a deterministic character vocabulary, leak-free splits, a validated `TrainingConfig`, uniform/unigram baselines, and since P30 the whole data layer for a real corpus — `manifest` (per-document SHA-256 over normalized text, licence, source, typed drift refusal), `data.split_text_units` (whole-document three-way split, deduplicated by content before selection), `subword` (byte-level BPE with a named pre-tokenizer, deterministic tie-breaking, self-describing checksum-verified record), `packing` (fixed-length next-token examples, dropped tail reported) and `model_metrics` (bits per character / nats / perplexity / accuracy through one arithmetic for any identifier space). **`[train]`** (numpy, ADR-0030): the tiny causal character model with hand-derived, every-scalar-verified gradients, Adam, a full-batch loop recording a held-out curve, a mini-batch loop over the same model, the JSON checkpoint (schema/2), held-out evaluation and the E2601/E2602 drivers. **`[nn]`** (torch, ADR-0034): `transformer` (decoder-only causal, pre-norm, GELU, tied head, parameter count derived from the config), `nn_training` (mini-batch AdamW with warmup, clipping, validation-selected early stopping, bit-identical resume), `nn_checkpoint` (ADR-0035: one checksummed file, tokenizer inline, `weights_only=True`, usable vs resumable kinds), `nn_evaluation` and `subword_experiment` (the E2605 driver). None of it is re-exported, so `import chakaso.training` stays dependency-free and only named modules import torch (enforced by a hygiene test). No application logic imports the training package; the only readers of its checkpoints are the two optional adapters, and the E2605 driver generates through `chakaso.models.load_model` so the public path is the one under test |
+| Experiment records | `experiments/E2601/record.md`, `experiments/E2602/record.md`, `experiments/E2603/record.md`, `experiments/E2604/record.md`, `experiments/E2605/record.md` | Five committed experiments and the project's only measured results. E2601: a randomly-initialised 984-parameter character model whose held-out next-char cross-entropy beats both uniform (3.3322) and unigram (3.0531) baselines — 1.6650 nats best, 2.4946 final — recorded honestly with the overfitting after step 50. E2602: the same protocol across five seeds with a three-way split and early stopping selected on validation → mean test loss **1.7978 ± 0.1767 nats**, below both baselines on every seed, and the step-300 final loss (mean 2.7804) worse on every seed — confirming the overfitting is systematic, not one lucky partition. E2603: the first grounded-answer evaluation baseline over the self-authored P27 workload — retrieval recall@k 0.8182 / MRR 0.8636 with the reference oracle over all 14 cases (held-out recall@k 1.0), zero stage failures, and honest negative findings (3 forbidden hits, 3 false retrievals on abstention cases); it measures the harness and retrieval, never a model, since no model answers in that path. E2604: the P28 evidence-sufficiency decision measured against the E2603 baseline — **100% accurate on the workload** (all 3 unanswerable cases judged insufficient, **0** answerable cases wrongly abstained → recall preserved) with retrieval's own metrics intentionally unchanged, and a documented narrow corpus-specific threshold band (~0.23–0.31). E2605: the first Transformer, trained from random initialization on the pinned 71-document corpus and recorded with its manifest and machine-readable report — held-out **1.8657 bits per character** (643,840 parameters, 2.6936 nats/token, perplexity 14.79, token accuracy 0.4501) against **3.1343** for E2601's character architecture, 3.3224 unigram and 4.8010 uniform; early stopping selected step 1380 of 2400 and the un-stopped model was 0.1434 nats worse; three committed generations loop. One seed, one author's prose, no error bar. Format per `docs/internal/experiments/README.md` |
+| Tests | `tests/` | 1,405 tests collected at the current head (1,389 pass and 16 skip in the dependency-free matrix — the skips are the numpy- and torch-gated training/adapter tests, K-009; 1,470 pass with `[train]`, 1,603 with `[train,nn]`): package, CLI (incl. `retrieve`, `benchmark` and `experiment`, and the retrieval-aware `chat` wiring — corpus grounding, `--no-retrieval`, strategy/top-k overrides, durable-store recording, and `benchmark grounded` across providers/splits/`--sufficiency` with JSON determinism), configuration (incl. the `retrieval` section: defaults, strategy pattern, numeric limits, boolean `enabled`, provenance), application composition (`chakaso.app`: the configured store is used and never silently downgraded, strategy/top-k/enabled change real runtime behaviour, SQLite-backed answers survive a reopen, sqlite-without-path is refused, corpus building bounds file size, close is idempotent), identifiers and hashing, source identity, model boundary, evidence, normalization, chunking, ingestion, corpus, lexical retrieval, **retrieval evidence sufficiency** (ADR-0032: discriminating-term policy over empty/single-doc/all-stopword/morphology-miss cases, protocol conformance, and a read-only-ness check that it never mutates the pack), dense retrieval (embedding double, exact index, retriever), hybrid retrieval (reciprocal-rank fusion, per-component provenance), retrieval orchestration, end-to-end pipeline, fetch policy and netguard, HTML/web ingestion, cache, evaluation metrics and answer evaluation, benchmark identity/cases/loader/fixtures/runner/report and the correction benchmark, claims/extract/links, citation validation, grounding and the semantic boundary, correction decision/reassess/record/metrics/follow-up/service, answer identity/record/store/serialization and the durable SQLite store (restart, rollback, schema, integrity) with a two-backend conformance suite and conversation integration, experiments (model/runner/compare), security/determinism/reproducibility regressions (the no-network import guard covers `chakaso.app`), conversation state and manager, query planning (mode/normalization/plan invariants/deterministic rules), retrieval-aware runtime (plan→retrieve→record, atomicity, provenance), retrieval-strategy comparison (measured, deterministic lexical/dense/hybrid), end-to-end grounded-turn + restart integration and untrusted-content security checks, the explicit reassessment trigger (deterministic intent detection over valid / none / ambiguous / malformed references) and the composed `Application.reassess_followup` (valid, unknown-target, ordinary-follow-up and ambiguous routes; append-only integrity where the original answer is never mutated; SQLite restart conformance) and its reachability from `chakaso chat`, the grounded-answer evaluation workload (schema invariants, provenance refusal, dataset integrity and split-leakage, the pinned workload content fingerprint, strict-loader validation, hand-checkable metric primitives, runner pass/abstain/fail paths incl. per-stage failure classification and the answered-cases-only coverage denominator, evidence-sufficiency measurement, deterministic reports, and CLI integration), the training pipeline (dependency-free corpus/tokenizer/split/config/baselines, and numpy-gated model/finite-difference-gradient/checkpoint/evaluation/loop/experiment incl. that a trained model reproducibly beats both baselines), **the model path** (dependency-free: manifest discovery/verification/drift refusal and snapshot round-trips, document split with dedup and leakage refusal, BPE training determinism with per-occurrence merge counting and totality over Unicode, packing with shifted targets and dropped tails, bits-per-character arithmetic against hand-computable cases including a separator that costs a prediction and decodes to nothing; `[nn]`: transformer config validation and parameter-count agreement, mask causality, forward-loss against a hand-computed value and sampled finite differences, checkpoint round-trip plus checksum/schema/tokenizer/shape refusal, `weights_only` load, overwrite guard, resume reaching bit-identical parameters, plan/step scheduling, the loop's incremental selection agreeing with the pure rule and refusing when it does not, artifact-scoped evaluation, `load_model` adapter selection, the Transformer adapter's full `LanguageModel` contract incl. sampling and stop semantics, and the E2605 driver end to end on a synthetic root — pinning, splitting, both tokenizations, both baselines, report digest determinism, drift refusal on a re-run and overwrite refusal), repository hygiene. The count ages; `python -m pytest` does not. |
 | CI | `.github/workflows/ci.yml` | Green on Python 3.11, 3.12, 3.13 |
-| An automatic correction loop that decides on its own when to reassess | **does not exist** | Since ADR-0029 a follow-up that *explicitly names* a stored answer composes into a reassessment through the runtime (a deterministic trigger + the existing boundary), but nothing decides unbidden that a turn needs revising, a vague reference is never resolved by a guess, there is no real semantic embedding, and the only model is the development double |
+| An automatic correction loop that decides on its own when to reassess | **does not exist** | Since ADR-0029 a follow-up that *explicitly names* a stored answer composes into a reassessment through the runtime (a deterministic trigger + the existing boundary), but nothing decides unbidden that a turn needs revising, a vague reference is never resolved by a guess, there is no real semantic embedding, and the model any default path answers with is still the development double |
 
 ## What works
 
@@ -83,8 +89,16 @@ A private planning note is never evidence that something is implemented.
 - Source and chunk identifiers can be derived from content and validated from a
   string, which is the path a citation from generated text will take.
 - `create_model(config)` builds the adapter named in configuration, and raises
-  `UnknownModelError` listing the registered adapters when the name is wrong. The
-  only adapter that exists is the deterministic development double.
+  `UnknownModelError` listing the registered adapters when the name is wrong. Three adapters are
+  registered; the default configuration selects the deterministic development double, and the two trained
+  ones need their extra installed and a checkpoint path given — a missing extra is a named error, never a
+  silent substitution.
+- `chakaso.models.load_model(path)` returns a `LanguageModel` from a checkpoint without a terminal, a config
+  file or an application import: it selects the adapter from the artifact's extension and declared schema,
+  verifies the checksum, and refuses an artifact whose tokenizer, architecture or tensor shapes do not match
+  what it claims. `model.generate(messages, params)` then satisfies the shared boundary contract,
+  `model.sample(prompt, max_new_tokens=…)` is the bare-string shape an inference caller usually wants, and
+  `model.score(text)` returns held-out cross-entropy in nats.
 - Asking the double to tokenize or produce structured output fails at the boundary
   with a message naming the model and the capability, rather than returning
   something that looks like an answer.
@@ -340,10 +354,13 @@ synthetic cases, not measured capability. None of these is a claim that the appr
 data — that is K-001, and it stands. The code that exists still does one small thing each. The
 dense retrieval boundary (ADR-0023) is the same kind of scaffolding: a real retriever and an exact
 index, but over a non-semantic fixture embedding, so it proves the shape, not any dense quality.
-The training layer (`chakaso.training`, ADR-0030) is experimental in a stronger sense: it trains and
-measures a *real* model (E2601 — the first measured result in the project), but only a 984-parameter
-character model over a 344-token synthetic corpus that overfits by step 50, and it is not wired into
-the runtime. It proves the learning loop works and is honest; it establishes nothing useful.
+The training layer (`chakaso.training`, ADR-0030/0034/0035) is experimental in a stronger sense: it trains
+and measures *real* models — E2601's 984-parameter character MLP over a 344-token synthetic corpus, and
+E2605's 643,840-parameter subword Transformer over the repository's pinned 780 KB of prose — and neither is
+wired into the runtime. Both prove the learning loop works and are honest about their scale; neither
+establishes anything useful. The `[nn]` path is experimental in a second, narrower way: its gradients are
+autograd cross-checked against hand-computed losses and verified by *sampled* finite differences, a weaker
+guarantee than the character model's every-scalar check, and no CI job installs `torch` (K-009).
 
 ## What is not implemented
 
@@ -367,23 +384,31 @@ the runtime. It proves the learning loop works and is honest; it establishes not
   that *explicitly names* a stored answer composes into a reassessment through the runtime. But
   nothing decides on its own that a turn needs reassessing (the trigger fires only on an explicit
   `ans_…` reference, never a guessed one), a vague reference like "my last answer" is not resolved,
-  and nothing generates revised prose (there is no model). An answer can be persisted durably
+  and nothing generates revised prose (the model in that path is a development double). An answer can be
+  persisted durably
   (ADR-0021), but that is a store a caller selects, not an automatic correction.
-- A general evaluation harness and model benchmarks. Retrieval and correction development
-  benchmarks, metric functions, and structural claim/citation/grounding/answer evaluation exist;
-  a *real* grounded-answer benchmark and any model-quality measurement do not. All benchmark
-  numbers are over synthetic fixtures and check structure, not meaning.
-- A tokenizer, dataset pipeline, model code and a training loop *beyond the toy*: `chakaso.training`
-  now has a character tokenizer, a leak-free split, a tiny causal model, a real optimizer, a checkpoint
-  format and a training loop, and E2601 measured them end to end — but only at a 344-token synthetic,
-  984-parameter scale. A subword/BPE tokenizer, a real corpus, a Transformer, mini-batching, and any
-  scaling are not built.
-- A *useful* inference model, and committed/released model weights: none. Since P25 a trained-char
-  adapter (`chakaso.models.trainedchar`) can load an E2601-class checkpoint behind the boundary, but its
-  model is a tiny toy that generates incoherent text; the checkpoint is reproducible from the seed and
-  recorded by fingerprint, not committed, and the adapter is opt-in behind `[train]`, never the default.
-  What is *not* built: a real or pretrained model adapter, subword tokenization, sampling/decoding
-  strategies, or any model that produces a useful grounded answer.
+- A general evaluation harness and external model benchmarks. Retrieval and correction development
+  benchmarks, metric functions, and structural claim/citation/grounding/answer evaluation exist, and model
+  metrics are now measured too (held-out loss, perplexity, bits per character and token accuracy against
+  uniform/unigram baselines — E2605). What does not exist is any *external* benchmark, a real
+  grounded-answer benchmark, or a comparison against another model: every model number is measured on this
+  repository's own text, and every harness number is over synthetic fixtures that check structure, not
+  meaning.
+- Training and model code *beyond the measured scale*: `chakaso.training` has two tokenizers (character
+  and learned byte-pair subword), a content-pinned corpus manifest, a document-level split, sequence
+  packing, a character MLP and a decoder-causal Transformer, a full-batch and a mini-batch loop with warmup,
+  clipping, early stopping and resume, and two checkpoint formats — and E2605 measured them end to end on
+  the repository's own 780 KB of text. What is *not* built: any training on an external corpus, gradient
+  accumulation, distributed or GPU execution, and any model at a scale where a number could be called
+  capability.
+- A *useful* inference model, and committed/released model weights: none. Two trained adapters exist behind
+  the boundary — `chakaso.models.trainedchar` (an E2601-class character checkpoint, behind `[train]`) and
+  `chakaso.models.nntransformer` (E2605's subword Transformer, behind `[nn]`, loaded by
+  `chakaso.models.load_model`) — and both generate text that loops, repeats and means nothing. Neither is
+  ever the default, neither checkpoint is committed (both are reproducible from seed, config and the pinned
+  manifest, and are recorded by checksum), and there is no pretrained or provider-backed adapter at all.
+  What is *not* built: beam/nucleus sampling, a tokenizer with normalization options beyond the named
+  pre-tokenizer, or any model that produces a useful grounded answer.
 - Automatic persistence of correction records and experiment results. Answer history can now be
   persisted durably to SQLite (ADR-0021), but a `CorrectionRecord` or an `ExperimentResult` is still
   only serializable — the runtime does not write it to disk unless a caller wires it to a store.
@@ -424,6 +449,9 @@ the runtime. It proves the learning loop works and is honest; it establishes not
 | ADR-0030 | A minimal, optional numerical dependency (numpy in a `[train]` extra) gates any from-scratch training |
 | ADR-0031 | The grounded-answer evaluation workload is self-authored, provenance-bearing data |
 | ADR-0032 | Evidence sufficiency is a deterministic, corpus-statistical decision at the retrieval boundary |
+| ADR-0033 | The product is a trained model; the Python library is the primary interface and the CLI a secondary developer utility |
+| ADR-0034 | `torch` is admitted as a separate optional `[nn]` extra for the model path only, confined to named modules |
+| ADR-0035 | A Transformer checkpoint is one checksummed, self-describing file carrying its tokenizer, with usable and resumable kinds separated |
 
 Two process facts are recorded outside the ADR series because they are repository
 history rather than architecture:
@@ -437,8 +465,12 @@ history rather than architecture:
 ## Known gaps and risks
 
 See [`KNOWN_ISSUES.md`](KNOWN_ISSUES.md). K-001 still stands and is the important
-one: nothing in this repository has been executed against a real workload, so every
-architectural decision made so far rests on reasoning rather than measurement.
+one: nothing in this repository has been executed against a real workload. The model
+path is now measured on real text (E2605, on this repository's own documentation), but a
+workload means a grounded question answered by a model and checked, and no turn here has
+ever done that. K-009 is now wider than it was: the `[train]` and `[nn]` matrices are not
+run by any CI job, so every torch-gated test in the model path is locally verified and
+remotely unverified.
 
 ## Next step
 
@@ -495,12 +527,38 @@ with retrieval's own `false_retrievals`/`forbidden_hits` metrics and the runtime
 ([`../../experiments/E2604/record.md`](../../experiments/E2604/record.md)). It is honestly bounded: it holds
 only over a narrow corpus-specific threshold band, is not a calibrated confidence, and does not close K-010.
 
-The next real unit, **P29**, is set by E2604's caveat rather than appetite: test whether the sufficiency
-policy survives calibration under a strict development/held-out protocol and a harder, extended workload
-(hard negatives, near-misses, partial evidence), or record truthfully that the self-authored corpus is too
-small to calibrate it at all — the choice must be made on development data, frozen, then reported on
-held-out, never tuned on the set it is judged by. Later, and only after a real model exists, do the runtime
-consumption of the decision (P32), a genuinely useful pretrained adapter (Option A) or a real `SemanticJudge`
-become defensible, each gated on its own dependency-feasibility decision. All of it stays behind the
-existing boundaries, and K-001 — that nothing has met a real workload — still stands. See
+**P30 and P31 are now complete, and they re-ordered the project.** [ADR-0033](../decisions/ADR-0033-model-centred-product-contract.md)
+made the model the product and the Python library the primary interface; P30 then built the model path's data
+layer with no new dependency at all (`training.manifest`, `data.split_text_units`, `training.subword`,
+`training.packing`, `training.model_metrics` — all in the dependency-free CI matrix), and
+[ADR-0034](../decisions/ADR-0034-optional-pytorch-model-extra.md) re-opened ADR-0030 on its own written
+revisit conditions to admit `torch` as a separate `[nn]` extra, recording that the speed argument did not
+survive measurement (1.16× on a same-shape matmul) and that the gradient guarantee became sampled rather than
+exhaustive. P31 built `training.transformer`, `training.nn_training`,
+`training.nn_checkpoint` ([ADR-0035](../decisions/ADR-0035-transformer-checkpoint-format.md)),
+`training.nn_evaluation`, the `training.subword_experiment` driver, `models.load_model` and the
+`subword_transformer` adapter, plus `chakaso experiment model` as a thin handler.
+
+**E2605 produced the project's first Transformer measurement**
+([`../../experiments/E2605/record.md`](../../experiments/E2605/record.md), record committed before the run):
+on held-out documents of the pinned 71-document / 780,223-character corpus, **1.8657 bits per character**
+(643,840 parameters; 2.6936 nats/token, perplexity 14.79, token accuracy 0.4501) against **3.1343** for
+E2601's character architecture, 3.3224 for the unigram and 4.8010 for the uniform predictor of its own
+identifier space. Early stopping selected step 1380 of a 2400-step budget and the un-stopped model was 0.1434
+nats worse. Wall clock 513.6 s + 69.9 s + 13.2 s on CPU, Python 3.13.5, torch 2.13.0+cpu. The record also
+documents its own correction: the pre-run text quoted a corpus figure (754,789 characters) that the run's
+pinning superseded, and three committed generation samples that loop.
+
+The next real unit is set by E2605's own follow-up section, not by appetite: **reproduce E2605 across
+pre-declared seeds** (the E2602 discipline) so the bits-per-character gap carries a spread instead of being a
+point estimate — a single-seed 1.8657 must not be quoted as an effect size. The unit after it is **an external
+corpus with a recorded licence**, pinned by the same content-digest manifest, because one author's prose
+bounds every number above; only then is a capacity question (context length, layers, vocabulary) interpretable.
+**P29** (calibrating the sufficiency policy) and **P32** (runtime consumption of that decision) stay deferred
+by [ADR-0033](../decisions/ADR-0033-model-centred-product-contract.md), which puts a measured model ahead of
+both, and nothing in E2605 changes their content — the trained checkpoint is loadable from Python and still
+answers nothing grounded. A genuinely useful pretrained adapter (Option A of
+[`../research/model-feasibility.md`](../research/model-feasibility.md)) and a real `SemanticJudge` remain
+gated on their own dependency-feasibility decisions. All of it stays behind the existing boundaries, and
+K-001 — that nothing has met a real workload — still stands. See
 [`ACTIVE_TASK.md`](ACTIVE_TASK.md) for the definition of done.
