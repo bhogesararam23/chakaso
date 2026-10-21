@@ -18,9 +18,9 @@ is.**
 | --- | --- |
 | **A trained model you can load from Python** | `chakaso.models.load_model(path)` returns a `LanguageModel` for a checkpoint this project trained. No terminal, no configuration file, no runtime import. |
 | **A tokenizer trained here** | A byte-pair subword vocabulary (`chakaso.training.subword`): byte-level base, so encoding is total; a named pre-tokenizer, so merges never cross a word boundary; deterministic tie-breaking, so the same text yields the same fingerprint; self-describing and checksum-verified on load. A deterministic character vocabulary also exists and is what E2601/E2602 measured. |
-| **A corpus with provenance** | `chakaso.training.manifest` pins a document set by path and content digest, records its licence, and *refuses* to prepare a corpus that has drifted. The corpus the model path uses today is Chakaso's own tracked text: 754,789 characters of Apache-2.0 prose, reproducible offline. |
+| **A corpus with provenance** | `chakaso.training.manifest` pins a document set by path and content digest, records its licence, and *refuses* to prepare a corpus that has drifted. The corpus the model path uses today is Chakaso's own tracked text: 71 documents, 780,223 characters of Apache-2.0 prose, pinned at fingerprint `e45993f9badf706c`, reproducible offline. |
 | **A Transformer, trained from scratch** | `chakaso.training.transformer` (decoder-only, causal attention, pre-norm, GELU, tied head) with `chakaso.training.nn_training`: mini-batches, warmup, gradient clipping, validation-selected early stopping, resumable artifacts. Requires the optional `[nn]` extra. |
-| **Measured results** | Five committed experiment records; four are measured results. E2601/E2602: a 984-parameter character model whose held-out loss beats uniform and unigram baselines across five seeds (mean 1.7978 ± 0.1767 nats). E2603/E2604: retrieval and evidence-sufficiency measurements over a self-authored workload. [E2605](experiments/E2605/record.md) is the first subword Transformer run, compared against the character model and the baselines in bits per character; its record is committed and its measured numbers are added by the run it was written before. |
+| **Measured results** | Five committed experiment records, all five measured. E2601/E2602: a 984-parameter character model whose held-out loss beats uniform and unigram baselines across five seeds (mean 1.7978 ± 0.1767 nats). E2603/E2604: retrieval and evidence-sufficiency measurements over a self-authored workload. [E2605](experiments/E2605/record.md): the first subword Transformer trained from random initialization on the pinned corpus reaches **1.8657 bits per character** on held-out documents, against 3.1343 for the character architecture, 3.3224 for the unigram baseline and 4.8010 for uniform — one seed, one corpus, and generations that loop rather than answer. |
 | **An application layer a model can plug into** | BM25/dense/hybrid retrieval over an in-memory corpus, claims, citation validation, structural and semantic-grounding boundaries, a correction decision rule with application-level reassessment, an append-only answer store (in-memory by default, durable SQLite when configured), and development benchmarks. |
 | **Verification** | Tests, lint, format and strict typing on Python 3.11–3.13 in CI, offline, CPU-only, no secrets and no provider dependency. |
 
@@ -70,7 +70,7 @@ application depends on, so `model.generate(messages, params)` works the same way
 two. Scoring a text is equally direct:
 
 ```python
-nats = model.score(open("docs/training.md").read())   # mean held-out cross-entropy, in nats
+nats = model.score(open("docs/training.md").read())  # mean held-out cross-entropy, in nats
 ```
 
 ## Train one

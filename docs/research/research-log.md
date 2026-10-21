@@ -534,3 +534,60 @@ boundary; a leakage test with per-document unique markers runs over 24 seeds and
 
 **Limitation.** The corpus is one author's technical prose about one project, so every number measured on it
 describes that distribution — including the house style, which a model can memorize and still be useless.
+
+---
+
+## 2026-10-21 — The corpus a model trains on is the corpus a manifest pinned, not the corpus someone counted
+
+**Observation.** Between the entry above (which counted 69 documents and 754,789 characters) and the run that
+pinned the corpus for E2605, this work's own documentation was committed. The manifest the run wrote names
+**71 documents and 780,223 characters**, fingerprint `e45993f9badf706c`, a 49/11/11 document split with no
+duplicate content dropped, split fingerprint `87067cca96275def`.
+
+**Result (measured).** 240,418 / 82,376 / 46,577 identifiers on the three sides at a 1,024-entry byte-pair
+vocabulary (767 merges, fingerprint `2605bf8f50183a6e`, `min_frequency=3`), 2.0829 characters per identifier
+on the test side. Pinning, training the vocabulary and packing both tokenizations took 13.2 s, all of it
+dependency-free.
+
+**Interpretation.** The count changed and nothing failed silently, because the unit of pinning is document
+content rather than a path list: a second preparation of the same include spec produces a different
+fingerprint, and a *modified* file produces a typed refusal instead of a substituted corpus. That is the
+property a later number depends on — the reader can tell which text produced which result.
+
+**Limitation.** This is mild self-reference: the corpus contains the documentation and the experiment records
+that describe the experiment, and 22 of the 71 documents are held out. It bounds what the numbers can mean,
+and it is the reason the next data decision is an external corpus with its own licence record rather than a
+bigger model.
+
+---
+
+## 2026-10-21 — Subword tokenization plus attention beats the character architecture on this corpus, and the model is still not useful
+
+**Experiment.** E2605 ([`../../experiments/E2605/record.md`](../../experiments/E2605/record.md)), written and
+committed before the run, trained on the pinned corpus above from random initialization at seed 7 on CPU and
+compared the Transformer against E2601's character model and against uniform and unigram predictors of *each*
+identifier space, scored by one metric function over the same held-out positions.
+
+**Result (measured).** Held-out bits per character: **Transformer 1.8657, character model 3.1343, unigram
+3.3224, uniform 4.8010** (643,840 parameters against 44,084). Token accuracy 0.4501 and 0.4059. The selected
+snapshot was step 1380 of a 2400-step budget; the run early-stopped at step 1920 and the model it did not
+report was **0.1434 nats worse** on held-out text. Wall clock 513.6 s (Transformer), 69.9 s (character
+baseline); the usable artifact is 3,123,518 bytes and the resumable one 8,307,445.
+
+**Interpretation.** Two mechanisms are separated rather than credited together: a 128-token causal context
+reaches across a document the way a 16-character window cannot, and the subword vocabulary spends ~2.08
+characters per predicted identifier, so equal description length per token buys fewer bits per character.
+Bits per character is what makes the two architectures comparable; perplexity 14.79 against the character
+model's 8.78 is meaningless, and the character model's *lower* perplexity beside its much worse
+bits-per-character is precisely the confusion this experiment exists to avoid.
+
+**Conclusion.** Believed, strongly, for this distribution: the from-scratch training path produces a model
+that measurably beats both trivial predictors and the previous architecture. Not believed: that 1.8657 is an
+effect size (one seed, and E2602 measured 0.18 nats of sample SD on a far smaller problem), that the model
+means anything (the committed generations loop — "a model that is a model that is a model" — and restate a
+claim they just made), or that this generalizes beyond one author's technical prose.
+
+**Limitation.** No peak-memory figure exists for any run here (the process-memory APIs return nothing from
+this shell), no CI job installs `torch` or `numpy` so the model-path tests are unverified remotely (K-009),
+and the subword advantage is partly an artefact of a corpus whose redundancy a 1,024-identifier vocabulary
+compresses well.

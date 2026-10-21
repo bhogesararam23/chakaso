@@ -10,6 +10,79 @@ capability is implemented or still planned.
 
 ## Unreleased
 
+### 2026-10-21 — There is a trained model: a subword Transformer, loadable from Python, measured against the character model (ADR-0035, P31, E2605)
+
+**Decided**
+
+- **ADR-0035** fixes the checkpoint format: one file holding tensors, canonical metadata and a SHA-256 over
+  both, with the tokenizer stored inside it so a checkpoint cannot be loaded against a vocabulary that did
+  not produce it. It separates a *usable* artifact (parameters plus metadata, what `load_model` reads) from a
+  *resumable* one (parameters plus optimizer moments plus step), refuses to overwrite an existing artifact
+  unless told to, and extends the `torch` module allowlist to exactly the modules that need it.
+
+**Added — the model, its training, its checkpoint (the optional `[nn]` extra)**
+
+- **Implemented** `chakaso.training.transformer`: a decoder-only causal Transformer (pre-norm blocks, GELU,
+  learned positional embeddings, multi-head causal self-attention with an additive mask, input/output
+  embeddings tied) whose parameter count is computed from the configuration and cross-checked against the
+  built model, because tied weights make a byte-level sum over stored tensors overstate it. Initialization is
+  named and seedless-by-default: zero-mean normal (std 0.02) weights, zero biases, unit normalization scales.
+- **Implemented** `chakaso.training.nn_training`: mini-batch AdamW training with linear warmup, gradient
+  clipping that records the pre-clip norm, and validation-selected early stopping. The batch order is a pure
+  function of `(total, update_index, batch_size, seed)`, so a resumed run replays the same batches and
+  reaches bit-identical parameters; the loop applies the selection rule incrementally and then refuses to
+  return if it disagrees with `choose_validation_best`, the pure form of the same rule. Training loss and
+  held-out loss are always separate numbers, and the held-out side is supplied by the caller, so this module
+  cannot score the documents it trained on as unseen.
+- **Implemented** `chakaso.training.nn_checkpoint`: save and load for the format ADR-0035 defines. Loading
+  uses `weights_only=True`, verifies the checksum, and refuses an artifact whose schema, tokenizer,
+  architecture or tensor shapes do not match what it claims — an incompatible checkpoint is an error naming
+  the mismatch, never a silently substituted model.
+- **Implemented** `chakaso.training.model_metrics`: a model's held-out loss expressed three ways — nats per
+  identifier, perplexity, and **bits per character**, whose denominator is the decoded whole target stream.
+  Bits per character is the only figure that compares a 116-symbol character model to a 1,024-symbol subword
+  model at all, so it is the headline and perplexity is labelled tokenizer-bound. One function computes all
+  three for both, against an `IdentifierDecoder` protocol rather than a class.
+- **Implemented** `chakaso.training.nn_evaluation` (score a built model or a saved artifact over packed
+  examples) and `chakaso.training.subword_experiment`, the driver that turns the model path into a measured
+  comparison: pin the corpus, train both tokenizations, split by document, pack, train the Transformer and
+  the character baseline, score both plus the trivial predictors on the same test positions, sample
+  generations through the public loading path, and write a deterministic report with its own digest.
+- **Implemented** the primary interface ADR-0033 demands: `chakaso.models.load_model(path)` returns a
+  `LanguageModel` from a checkpoint, with no terminal, no configuration file and no application import. The
+  concrete adapter (`chakaso.models.nntransformer`) is reached through the registry's one selection point,
+  declares itself not a development double, generates greedily or by sampling, honours the document separator
+  as a stop condition, and scores a text in nats.
+- **Reachable from the terminal as a thin handler**: `chakaso experiment model --work-dir … [--max-steps …
+  --json --write-report …]`, which delegates to the library and prints what the run measured. Heavy
+  dependencies are imported lazily, so the dependency-free install reports what is missing instead of
+  failing at import.
+- **Test totals measured on 2026-10-21**: 1,405 collected in the dependency-free matrix (1,389 passed, 16
+  skipped — up from 1,276 collected before this work), 1,477 with `[train]` (1,470 passed, 7 skipped) and
+  1,604 with `[train,nn]` (1,603 passed, 1 skipped). The torch-gated ones inherit K-009's gap — they skip in
+  the dependency-free matrix that CI runs, and no CI job installs `torch`.
+
+**Measured**
+
+- **E2605 result** ([`experiments/E2605/record.md`](experiments/E2605/record.md), with
+  [`results.json`](experiments/E2605/results.json) and the corpus manifest committed beside it): on held-out
+  documents of the pinned 71-document corpus, the Transformer trained from random initialization reaches
+  **1.8657 bits per character** against **3.1343** for E2601's character architecture, **3.3224** for the
+  unigram baseline and **4.8010** for uniform over the identifier space. Early stopping was load-bearing: the
+  selected step was 1380 of a 2400-step budget and the un-stopped model was 0.1434 nats worse on held-out
+  text. The three generation samples in the record loop ("a model that is a model that is a model") and are
+  quoted as evidence of what the model is *not*. One seed, one author's prose, no error bar.
+
+**Status and honesty**
+
+- The record was committed before the run, and its pre-run text quoted a corpus figure (754,789 characters)
+  that the run's own pinning superseded (780,223). That correction is written into the record rather than
+  quietly edited, and the README and this changelog are fixed in the same commit; the research-log entry that
+  measured the earlier figure stays as the dated observation it was, with a new entry recording the growth.
+- A model now exists, and nothing about the application changes: no runtime path uses it as a default, P29
+  (calibration) and P32 (runtime consumption) stay deferred, and the strong form of K-001 — no model has ever
+  produced a grounded answer here — still stands.
+
 ### 2026-10-21 — Chakaso is a language-model project, and now has a real corpus to train on (ADR-0033/0034, P30)
 
 **Decided**
@@ -53,10 +126,14 @@ capability is implemented or still planned.
 - **Implemented** `chakaso.training.packing`: one side of a split becomes fixed-length next-token
   examples, with every document terminated by the separator, targets shifted by exactly one token, long
   documents truncated into blocks rather than discarded, and the dropped tail reported rather than hidden.
-- **Measured on the real corpus** (this checkout, 2026-10-21): 69 tracked documents, 754,789 characters,
-  manifest fingerprint `0f9f7d2f57644a4d`; a 49/10/10 document split with no duplicate content; a
-  1,024-entry vocabulary trained in 20.3 s over 178,252 pieces, compressing the training side to 234,960
-  tokens at 2.12 characters per token, with 82,663 validation and 38,982 test tokens.
+- **Measured on the real corpus** (this checkout, 2026-10-21, as re-measured by the run that pinned it): 71
+  tracked documents, 780,223 characters, manifest fingerprint `e45993f9badf706c`; a 49/11/11 document split
+  with no duplicate content dropped, split fingerprint `87067cca96275def`; a 1,024-entry vocabulary (767
+  merges, fingerprint `2605bf8f50183a6e`) trained on the training side alone, tokenizing the sides into
+  240,418 / 82,376 / 46,577 identifiers at 2.0829 characters per identifier on the test side. Pinning,
+  tokenizing and packing took 13.2 s. An earlier scratch preparation of the same include spec measured 69
+  documents and 754,789 characters; the corpus grew as this work's own documentation was committed, which is
+  exactly why the manifest pins content rather than a path list.
 - **98 new tests**, all of them in the dependency-free matrix (1366 passed, 8 skipped there, up from 1268;
   1418 passed with `[train]` installed), including leakage tests written so they can actually fail: a
   held-out document carries a token no other document has, and its appearance anywhere in the training side

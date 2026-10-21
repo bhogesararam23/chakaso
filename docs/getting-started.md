@@ -150,8 +150,8 @@ model = load_model("data/experiments/E2605/E2605-transformer.pt")
 result = model.sample("The retrieval layer owns", max_new_tokens=64)
 
 print(result.text)
-print(model.metadata.development_double)          # False: a trained checkpoint, stated
-print(model.artifact.corpus_fingerprint)          # which pinned corpus produced it
+print(model.metadata.development_double)  # False: a trained checkpoint, stated
+print(model.artifact.corpus_fingerprint)  # which pinned corpus produced it
 print(model.score(open("docs/training.md").read()))  # held-out cross-entropy, in nats
 ```
 

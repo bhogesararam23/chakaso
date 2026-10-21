@@ -2,7 +2,9 @@
 
 **Type:** Research — candidate comparison for the first model-centred experiment (P31/E2605). Every figure
 below is either read from this checkout, produced by a command quoted here, or labelled an estimate or an
-assumption. Nothing here is a measured model result; the measurement is E2605.
+assumption. Nothing here is a measured model result; the measurement is
+[E2605](../../experiments/E2605/record.md), now run, and where this note estimated it says so beside the
+measured number.
 
 **Date:** 2026-10-21. **Follows:** [ADR-0033](../decisions/ADR-0033-model-centred-product-contract.md)
 (product contract), [`../internal/engineering/model-centred-audit.md`](../internal/engineering/model-centred-audit.md)
@@ -114,8 +116,11 @@ puts the hand-written-gradient route (C3) in the position ADR-0030 predicted:
 | Third-party corpora committed | none | `git ls-files` |
 
 An *estimate* on the observed character count and typical English subword expansion: ~250,000–320,000
-tokens at a 1,024-entry vocabulary. Not measured until the tokenizer exists; the E2605 record will state
-the measured count.
+tokens at a 1,024-entry vocabulary. **Measured later by E2605: 369,371 identifiers over the pinned 780,223
+characters** (240,418 / 82,376 / 46,577 by side, 2.0829 characters per identifier on the test side). The
+estimate assumed 2.26–2.89 characters per identifier; the measured figure is 2.11, so the shortfall is the
+compression assumption rather than the 8% the corpus grew by between the two counts. Which is what an
+unmeasured estimate is for, and why the record quotes the manifest's own numbers and not this paragraph.
 
 **Open.** No external corpus is committed, and committing one is refused by the artifact policy
 ([`../internal/engineering/artifact-policy.md`](../internal/engineering/artifact-policy.md)) and by
@@ -148,8 +153,10 @@ baselines, measured in **bits per character** so the comparison does not depend 
 
 Bits per character is the right unit because it is the only one that makes C1 and C2 comparable at all:
 cross-entropy per token measures different things for different segmentations. `H_char = H_token ×
-(tokens/characters)` — the token loss scaled by the measured compression rate. *(Derivation, to be
-evaluated by test on a tiny controlled example rather than trusted.)*
+(tokens/characters)` — the token loss scaled by the measured compression rate. *(Implemented as
+`chakaso.training.model_metrics.bits_per_character`, whose denominator is the decoded whole target stream
+rather than a per-token character count; `tests/test_training_model_metrics.py` tests exactly that,
+including a separator target that costs a prediction and contributes no characters.)*
 
 **C3 rejected** — not for speed (the measured matmul comparison above is 1.16× and does not support a
 speed argument), but because it trades a verified-gradient property the project currently holds *fully*
