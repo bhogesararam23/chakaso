@@ -1,0 +1,606 @@
+{
+  "baselines_subword": {
+    "uniform": {
+      "bits_per_character": 4.80103069218461,
+      "characters_scored": 96246,
+      "loss_nats_per_token": 6.931471805599452,
+      "perplexity": 1023.9999999999991,
+      "positions_scored": 46208,
+      "separator_targets": 10,
+      "token_accuracy": 0.0,
+      "vocabulary_size": 1024
+    },
+    "unigram": {
+      "bits_per_character": 3.322429516434608,
+      "characters_scored": 96246,
+      "loss_nats_per_token": 4.796746364639233,
+      "perplexity": 121.11570939395337,
+      "positions_scored": 46208,
+      "separator_targets": 10,
+      "smoothing_alpha": 1.0,
+      "token_accuracy": 0.26930401662049863
+    }
+  },
+  "character_baseline": {
+    "architecture": {
+      "context_characters": 16,
+      "embed_dim": 32,
+      "gradients": "hand-derived, finite-difference verified (ADR-0030)",
+      "hidden_dim": 64,
+      "kind": "character_causal_mlp",
+      "parameter_count": 44084,
+      "vocabulary_fingerprint": "3d74047e5854ae01",
+      "vocabulary_size": 116
+    },
+    "baselines": {
+      "uniform_nats": 4.75359,
+      "unigram_nats": 3.310774
+    },
+    "budget": {
+      "batch_windows": 256,
+      "eval_every": 200,
+      "max_steps": 4000,
+      "selected_step": 3800,
+      "selected_validation_loss_nats": 2.108838,
+      "test_windows": 97084,
+      "train_windows": 507394,
+      "unknown_character_targets_scored": 5,
+      "validation_windows": 175742,
+      "wall_clock_s": 69.9
+    },
+    "curve": [
+      {
+        "step": 0,
+        "validation_loss": 4.754738
+      },
+      {
+        "step": 200,
+        "validation_loss": 2.393173
+      },
+      {
+        "step": 400,
+        "validation_loss": 2.29453
+      },
+      {
+        "step": 600,
+        "validation_loss": 2.233128
+      },
+      {
+        "step": 800,
+        "validation_loss": 2.204074
+      },
+      {
+        "step": 1000,
+        "validation_loss": 2.177931
+      },
+      {
+        "step": 1200,
+        "validation_loss": 2.157105
+      },
+      {
+        "step": 1400,
+        "validation_loss": 2.178341
+      },
+      {
+        "step": 1600,
+        "validation_loss": 2.155926
+      },
+      {
+        "step": 1800,
+        "validation_loss": 2.12815
+      },
+      {
+        "step": 2000,
+        "validation_loss": 2.240494
+      },
+      {
+        "step": 2200,
+        "validation_loss": 2.116303
+      },
+      {
+        "step": 2400,
+        "validation_loss": 2.134291
+      },
+      {
+        "step": 2600,
+        "validation_loss": 2.120251
+      },
+      {
+        "step": 2800,
+        "validation_loss": 2.122999
+      },
+      {
+        "step": 3000,
+        "validation_loss": 2.110529
+      },
+      {
+        "step": 3200,
+        "validation_loss": 2.116233
+      },
+      {
+        "step": 3400,
+        "validation_loss": 2.112673
+      },
+      {
+        "step": 3600,
+        "validation_loss": 2.115712
+      },
+      {
+        "step": 3800,
+        "validation_loss": 2.108838
+      },
+      {
+        "step": 4000,
+        "validation_loss": 2.196495
+      }
+    ],
+    "test": {
+      "bits_per_character": 3.134278645735399,
+      "characters_scored": 97079,
+      "loss_nats_per_token": 2.1724045178920877,
+      "perplexity": 8.779368830639225,
+      "positions_scored": 97084,
+      "separator_targets": 5,
+      "token_accuracy": 0.40594742697045855
+    }
+  },
+  "corpus": {
+    "characters": 780223,
+    "documents": 71,
+    "documents_per_side": {
+      "dropped_duplicates": 0,
+      "test": 11,
+      "train": 49,
+      "validation": 11
+    },
+    "duplicate_groups": [],
+    "fingerprint": "e45993f9badf706c",
+    "identifiers_per_side": {
+      "test": [
+        "AGENTS.md@2569108c6900",
+        "docs/decisions/ADR-0005-src-layout.md@5fbc2f7184fe",
+        "docs/decisions/ADR-0027-semantic-evaluation-contract.md@f40298e2d4f6",
+        "docs/decisions/ADR-0031-grounded-answer-evaluation-workload.md@ab40a5e6a1f5",
+        "docs/decisions/ADR-0034-optional-pytorch-model-extra.md@3a9c945344ef",
+        "docs/internal/engineering/model-centred-audit.md@942680b97c2a",
+        "docs/internal/experiments/README.md@f52b0828e996",
+        "docs/research/README.md@773d30d848a3",
+        "docs/research/open-questions.md@9ab354a1a6de",
+        "docs/transparency.md@e22e0887cbde",
+        "experiments/E2604/record.md@eeec0ebf678f"
+      ],
+      "train": [
+        "CONTRIBUTING.md@d34150c75078",
+        "LICENSE@42b6785800a6",
+        "README.md@c26f91e16531",
+        "docs/README.md@bdb0cccddd33",
+        "docs/agent/ACTIVE_TASK.md@451bb49095d5",
+        "docs/agent/CONVENTIONS.md@a8d2e1b861cd",
+        "docs/agent/CURRENT_STATE.md@3b3a9a088257",
+        "docs/agent/KNOWN_ISSUES.md@9775b5ea155e",
+        "docs/decisions/ADR-0001-local-first-runtime.md@acbea3217097",
+        "docs/decisions/ADR-0002-language-model-boundary.md@a211c74c2be3",
+        "docs/decisions/ADR-0003-evidence-identifier-ownership.md@4567eca4a706",
+        "docs/decisions/ADR-0004-apache-2.0-license.md@3b406d17ead5",
+        "docs/decisions/ADR-0006-toml-configuration.md@bde891c4cd5d",
+        "docs/decisions/ADR-0007-content-derived-identifiers.md@2c9e07893bf8",
+        "docs/decisions/ADR-0008-transactional-turns.md@90e7b5bc9f97",
+        "docs/decisions/ADR-0010-section-bounded-chunks.md@8a5cc08e8e4a",
+        "docs/decisions/ADR-0012-optional-bounded-fetcher.md@126ce01e47c6",
+        "docs/decisions/ADR-0014-claim-representation.md@fbb553ba7bd6",
+        "docs/decisions/ADR-0015-grounding-boundary.md@2a48f90d85dc",
+        "docs/decisions/ADR-0016-correction-decision-rule.md@5f746cd80152",
+        "docs/decisions/ADR-0019-semantic-grounding-boundary.md@b22ff0254347",
+        "docs/decisions/ADR-0021-sqlite-answer-store.md@1fdf8331a787",
+        "docs/decisions/ADR-0022-query-planner-boundary.md@aad1b35ea4da",
+        "docs/decisions/ADR-0023-dense-retrieval-boundary.md@eecbfb693b86",
+        "docs/decisions/ADR-0024-hybrid-rank-fusion.md@7fa8da65d228",
+        "docs/decisions/ADR-0025-retrieval-aware-runtime.md@81ee8463ccd6",
+        "docs/decisions/ADR-0026-application-composition-root.md@411b9bdcef30",
+        "docs/decisions/ADR-0028-answer-evaluation-provenance.md@58a43c985c09",
+        "docs/decisions/ADR-0029-explicit-reassessment-trigger.md@325f481a1a8f",
+        "docs/decisions/ADR-0030-minimal-optional-training-dependency.md@f4601ac2cb07",
+        "docs/decisions/ADR-0032-retrieval-evidence-sufficiency.md@9d33f452981b",
+        "docs/decisions/ADR-0033-model-centred-product-contract.md@12d611c2c2a2",
+        "docs/decisions/ADR-0035-transformer-checkpoint-format.md@a2f1b5cc2c24",
+        "docs/decisions/README.md@00088f076d69",
+        "docs/evaluation.md@c403c4a4078a",
+        "docs/getting-started.md@4431812e1ca9",
+        "docs/internal/engineering/artifact-policy.md@f0dd9037225f",
+        "docs/internal/engineering/repository-history.md@737a95c6331c",
+        "docs/internal/engineering/tooling.md@2a4e0b5e163e",
+        "docs/research/hypotheses.md@407f04d6795d",
+        "docs/research/literature.md@8fb776f5a71c",
+        "docs/research/model-feasibility.md@c909c9f32119",
+        "docs/research/next-model-experiment.md@9d6445c76a02",
+        "docs/research/research-log.md@f8a6e461d0aa",
+        "docs/retrieval.md@400c5bb615b1",
+        "docs/roadmap.md@440a2bf2178a",
+        "docs/training.md@7534f0a8dcf5",
+        "experiments/E2601/record.md@9c2ced8042a9",
+        "experiments/E2603/record.md@210d64b4dd99"
+      ],
+      "validation": [
+        "CHANGELOG.md@7a9f244b2a49",
+        "docs/architecture.md@62c633700672",
+        "docs/correction.md@10e4d00c07d4",
+        "docs/decisions/ADR-0009-unresolved-references-are-recorded.md@c101255ae1f5",
+        "docs/decisions/ADR-0011-typed-source-references.md@a1c3c416d1df",
+        "docs/decisions/ADR-0013-benchmark-identity-and-versioning.md@19ecd22f13b0",
+        "docs/decisions/ADR-0017-answer-identity.md@66a610dc20a9",
+        "docs/decisions/ADR-0018-answer-persistence.md@cc6c81964d97",
+        "docs/decisions/ADR-0020-experiment-artifacts.md@8726e0e60f60",
+        "experiments/E2602/record.md@be6287831900",
+        "experiments/E2605/record.md@6f9ec657b6b3"
+      ]
+    },
+    "licence": "Apache-2.0 (the project's own licence; the text is authored for Chakaso)",
+    "name": "chakaso-repo-text-v1",
+    "source": "Chakaso's tracked markdown and LICENSE files, discovered from the include spec on this plan.",
+    "split_fingerprint": "87067cca96275def",
+    "split_seed": 7,
+    "version": "1.0.0"
+  },
+  "environment": {
+    "device": "cpu",
+    "platform": "Windows-11-10.0.26200-SP0",
+    "python": "3.13.5",
+    "torch": "2.13.0+cpu"
+  },
+  "experiment": "E2605",
+  "plan": {
+    "batch_size": 32,
+    "character_batch_windows": 256,
+    "character_context": 16,
+    "character_embed_dim": 32,
+    "character_eval_every": 200,
+    "character_hidden_dim": 64,
+    "character_learning_rate": 0.02,
+    "character_steps": 4000,
+    "context_length": 128,
+    "d_model": 128,
+    "eval_every": 60,
+    "feedforward_dim": 384,
+    "gradient_clip_norm": 1.0,
+    "learning_rate": 0.0006,
+    "max_steps": 2400,
+    "min_delta": 0.001,
+    "num_heads": 4,
+    "num_layers": 3,
+    "overwrite_artifacts": false,
+    "patience": 8,
+    "root": ".",
+    "samples_per_prompt": 96,
+    "seed": 7,
+    "vocab_size": 1024,
+    "warmup_steps": 60,
+    "weight_decay": 0.01,
+    "work_dir": "data\\experiments\\E2605"
+  },
+  "samples": [
+    {
+      "finish_reason": "length",
+      "model_id": "subword_transformer",
+      "prompt": "# Chakaso\n\nChakaso is a",
+      "text": " model that is a model that is a model that that is not a model to a model that it.\n\n## Consequence is a model\n\n- **A boundary** rested as a real model that a model that reachable to in a\nreal"
+    },
+    {
+      "finish_reason": "length",
+      "model_id": "subword_transformer",
+      "prompt": "## Status\n\nThe retrieval layer",
+      "text": " is a real model and a real model model (`chakaso benchmarks`, ADR-0031).\n\n## Consequences\n\n- The model is a real model (the model boundary)\n\n- **A model* is a real model* that a model that not a model"
+    },
+    {
+      "finish_reason": "stop",
+      "model_id": "subword_transformer",
+      "prompt": "The tokenizer is trained by the project because",
+      "text": " it is not a model to a model that it.\n"
+    }
+  ],
+  "timings": {
+    "prepare_seconds": 13.2,
+    "transformer_wall_clock_s": 513.63
+  },
+  "tokenizer": {
+    "characters_per_token_test": 2.0829,
+    "fingerprint": "2605bf8f50183a6e",
+    "kind": "byte-pair subword trained by chakaso.training.subword",
+    "merges": 767,
+    "min_frequency": 3,
+    "size": 1024,
+    "test_characters_decoded": 96246,
+    "tokens_per_side": {
+      "test": 46577,
+      "train": 240418,
+      "validation": 82376
+    }
+  },
+  "transformer": {
+    "architecture": {
+      "context_length": 128,
+      "d_model": 128,
+      "dropout": 0.0,
+      "feedforward_dim": 384,
+      "initialization_std": 0.02,
+      "num_heads": 4,
+      "num_layers": 3,
+      "tie_embeddings": true,
+      "vocab_size": 1024
+    },
+    "artifact": {
+      "checksum": "95c849b3cffa5cb0d18a3d2983bfc542da38ff52b4c869d796a7e666865d1416",
+      "path": "E2605-transformer.pt",
+      "schema": "chakaso-transformer-checkpoint/1"
+    },
+    "budget": {
+      "batch_size": 32,
+      "best_step": 1380,
+      "eval_every": 60,
+      "gradient_clip_norm": 1.0,
+      "learning_rate": 0.0006,
+      "max_steps": 2400,
+      "min_delta": 0.001,
+      "patience": 8,
+      "records": 33,
+      "seed": 7,
+      "steps_per_epoch_estimate": 59,
+      "stopped_early": true,
+      "wall_clock_s": 513.63,
+      "warmup_steps": 60,
+      "weight_decay": 0.01
+    },
+    "curve": [
+      {
+        "gradient_norm": 0.0,
+        "learning_rate": 0.0,
+        "step": 0,
+        "train_loss": 6.99267,
+        "validation_loss": 6.989863234253886
+      },
+      {
+        "gradient_norm": 1.2508,
+        "learning_rate": 0.0006,
+        "step": 60,
+        "train_loss": 4.810725,
+        "validation_loss": 4.821468819645132
+      },
+      {
+        "gradient_norm": 0.4613,
+        "learning_rate": 0.0006,
+        "step": 120,
+        "train_loss": 4.188221,
+        "validation_loss": 4.153559850674812
+      },
+      {
+        "gradient_norm": 0.5211,
+        "learning_rate": 0.0006,
+        "step": 180,
+        "train_loss": 3.941966,
+        "validation_loss": 3.9367538679356113
+      },
+      {
+        "gradient_norm": 0.585,
+        "learning_rate": 0.0006,
+        "step": 240,
+        "train_loss": 3.834751,
+        "validation_loss": 3.782704256171343
+      },
+      {
+        "gradient_norm": 1.178,
+        "learning_rate": 0.0006,
+        "step": 300,
+        "train_loss": 3.68346,
+        "validation_loss": 3.666893607022994
+      },
+      {
+        "gradient_norm": 1.07,
+        "learning_rate": 0.0006,
+        "step": 360,
+        "train_loss": 3.565639,
+        "validation_loss": 3.5566210096532647
+      },
+      {
+        "gradient_norm": 0.8461,
+        "learning_rate": 0.0006,
+        "step": 420,
+        "train_loss": 3.356748,
+        "validation_loss": 3.452619614645979
+      },
+      {
+        "gradient_norm": 0.9097,
+        "learning_rate": 0.0006,
+        "step": 480,
+        "train_loss": 3.298451,
+        "validation_loss": 3.338689925154922
+      },
+      {
+        "gradient_norm": 1.094,
+        "learning_rate": 0.0006,
+        "step": 540,
+        "train_loss": 3.19159,
+        "validation_loss": 3.2411432684775803
+      },
+      {
+        "gradient_norm": 1.3777,
+        "learning_rate": 0.0006,
+        "step": 600,
+        "train_loss": 3.017156,
+        "validation_loss": 3.1433102404435975
+      },
+      {
+        "gradient_norm": 1.1347,
+        "learning_rate": 0.0006,
+        "step": 660,
+        "train_loss": 3.00452,
+        "validation_loss": 3.066690882171583
+      },
+      {
+        "gradient_norm": 1.325,
+        "learning_rate": 0.0006,
+        "step": 720,
+        "train_loss": 2.815429,
+        "validation_loss": 3.004166091871112
+      },
+      {
+        "gradient_norm": 1.3306,
+        "learning_rate": 0.0006,
+        "step": 780,
+        "train_loss": 2.805044,
+        "validation_loss": 2.927460880488811
+      },
+      {
+        "gradient_norm": 1.6546,
+        "learning_rate": 0.0006,
+        "step": 840,
+        "train_loss": 2.642396,
+        "validation_loss": 2.8829795432314977
+      },
+      {
+        "gradient_norm": 1.4183,
+        "learning_rate": 0.0006,
+        "step": 900,
+        "train_loss": 2.61761,
+        "validation_loss": 2.8422581880443896
+      },
+      {
+        "gradient_norm": 1.3627,
+        "learning_rate": 0.0006,
+        "step": 960,
+        "train_loss": 2.50201,
+        "validation_loss": 2.797316091561392
+      },
+      {
+        "gradient_norm": 1.4282,
+        "learning_rate": 0.0006,
+        "step": 1020,
+        "train_loss": 2.434115,
+        "validation_loss": 2.7598103774378666
+      },
+      {
+        "gradient_norm": 1.4922,
+        "learning_rate": 0.0006,
+        "step": 1080,
+        "train_loss": 2.464938,
+        "validation_loss": 2.7333306391784764
+      },
+      {
+        "gradient_norm": 1.6753,
+        "learning_rate": 0.0006,
+        "step": 1140,
+        "train_loss": 2.42694,
+        "validation_loss": 2.7169187382844546
+      },
+      {
+        "gradient_norm": 1.6511,
+        "learning_rate": 0.0006,
+        "step": 1200,
+        "train_loss": 2.28538,
+        "validation_loss": 2.69921342332535
+      },
+      {
+        "gradient_norm": 1.8699,
+        "learning_rate": 0.0006,
+        "step": 1260,
+        "train_loss": 2.26053,
+        "validation_loss": 2.692886735204619
+      },
+      {
+        "gradient_norm": 1.5657,
+        "learning_rate": 0.0006,
+        "step": 1320,
+        "train_loss": 2.148473,
+        "validation_loss": 2.682898765821068
+      },
+      {
+        "gradient_norm": 1.6971,
+        "learning_rate": 0.0006,
+        "step": 1380,
+        "train_loss": 2.112056,
+        "validation_loss": 2.6784589948325324
+      },
+      {
+        "gradient_norm": 2.0875,
+        "learning_rate": 0.0006,
+        "step": 1440,
+        "train_loss": 2.059442,
+        "validation_loss": 2.6781697183567155
+      },
+      {
+        "gradient_norm": 1.8716,
+        "learning_rate": 0.0006,
+        "step": 1500,
+        "train_loss": 1.931077,
+        "validation_loss": 2.6880172397649402
+      },
+      {
+        "gradient_norm": 2.0324,
+        "learning_rate": 0.0006,
+        "step": 1560,
+        "train_loss": 1.952922,
+        "validation_loss": 2.7059533005597824
+      },
+      {
+        "gradient_norm": 2.0774,
+        "learning_rate": 0.0006,
+        "step": 1620,
+        "train_loss": 1.95251,
+        "validation_loss": 2.720999814873579
+      },
+      {
+        "gradient_norm": 2.1399,
+        "learning_rate": 0.0006,
+        "step": 1680,
+        "train_loss": 1.961317,
+        "validation_loss": 2.7346970960264296
+      },
+      {
+        "gradient_norm": 2.1613,
+        "learning_rate": 0.0006,
+        "step": 1740,
+        "train_loss": 1.818317,
+        "validation_loss": 2.7357151097264785
+      },
+      {
+        "gradient_norm": 2.3085,
+        "learning_rate": 0.0006,
+        "step": 1800,
+        "train_loss": 1.813228,
+        "validation_loss": 2.767669833192257
+      },
+      {
+        "gradient_norm": 2.3416,
+        "learning_rate": 0.0006,
+        "step": 1860,
+        "train_loss": 1.740701,
+        "validation_loss": 2.7810307916802675
+      },
+      {
+        "gradient_norm": 2.2629,
+        "learning_rate": 0.0006,
+        "step": 1920,
+        "train_loss": 1.694023,
+        "validation_loss": 2.821908386523447
+      }
+    ],
+    "parameter_count": 643840,
+    "parameters_by_configuration": 643840,
+    "test": {
+      "bits_per_character": 1.8657340418089126,
+      "characters_scored": 96246,
+      "loss_nats_per_token": 2.693647205504745,
+      "perplexity": 14.785503470353591,
+      "positions_scored": 46208,
+      "separator_targets": 10,
+      "token_accuracy": 0.4500952216066482
+    },
+    "validation": {
+      "bits_per_character": 1.8109540762832341,
+      "characters_scored": 174254,
+      "loss_nats_per_token": 2.6784590194473097,
+      "perplexity": 14.562635258895897,
+      "positions_scored": 81664,
+      "separator_targets": 10,
+      "token_accuracy": 0.44952488244514105
+    }
+  }
+}
