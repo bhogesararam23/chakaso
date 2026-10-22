@@ -109,9 +109,13 @@ CPU wheel. Between the matrix landing and that green run the runners caught thre
 no way to catch — a Windows-only `ctypes.WinDLL` (`5e1b641`), an assertion finer than float32 (`b99ffee`), and a
 model-card link one directory level short (`a6303ef`, failing run `39719830927`) — which is the argument for
 three tiers on a Linux runner, stated here rather than in the abstract. K-009 is closed with those identifiers.
-The documentation commits that follow (`201c19b`, and this ledger) change prose, statuses and links only; their
-re-checks are the hygiene and status guards in `tests/test_repository_hygiene.py` running in every tier, and the
-run for `201c19b` is recorded in the commit that follows this one once the runner has answered.
+The two documentation commits after that (`201c19b`, then this ledger) went up in one push, so Actions ran the
+tip rather than each commit: run
+[`39722535891`](https://github.com/bhogesararam23/chakaso/actions/runs/39722535891) completed **success on all
+eight jobs** for `e61b9fe`, the delivered head, which contains `201c19b`'s tree — so the head is verified by
+that run rather than by a separate one of its own. The recording commit for this fact necessarily sits behind
+the run it names; `gh run list` shows the chain, and the rule that a ledger cannot be the last line of the
+delivery it counts is stated rather than escaped.
 
 Locally, at this head: dependency-free **1,652 passed / 24 skipped**, `[train]` **1,733 / 15**, `[train,nn]`
 **2,023 / 1**, `mypy src` clean over 125 modules, the model-path configuration clean over 157, lint and format
