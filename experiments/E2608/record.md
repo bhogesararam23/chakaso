@@ -307,6 +307,40 @@ snapshot it points at is not the working tree: `chakaso corpus prepare` wrote it
 `configs/corpora/gutenberg-english-prose-v2.toml`, and `chakaso corpus verify` re-checks it, so a re-run after
 any repository edit trains on the same bytes this record names.
 
+The generation evaluation was run over the two saved artifacts, through the boundary, exactly as the protocol
+section declares — one command per arm, with the raw text retained:
+
+```bash
+python -c "
+import json
+from pathlib import Path
+from chakaso.models import load_model
+from chakaso.training.generation_eval import evaluate_generation, summarise_generation_evaluation
+for family in ('decoder', 'transformer'):
+    model = load_model(f'data/experiments/E2608/{family}/E2608-{family}.pt')
+    report = evaluate_generation(model)
+    target = Path(f'data/experiments/E2608/generation-E2608-{family}.json')
+    target.write_text(json.dumps(report, sort_keys=True, indent=2, ensure_ascii=False) + chr(10), encoding='utf-8')
+    print(family, summarise_generation_evaluation(report))
+"
+```
+
+and the reference release was exported and verified with:
+
+```bash
+chakaso model export data/experiments/E2608/decoder --output data/experiments/E2608/release \
+  --model-id chakaso-base --model-version 0.1.0 --summary "…" \
+  --capability tokenize --capability generate --capability stream --capability score \
+  --limitation "…" --limitation "…" --limitation "…" --limitation "…" --limitation "…" \
+  --licence-model "Apache-2.0" --licence-data "Public domain in the United States (Project Gutenberg)" \
+  --redistribution "Weights may be redistributed with model.json attached; the corpus is redistributed from its own source, not from this repository." \
+  --reproduce "chakaso experiment model --work-dir data/experiments/E2608/decoder"
+chakaso model verify data/experiments/E2608/release
+```
+
+The five `--limitation` strings and the summary are the ones now printed by that command and quoted in
+[`MODEL_CARD.md`](../../MODEL_CARD.md).
+
 ## Follow-up this record commits to
 
 1. **E2609** — arm A across pre-declared seeds (5, split fixed), reporting mean ± sample SD bits per

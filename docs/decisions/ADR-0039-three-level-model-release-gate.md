@@ -83,7 +83,7 @@ answered, a instruction is not followed, and neither is claimed.
 ## Assessment of `chakaso-base@0.1.0`
 
 Level 1 **met**, Level 2 **met**, Level 3 **not met and not claimed**. The evidence for each verdict, including
-the measurements that withhold the third, is in [`MODEL_CARD.md`](../MODEL_CARD.md); the generation statistics
+the measurements that withhold the third, is in [`MODEL_CARD.md`](../../MODEL_CARD.md); the generation statistics
 that decide Level 3 are mean bigram repetition 0.5538 over five greedy continuations, zero tail loops, zero
 periodic runs of three or more, every sample truncated at its bound, and no sample anyone would publish.
 
