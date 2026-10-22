@@ -10,6 +10,24 @@ capability is implemented or still planned.
 
 ## Unreleased
 
+### 2026-10-22 — CI gained the two tiers that test the product (node M)
+
+**Implemented**
+
+- `.github/workflows/ci.yml` now runs three jobs instead of one: `checks` on Python 3.11/3.12/3.13 with
+  `.[dev]` (the dependency-free guarantee, including the HTTP serving surface), `train` on the same three with
+  `.[dev,train]`, and `model-path` on the floor and the latest with `.[dev,train,nn]` from the PyTorch CPU
+  wheel index plus the strict type check over every module.
+- The matrix existed before, as a document, because the session's GitHub token lacked the `workflow` scope
+  and GitHub refuses a whole push that touches a workflow file. The scope is present now, so the file is the
+  delivery and the document describes it; five hygiene tests read the shipped workflow rather than a copy —
+  jobs and installed extras against `pyproject.toml`, every `run:` command against what `AGENTS.md` and
+  `CONTRIBUTING.md` promise contributors, no mechanism that can hide a failure, `src/chakaso/serve/` free of
+  `numpy` and `torch`, and the document refused while it still describes the matrix as un-applied.
+- **Not claimed:** no runner result has been read back for the new jobs yet. "CI is defined to test the model
+  path" is what changed; "CI has tested it" waits for the run, and K-009 stays open until the identifiers and
+  verdicts are recorded.
+
 ### 2026-10-22 — a trained checkpoint can be served locally over HTTP (node K)
 
 **Implemented**

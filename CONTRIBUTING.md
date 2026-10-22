@@ -62,12 +62,15 @@ python -m ruff format --check .
 python -m mypy src
 ```
 
-CI runs the same commands. If you cannot run them locally, say so in the pull
+CI runs the same commands, in its `checks` job. If you cannot run them locally, say so in the pull
 request rather than assuming.
 
 Those four are the dependency-free matrix. `numpy` and `torch` are optional extras (ADR-0030, ADR-0034), so
 in that matrix the numerical and Transformer tests skip and `mypy src` excludes the modules whose types
-resolve through them. A change that touches the model path is also run with the extras installed:
+resolve through them — the skipping is the guarantee, not a hole. Two more jobs run the same suite with the
+extras installed (`train` with numpy on all three Pythons, `model-path` with torch on the floor and the
+latest), which is what makes a change to the model path a checked change rather than one only a maintainer's
+machine sees:
 
 ```bash
 python -m pip install -e ".[dev,train,nn]"

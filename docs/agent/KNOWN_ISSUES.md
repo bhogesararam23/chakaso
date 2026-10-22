@@ -137,17 +137,18 @@ opt-in.
 **What would close it:** IP-pinned resolution in the transport, plus a politeness layer
 (robots, per-host spacing) before the fetcher is used against the live web.
 
-### K-009 — The training and model-path tests do not run in remote CI
+### K-009 — The model path is in CI's definition; the first runner verdict is unread
 
-**Impact:** Medium, and it is a coverage gap rather than a correctness one — but it is now the largest gap in
-the repository, because the model path is the product.
+**Impact:** Medium, and it is a coverage gap rather than a correctness one — smaller than it was, because the
+gap is now "unverified on a runner" rather than "not covered at all".
 
 `chakaso.training` splits across two optional extras: `numpy` in `[train]` (ADR-0030) and `torch` in `[nn]`
-(ADR-0034). The core CI matrix installs only `.[dev]`, so the numerical and model tests
-`pytest.importorskip("numpy")` / `("torch")` and **skip** there; `mypy src` excludes the modules that import
-them in that matrix (their types resolve through the absent package). The tests and the strict type-check of
-the training and model packages therefore run only where the extras are installed — locally, and by any
-maintainer who runs `.[dev,train,nn]` — not on every push in CI.
+(ADR-0034). Until 2026-10-22 the CI matrix installed only `.[dev]`, so the numerical and model tests
+`pytest.importorskip("numpy")` / `("torch")` and **skipped** there, and `mypy src` excluded the modules that
+import them — the model path, which is the product, ran only on a maintainer's machine. That is fixed in the
+workflow: three jobs now install `.[dev]`, `.[dev,train]` and `.[dev,train,nn]`. What is not fixed is the
+part a repository cannot fix by itself — no result has been read back from Actions for the new jobs, so the
+claim standing is "CI is defined to test the model path", not "CI has tested it".
 
 **Why it is not closed in the obvious way.** The clean fix is dedicated CI jobs installing `.[dev,train]` and
 `.[dev,train,nn]` and running the full suite plus `mypy src --exclude '_never_match_'`; the commands exist but
@@ -188,26 +189,31 @@ tiers **pushed and read back from the runner**. The scope is evidence that it is
 it passed — and applying the matrix still needs the decision ADR-0034 left open, whether a runner should fetch
 the torch CPU wheel index on every push.
 
-Locally all three matrices still run, and the counts grew with the new tests: **1,479 pass / 21 skip**
-dependency-free, **1,560 pass / 12 skip** with `[train]`, and **1,739 pass / 1 skip** with `[train,nn]`;
-strict typing is clean over all 147 source files in the `[nn]` environment (and over the 118 the
-dependency-free `mypy src` reaches). Measured on 2026-10-21 against this working tree; the figures for the
-delivered head are restated in the delivery ledger.
+Locally all three matrices still run, and the counts grew with the new tests: **1,644 pass / 23 skip**
+dependency-free, **1,724 pass / 14 skip** with `[train]`, and **2,001 pass / 1 skip** with `[train,nn]`;
+strict typing is clean over all 157 source files in the `[nn]` environment (and over the 125 the
+dependency-free `mypy src` reaches). Measured on 2026-10-22 against the working tree that shipped the matrix;
+the figures for the delivered head are restated in the delivery ledger.
 
-**The fix is now written and partly tested, which is new.**
+**The matrix is now the workflow, not a document about one (2026-10-22).**
+[`.github/workflows/ci.yml`](../../.github/workflows/ci.yml) carries three jobs — `checks` on
+3.11/3.12/3.13 with `.[dev]`, `train` on the same three with `.[dev,train]`, and `model-path` on the floor and
+the latest with `.[dev,train,nn]` from the CPU wheel index — and
 [`docs/internal/engineering/optional-dependency-ci-matrix.md`](../internal/engineering/optional-dependency-ci-matrix.md)
-carries a complete three-tier workflow — core on 3.11/3.12/3.13, `[dev,train]` on the same three, and
-`[dev,train,nn]` on the floor and the latest with the CPU wheel index ADR-0034 names — ready to paste into
-`.github/workflows/ci.yml` by anyone holding a `workflow`-scoped token. Four tests in
-`tests/test_repository_hygiene.py` keep it from being decoration: the jobs install exactly the tiers they
-claim, every `run:` command is one `AGENTS.md` and `CONTRIBUTING.md` document, nothing can fail quietly
-(no `continue-on-error`, no deselection), and the **shipped** workflow still installs only `.[dev]` — that
-last assertion is written to fail the moment someone applies the matrix, which is exactly when this entry
-should be rewritten rather than left to rot. None of it has run on a runner, and no claim is made that it
-will pass there: the `[nn]` job would download a torch wheel on a GitHub host for the first time.
+describes that file instead of replacing it. Five hygiene tests read the shipped file rather than a copy: the
+jobs and their installed extras match `pyproject.toml`, every `run:` command is one the contributor contract
+documents, nothing can fail quietly, `src/chakaso/serve/` imports neither `numpy` nor `torch` (so the
+dependency-free tier is genuinely coverage of the HTTP surface), and the document is refused while it still
+describes the matrix as un-applied. The assertion that used to guard the *blocked* state — "the shipped
+workflow installs only `.[dev]`" — was deleted, as its own text said it should be, and the test that replaces
+it fails if the document falls behind the file.
 
-**What would close it:** a CI workflow change (jobs installing `.[dev,train]` and `.[dev,train,nn]`) made with
-a credential that has the `workflow` scope, plus a decision on fetching the CPU wheel index in CI.
+**What still keeps this entry open:** the first runner result has not been read. A workflow file in the
+repository is not evidence that Actions executed it; the `[nn]` job downloads a torch wheel on a GitHub host
+for the first time, and its outcome is unknown until `gh run list` says otherwise. Recording the run
+identifiers and their verdicts is what closes K-009 — and ADR-0034's open question, whether a runner should
+fetch the CPU wheel index on every push, is now answered in the affirmative by the file itself, which should
+be revisited if the download time becomes the reason a contributor's check is slow.
 
 ### K-006 — The invented-reference condition is persisted; the rate is not yet aggregated
 

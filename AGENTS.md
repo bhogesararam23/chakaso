@@ -128,12 +128,14 @@ python -m ruff format --check .    # format check
 python -m mypy src                 # types
 ```
 
-All four must pass before a commit is pushed. CI runs exactly these.
+All four must pass before a commit is pushed. CI runs exactly these in its `checks` job, and the commands
+below in its `train` and `model-path` jobs.
 
 The four gates above are the dependency-free matrix: `numpy` and `torch` are absent there, so the
-numerical and Transformer tests skip and `mypy src` does not resolve their types. Anything that touches
-the model path is also run with the optional extras installed, and that is a separate command, not a
-substitute for the four:
+numerical and Transformer tests skip and `mypy src` does not resolve their types. That skipping is the
+guarantee being tested — it is what proves `import chakaso`, the runtime, retrieval, the CLI and the HTTP
+serving adapter need no numerical library. Anything that touches the model path is also run with the optional
+extras installed, and that is a separate command, not a substitute for the four:
 
 ```bash
 python -m pip install -e ".[dev,train]"        # numpy: the character model and its tests
@@ -234,8 +236,10 @@ Before every commit:
   tests are what keep that true. Run the gated suite locally with the extras installed before claiming a
   numerical behaviour is verified.
 - **Workflow files cannot be pushed from an OAuth token without the `workflow` scope.** GitHub refuses the
-  whole push, naming the file. K-009 records this project's consequence: `[train]` and `[nn]` jobs do not
-  run in remote CI. Never document a CI job that has not landed.
+  whole push, naming the file — which is why the three-tier matrix lived for a while as a document instead of
+  a job. The scope is present now and `.github/workflows/ci.yml` carries `checks`, `train` and `model-path`;
+  K-009 records what remains open (no runner result read back for the new jobs yet). Never document a CI job
+  that has not landed, and never call a landed job a passed one.
 - **Checkpoint and corpus bytes stay out of Git.** They live in `data/`, are git-ignored, and are cited by
   fingerprint in the experiment record.
 - **The research log is not a place for opinions.** Entry types are defined in

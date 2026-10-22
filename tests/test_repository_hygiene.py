@@ -519,7 +519,7 @@ def test_markdown_relative_links_resolve(tracked_files: list[Path]) -> None:
 
 
 # ---------------------------------------------------------------------------
-# The optional-dependency CI matrix, and the gap that keeps it out of the repository
+# The optional-dependency CI matrix, as shipped
 
 
 CI_MATRIX_DOCUMENT = REPO_ROOT / "docs/internal/engineering/optional-dependency-ci-matrix.md"
@@ -567,10 +567,30 @@ def _jobs(block: str) -> dict[str, list[str]]:
     return jobs
 
 
-def test_the_prepared_ci_matrix_installs_exactly_the_documented_tiers() -> None:
+CI_WORKFLOW = REPO_ROOT / ".github/workflows/ci.yml"
+
+
+def _workflow_text() -> str:
+    return CI_WORKFLOW.read_text(encoding="utf-8")
+
+
+def _workflow_jobs() -> dict[str, list[str]]:
+    """The job bodies of the shipped workflow, read from the ``jobs:`` mapping onward.
+
+    The offset matters: the file's ``on:`` block also nests its triggers two spaces deep, and a reader that
+    starts at the top would report ``push`` as a job.
+    """
+    lines = _workflow_text().splitlines()
+    if "jobs:" not in lines:
+        message = f"{CI_WORKFLOW.relative_to(REPO_ROOT)} has no top-level jobs: mapping"
+        raise AssertionError(message)
+    return _jobs(chr(10).join(lines[lines.index("jobs:") :]))
+
+
+def test_the_shipped_workflow_installs_exactly_the_documented_tiers() -> None:
     """Every tier the package declares gets a job, and no job installs a tier it does not name.
 
-    The document and pyproject are the two places this can drift, and a job that silently installs `.[dev]`
+    The workflow and pyproject are the two places this can drift, and a job that silently installs `.[dev]`
     while claiming to cover `[nn]` would make the coverage claim false without any test failing.
     """
     package = tomllib.loads((REPO_ROOT / "pyproject.toml").read_text(encoding="utf-8"))["project"]
@@ -579,9 +599,8 @@ def test_the_prepared_ci_matrix_installs_exactly_the_documented_tiers() -> None:
         "train": ["dev", "train"],
         "model-path": ["dev", "train", "nn"],
     }
-    blocks = _yaml_blocks(CI_MATRIX_DOCUMENT.read_text(encoding="utf-8"))
-    assert blocks, "the CI document carries no yaml block to apply"
-    jobs = _jobs(blocks[0])
+    jobs = _workflow_jobs()
+    assert jobs, "the shipped workflow carries no job bodies to read"
 
     assert set(jobs) == set(tiers)
     for job, extras in tiers.items():
@@ -593,22 +612,22 @@ def test_the_prepared_ci_matrix_installs_exactly_the_documented_tiers() -> None:
         assert declared == f".[{','.join(extras)}]"
 
 
-def test_the_prepared_ci_matrix_cannot_hide_a_failure() -> None:
-    block = _yaml_blocks(CI_MATRIX_DOCUMENT.read_text(encoding="utf-8"))[0]
+def test_the_shipped_workflow_cannot_hide_a_failure() -> None:
+    block = _workflow_text()
 
     assert "continue-on-error" not in block
     assert "|| true" not in block
     assert "if: failure()" not in block
-    for job_lines in _jobs(block).values():
+    for job_lines in _workflow_jobs().values():
         for line in job_lines:
             assert " --deselect" not in line and "-k " not in line, line
 
 
-def test_the_prepared_ci_matrix_runs_the_documented_commands_and_the_cpu_wheel_index() -> None:
+def test_the_shipped_workflow_runs_the_documented_commands_and_the_cpu_wheel_index() -> None:
     """A CI job that runs a weaker command than the contributor contract is not coverage of it."""
     agents = (REPO_ROOT / "AGENTS.md").read_text(encoding="utf-8")
     contributing = (REPO_ROOT / "CONTRIBUTING.md").read_text(encoding="utf-8")
-    jobs = _jobs(_yaml_blocks(CI_MATRIX_DOCUMENT.read_text(encoding="utf-8"))[0])
+    jobs = _workflow_jobs()
 
     for gate in ("ruff format --check .", "ruff check .", "mypy src"):
         assert f"python -m {gate}" in agents
@@ -624,15 +643,47 @@ def test_the_prepared_ci_matrix_runs_the_documented_commands_and_the_cpu_wheel_i
     assert "[dev,train,nn]" in model_path_runs
 
 
-def test_the_shipped_workflow_still_covers_only_the_core_tier() -> None:
-    """The gap this document describes is asserted, not remembered.
+def test_the_dependency_free_tier_covers_the_serving_adapter() -> None:
+    """The HTTP surface has to be tested where a numerical library is absent, or its tier is a fiction.
 
-    If someone applies the matrix with a `workflow`-scoped token, this test fails — and the right response is
-    to delete it and rewrite the document, which is exactly what a stale "still blocked" claim would need.
+    `checks` installs `.[dev]` and runs `python -m pytest`; the serving tests only count as coverage of the
+    default install if nothing under `src/chakaso/serve/` reaches for numpy or torch. That is also the claim
+    ADR-0038 makes about the transport being standard library, so it is asserted rather than remembered.
     """
-    shipped = (REPO_ROOT / ".github/workflows/ci.yml").read_text(encoding="utf-8")
+    serve_files = sorted((REPO_ROOT / "src/chakaso/serve").glob("*.py"))
+    assert serve_files, "the serving adapter has no modules to check"
+    for path in serve_files:
+        tree = ast.parse(path.read_text(encoding="utf-8"), filename=str(path))
+        imported = {
+            alias.name
+            for node in ast.walk(tree)
+            if isinstance(node, ast.Import)
+            for alias in node.names
+        } | {
+            node.module.split(".")[0]
+            for node in ast.walk(tree)
+            if isinstance(node, ast.ImportFrom) and node.module
+        }
+        assert not imported & {"numpy", "torch"}, f"{path.name} imports a numerical library"
+    assert "python -m pytest" in _body(_workflow_jobs()["checks"])
 
-    assert "jobs:" in shipped
-    assert '.[dev]"' in shipped
-    for tier in ("[dev,train]", "[dev,train,nn]"):
-        assert tier not in shipped, f"the shipped workflow installs {tier}: update the CI document"
+
+def test_the_ci_document_describes_the_shipped_workflow() -> None:
+    """The internal document is a description of the file, not an alternative copy of it.
+
+    It used to record a matrix that could not be pushed. If it drifts from what is shipped — naming a job
+    that is not there, or still claiming the delivery is blocked while the file installs the extras — the
+    next reader is told a falsehood about the project's own evidence.
+    """
+    document = CI_MATRIX_DOCUMENT.read_text(encoding="utf-8")
+    shipped_names = set(_workflow_jobs())
+
+    for job in sorted(shipped_names):
+        assert f"`{job}`" in document, f"{job} is shipped but not described in the CI document"
+    blocked = re.search(
+        r"(?i)(is not running|blocked from delivery|has not run on GitHub Actions)", document
+    )
+    assert blocked is None, (
+        f"the CI document still claims delivery is blocked: {blocked and blocked.group(0)!r} — "
+        "update it with what the runners actually did"
+    )

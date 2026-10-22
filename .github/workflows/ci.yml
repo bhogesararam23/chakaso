@@ -1,8 +1,13 @@
 name: CI
 
-# Runs exactly the commands documented in CONTRIBUTING.md and AGENTS.md, on a
-# machine with no GPU, no secrets and no access to a model provider. A check that
-# cannot run on a fork is not a check.
+# Runs exactly the commands documented in CONTRIBUTING.md and AGENTS.md, on a machine with no GPU, no
+# secrets and no access to a model provider. A check that cannot run on a fork is not a check.
+#
+# Three tiers, because that is what the package declares. `checks` installs only `.[dev]` and is the
+# guarantee that `import chakaso`, the runtime, retrieval, the CLI and the HTTP serving adapter need no
+# numerical library at all — the model-path tests skip there by design, which is why a second and third
+# job exist. `train` adds numpy and runs the character model's tests. `model-path` adds torch from the CPU
+# wheel index and type-checks every module, including the ones the base tier cannot resolve.
 on:
   push:
     branches: [main]
@@ -18,7 +23,7 @@ concurrency:
 
 jobs:
   checks:
-    name: python ${{ matrix.python-version }}
+    name: core python ${{ matrix.python-version }}
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -56,3 +61,62 @@ jobs:
         run: |
           python -m chakaso --version
           chakaso info
+
+  train:
+    name: train python ${{ matrix.python-version }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.11", "3.12", "3.13"]
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+          cache-dependency-path: pyproject.toml
+
+      - name: Install
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e ".[dev,train]"
+
+      - name: Types
+        run: python -m mypy src
+
+      - name: Tests
+        run: python -m pytest
+
+  model-path:
+    name: model path python ${{ matrix.python-version }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        # The floor and the latest, not all three: torch is a ~200 MB download, and the failures it can
+        # introduce across minor versions are a wheel that does not exist or an operator signature that
+        # changed — both of which show up at an end of the supported range.
+        python-version: ["3.11", "3.13"]
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+          cache-dependency-path: pyproject.toml
+
+      - name: Install
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e ".[dev,train,nn]" --extra-index-url https://download.pytorch.org/whl/cpu
+
+      - name: Types
+        run: python -m mypy --config-file configs/mypy-model-path.toml
+
+      - name: Tests
+        run: python -m pytest
