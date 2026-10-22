@@ -2,14 +2,19 @@
 
 Chakaso intends to train its own language model from randomly initialised
 parameters. This document describes that plan, and is explicit about what has and
-has not been executed. As of 2026-10-21 the training pipeline exists
+has not been executed. As of 2026-10-22 the training pipeline exists
 (`chakaso.training`, gated by [ADR-0030](decisions/ADR-0030-minimal-optional-training-dependency.md)
-and, for the model itself, [ADR-0034](decisions/ADR-0034-optional-pytorch-model-extra.md)) and two
+and, for the model itself, [ADR-0034](decisions/ADR-0034-optional-pytorch-model-extra.md)) and five
 experiments have measured from-scratch training: [E2601](../experiments/E2601/record.md) trained a
-984-parameter character model that beats trivial baselines on held-out loss, and
+984-parameter character model that beats trivial baselines on held-out loss,
 [E2605](../experiments/E2605/record.md) trained a 643,840-parameter subword causal Transformer that beats it,
-in bits per character, on held-out documents. Neither is a useful model, and that distinction is what the
-rest of this document keeps honest.
+in bits per character, on held-out documents, [E2606](../experiments/E2606/record.md) put a five-seed spread on
+that result and reproduced its artifact tensor-for-tensor, [E2607](../experiments/E2607/record.md) repeated the
+protocol on externally licensed prose, and [E2608](../experiments/E2608/record.md) trained a
+3,413,760-parameter rotary decoder to 1.6865 bits per character against 1.9043 for the transformer
+architecture at a matched token budget — the artifact it selected is the first one released under a contract, at
+Level 2 of [ADR-0039](decisions/ADR-0039-three-level-model-release-gate.md). None of them is a useful model, and
+that distinction is what the rest of this document keeps honest.
 
 ## Strategy
 
@@ -39,10 +44,10 @@ the project's central claim false.
 
 | Stage | Goal | Output | Status |
 | --- | --- | --- | --- |
-| M0 | Train nothing; validate the system architecture | Web-grounded prototype | In progress |
+| M0 | Train nothing; validate the system architecture | Web-grounded prototype | **Superseded, and honest about which half happened.** The architecture validation is done and shipped: retrieval, evidence identity, citation validation, grounding boundaries, a durable answer store and a local runtime all exist and are tested without a provider. The *web-grounded prototype* half was never the model's milestone and stays unmet — no model answers a grounded question here (K-001), and default fetching is off ([ADR-0001](decisions/ADR-0001-local-first-runtime.md)) |
 | M1 | Train a tokenizer on a controlled corpus | Versioned tokenizer | **Done for both tokenizations** — a deterministic character vocabulary (used by E2601/E2602) and, since P30, a learned byte-pair subword vocabulary trained on pinned training-split text (`chakaso.training.subword`, ADR-0033's model-centred contract) |
 | M2 | Train a tiny Transformer from random initialisation | Chakaso-0 checkpoint | **Done** — [E2605](../experiments/E2605/record.md) trained a 643,840-parameter subword causal Transformer from random initialization on the pinned corpus and measured 1.8657 bits per character on held-out documents, against 3.1343 for the character architecture. The artifact is `E2605-transformer.pt`: an experiment result, not a release, and not named Chakaso-0 |
-| M3 | Pretrain a small useful base model | Chakaso Base | Planned |
+| M3 | Pretrain a small useful base model | Chakaso Base | **Half met, and the half that matters is not.** An artifact named `chakaso-base@0.1.0` now exists and is released under a contract — E2608's 3,413,760-parameter rotary decoder, 1.6865 bits per character on held-out licensed prose, loadable, verifiable, serveable, Level 2 of [ADR-0039](decisions/ADR-0039-three-level-model-release-gate.md). "**Useful**" is not met: its generations repeat phrases, every measured sample hit its token bound, and Level 3 is withheld in [the model card](../MODEL_CARD.md) on that measurement rather than on caution |
 | M4 | Instruction tune | Chakaso Instruct | Planned |
 | M5 | Teach grounding and correction behaviour | Chakaso Grounded | Planned |
 | M6 | Preference optimization, if justified | Aligned variant | Research |
@@ -288,13 +293,13 @@ something nobody defined.
 | Corpus and provenance | Implemented — `chakaso.training.corpus` (the self-authored toy text), `chakaso.training.manifest` (pins a real document set by path and content digest and refuses drift), `chakaso.training.snapshot` (recovers a pinned corpus from the revision that recorded it and writes a checksum-verified snapshot), and `chakaso.training.source_corpus` (turns a downloaded external text into a pinned corpus offline). E2605 trained on the pinned repository text: 71 documents, 780,223 characters, fingerprint `e45993f9badf706c`; E2607 trains on 105 documents of Project Gutenberg prose, fingerprint `931b07a635ca5a0c` |
 | Tokenizer | Implemented — a deterministic character vocabulary (`chakaso.training.tokenizer`, used by E2601/E2602) and a learned byte-pair subword vocabulary (`chakaso.training.subword`, dependency-free, total over Unicode, self-describing and checksum-verified on load) |
 | Dataset pipeline | Implemented — document-level three-way split with deduplication before selection (`chakaso.training.data.split_text_units`), sequence packing with per-position targets (`chakaso.training.packing`), split/manifest fingerprints, and a split seed separate from the model seed so a study can vary initialization without moving the held-out documents |
-| Model code | Implemented and measured — the character MLP (E2601, 984 parameters, every gradient finite-difference verified) and the decoder-only causal Transformer (`chakaso.training.transformer`, 643,840 parameters in E2605, autograd gradients cross-checked against hand-computed losses and sampled finite differences per ADR-0034) |
+| Model code | Implemented and measured — the character MLP (E2601, 984 parameters, every gradient finite-difference verified), the decoder-only causal Transformer (`chakaso.training.transformer`, 643,840 parameters in E2605, autograd gradients cross-checked against hand-computed losses and sampled finite differences per ADR-0034), and since E2608 a second family: `chakaso.training.decoder`, a rotary-position, RMSNorm, tied-embedding decoder with an ignore-index target mask and a key/value cache whose stepped forward pass is tested equal to the full one (3,413,760 parameters measured) |
 | Training loop | Implemented and measured — full-batch Adam over the character model (E2601/E2602) and mini-batch AdamW with warmup, gradient clipping, validation-selected early stopping and bit-identical resume for the Transformer (`chakaso.training.nn_training`) |
-| Checkpoints | Implemented — character JSON schema/2 (checksum-verified, vocabulary embedded) and `chakaso-transformer-checkpoint/1` (ADR-0035): one file, checksum over tensors plus metadata, tokenizer inline, `weights_only=True`, incompatible artifacts refused by name, usable and resumable kinds distinguished |
+| Checkpoints | Implemented — character JSON schema/2 (checksum-verified, vocabulary embedded), and one tensor-plus-metadata file carrying **two** architecture schemas: `chakaso-transformer-checkpoint/1` (ADR-0035) and `chakaso-decoder-checkpoint/1` (ADR-0037). A file names its own family, the loader builds the class from that and never guesses, the checksum covers tensors plus metadata, `weights_only=True` is explicit, incompatible artifacts are refused by name, and usable and resumable kinds are distinguished |
 | Model evaluation | Implemented and measured — `chakaso.training.model_metrics` reports nats per identifier, perplexity and **bits per character** through one arithmetic for any identifier space, with uniform and unigram baselines scored the same way; `chakaso.training.generation_eval` measures what a model emits over the boundary (repetition ratios, longest repeated block, cycles anywhere in the sample and periodic tails, length and termination, refusal on empty input) and carries its own interpretation limit, because none of it measures meaning |
 | Seed studies | Implemented — `chakaso.training.seed_study` runs a declared seed list over one fixed protocol, one directory per run, and rebuilds its aggregate from the reports on disk: mean, sample standard deviation, median, range, with no confidence interval published and the reason stated. A reused report is accepted only after its configuration, corpus fingerprint and seed match the study |
-| Using a trained model | Implemented — `chakaso.models.load_model(path)` returns a `LanguageModel` from a checkpoint with no terminal, no config and no application import; the runtime's own default adapter is still the development double |
-| Experiments | E2601, E2602, E2603, E2604 and E2605 are measured results; E2606 (five seeds on the internal corpus) and E2607 (three seeds on external prose) are preregistered and running. Nothing has been measured on a real *workload* (K-001), and no measured model is useful |
+| Using a trained model | Implemented — `chakaso.models.load_model(path)` returns a `LanguageModel` from a checkpoint **or from a verified release directory**, with no terminal, no config and no application import; generation is bounded by one validated parameter object (temperature over a stated range, top-k, top-p, a seed, stop sequences, a repeat penalty), `stream()` yields as the model steps and stops when the caller cancels, `score()` returns the same held-out cross-entropy the experiments report, `describe()` states what the runtime is, and `chakaso model inspect|verify|export|generate|stream|score|serve` is the same surface from a terminal — thin handlers over that library, never a second implementation of it. The runtime's own default adapter is still the development double, and `chakaso.serve` refuses to serve it |
+| Experiments | E2601 through E2608 are **measured results**, all eight committed: the character model across two records, the retrieval and sufficiency measurements across two, the Transformer across three (E2605, E2606's five seeds, E2607 on licensed prose), and E2608's two-arm comparison on a 919-document licensed corpus. Nothing has been measured on a real *workload* (K-001), and no measured model is useful |
 
 The two halves of this table used to contradict each other — the header cited a measured E2601 while the
 rows below said the tokenizer, model code, training loop and checkpoints did not exist. They were written

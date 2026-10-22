@@ -198,14 +198,24 @@ cannot tilt it. And the same metric function scores both architectures and both 
 so a comparison in an experiment record is one measurement applied four times rather than
 four measurements that happen to be printed together.
 
-**Measured on 2026-10-21** ([E2605](../experiments/E2605/record.md), over the pinned 71-document corpus,
-held-out documents only): **1.8657** bits per character for the subword Transformer (643,840 parameters,
-2.6936 nats/token, perplexity 14.79, token accuracy 0.4501), **3.1343** for the character model E2601
-measured (44,084 parameters, 2.1724 nats/token, 8.78, 0.4059), 3.3224 for the unigram and 4.8010 for the
-uniform predictor of the Transformer's own identifier space. One seed, one author's prose, no error bar:
-these are measurements of a training path and a distribution, not of language ability. E2606 is the study
-that puts a spread on those numbers, and E2607 the one that asks whether they survive on somebody else's
-text.
+**Measured** ([E2605](../experiments/E2605/record.md), over the pinned 71-document corpus, held-out documents
+only): **1.8657** bits per character for the subword Transformer (643,840 parameters, 2.6936 nats/token,
+perplexity 14.79, token accuracy 0.4501), **3.1343** for the character model E2601 measured (44,084 parameters,
+2.1724 nats/token, 8.78, 0.4059), 3.3224 for the unigram and 4.8010 for the uniform predictor of the
+Transformer's own identifier space. That single run was the best of five draws:
+[E2606](../experiments/E2606/record.md) re-ran the identical protocol across five pre-declared seeds and reports
+**1.8794 ± 0.0077** for the Transformer against **3.0937 ± 0.0267** for the character architecture, every seed
+under every baseline, with the seed-7 run reproducing E2605's artifact tensor for tensor — so the gap is
+real and the headline number is a spread, and quoting 1.8657 without the mean is a defect.
+[E2607](../experiments/E2607/record.md) asked whether it survives on somebody else's text: **2.0176 ± 0.0118**
+against **3.2218 ± 0.0153** on three externally licensed Project Gutenberg texts, and none of its runs
+early-stopped, so its level is a budget floor rather than a converged one.
+[E2608](../experiments/E2608/record.md) compared two architectures at a matched token budget on a
+919-document licensed corpus: **1.6865** bits per character for the 3,413,760-parameter rotary decoder against
+**1.9043** for the 1,037,056-parameter transformer, both under unigram 3.2263 and uniform 5.5661, both still
+truncated at the 2,400-step ceiling — and the record states that the arms differ 3.3× in parameters, so the gap
+is not a controlled architecture result. All of it remains measurement of a training path and a distribution,
+not of language ability: no checkpoint measured here produces usable text.
 
 ### How a multi-seed result is reported
 

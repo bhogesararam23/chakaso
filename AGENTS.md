@@ -16,10 +16,14 @@ grounded model could later be measured honestly. It is one consumer of the model
 centre, and it is not the primary interface either: the Python library is. A CLI, a web frontend or a
 hosted API may exist only with a technical justification that does not displace model work.
 
-What exists today, precisely: a conversation can be held, but the model implementations behind the boundary
-are a deterministic development double, an adapter over a measured 984-parameter character toy, and an
-adapter over a measured 643,840-parameter subword Transformer (E2605, reproduced and put on a spread by
-E2606). None of the three answers a grounded question, and neither trained model is useful text. Local
+What exists today, precisely: a conversation can be held, and the model implementations behind the boundary are
+a deterministic development double, an adapter over a measured 984-parameter character toy, and an adapter over
+the two trained subword architectures — the measured 643,840-parameter Transformer (E2605, reproduced and put on
+a spread by E2606, run on licensed data by E2607) and the 3,413,760-parameter rotary decoder E2608 trained and
+compared against it, which is the first artifact this project has released under a contract
+(`chakaso-base@0.1.0`, Level 2 of [ADR-0039](docs/decisions/ADR-0039-three-level-model-release-gate.md); Level
+3 — useful behaviour — is withheld on the measurement in its model card). None of them answers a grounded
+question, and no trained model is useful text. Local
 lexical retrieval exists (ingest, corpus, BM25, evidence
 pack); web fetching is opt-in and off every default path — see
 [`docs/agent/CURRENT_STATE.md`](docs/agent/CURRENT_STATE.md), which is the authority on what is real.
@@ -77,10 +81,13 @@ executed comparisons over small synthetic or self-authored development fixtures 
 measurement E-001, E2601 and E2602 (a tiny character LM whose held-out next-token loss beats uniform and
 unigram baselines, recorded in
 [`experiments/E2601/record.md`](experiments/E2601/record.md)), E2603/E2604 (retrieval and
-evidence-sufficiency measurements over a self-authored workload), and E2605/E2606/E2607 (a 643,840-parameter
-subword Transformer trained from random initialization: E2605 on this repository's own pinned prose, E2606 the
-same protocol across five pre-declared seeds, reproducing E2605 exactly, and E2607 on an externally licensed
-Project Gutenberg corpus). All of them check the shape of a mechanism or a learning loop on hand-built or
+evidence-sufficiency measurements over a self-authored workload), and E2605/E2606/E2607/E2608 (a
+643,840-parameter subword Transformer and, since E2608, a 3,413,760-parameter rotary decoder trained from random
+initialization: E2605 on this repository's own pinned prose, E2606 the same protocol across five pre-declared
+seeds, reproducing E2605 exactly, E2607 on an externally licensed Project Gutenberg corpus, and E2608 the two
+architectures compared at a matched token budget on a 919-document licensed corpus — 1.6865 against
+1.9043 bits per character, both arms truncated at the step ceiling, neither arm producing usable text). All of
+them check the shape of a mechanism or a learning loop on hand-built or
 public-domain text, never meaning on a real workload. There
 is no measurement of a real workload and no result from any *useful* language model —
 the trained artifact is an experiment, not a deployed model — and it should stay obvious
@@ -182,7 +189,7 @@ docs/agent/         this directory's context: current state, conventions, active
 docs/internal/      engineering notes that are not for external readers
 ```
 
-Experiment records live at `experiments/<experiment-id>/record.md`; seven are committed (E2601–E2607) and
+Experiment records live at `experiments/<experiment-id>/record.md`; eight are committed (E2601–E2608) and
 they are the project's only measured results. The format is defined in
 [`docs/internal/experiments/README.md`](docs/internal/experiments/README.md), which requires the record to
 be written **before** the run. Generated artifacts — corpora, checkpoints, logs — belong in `data/` and are
