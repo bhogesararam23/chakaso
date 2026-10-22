@@ -175,11 +175,27 @@ class _Row:
     targets: tuple[int, ...]
 
 
-def test_batched_scoring_returns_the_same_numbers_row_by_row() -> None:
-    """Batching is a speed change only: identical model, identical examples, identical per-position output.
+def _float32_ulp(value: float) -> float:
+    """The spacing of the format the model computes in, near ``value``.
 
-    If this ever fails, every held-out number measured after the batching was introduced is a different
-    measurement from the ones before it — which is why it is asserted directly rather than assumed.
+    A float32 mantissa carries 24 bits, so one unit in the last place at an exponent of ``e`` is
+    ``2 ** (e - 23)``. This is the only honest way to state how far two arithmetic paths through the same
+    model may sit apart: the numbers themselves are float64 by the time they reach the assertion, and their
+    precision was decided inside torch.
+    """
+    return math.ldexp(1.0, math.floor(math.log2(value)) - 23)
+
+
+def test_batched_scoring_returns_the_same_numbers_row_by_row() -> None:
+    """Batching is a speed change: the same model over the same examples agrees to float32 rounding.
+
+    Not bit-for-bit, and that was the bug in this assertion rather than the bug in the code. On the machine
+    that wrote it the two paths agreed exactly, so the test rounded to nine decimals and passed; on a GitHub
+    runner it failed, because a different reduction order in the kernel moves the last bits of a 24-bit
+    mantissa and nine decimals is finer than the format the computation is performed in. The bound is
+    therefore stated in units of that format — 32 ulps, generously more than reassociation of a 256-wide dot
+    product can cost — and anything wider than that is a real disagreement about what the model predicted,
+    which is the thing worth catching.
     """
     model = _model()
     examples = _examples("the quick red fox ran over the dry sand and the quiet owl slept")
@@ -187,9 +203,10 @@ def test_batched_scoring_returns_the_same_numbers_row_by_row() -> None:
     one_at_a_time = score_model_on_examples(model, examples, batch_size=1)
     batched = score_model_on_examples(model, examples, batch_size=len(examples))
 
-    assert [round(value, 9) for value in batched[0]] == [
-        round(value, 9) for value in one_at_a_time[0]
-    ]
+    tolerance = 32 * _float32_ulp(max([*one_at_a_time[0], *batched[0]]))
+    assert [round(value, 9) for value in batched[0]] == pytest.approx(
+        [round(value, 9) for value in one_at_a_time[0]], abs=tolerance
+    )
     assert batched[1] == one_at_a_time[1]
     assert batched[2] == one_at_a_time[2]
 
