@@ -209,7 +209,7 @@ final held-out scoring, and its numbers are reported here rather than aggregated
 | Outcome class | `budget_ceiling` (the run was never allowed to converge; this is the expected label for a pilot) |
 | Throughput | **4,561 positions/second** over gradient time only; 8 steps is 65,536 positions |
 | Wall clock | **239.35 s** total, of which 12.98 s was corpus preparation and tokenizer work — so ~226 s for 8 steps, two held-out evaluations, one final evaluation and the samples |
-| Held-out scoring | 1,000,448 positions (2,156,862 characters) scored per evaluation, so the loop's cost is dominated by evaluation, not by the steps |
+| Held-out scoring | each scheduled evaluation scores the validation split (1,019,136 positions); the final pass scores validation and test (1,000,448 positions, 2,156,862 characters) — so the loop's cost is dominated by evaluation, not by the steps |
 | Curve | step 0 train 8.3853 / val 8.3822 → step 4 6.3642 / 6.2774 → step 8 6.1286 / 6.1129 nats |
 | Final test metrics | 4.0808 bits/character, 6.0982 nats/token, perplexity 445.06, token accuracy 0.3557 |
 | Baselines on the same split | unigram 3.2263 bits/character, uniform 5.5661 — the model is still worse than a unigram after 8 steps, which is what 8 steps of a 3.4 M-parameter model means |
@@ -222,9 +222,9 @@ cached tokenizer, either-family training, checkpoint writing, held-out scoring a
 `chakaso.models.load_model` all ran on the decoder family. It did **not** exercise experiment-level resume:
 neither smoke run reports `resumed_from_step`, so the resume path is covered by unit tests only until an arm
 needs it. **The evaluation, not the training, is the expensive part**: 8 steps
-of gradient work are ~14 s at the measured rate, and the rest of the 239 s is three passes over a million
-held-out positions plus sampling, which is why the arms' declared `eval_every 100` is a cost decision as well
-as a statistical one. **The samples are degenerate at step 8**, which is expected and recorded rather than
+of gradient work are ~14 s at the measured rate, and the rest of the 239 s is four passes over a million
+held-out positions (three scheduled validation evaluations, one final validation-and-test pass) plus the samples,
+which is why the arms' declared `eval_every 100` is a cost decision as well as a statistical one. **The samples are degenerate at step 8**, which is expected and recorded rather than
 hidden: a pilot is not evidence about capability, and the space-run output is the same failure mode the
 generation suite has reported for every checkpoint in this repository so far.
 
@@ -318,5 +318,159 @@ any repository edit trains on the same bytes this record names.
 
 ## Results
 
-*(Not yet measured. This section is filled in from the reports on disk after both arms complete; the
-preregistration above is the version that was committed first.)*
+Measured 2026-10-22 on this machine (`Windows-11-10.0.26200-SP0`, Python 3.13.5, torch 2.13.0+cpu,
+numpy 2.4.0, 14 torch threads, device cpu), from the two reports on disk:
+`data/experiments/E2608/decoder/report.json` and `data/experiments/E2608/transformer/report.json`. Both arms
+completed; neither raised; neither early-stopped.
+
+### The two arms
+
+| | arm A — decoder | arm B — transformer |
+| --- | --- | --- |
+| Architecture | d256, 4 layers, 8 heads, FF 640, context 256, RoPE θ 10,000, tied embeddings | d128, 3 layers, 4 heads, FF 384, context 128, sinusoidal-free learned positions, tied head |
+| Parameters | **3,413,760** | **1,037,056** |
+| Checkpoint schema | `chakaso-decoder-checkpoint/1` | `chakaso-transformer-checkpoint/1` |
+| Artifact digest (first 16) | `4ad9efc0fc89fdbe` (`E2608-decoder.pt`) | `09c1aee67fa990d7` (`E2608-transformer.pt`) |
+| Schedule | cosine to 0.1 | constant (the measured E2605–E2607 protocol) |
+| Optimizer batch | 32 × 256 = 8,192 positions/step, accumulation 1 | 32 × 128 × 2 = 8,192 positions/step, accumulation 2, effective batch 64 |
+| **Total training positions** | **19,660,800** | **19,660,800** — the token budget matched exactly, as declared |
+| Seed / split seed | 7 / 7 | 7 / 7 |
+| Tokenizer | `b597eb34f13d9058`, 4,096 identifiers, 3,839 merges, reused from cache | identical (same cache, same corpus fingerprint) |
+| Throughput (gradient time only) | 4,821.2 positions/s | 12,098.1 positions/s |
+| Wall clock | 6,024.06 s (100.4 min) | 2,322.89 s (38.7 min) |
+| Validation bits/character | 1.7100 | 1.9357 |
+| **Test bits/character** | **1.6865** | **1.9043** |
+| Test nats/token | 2.5203 | 2.8455 |
+| Test perplexity | 12.43 | 17.21 |
+| Test token accuracy | 0.5057 | 0.4613 |
+| Scored test positions | 1,000,448 over 2,156,862 characters | 996,608 over 2,148,397 characters |
+| Uniform baseline (same packing) | 5.5661 | 5.5666 |
+| Unigram baseline (same packing) | 3.2263 | 3.2265 |
+| Selected step / outcome class | 2,400 / `budget_ceiling`, early stopped: false | 2,400 / `budget_ceiling`, early stopped: false |
+
+Both arms beat both trivial baselines by a wide margin, and the decoder arm is 0.2178 bits per character below
+the transformer arm on the same tokens, the same split, the same tokenizer and the same seed.
+
+### Curves, and what they were still doing at the end
+
+Validation loss in nats, evaluated on the 1,019,136-position validation split every 100 steps:
+
+| Step | arm A | arm B |
+| --- | --- | --- |
+| 0 | 8.3822 | 8.3496 |
+| 100 | 4.3212 | 5.4460 |
+| 500 | 3.0681 | 3.6721 |
+| 1,000 | 2.7604 | 3.2546 |
+| 1,500 | 2.6325 | 3.0610 |
+| 2,000 | 2.5661 | 2.9409 |
+| 2,300 | 2.5457 | 2.8871 |
+| **2,400 (final)** | **2.5436** | **2.8790** |
+
+Neither curve had turned up by its last evaluation. Arm A's final 100 steps still improved validation loss by
+0.0021 nats; arm B's by 0.0081. The budget ended, the models did not.
+
+### Generation evaluation
+
+Run with `chakaso.training.generation_eval` over each saved artifact through `chakaso.models.load_model`, five
+fixed continuation probes at greedy decoding plus four hostile probes, raw text retained in
+`data/experiments/E2608/generation-E2608-decoder.json` and `…-transformer.json`. This is the procedure the
+protocol section declared before the arms ran: both arms were trained by the same commit, and the in-report
+wiring of this suite (`8244c6b`) landed after them, so the numbers below come from the suite executed over the
+two artifacts rather than from a report field.
+
+| | arm A — decoder | arm B — transformer |
+| --- | --- | --- |
+| Tail-looping samples | **0 of 5** | **0 of 5** |
+| Samples with a periodic run of ≥ 3 | **0 of 5** | **1 of 5** (`list-continuation`, 3 repeats) |
+| Mean bigram repetition ratio | **0.5538** | **0.7012** |
+| Longest repeated block, worst sample | `' of the South Testament'` × 2 | `' the whale of the whale of '` × 2 |
+| Empty outputs | 0 | 0 |
+| Refusals (`ModelError`, documented) | 1 — `empty-prompt` | 1 — `empty-prompt` |
+| Crashes (any other exception) | **0** | **0** |
+| Samples that hit their token bound | 5 of 5 | 5 of 5 |
+
+Two samples from each arm, verbatim, because the statistics above are not the evidence and a reader is entitled
+to the text:
+
+> ` very unfortunate to the Error of the Emperor of the\nEmperor of the Soule of the Soule` — arm A, `document-heading`
+>
+> ` of the world.\n\nI am sure you are not in the world of the world` — arm A, `table-row`
+>
+> ` man of the whale of the whale, and the same man of the\nwhale, and the whale of the whale of the whale` — arm B, `document-heading`
+>
+> ` in the same time of the same time to the same\ntime to the same time o` — arm B, `status-section`
+
+The suite's own limit travels with these files: *surface statistics only — no semantic quality, usefulness or
+groundedness is measured here, and none may be inferred from these numbers.*
+
+## Interpretation — which hypothesis held
+
+**H1 (the schedule was the truncation): FAILURE, as declared.** Both arms selected step 2,400, the ceiling, and
+both were still improving at it. Cosine decay to 0.1 did not turn a truncated run into a converged one. What
+this does *not* establish is that the schedule is useless: it establishes that at 19.7 million positions neither
+architecture had finished learning, so the binding constraint is budget, capacity or data — not the shape of the
+learning-rate curve. The declared failure consequence stands: the next hypothesis is data or capacity.
+
+**H2 (the rotary decoder beats the measured transformer on held-out loss): SUCCESS on the pre-declared
+condition, with a confound that must be read alongside it.** 1.6865 < 1.9043, and both beat the unigram
+(3.2263) and uniform (5.5661) baselines, which is exactly the condition written before the runs. But the arms are
+not capacity-matched or context-matched: arm A has 3.3× the parameters and 2× the context length of arm B. They
+are *token*-matched, which was the declared design, and it means the honest sentence is "the larger rotary
+decoder, trained on the same number of tokens, reaches lower held-out loss than the smaller measured
+transformer" — not "rotary positions, RMSNorm and a key/value cache are better". A controlled architecture
+answer needs an arm at matched parameters or matched context, and that is recorded as follow-up work rather
+than claimed here.
+
+**H3 (the decoder's output still loops): FAILURE of the declared success criterion — and that is the
+surprising direction, so it is reported with its text attached.** The criterion was a periodic run of ≥ 3 in the
+majority of prompts; the decoder arm produced **zero**, and no arm produced a tail loop. For the first time in
+this project, a trained checkpoint's samples are not exact cycles: arm A writes *the Error of the Emperor of the
+Emperor of the Soule of the Soule*, which is phrase-level repetition, not a metronome. Repetition has not gone
+away, though: mean bigram repetition is still 0.5538, every sample hit its 64-token bound, and no sample is a
+sentence anyone would publish. The measured claim is therefore narrow: **the decoder arm's generations are less
+degenerate than any checkpoint this repository has produced, and they are still not usable text.**
+
+## Deviations from the preregistration
+
+1. **The character baseline did not run**, for the memory reason stated in the budget section, and the report
+   records the skip with its cause rather than dropping the comparison silently. E2607's gap-to-the-character-arm
+   number is therefore not reproduced here.
+2. **One seed per arm**, as declared with its cost reason. The 0.2178 bits gap between arms is a single pair of
+   draws; E2606 measured the size of seed luck on the transformer family at ± 0.0077 bits, which is roughly
+   1/28 of this gap — suggestive, not a substitute for a spread.
+3. **The two arms scored different position counts** (1,000,448 vs 996,608) because the packing tail depends on
+   context length, so the trivial baselines differ in the fourth decimal between the arms. Metrics are per
+   position, so this is a difference in which positions were averaged, not a bias in the comparison; the
+   arm-specific baselines are the ones quoted above.
+4. **The pilot's report named the wrong checkpoint schema.** Fixed before either arm ran (`ceb96a0`); both arm
+   reports carry their file's actual schema. The release builder now refuses a report whose family and its
+   artifact's schema contradict each other (`4aa8f0e`), which is what the pilot's report still triggers when
+   `chakaso model export` is pointed at it — the guard catching the historical record rather than smoothing it
+   over.
+5. **Timings are from a shared machine.** Arm A measured 4,821 positions/s against ADR-0037's projected 5,081
+   (-5.1%), and its wall clock 100.4 minutes against a projected 65 minutes plus evaluation overhead — the
+   overhead was larger than estimated because three full passes over a million held-out positions accompany the
+   25 scheduled evaluations. The operator session also ran test suites during parts of both arms. No timing
+   figure here is presented as intrinsic to the model or the hardware.
+6. **The arms were trained by pre-wiring code.** The in-report `generation`/`latency`/`resources` blocks
+   (`8244c6b`) are not in E2608's reports by design, not by omission; the protocol section states the
+   substitute procedure.
+7. **`--samples-per-prompt` is a token count, not a sample count.** One greedy continuation per held-out prompt,
+   of `samples_per_prompt` tokens — which is what the protocol section describes. The flag's name misleads and
+   should be renamed; it was not renamed here because both arms' commands are cited verbatim above.
+
+## Conclusion
+
+The reference model this release ships is **arm A: a 3,413,760-parameter rotary decoder, trained from random
+initialization on 14,490,005 characters of public-domain prose pinned by content digest, reaching 1.6865 bits
+per character on held-out documents** — the lowest held-out loss this project has measured, below its own
+predecessor arm and below both trivial baselines, reproducible with the commands above and loadable through
+`chakaso.models.load_model`.
+
+It is not a useful language model. Its generations repeat phrases, every sample reached its token bound, and
+nothing it writes answers anything. The honest gate level for this artifact is therefore **Level 2**: the
+contract, the integration and the measurement are complete and verified; the behaviour claim is not supported.
+What would change that is named in [`docs/roadmap.md`](../../docs/roadmap.md): a larger token budget with
+validation that has actually turned, a seed spread on this configuration, and a capacity-matched comparison arm
+so the architecture question can be answered instead of hinted at.
+
