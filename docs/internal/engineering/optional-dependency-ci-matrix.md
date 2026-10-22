@@ -1,11 +1,15 @@
 # The optional-dependency CI matrix, as shipped
 
-**Status: shipped.** The three tiers this document used to describe as prepared-and-unappliable are now the
-content of [`.github/workflows/ci.yml`](../../../.github/workflows/ci.yml). Nothing in this file claims a
-runner has run them: **this document is committed before the first result has been read back from GitHub
-Actions**, and the commit that follows records the run identifiers and what they returned. Until then the
-honest statement is that the model path is tested on every push in the repository's own definition of CI, and
-that the runners' first verdict is unknown rather than expected.
+**Status: shipped, and read back once.** The three tiers this document used to describe as prepared-and-
+unappliable are now the content of
+[`.github/workflows/ci.yml`](../../../.github/workflows/ci.yml). The first push of that file produced run
+[`39702923101`](https://github.com/bhogesararam23/chakaso/actions/runs/39702923101): all eight jobs reached
+GitHub Actions, both `model-path` jobs installed the PyTorch CPU wheel on a Linux host for the first time, and
+every one of the eight then failed the same step — `mypy src` on `core/process_memory.py`, which reached for
+`ctypes.WinDLL` outside any platform guard and so described a Windows-only name to a Linux runner. Nothing in
+this document claims the matrix passes: the verdict on the repaired code belongs to the next run, recorded
+when it is read. What changed on 2026-10-22 is that the model path is now something the runners are asked
+about, and they answered with a real defect on their first attempt.
 
 ## What each tier is for
 

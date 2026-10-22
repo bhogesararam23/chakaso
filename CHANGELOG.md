@@ -24,9 +24,20 @@ capability is implemented or still planned.
   jobs and installed extras against `pyproject.toml`, every `run:` command against what `AGENTS.md` and
   `CONTRIBUTING.md` promise contributors, no mechanism that can hide a failure, `src/chakaso/serve/` free of
   `numpy` and `torch`, and the document refused while it still describes the matrix as un-applied.
-- **Not claimed:** no runner result has been read back for the new jobs yet. "CI is defined to test the model
-  path" is what changed; "CI has tested it" waits for the run, and K-009 stays open until the identifiers and
-  verdicts are recorded.
+- **Read back from the runner:** the first push of this workflow produced run `39702923101`, in which all
+  eight jobs reached GitHub Actions — including both `model-path` jobs, which fetched the PyTorch CPU wheel on
+  a Linux host for the first time — and all eight then failed the same step. What they found is the fix below.
+  The verdict on the repaired matrix belongs to the next run, recorded when it is read rather than assumed.
+
+**Fixed**
+
+- `chakaso.core.process_memory` reached for `ctypes.WinDLL`, a name that exists only in a Windows build of
+  CPython, outside any platform guard. The runner is Linux, and all eight jobs failed the type check on it
+  while every Windows gate passed it — found by CI on the first push, not by the author. The Windows reading
+  is now behind a `sys.platform == "win32"` check that both a Linux and a Windows type checker can prune, the
+  wrong-platform case returns a stated absence instead of raising, and its test patches one layer out so it
+  runs on either operating system. `AGENTS.md` and `CONTRIBUTING.md` now tell a contributor to type-check the
+  runner's platform from whichever machine they are on.
 
 ### 2026-10-22 — a trained checkpoint can be served locally over HTTP (node K)
 

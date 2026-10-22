@@ -208,12 +208,16 @@ describes the matrix as un-applied. The assertion that used to guard the *blocke
 workflow installs only `.[dev]`" — was deleted, as its own text said it should be, and the test that replaces
 it fails if the document falls behind the file.
 
-**What still keeps this entry open:** the first runner result has not been read. A workflow file in the
-repository is not evidence that Actions executed it; the `[nn]` job downloads a torch wheel on a GitHub host
-for the first time, and its outcome is unknown until `gh run list` says otherwise. Recording the run
-identifiers and their verdicts is what closes K-009 — and ADR-0034's open question, whether a runner should
-fetch the CPU wheel index on every push, is now answered in the affirmative by the file itself, which should
-be revisited if the download time becomes the reason a contributor's check is slow.
+**What still keeps this entry open:** the repaired matrix has not yet been seen passing. The first push of the
+new workflow — run `39702923101`, 2026-10-22 — reached the runner with all eight jobs, including both
+`model-path` jobs that fetched the PyTorch CPU wheel on a Linux host for the first time, and every one of them
+failed the same `mypy src` step on a Windows-only attribute in `core/process_memory.py`. That is the gap this
+entry exists to describe, working: a check that runs only on a maintainer's machine had hidden a defect the
+product's own platform would hit, and the new jobs found it on their first attempt rather than the old ones
+failing to look. K-009 closes when a run of the three tiers is read back green, with its identifiers recorded
+here. ADR-0034's open question — whether a runner should fetch the CPU wheel index on every push — is now
+answered in the affirmative by the file itself, and should be revisited if that download becomes the reason a
+contributor's check is slow.
 
 ### K-006 — The invented-reference condition is persisted; the rate is not yet aggregated
 
