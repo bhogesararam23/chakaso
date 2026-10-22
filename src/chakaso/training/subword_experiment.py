@@ -923,6 +923,7 @@ def run_experiment(plan: ExperimentPlan, *, verbose: bool = False) -> dict[str, 
     inference = load_model(artifact_path)
     params = GenerationParams(max_new_tokens=plan.samples_per_prompt, temperature=0.0)
     samples = []
+    sampling_started = time.perf_counter()
     for source, prompt in _prompt_set(plan, prepared):
         result = inference.generate([Message(role=Role.USER, content=prompt)], params)
         samples.append(
@@ -934,6 +935,25 @@ def run_experiment(plan: ExperimentPlan, *, verbose: bool = False) -> dict[str, 
                 "model_id": result.model_id,
             }
         )
+    sampling_seconds = time.perf_counter() - sampling_started
+
+    # What the model emits is measured with the same instrument a consumer would reach for — the suite runs
+    # over the boundary, not over the adapter's internals, so the numbers describe the thing a release ships.
+    from chakaso.core.process_memory import peak_memory
+    from chakaso.training.generation_eval import evaluate_generation
+
+    generation = evaluate_generation(inference)
+    memory = peak_memory()
+    produced = sum(len(item["text"]) for item in samples)
+    latency = {
+        "samples": len(samples),
+        "seconds": round(sampling_seconds, 3),
+        "characters": produced,
+        "characters_per_second": round(produced / sampling_seconds, 2)
+        if sampling_seconds > 0
+        else None,
+        "measurement": "greedy generation through chakaso.models.load_model, warm process, no batching",
+    }
 
     targets = [token for example in prepared.test.examples for token in example.targets]
     return {
@@ -1040,6 +1060,9 @@ def run_experiment(plan: ExperimentPlan, *, verbose: bool = False) -> dict[str, 
         },
         "baselines_subword": baseline_metrics(prepared),
         "samples": samples,
+        "generation": generation,
+        "latency": latency,
+        "resources": memory.as_dict(),
         "timings": prepared.timings | {"transformer_wall_clock_s": round(wall, 2)},
         "environment": artifact.environment,
         "plan": {
@@ -1083,18 +1106,33 @@ def summarise(report: dict[str, Any]) -> str:
     uniform = report["baselines_subword"]["uniform"]
     unigram = report["baselines_subword"]["unigram"]
     budget = report["transformer"]["budget"]
-    return " | ".join(
+    parts = [
+        f"transformer {report['transformer']['parameter_count']:,} params, "
+        f"test bits/char {transformer['bits_per_character']:.4f}, "
+        f"perplexity {transformer['perplexity']:.2f} at step {budget['best_step']} "
+        f"(early stopped: {budget['stopped_early']})",
         (
-            f"transformer {report['transformer']['parameter_count']:,} params, "
-            f"test bits/char {transformer['bits_per_character']:.4f}, "
-            f"perplexity {transformer['perplexity']:.2f} at step {budget['best_step']} "
-            f"(early stopped: {budget['stopped_early']})",
-            (
-                f"character test bits/char {character['bits_per_character']:.4f}"
-                if character is not None
-                else "character baseline skipped (see the report's reason)"
-            ),
-            f"unigram {unigram['bits_per_character']:.4f}",
-            f"uniform {uniform['bits_per_character']:.4f}",
+            f"character test bits/char {character['bits_per_character']:.4f}"
+            if character is not None
+            else "character baseline skipped (see the report's reason)"
+        ),
+        f"unigram {unigram['bits_per_character']:.4f}",
+        f"uniform {uniform['bits_per_character']:.4f}",
+    ]
+
+    # Both of these are read with ``get`` because reports written before the run measured them exist on disk
+    # and are cited by records: a summary that only works on the newest shape would break a re-read of a
+    # measured run, which is the one thing the reproducibility rule refuses to do.
+    generation = report.get("generation", {}).get("automated_summary", {})
+    if generation:
+        parts.append(
+            f"generations: {generation['samples_generated']} sampled, "
+            f"{len(generation.get('looping_samples', []))} tail-looping, "
+            f"{len(generation.get('periodic_run_samples', []))} cycling, "
+            f"{generation['samples_refused']} refused"
         )
-    )
+    resources = report.get("resources", {})
+    peak = resources.get("peak_resident_megabytes")
+    if peak is not None:
+        parts.append(f"peak RSS {peak} MB via {resources['source']}")
+    return " | ".join(parts)

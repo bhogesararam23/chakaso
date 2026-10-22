@@ -27,7 +27,14 @@ from collections.abc import Callable, Sequence
 from dataclasses import dataclass
 from typing import Any
 
-from chakaso.models import FinishReason, GenerationParams, LanguageModel, Message, Role
+from chakaso.models import (
+    FinishReason,
+    GenerationParams,
+    LanguageModel,
+    Message,
+    ModelError,
+    Role,
+)
 
 __all__ = [
     "CONTINUATION_PROBES",
@@ -121,7 +128,10 @@ CONTINUATION_PROBES: tuple[GenerationProbe, ...] = (
 #: Inputs a model must survive without an unhandled failure. Each names the behaviour being checked.
 EDGE_PROBES: tuple[GenerationProbe, ...] = (
     GenerationProbe(
-        label="empty-prompt", prompt="", max_new_tokens=8, why="an empty turn is legal input"
+        label="empty-prompt",
+        prompt="",
+        max_new_tokens=8,
+        why="nothing to continue must produce a named refusal, not a crash and not an invented prompt",
     ),
     GenerationProbe(
         label="single-character",
@@ -286,8 +296,14 @@ def _run_probe(
             if sampler is None
             else sampler(model, messages, params)
         )
+    except ModelError as exc:
+        # A refusal the boundary states by name is a different event from a crash, and the suite used to
+        # record them identically: "the model will not continue nothing" is the documented contract, while
+        # an AttributeError in the decoder is a defect. Counting them together made a compliant model look
+        # like a failing one.
+        return {**record, "status": "refused", "error": f"{type(exc).__name__}: {exc}"}
     except Exception as exc:
-        return {**record, "status": "raised", "error": f"{type(exc).__name__}: {exc}"}
+        return {**record, "status": "crashed", "error": f"{type(exc).__name__}: {exc}"}
     text = result.text
     block, times = longest_repeated_block(text)
     run_block, run_repeats = longest_periodic_run(text)
@@ -357,7 +373,8 @@ def evaluate_generation(
         "edge_samples": edges,
         "automated_summary": {
             "samples_generated": len(generated),
-            "samples_raised": sum(1 for sample in all_samples if sample["status"] == "raised"),
+            "samples_refused": sum(1 for sample in all_samples if sample["status"] == "refused"),
+            "samples_crashed": sum(1 for sample in all_samples if sample["status"] == "crashed"),
             "looping_samples": [sample["label"] for sample in loops],
             "periodic_run_samples": [
                 sample["label"]
@@ -395,5 +412,6 @@ def summarise_generation_evaluation(report: dict[str, Any]) -> str:
         f"{f' ({fraction:.0%})' if fraction is not None else ''}, "
         f"{len(periodic)} with a periodic run of 3 or more, "
         f"mean bigram repetition {mean if mean is not None else 'undefined'}, "
-        f"{len(summary['empty_outputs'])} empty"
+        f"{len(summary['empty_outputs'])} empty, "
+        f"{summary.get('samples_refused', 0)} refused, {summary.get('samples_crashed', 0)} crashed"
     )

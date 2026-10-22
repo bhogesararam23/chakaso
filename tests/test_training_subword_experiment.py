@@ -719,3 +719,41 @@ def test_the_one_line_summary_survives_a_skipped_character_baseline(tmp_path: Pa
     assert "character baseline skipped" in line
     assert "bits/char" in line
     assert report["character_baseline"]["skipped"] is True
+
+
+def test_a_run_records_its_own_generations_latency_and_memory(tmp_path: Path) -> None:
+    """What the model emits, how fast it emitted it and what the process held — in the run's report.
+
+    These three were the release brief's evaluation asks, and each was previously something an operator had to
+    measure by hand after the fact, which is how a number goes missing from a record and gets described as
+    "not measured" in prose. A run now states them itself: the generation suite over the boundary with its raw
+    text retained and its interpretation limit attached, the sampling throughput it actually achieved, and the
+    high-water mark of resident memory the operating system will report.
+    """
+    root = _root(tmp_path)
+    work = tmp_path / "work-observed"
+
+    report = run_experiment(_plan(root, work, model_family="decoder", character_baseline=False))
+
+    generation = report["generation"]
+    assert generation["interpretation_limit"].startswith("surface statistics only")
+    assert generation["automated_summary"]["samples_generated"] == len(generation["samples"])
+    assert {sample["status"] for sample in generation["edge_samples"]} <= {
+        "generated",
+        "refused",
+        "crashed",
+    }
+    # Raw output, not just its statistics: a reader must be able to disagree with the summary.
+    assert all(("text" in sample or "error" in sample) for sample in generation["samples"])
+    assert generation["model_id"] == "subword_transformer"
+
+    assert report["latency"]["samples"] == len(report["samples"])
+    assert report["latency"]["characters"] > 0
+    assert report["latency"]["characters_per_second"] > 0
+
+    resources = report["resources"]
+    assert resources["source"]
+    assert resources["peak_resident_bytes"] is None or resources["peak_resident_bytes"] > 0
+
+    line = summarise(report)
+    assert "generations:" in line

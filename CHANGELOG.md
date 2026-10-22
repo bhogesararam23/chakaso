@@ -10,6 +10,33 @@ capability is implemented or still planned.
 
 ## Unreleased
 
+### 2026-10-22 — a run now measures its own generations, its throughput and its memory (node L)
+
+**Implemented**
+
+- `chakaso.training.subword_experiment.run_experiment` writes three blocks it previously left to whoever came
+  after it. `generation` is the output of `chakaso.training.generation_eval` run over the boundary against the
+  artifact the run just saved — repetition ratios, longest repeated block, periodic runs, tail loops, length,
+  termination and refusal behaviour, with the raw text retained and the interpretation limit carried inside the
+  payload. `latency` records how many samples were produced, in how many seconds, at what character rate, and
+  states the conditions of that measurement rather than implying a hardware benchmark. `resources` records the
+  process's high-water resident memory from the operating system, or a named absence where the platform will
+  not say.
+- The suite distinguishes **refused** from **crashed**. It used to record any exception as `raised`, which made
+  a model that correctly refuses to continue nothing look like a model that fell over: the boundary's typed
+  `ModelError` is now a refusal, and anything else is a crash. Both are counted in the automated summary and
+  neither is folded into the repetition statistics, because a sample that produced no text is not evidence of
+  a fluent one. The empty-prompt probe's stated purpose was corrected to match the boundary's documented
+  contract, which is that an empty request is refused by name.
+- Measured with this wiring on the two E2608 arms: the decoder arm produced 5 continuation samples with
+  **0 tail-looping and 0 periodic runs of 3 or more** (mean bigram repetition 0.5538), the transformer arm
+  **0 tail-looping but 1 periodic run of 3 or more** (mean bigram repetition 0.7012); one edge probe per arm
+  was a refusal, zero crashed. Both numbers and their raw text are in
+  `data/experiments/E2608/generation-E2608-<family>.json`.
+
+**Not claimed:** these are surface statistics. A lower repetition ratio is not a model that means anything, and
+neither arm's samples are sentences anyone would publish.
+
 ### 2026-10-22 — the release lifecycle has a command line (node H)
 
 **Implemented**

@@ -12,7 +12,13 @@ from collections.abc import Sequence
 
 import pytest
 
-from chakaso.models import FinishReason, GenerationParams, GenerationResult, Message
+from chakaso.models import (
+    FinishReason,
+    GenerationParams,
+    GenerationResult,
+    Message,
+    ModelError,
+)
 from chakaso.models.deterministic import DeterministicModel
 from chakaso.training.generation_eval import (
     CONTINUATION_PROBES,
@@ -171,9 +177,16 @@ def test_the_declared_suite_is_named_and_its_edge_cases_are_fixed() -> None:
 class _ScriptedModel:
     """A model that returns fixed text per prompt, so the suite's bookkeeping is what is under test."""
 
-    def __init__(self, outputs: dict[str, str], *, fail: Sequence[str] = ()) -> None:
+    def __init__(
+        self,
+        outputs: dict[str, str],
+        *,
+        fail: Sequence[str] = (),
+        refuse: Sequence[str] = (),
+    ) -> None:
         self._outputs = outputs
         self._fail = tuple(fail)
+        self._refuse = tuple(refuse)
         self.prompts: list[str] = []
 
     def generate(
@@ -182,8 +195,11 @@ class _ScriptedModel:
         prompt = messages[-1].content
         self.prompts.append(prompt)
         if prompt in self._fail:
-            message = f"this model refuses {prompt!r}"
+            message = f"this model breaks on {prompt!r}"
             raise ValueError(message)
+        if prompt in self._refuse:
+            message = f"this model refuses {prompt!r}"
+            raise ModelError(message)
         text = self._outputs.get(prompt, "")
         bound = params is not None and len(text) >= params.max_new_tokens
         return GenerationResult(
@@ -193,7 +209,7 @@ class _ScriptedModel:
         )
 
 
-def test_each_probe_is_reported_as_generated_or_raised_neither_swallowed_nor_skipped() -> None:
+def test_a_refusal_and_a_crash_are_not_recorded_as_the_same_event() -> None:
     looping = " the the the the the the"
     varied = "a sentence about retrieval and one about tokenization, both short"
     model = _ScriptedModel(
@@ -202,24 +218,36 @@ def test_each_probe_is_reported_as_generated_or_raised_neither_swallowed_nor_ski
             "status prompt": varied,
         },
         fail=("because prompt",),
+        refuse=("empty prompt",),
     )
     probes = (
         GenerationProbe(label="heading", prompt="heading prompt", max_new_tokens=64),
         GenerationProbe(label="status", prompt="status prompt", max_new_tokens=64),
         GenerationProbe(label="because", prompt="because prompt", max_new_tokens=8),
+        GenerationProbe(label="empty", prompt="empty prompt", max_new_tokens=8),
     )
 
     report = evaluate_generation(model, probes=probes, edge_probes=())
 
     statuses = {sample["label"]: sample["status"] for sample in report["samples"]}
-    assert statuses == {"heading": "generated", "status": "generated", "because": "raised"}
+    assert statuses == {
+        "heading": "generated",
+        "status": "generated",
+        "because": "crashed",
+        "empty": "refused",
+    }
     summary = report["automated_summary"]
     assert summary["samples_generated"] == 2
-    assert summary["samples_raised"] == 1
+    assert summary["samples_crashed"] == 1
+    assert summary["samples_refused"] == 1
+    # A refusal produced no text, so it contributes nothing to the repetition statistics — counting it as a
+    # zero-repetition sample would flatter a model that answered nothing.
     assert summary["looping_samples"] == ["heading"]
     assert summary["looping_fraction"] == 0.5
     assert report["interpretation_limit"] == INTERPRETATION_LIMIT
     assert "surface statistics only" in INTERPRETATION_LIMIT
+    line = summarise_generation_evaluation(report)
+    assert "1 refused" in line and "1 crashed" in line
 
 
 def test_an_empty_output_is_recorded_as_empty_not_as_a_zero_length_success() -> None:
