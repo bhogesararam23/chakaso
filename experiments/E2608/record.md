@@ -256,6 +256,47 @@ used for the budget statements below is the run's own 571.
   (`model.json` + digest verification) and its model card, only if arm A completes and beats the baselines.
 - No weights, no corpus bytes, no checkpoints in Git.
 
+## Commands, exactly as run
+
+Nothing in this record is reproducible by description alone, so the invocations are recorded verbatim. Both
+arms share these arguments; only the family, context width, architecture size, accumulation and schedule
+differ, and they are listed per arm.
+
+```bash
+COMMON=(
+  --root . --experiment E2608
+  --corpus-snapshot data/experiments/E2608/gutenberg-english-prose-v2-snapshot.json
+  --expected-corpus-fingerprint e9fc2e92f59d88ea
+  --tokenizer-cache-dir data/experiments/tokenizers
+  --tokenizer-min-frequency 3 --vocab-size 4096
+  --no-character-baseline --sample-prompts held_out --samples-per-prompt 64
+  --batch-size 32 --learning-rate 0.0006 --weight-decay 0.01
+  --warmup-steps 200 --eval-every 100 --max-steps 2400
+  --patience 3 --min-delta 0.0005 --seed 7 --split-seed 7 --verbose
+)
+
+# arm A — the rotary decoder, cosine decay to 0.1
+.venv-nn/Scripts/python.exe -m chakaso experiment model "${COMMON[@]}" \
+  --work-dir data/experiments/E2608/decoder \
+  --model-family decoder --context-length 256 --d-model 256 --num-layers 4 --num-heads 8 \
+  --feedforward-dim 640 --rope-theta 10000 --grad-accum-steps 1 \
+  --schedule cosine --decay-to 0.1 \
+  --write-report data/experiments/E2608/decoder/report.json
+
+# arm B — the measured transformer, constant schedule, token-matched by accumulation
+.venv-nn/Scripts/python.exe -m chakaso experiment model "${COMMON[@]}" \
+  --work-dir data/experiments/E2608/transformer \
+  --model-family transformer --context-length 128 --d-model 128 --num-layers 3 --num-heads 4 \
+  --feedforward-dim 384 --grad-accum-steps 2 --schedule constant \
+  --write-report data/experiments/E2608/transformer/report.json
+```
+
+The pilot was the same `COMMON` block with `--experiment E2608SMOKE2 --work-dir
+data/experiments/E2608-smoke2 --max-steps 8 --eval-every 4 --warmup-steps 2 --samples-per-prompt 24`. The
+snapshot it points at is not the working tree: `chakaso corpus prepare` wrote it from the catalogue
+`configs/corpora/gutenberg-english-prose-v2.toml`, and `chakaso corpus verify` re-checks it, so a re-run after
+any repository edit trains on the same bytes this record names.
+
 ## Follow-up this record commits to
 
 1. **E2609** — arm A across pre-declared seeds (5, split fixed), reporting mean ± sample SD bits per
