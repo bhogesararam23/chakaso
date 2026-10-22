@@ -10,6 +10,25 @@ capability is implemented or still planned.
 
 ## Unreleased
 
+### 2026-10-22 — the developer-facing documentation catches up with the runtime (nodes N, P)
+
+**Implemented**
+
+- `README.md` now describes what a developer can actually do with a trained artifact — bounded decoding,
+  streaming with cancellation, scoring, a release directory that verifies before it loads, and the optional
+  local HTTP endpoint — each with a status label and a code block that was **executed** against the E2608
+  pilot checkpoint rather than written freehand. Two things the snippets got wrong were found that way:
+  `stop_sequences` is a tuple, not a list, and a work directory is not a release until a contract is written
+  into it, which is exactly the distinction the release section now states.
+- `tests/test_vertical_slice.py` walks the whole sequence in one run: prepare a corpus, train from random
+  initialization, save, load through `chakaso.models.load_model`, generate under a bound, repeat at zero
+  temperature, honour a seed, stream and cancel, score, build and verify a release, and answer over a real
+  socket — plus a fresh-interpreter check that loading a model does not import the conversation runtime
+  (ADR-0033). It is the test that would have caught the release-builder field-name defect and the serving
+  loader's wrong function before they were written down as fixed.
+- **What the slice does not claim:** the model in it is twelve steps of a one-layer decoder over five
+  hand-written documents. Shape, not capability.
+
 ### 2026-10-22 — CI gained the two tiers that test the product (node M)
 
 **Implemented**

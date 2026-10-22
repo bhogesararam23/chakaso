@@ -16,13 +16,16 @@ is.**
 
 | | |
 | --- | --- |
-| **A trained model you can load from Python** | `chakaso.models.load_model(path)` returns a `LanguageModel` for a checkpoint this project trained. No terminal, no configuration file, no runtime import. |
+| **A trained model you can load from Python** | `chakaso.models.load_model(path)` returns a `LanguageModel` for a checkpoint this project trained, or for a **release directory** whose contract is verified before a weight is read. No terminal, no configuration file, no runtime import. |
+| **The runtime around it** | **Implemented.** Bounded decoding through one validated parameter object (`temperature` over a stated range, `top_k`, `top_p`, a seed, `stop_sequences`, `stop_token_ids`, `max_new_tokens`), a generation result that says how it ended and how much it produced, `stream()` that yields as the model steps and stops when the caller cancels, a `score()` that returns the same held-out arithmetic the experiments use, `describe()` for the facts a caller cannot inspect from outside, and **versioned** prompt templates — the default is the shape the measured runs used, and a role-labelled template is opt-in rather than a claim about instruction following. |
+| **A release contract** | **Implemented.** `chakaso.models.release` writes a model as one directory: `model.json` assembled from the run's own report plus the checkpoint's declared facts, the artifact's SHA-256 checked at load, licence and redistribution stated, and `known_limitations` required to be non-empty. A release that does not verify is a typed error, never a plausible generation from somebody else's weights. |
+| **An optional local HTTP endpoint** | **Implemented.** `chakaso.serve` puts a loaded model behind `/health`, `/v1/models`, `/v1/completions` and `/v1/chat/completions` with server-sent events, using only the standard library: loopback by default, bounded concurrency, a client that hangs up cancelling the generation, and a refusal to serve the development double or to honour a request field it cannot ([ADR-0038](docs/decisions/ADR-0038-local-http-serving-adapter-from-the-standard-library.md)). Not authenticated, and not a hosted API. |
 | **A tokenizer trained here** | A byte-pair subword vocabulary (`chakaso.training.subword`): byte-level base, so encoding is total; a named pre-tokenizer, so merges never cross a word boundary; deterministic tie-breaking, so the same text yields the same fingerprint; self-describing and checksum-verified on load. A deterministic character vocabulary also exists and is what E2601/E2602 measured. |
 | **A corpus with provenance** | `chakaso.training.manifest` pins a document set by path and content digest, records its licence, and *refuses* to prepare a corpus that has drifted. `chakaso.training.snapshot` recovers a pinned corpus from the revision that recorded it and writes a checksum-verified snapshot, so a measured result stays re-trainable after the repository edits its own text. Two corpora are pinned: Chakaso's own tracked prose (71 documents, 780,223 characters, Apache-2.0, fingerprint `e45993f9badf706c`) and three Project Gutenberg texts (105 documents, 1,660,274 characters, public domain in the US under the Project Gutenberg License, fingerprint `931b07a635ca5a0c`) — the second one because one author's house style bounds what the first can establish. |
-| **A Transformer, trained from scratch** | `chakaso.training.transformer` (decoder-only, causal attention, pre-norm, GELU, tied head) with `chakaso.training.nn_training`: mini-batches, warmup, gradient clipping, validation-selected early stopping, resumable artifacts. Requires the optional `[nn]` extra. |
-| **Measured results** | Seven experiment records, all measured and closed. E2601/E2602: a 984-parameter character model whose held-out loss beats uniform and unigram baselines across five seeds (mean 1.7978 ± 0.1767 nats). E2603/E2604: retrieval and evidence-sufficiency measurements over a self-authored workload. [E2605](experiments/E2605/record.md): the first subword Transformer trained from random initialization on the pinned corpus reaches **1.8657 bits per character** on held-out documents, against 3.1343 for the character architecture, 3.3224 unigram and 4.8010 uniform. [E2606](experiments/E2606/record.md): five pre-declared seeds, with the document split held fixed so only initialization moves — **1.8794 ± 0.0077 bits per character against 3.0937 ± 0.0267**, every seed below every baseline, and the seed-7 run reproducing E2605 **exactly** (all 41 tensors equal) from a corpus recovered out of git history. [E2607](experiments/E2607/record.md): the same protocol on the external corpus, three seeds — **2.0176 ± 0.0118 against 3.2218 ± 0.0153**, so the gap survives the change of data (1.2042 against 1.2143), but no run early-stopped and all three selected the 2,400-step ceiling, which makes that level a floor rather than a converged loss. Every one of these generations loops rather than answers. |
+| **Two model architectures, trained from scratch** | `chakaso.training.transformer` (decoder-only, causal attention, pre-norm, GELU, tied head), measured by E2605/E2606/E2607, and `chakaso.training.decoder` (**Implemented**, the family ADR-0037 chose from measured throughput): rotary positions, RMSNorm, biases-free attention, tied embeddings, an ignore-index target mask so padding is visibly not a label, and a key/value cache that makes stepped decoding equal to a full forward pass. Each writes its own checkpoint schema and the loader picks the class from the file, never a guess. `chakaso.training.nn_training` runs either: mini-batches, warmup, cosine decay to a stated floor, gradient accumulation over an effective batch size, gradient clipping, validation-selected early stopping, throughput measured over gradient time only, a completion class that names why the run ended, and resume that refuses a changed identity while allowing a longer budget. Requires the optional `[nn]` extra. |
+| **Measured results** | Seven experiment records, all measured and closed. E2601/E2602: a 984-parameter character model whose held-out loss beats uniform and unigram baselines across five seeds (mean 1.7978 ± 0.1767 nats). E2603/E2604: retrieval and evidence-sufficiency measurements over a self-authored workload. [E2605](experiments/E2605/record.md): the first subword Transformer trained from random initialization on the pinned corpus reaches **1.8657 bits per character** on held-out documents, against 3.1343 for the character architecture, 3.3224 unigram and 4.8010 uniform. [E2606](experiments/E2606/record.md): five pre-declared seeds, with the document split held fixed so only initialization moves — **1.8794 ± 0.0077 bits per character against 3.0937 ± 0.0267**, every seed below every baseline, and the seed-7 run reproducing E2605 **exactly** (all 41 tensors equal) from a corpus recovered out of git history. [E2607](experiments/E2607/record.md): the same protocol on the external corpus, three seeds — **2.0176 ± 0.0118 against 3.2218 ± 0.0153**, so the gap survives the change of data (1.2042 against 1.2143), but no run early-stopped and all three selected the 2,400-step ceiling, which makes that level a floor rather than a converged loss. Every one of these generations loops rather than answers. [E2608](experiments/E2608/record.md) is the experiment now running against that last fact — the rotary decoder against the measured transformer, token-matched, on the larger licensed corpus, preregistered before either arm ran; its pilot is recorded and **no comparison between the two architectures has been measured yet**, so nothing here claims the new family is better. |
 | **An application layer a model can plug into** | BM25/dense/hybrid retrieval over an in-memory corpus, claims, citation validation, structural and semantic-grounding boundaries, a correction decision rule with application-level reassessment, an append-only answer store (in-memory by default, durable SQLite when configured), and development benchmarks. |
-| **Verification** | Tests, lint, format and strict typing on Python 3.11–3.13 in CI, offline, CPU-only, no secrets and no provider dependency. **The CI that runs covers the dependency-free tier only**: the `[train]` and `[nn]` matrices, where the model path actually lives, are verified locally on every delivery (1,479 / 1,560 / 1,739 tests across the three tiers, plus a strict type check over every source file) and are not run by a GitHub runner — the prepared three-tier workflow and the exact reason it has not yet been applied are in [`docs/internal/engineering/optional-dependency-ci-matrix.md`](docs/internal/engineering/optional-dependency-ci-matrix.md), and it is gap K-009. |
+| **Verification** | Tests, lint, format and strict typing on Python 3.11–3.13 in CI, offline, CPU-only, no secrets and no provider dependency. **Three tiers now run on the runners**: `core` with `.[dev]`, `train` with `.[dev,train]`, and `model path` with `.[dev,train,nn]` from the PyTorch CPU wheel index plus the strict type check over every module — read back green across all eight jobs (runs `39704678913` and `39706259071`, 2026-10-22; model path python 3.13: 2,003 passed / 2 skipped in 79.18 s). The dependency-free tier is what proves the default install needs no numerical library, and it is also where the HTTP serving adapter is tested. Landing the tiers found two defects no local gate could see, recorded in [`docs/internal/engineering/optional-dependency-ci-matrix.md`](docs/internal/engineering/optional-dependency-ci-matrix.md). |
 
 ## What does not exist
 
@@ -75,6 +78,64 @@ two. Scoring a text is equally direct:
 ```python
 nats = model.score(open("docs/training.md").read())  # mean held-out cross-entropy, in nats
 ```
+
+Generation can be streamed, bounded and cancelled. The same object answers the `LanguageModel` boundary the
+application uses, so a turn is a list of messages and a policy is one parameter object:
+
+```python
+from chakaso.models import GenerationParams, Message, Role
+from chakaso.models.decoding import AbortSignal
+
+params = GenerationParams(max_new_tokens=64, temperature=0.7, top_k=40, seed=7, stop_sequences=("\n\n",))
+messages = [Message(role=Role.USER, content="The retrieval layer owns")]
+signal = AbortSignal()
+
+for index, chunk in enumerate(model.stream(messages, params, signal=signal)):
+    print(chunk.text, end="", flush=True)
+    if chunk.final:
+        print("\nhow it ended:", chunk.finish_reason.value)
+        break
+    if index == 8:
+        signal.abort()  # a caller that has seen enough: the step loop stops at the next boundary
+```
+
+A release directory is what a consumer is handed, and building one is a call, not a manual: it assembles
+`model.json` from the run's own report and the checkpoint's own facts, then every load verifies the artifact's
+digest before reading a weight. The optional HTTP adapter is also a call, not a service to install:
+
+```python
+from pathlib import Path
+
+from chakaso.models import load_model
+from chakaso.models.release import build_release, write_release
+from chakaso.serve.server import serve
+
+work = Path("data/experiments/E2608/decoder")
+release = build_release(
+    work,
+    model_id="chakaso-base",
+    model_version="0.1.0",
+    summary="What the run did, in one paragraph, for someone deciding whether to load it.",
+    capabilities=("tokenize", "generate", "stream", "score"),
+    known_limitations=("Generations repeat: measured, not fixed.",),  # required, and non-empty
+    checkpoint_name="E2608-decoder.pt",
+    licence_model="Apache-2.0",
+    licence_training_data="Public domain in the United States (Project Gutenberg)",
+    redistribution="Weights may be redistributed with this document attached.",
+    created_utc="2026-10-22T00:00:00Z",
+    reproduce="chakaso experiment model --work-dir data/experiments/E2608/decoder",
+)
+write_release(release, work)
+
+model = load_model(str(work))                     # the directory: verified, then loaded
+service = serve(str(work / "E2608-decoder.pt")).start()
+print(service.base_url, service.loopback_only)     # http://127.0.0.1:<port>, True by default
+service.stop()
+```
+
+`serve` speaks `/health`, `/v1/models`, `/v1/completions` and `/v1/chat/completions`, streaming over
+server-sent events, and it refuses the development double and any request field it cannot honour. It is not
+authenticated, so binding beyond loopback is a decision an operator states.
 
 ## Train one
 
