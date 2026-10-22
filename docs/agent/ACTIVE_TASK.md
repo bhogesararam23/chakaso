@@ -92,6 +92,59 @@ loops stay visible.
 A node moves to complete only when its acceptance criteria are evidenced here. Nothing in this table is marked
 from the existence of a file.
 
+**Delivery record (2026-10-22).** The arc began at `a664477` == `origin/main` with the previous session's
+serving layer sitting uncommitted in the working tree; that work was finished, debugged and committed rather
+than discarded (`f0757e9`), and everything after it is one node or one fix per commit. The content head is
+`201c19b`, **34 commits** — the number `git rev-list --count a664477..201c19b` returns — all pushed normally to
+`main`: no force-push, no branch deleted, no published history rewritten, no hook bypassed, no `--no-verify`,
+no secrets or credentials in any diff, and the private documentation pack stayed untracked throughout (checked
+by `git ls-files`, not by `git status`, because it is ignored and would not show). This ledger commit follows the
+content head, so read the range between the endpoints rather than `HEAD`.
+
+Remote CI was verified, not assumed. Run
+[`39720748094`](https://github.com/bhogesararam23/chakaso/actions/runs/39720748094) completed **success across
+all eight jobs** for `a6303ef`: core 3.13 **1,651 passed / 25 skipped** in 18.25 s, train 3.11 **1,732 / 16** in
+20.59 s, model path 3.13 **2,022 / 2** in 48.55 s, the model-path jobs costing 1m36s–2m18s including the PyTorch
+CPU wheel. Between the matrix landing and that green run the runners caught three defects the local gates had
+no way to catch — a Windows-only `ctypes.WinDLL` (`5e1b641`), an assertion finer than float32 (`b99ffee`), and a
+model-card link one directory level short (`a6303ef`, failing run `39719830927`) — which is the argument for
+three tiers on a Linux runner, stated here rather than in the abstract. K-009 is closed with those identifiers.
+The documentation commits that follow (`201c19b`, and this ledger) change prose, statuses and links only; their
+re-checks are the hygiene and status guards in `tests/test_repository_hygiene.py` running in every tier, and the
+run for `201c19b` is recorded in the commit that follows this one once the runner has answered.
+
+Locally, at this head: dependency-free **1,652 passed / 24 skipped**, `[train]` **1,733 / 15**, `[train,nn]`
+**2,023 / 1**, `mypy src` clean over 125 modules, the model-path configuration clean over 157, lint and format
+clean. The one-test difference between local and runner counts is accounted for, not smoothed: the hygiene test
+that checks the private documentation pack is *untracked* skips where the pack does not exist at all.
+
+**What shipped.** A trained, exported, verifiable, serveable reference model — `chakaso-base@0.1.0`, the E2608
+decoder arm, 3,413,760 parameters, **1.6865 bits per character** on held-out licensed prose against unigram
+3.2263 and uniform 5.5661 — with a release contract that verifies before loading, a Python runtime that
+generates under stated bounds, streams cancellably and scores, a standard-library HTTP adapter that refuses the
+double, a lifecycle CLI that is thin wiring over that runtime, a generation evaluation that a run now performs
+on itself, three CI tiers, and a model card whose Level 3 row says **not met** with the measurement that
+withholds it in the same document. E2608's two arms ran 19,660,800 positions each on the same pinned corpus with
+the same seed; both selected the 2,400-step ceiling with validation still falling, so H1 failed, and neither
+arm's output is usable text.
+
+**What is not verified, and would be dishonest to imply.** `chakaso model serve` was exercised by hand over a
+real socket (twice: from the working tree, and from a freshly installed wheel in a clean environment where
+`/v1/chat/completions` returned the model's own text with the not-instruction-tuned note) but has no CI job.
+The clean-install slice was run manually on this Windows machine — Python 3.13.5, torch 2.14.1+cpu, numpy 2.4.6
+— and is not automated in CI. The generation evidence is five continuation probes and four hostile probes per
+arm: enough to state what was measured, not enough to characterize a distribution, and the record says so. One
+seed per arm. The architecture comparison is confounded by 3.3× parameters and 2× context and is reported as
+confounded. Every timing here is from a 16.6 GB CPU-only machine that was also running the author's session, and
+no timing is presented as intrinsic. No workload was met: nothing in this repository answers a grounded question
+with a trained model, and K-001 stands exactly where it was.
+
+**On the commit count.** The brief named 1,000+ commits as an aspiration and explicitly said it is not a quota
+that overrides quality. Thirty-three is what this arc's work supported as separable, reviewable changes:
+fourteen features, five fixes, two test deliveries, one CI tier change, four research records and four
+documentation corrections — plus the ledger commit that follows. Splitting any of them further would have
+produced commits that cannot be understood on their own, which is the thing AGENTS.md actually asks of a commit.
+
 ## Previous unit (delivered): nodes A–N — reproducibility, multi-seed validation and generalization (P33–P36)
 
 **Goal.** The reproducibility arc is built, measured and recorded: E2605 is reproducible from a corpus
