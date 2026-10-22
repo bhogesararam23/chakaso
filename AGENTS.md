@@ -237,9 +237,9 @@ Before every commit:
   numerical behaviour is verified.
 - **Workflow files cannot be pushed from an OAuth token without the `workflow` scope.** GitHub refuses the
   whole push, naming the file — which is why the three-tier matrix lived for a while as a document instead of
-  a job. The scope is present now and `.github/workflows/ci.yml` carries `checks`, `train` and `model-path`;
-  K-009 records what remains open (no runner result read back for the new jobs yet). Never document a CI job
-  that has not landed, and never call a landed job a passed one.
+  a job. The scope is present now, `.github/workflows/ci.yml` carries `checks`, `train` and `model-path`, and
+  the tiers have been read back green from the runner (K-009 is closed, with the run identifiers). Never
+  document a CI job that has not landed, and never call a landed job a passed one until its run has been read.
 - **CI runs on Linux; your machine may not, and a green local matrix is not evidence about the other one.**
   Platform-specific attributes type-check only for the platform you check on: `mypy --platform linux src`
   found `ctypes.WinDLL` in `core/process_memory.py` on 2026-10-22 after every Windows gate had passed it, and

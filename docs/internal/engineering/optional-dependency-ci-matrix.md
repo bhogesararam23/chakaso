@@ -1,15 +1,20 @@
 # The optional-dependency CI matrix, as shipped
 
-**Status: shipped, and read back once.** The three tiers this document used to describe as prepared-and-
-unappliable are now the content of
-[`.github/workflows/ci.yml`](../../../.github/workflows/ci.yml). The first push of that file produced run
-[`39702923101`](https://github.com/bhogesararam23/chakaso/actions/runs/39702923101): all eight jobs reached
-GitHub Actions, both `model-path` jobs installed the PyTorch CPU wheel on a Linux host for the first time, and
-every one of the eight then failed the same step — `mypy src` on `core/process_memory.py`, which reached for
-`ctypes.WinDLL` outside any platform guard and so described a Windows-only name to a Linux runner. Nothing in
-this document claims the matrix passes: the verdict on the repaired code belongs to the next run, recorded
-when it is read. What changed on 2026-10-22 is that the model path is now something the runners are asked
-about, and they answered with a real defect on their first attempt.
+**Status: shipped, and read back green.** The three tiers this document used to describe as
+prepared-and-unappliable are now the content of
+[`.github/workflows/ci.yml`](../../../.github/workflows/ci.yml). Landing them took three runs, and each of the
+two failures was a defect the old single-tier CI had no way to see:
+
+| Run | Result | What it showed |
+| --- | --- | --- |
+| [`39702923101`](https://github.com/bhogesararam23/chakaso/actions/runs/39702923101) | 8 jobs, all failed `Types` | `mypy src` on `core/process_memory.py`, which reached for `ctypes.WinDLL` outside any platform guard — a Windows-only name described to a Linux runner, passed by every gate on the author's machine. Fixed in `5e1b641`. |
+| [`39703950809`](https://github.com/bhogesararam23/chakaso/actions/runs/39703950809) | 7 jobs green, `model path 3.13` failed `Tests` | batched and unbatched scoring compared to nine decimals, finer than the float32 the arithmetic happens in. The expectation was the defect. Fixed in `b99ffee`. |
+| [`39704678913`](https://github.com/bhogesararam23/chakaso/actions/runs/39704678913) | **all 8 jobs success** | core 3.13: 1,644 passed / 24 skipped in 17.39 s. model path 3.13: 2,002 passed / 2 skipped in 43.53 s. |
+| [`39706259071`](https://github.com/bhogesararam23/chakaso/actions/runs/39706259071) | **all 8 jobs success** | the current head: core 3.13 1,644 / 24 in 17.39 s, model path 3.13 2,003 / 2 in 79.18 s, model-path jobs taking 1m58s–2m31s including the torch download. |
+
+The runner reports one more skip than the same head does locally, and the difference is accounted for rather
+than smoothed: the hygiene test that checks the private documentation pack is untracked skips where that pack
+does not exist at all.
 
 ## What each tier is for
 
@@ -59,9 +64,9 @@ file rather than a copy of it:
 ## What this buys, and what it still does not prove
 
 Applied, the matrix runs 3 + 3 + 2 = 8 jobs: the dependency-free suite, the suite with numpy, the suite with
-torch, plus a strict type check over every source file in the `[nn]` environment. The local counts at the
-time of writing are measured and recorded in [K-009](../../agent/KNOWN_ISSUES.md); the runner counts will
-differ slightly because the working tree moves, and they will be read from Actions rather than assumed.
+torch, plus a strict type check over every source file in the `[nn]` environment. The local counts are
+measured and recorded in [K-009](../../agent/KNOWN_ISSUES.md), and the table above carries the counts the
+runners themselves reported, so the two are not conflated.
 
 It does not prove the model is good at anything. **CI verifies the code path; it does not train a model, and
 no experiment in this repository becomes a measured result by running in CI.** The experiment records stay
@@ -74,5 +79,5 @@ The matrix was designed on 2026-10-21 and could not be delivered: the session's 
 scopes `gist, read:org, repo`, and GitHub refuses a push that creates or updates any file under
 `.github/workflows/` — the *whole* push, naming the file — which would have blocked every other commit in the
 same push. It was therefore committed as a document. The credential's scopes were re-checked on 2026-10-22 and
-now include `workflow`; the file is the delivery, and [K-009](../../agent/KNOWN_ISSUES.md) records both the
-change and the remaining gap until the first run is read.
+now include `workflow`; the file is the delivery, and [K-009](../../agent/KNOWN_ISSUES.md) is closed with the
+run identifiers above rather than left as a promise about a future one.

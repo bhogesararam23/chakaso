@@ -194,7 +194,7 @@ pre-declared seeds with a proper test split (1.80 ± 0.18 nats, below both basel
    deduplicated by content *before* selection), `chakaso.training.subword` (byte-level BPE, named
    pre-tokenizer, deterministic tie-breaking, self-describing checksum-verified record) and
    `chakaso.training.packing` (fixed-length next-token examples, dropped tail reported). All of their tests
-   run in the dependency-free CI matrix, so they do not inherit K-009's gap.
+   run in the dependency-free CI matrix, which is why admitting them cost no new tier.
 2. **P31 — the model, admitted by measurement.** [ADR-0034](decisions/ADR-0034-optional-pytorch-model-extra.md)
    re-opened ADR-0030 on its own revisit conditions and admitted `torch` as a separate `[nn]` extra,
    recording that the speed argument did not survive measurement (1.16× on a same-shape matmul) and that

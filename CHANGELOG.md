@@ -26,8 +26,11 @@ capability is implemented or still planned.
   `numpy` and `torch`, and the document refused while it still describes the matrix as un-applied.
 - **Read back from the runner:** the first push of this workflow produced run `39702923101`, in which all
   eight jobs reached GitHub Actions — including both `model-path` jobs, which fetched the PyTorch CPU wheel on
-  a Linux host for the first time — and all eight then failed the same step. What they found is the fix below.
-  The verdict on the repaired matrix belongs to the next run, recorded when it is read rather than assumed.
+  a Linux host for the first time — and all eight then failed the same step. What they found is the fix below,
+  and a second run found an assertion finer than float32. Runs `39704678913` and `39706259071` are green across
+  all eight jobs (core python 3.13: 1,644 passed / 24 skipped in 17.39 s; model path python 3.13: 2,003 passed
+  / 2 skipped in 79.18 s), so the model path is now verified where the product runs rather than only where it
+  is developed. K-009 is closed with those identifiers.
 
 **Fixed**
 

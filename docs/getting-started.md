@@ -132,9 +132,12 @@ marked and skipped by default.
 | `.[dev,train]` | + the character model, its hand-derived gradients verified against finite differences, its checkpoint and held-out evaluation | the torch modules |
 | `.[dev,train,nn]` | everything, including the Transformer, mini-batch training, artifacts, evaluation and the inference adapter | nothing |
 
-The skips are deliberate and are the same gate on every machine: `pytest.importorskip`. Because this
-session's GitHub credential has no `workflow` scope, the `[train]` and `[nn]` jobs cannot be added to CI
-(K-009), so the extras tiers are run locally and the gap is recorded rather than claimed away.
+The skips are deliberate and are the same gate on every machine: `pytest.importorskip`. All three tiers are
+CI jobs — `core` with `.[dev]`, `train` with `.[dev,train]`, and `model path` with `.[dev,train,nn]` from the
+PyTorch CPU wheel index plus the strict type check over every module — so the extras tiers are verified on a
+runner as well as locally, and the dependency-free tier is the one that proves the default install needs
+nothing. See [`.github/workflows/ci.yml`](../.github/workflows/ci.yml) and
+[`optional-dependency-ci-matrix.md`](internal/engineering/optional-dependency-ci-matrix.md).
 
 ## Load and use a trained checkpoint
 

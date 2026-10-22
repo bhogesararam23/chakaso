@@ -137,18 +137,33 @@ opt-in.
 **What would close it:** IP-pinned resolution in the transport, plus a politeness layer
 (robots, per-host spacing) before the fetcher is used against the live web.
 
-### K-009 — The model path is in CI's definition; the first runner verdict is unread
+### K-009 — Closed: the model path now runs in remote CI, and the runners found two defects
 
-**Impact:** Medium, and it is a coverage gap rather than a correctness one — smaller than it was, because the
-gap is now "unverified on a runner" rather than "not covered at all".
+**Closed on 2026-10-22.** Read back from GitHub Actions rather than inferred: run
+[`39704678913`](https://github.com/bhogesararam23/chakaso/actions/runs/39704678913) completed success with
+all eight jobs — `core python 3.11/3.12/3.13` in 27–36 s, `train python 3.11/3.12/3.13` in 37–39 s, and
+`model path python 3.11/3.13` in 2m14s and 1m30s. The runner's own counts, from its logs: core 3.13
+**1,644 passed / 24 skipped in 16.92 s**, model path 3.13 **2,002 passed / 2 skipped in 43.53 s**. Getting
+there took two fixes the previous single-tier CI could not have found:
+
+- run `39702923101` (the first push of the new file) reached all eight jobs and failed the same step in every
+  one: `mypy src` on a Windows-only `ctypes.WinDLL` in `core/process_memory.py`, which had passed every gate
+  on the author's machine. Fixed in `5e1b641`.
+- run `39703950809` then failed one test on `model path python 3.13`: batched and unbatched scoring were
+  compared to nine decimal places, finer than the float32 the computation happens in. The expectation was the
+  defect; the bound is now stated in units of that format. Fixed in `b99ffee`, after which `39704678913` went
+  green.
+
+The entry is kept with its number because roughly twenty documents cite it, including dated ones that should
+not be rewritten. What it recorded was true and is now false: the model path is not locally-only.
+
+**Impact (historical):** Medium, and it was a coverage gap rather than a correctness one — larger than it
+sounded, because the model path is the product.
 
 `chakaso.training` splits across two optional extras: `numpy` in `[train]` (ADR-0030) and `torch` in `[nn]`
 (ADR-0034). Until 2026-10-22 the CI matrix installed only `.[dev]`, so the numerical and model tests
 `pytest.importorskip("numpy")` / `("torch")` and **skipped** there, and `mypy src` excluded the modules that
-import them — the model path, which is the product, ran only on a maintainer's machine. That is fixed in the
-workflow: three jobs now install `.[dev]`, `.[dev,train]` and `.[dev,train,nn]`. What is not fixed is the
-part a repository cannot fix by itself — no result has been read back from Actions for the new jobs, so the
-claim standing is "CI is defined to test the model path", not "CI has tested it".
+import them — the model path, which is the product, ran only on a maintainer's machine.
 
 **Why it is not closed in the obvious way.** The clean fix is dedicated CI jobs installing `.[dev,train]` and
 `.[dev,train,nn]` and running the full suite plus `mypy src --exclude '_never_match_'`; the commands exist but
@@ -180,20 +195,20 @@ naming the file, which is why the prepared matrix was delivered as a document ra
 workflow: it would block every other commit in the same push). Checked while at it: `main` is **not**
 protected, and Actions is enabled with `allowed_actions: all` — the missing scope was the only blocker.
 
-**The scope blocker is gone (measured 2026-10-22).** `gh auth status` now reports `gist, read:org, repo,
-workflow`, so this entry's premise changed under the documentation that repeated it. Every statement above this
-paragraph was true of the credential that existed when it was written and is kept as dated history; the earlier
-sessions' refusals were real, and the prepared matrix was written against a token that could not apply it. What
-still has not happened is the thing that actually closes K-009: a workflow file carrying the `[train]` and `[nn]`
-tiers **pushed and read back from the runner**. The scope is evidence that it is now possible, not evidence that
-it passed — and applying the matrix still needs the decision ADR-0034 left open, whether a runner should fetch
-the torch CPU wheel index on every push.
+**The scope blocker went (measured 2026-10-22).** `gh auth status` began reporting `gist, read:org, repo,
+workflow`, so this entry's premise changed under the documentation that repeated it. Every statement above
+this paragraph was true of the credential that existed when it was written and is kept as dated history; the
+earlier sessions' refusals were real, and the prepared matrix was written against a token that could not apply
+it. ADR-0034's open question — whether a runner should fetch the torch CPU wheel index on every push — is now
+answered by the shipped file in the affirmative, and the measured cost is 1m30s–2m14s per model-path job.
 
 Locally all three matrices still run, and the counts grew with the new tests: **1,644 pass / 23 skip**
 dependency-free, **1,724 pass / 14 skip** with `[train]`, and **2,001 pass / 1 skip** with `[train,nn]`;
 strict typing is clean over all 157 source files in the `[nn]` environment (and over the 125 the
 dependency-free `mypy src` reaches). Measured on 2026-10-22 against the working tree that shipped the matrix;
-the figures for the delivered head are restated in the delivery ledger.
+the figures for the delivered head are restated in the delivery ledger. The same three tiers were then run by
+GitHub's own runners, which is what closed this entry — and their counts differ from these by a handful,
+which is expected when the tree moves between the two measurements.
 
 **The matrix is now the workflow, not a document about one (2026-10-22).**
 [`.github/workflows/ci.yml`](../../.github/workflows/ci.yml) carries three jobs — `checks` on
@@ -208,16 +223,10 @@ describes the matrix as un-applied. The assertion that used to guard the *blocke
 workflow installs only `.[dev]`" — was deleted, as its own text said it should be, and the test that replaces
 it fails if the document falls behind the file.
 
-**What still keeps this entry open:** the repaired matrix has not yet been seen passing. The first push of the
-new workflow — run `39702923101`, 2026-10-22 — reached the runner with all eight jobs, including both
-`model-path` jobs that fetched the PyTorch CPU wheel on a Linux host for the first time, and every one of them
-failed the same `mypy src` step on a Windows-only attribute in `core/process_memory.py`. That is the gap this
-entry exists to describe, working: a check that runs only on a maintainer's machine had hidden a defect the
-product's own platform would hit, and the new jobs found it on their first attempt rather than the old ones
-failing to look. K-009 closes when a run of the three tiers is read back green, with its identifiers recorded
-here. ADR-0034's open question — whether a runner should fetch the CPU wheel index on every push — is now
-answered in the affirmative by the file itself, and should be revisited if that download becomes the reason a
-contributor's check is slow.
+**Why the gap mattered, in one line:** the two defects the new tiers found — a Windows-only attribute and an
+assertion finer than the datatype — were both invisible to every gate the repository had ever run, on the
+machine that wrote them. A check that runs only where the extras happen to be installed, and only on one
+operating system, is not a check on the model path.
 
 ### K-006 — The invented-reference condition is persisted; the rate is not yet aggregated
 
