@@ -10,6 +10,25 @@ capability is implemented or still planned.
 
 ## Unreleased
 
+### 2026-10-22 — a trained checkpoint can be served locally over HTTP (node K)
+
+**Implemented**
+
+- `chakaso.serve` puts an OpenAI-shaped HTTP interface in front of one loaded model: `GET /health`,
+  `GET /v1/models`, `POST /v1/completions` and `POST /v1/chat/completions`, with server-sent events for
+  `stream: true`. It is the standard library's threaded HTTP server and nothing else — no framework, no new
+  extra to install, and no third party between the request and the weights.
+- It binds `127.0.0.1` unless an operator names another address, caps concurrent generations and answers a
+  request over the cap with `429` and `Retry-After` rather than queueing it invisibly, refuses a body larger
+  than the stated ceiling before reading it, and stops producing tokens when the client hangs up mid-stream —
+  the disconnect cancels the generation through the same `AbortSignal` the Python API exposes.
+- The adapter refuses the development double, and refuses the parts of the API shape it cannot honour
+  (`n`, `best_of`, `logprobs`, `echo`, `user`, `suffix`) with the offending field named, instead of accepting
+  them and answering a different question. A release directory is checksum-verified before a weight is read.
+- **What is not claimed:** this has been exercised over a real socket against a scripted model and a real
+  checkpoint loader, not yet end to end against a trained artifact; that is the vertical slice. There is no
+  authentication, so a non-loopback bind is an operator's stated decision, not a supported deployment mode.
+
 ### 2026-10-21 — A measured result can be reproduced, and it was: E2605 across five seeds, and on prose nobody wrote about this project (ADR-0036, P33–P36)
 
 **Measured**
