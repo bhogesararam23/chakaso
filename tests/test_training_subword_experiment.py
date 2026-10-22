@@ -23,12 +23,16 @@ pytest.importorskip("torch")
 pytest.importorskip("numpy")
 
 from chakaso.core.hashing import sha256_hex
+from chakaso.models import GenerationParams, Message, Role
+from chakaso.models.release import build_release, load_model_release, write_release
+from chakaso.serve.app import load_serving_model
 from chakaso.training.errors import (
     CheckpointError,
     CorpusDriftError,
     CorpusError,
     CorruptedCorpusArtifactError,
 )
+from chakaso.training.nn_checkpoint import checkpoint_filename
 from chakaso.training.nn_training import TrainingScheduleError
 from chakaso.training.subword_experiment import (
     CorpusSpec,
@@ -494,6 +498,60 @@ def test_a_decoder_family_run_records_the_family_and_its_own_artifact(tmp_path: 
     artifact = torch.load(work / "E2605-decoder.pt", map_location="cpu", weights_only=True)
     assert report["transformer"]["artifact"]["schema"] == artifact["schema_version"]
     assert artifact["schema_version"] == "chakaso-decoder-checkpoint/1"
+
+
+def test_a_run_report_is_consumable_by_the_release_builder(tmp_path: Path) -> None:
+    """The release contract reads the report the experiment writes, over a real artifact.
+
+    The two halves name the same fields by hand, and the hand-written fixture in ``test_models_release.py``
+    disagreed with the writer on three of them — nats, positions, and the artifact block that carries the
+    schema — which is precisely the divergence a fixture can hide forever. This runs the actual pipeline and
+    builds a release out of what it produced, then loads the model back from the verified directory.
+    """
+    root = _root(tmp_path)
+    work = tmp_path / "work-release"
+
+    report = run_experiment(
+        _plan(root, work, model_family="decoder", character_baseline=False, vocab_size=268)
+    )
+    write_report(report, work / "report.json")
+
+    release = build_release(
+        work,
+        model_id="chakaso-release-fixture",
+        model_version="0.1.0",
+        summary="A tiny decoder trained on four hand-written documents, for the contract and not for quality.",
+        capabilities=("tokenize", "generate", "score"),
+        known_limitations=("Trained on synthetic fixtures; its output is not text worth reading."),
+        checkpoint_name=checkpoint_filename("E2605", "decoder"),
+        licence_model="Apache-2.0",
+        licence_training_data="Self-authored documents in this repository's test fixtures",
+        redistribution="A test fixture; not a distribution.",
+        created_utc="2026-10-22T00:00:00Z",
+        reproduce="python -m pytest tests/test_training_subword_experiment.py",
+    )
+
+    assert release.checkpoint["schema_version"] == "chakaso-decoder-checkpoint/1"
+    assert (
+        release.training["held_out"]["scored_positions"]
+        == report["transformer"]["test"]["positions_scored"]
+    )
+
+    write_release(release, work)
+
+    reloaded, model = load_model_release(work)
+    assert reloaded.checksum == release.checksum
+    result = model.generate(
+        [Message(role=Role.USER, content="The fox")], GenerationParams(max_new_tokens=4)
+    )
+    assert result.model_id == model.metadata.model_id
+
+    # The serving adapter takes the same directory, verifies it the same way, and reports the identity a
+    # client is shown. This is the one path where a release directory reaches the runtime from the network
+    # side, so it is checked on a real artifact rather than only against a scripted model.
+    served, identity = load_serving_model(str(work))
+    assert identity == f"{release.model_id}@{release.model_version}"
+    assert served.metadata.model_id == model.metadata.model_id
 
 
 def test_a_skipped_character_baseline_says_why_in_the_report(tmp_path: Path) -> None:

@@ -265,10 +265,10 @@ def build_release(
             "warmup_steps": model["budget"]["warmup_steps"],
             "held_out": {
                 "bits_per_character": model["test"]["bits_per_character"],
-                "nats_per_token": model["test"]["nats_per_token"],
+                "nats_per_token": model["test"]["loss_nats_per_token"],
                 "perplexity": model["test"]["perplexity"],
                 "token_accuracy": model["test"]["token_accuracy"],
-                "scored_positions": model["test"]["positions"],
+                "scored_positions": model["test"]["positions_scored"],
             },
             "baselines": {
                 "unigram_bits_per_character": report["baselines_subword"]["unigram"][
@@ -303,7 +303,10 @@ def build_release(
         checkpoint={
             "file": checkpoint_name,
             "sha256": _digest(checkpoint),
-            "schema_version": (f"chakaso-{report['model_family']}-checkpoint/1"),
+            # Read from the run's own artifact block rather than assembled from the family name: the file
+            # states its schema, and a release that inferred it could sign a contract around a checkpoint the
+            # loader would rebuild differently.
+            "schema_version": model["artifact"]["schema"],
             "parameter_count": model["parameter_count"],
             "size_bytes": checkpoint.stat().st_size,
         },

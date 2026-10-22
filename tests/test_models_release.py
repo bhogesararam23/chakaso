@@ -66,10 +66,15 @@ def _report() -> dict[str, Any]:
             },
             "test": {
                 "bits_per_character": 1.71,
-                "nats_per_token": 2.4,
+                "loss_nats_per_token": 2.4,
                 "perplexity": 11.2,
                 "token_accuracy": 0.5,
-                "positions": 480_000,
+                "positions_scored": 480_000,
+            },
+            "artifact": {
+                "path": "E2608-decoder.pt",
+                "checksum": "d" * 64,
+                "schema": "chakaso-decoder-checkpoint/1",
             },
         },
         "baselines_subword": {
