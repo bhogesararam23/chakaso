@@ -1076,7 +1076,7 @@ def write_report(
 def summarise(report: dict[str, Any]) -> str:
     """A one-line digest of the comparison, for the record and for an operator's terminal."""
     transformer = report["transformer"]["test"]
-    character = report["character_baseline"]["test"]
+    character = report["character_baseline"].get("test")
     uniform = report["baselines_subword"]["uniform"]
     unigram = report["baselines_subword"]["unigram"]
     budget = report["transformer"]["budget"]

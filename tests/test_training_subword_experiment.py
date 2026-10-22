@@ -642,3 +642,14 @@ def test_the_repository_prompt_set_is_named_as_such(tmp_path: Path) -> None:
 def test_an_unknown_prompt_source_is_refused(tmp_path: Path) -> None:
     with pytest.raises(ValueError, match="sample_prompts"):
         _plan(_root(tmp_path), tmp_path / "work", sample_prompts="whatever-the-model-likes")
+
+
+def test_the_one_line_summary_survives_a_skipped_character_baseline(tmp_path: Path) -> None:
+    root = _root(tmp_path)
+
+    report = run_experiment(_plan(root, tmp_path / "work-summary", character_baseline=False))
+    line = summarise(report)
+
+    assert "character baseline skipped" in line
+    assert "bits/char" in line
+    assert report["character_baseline"]["skipped"] is True
