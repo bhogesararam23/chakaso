@@ -256,3 +256,86 @@ def test_loading_a_model_does_not_import_the_conversation_runtime(
 
     assert result.returncode == 0, result.stderr
     assert result.stdout.strip().endswith("BANNED:"), result.stdout
+
+
+def test_the_release_lifecycle_runs_from_the_terminal(
+    trained: dict[str, object], tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """The same sequence, driven by the commands an operator would actually type.
+
+    The library path is what the boundary promises; the terminal is what a release gets judged on, and the
+    two are only the same product if the handlers stay thin. Export, verify, inspect, score and generate each
+    run here over the artifact this file trained, so a handler that grew logic of its own would show up as a
+    difference between what the API returned and what the command printed.
+    """
+    from chakaso.cli import main
+
+    work = trained["work"]
+    released = tmp_path / "released"
+    argv = [
+        "model",
+        "export",
+        str(work),
+        "--output",
+        str(released),
+        "--model-id",
+        "chakaso-slice",
+        "--model-version",
+        "0.1.0",
+        "--summary",
+        "A twelve-step decoder, exported from its own run directory.",
+        "--capability",
+        "tokenize",
+        "--capability",
+        "generate",
+        "--capability",
+        "stream",
+        "--capability",
+        "score",
+        "--limitation",
+        "Twelve steps of training; its output is not language.",
+        "--licence-model",
+        "Apache-2.0",
+        "--licence-data",
+        "Self-authored test fixtures",
+        "--redistribution",
+        "with the contract attached",
+        "--created-utc",
+        "2026-10-22T00:00:00Z",
+    ]
+    assert main(argv) == 0
+    assert "released chakaso-slice@0.1.0" in capsys.readouterr().out
+
+    assert main(["model", "verify", str(released)]) == 0
+    verified = capsys.readouterr().out
+    assert "chakaso-decoder-checkpoint/1" in verified
+    assert "not language" in verified
+
+    assert main(["model", "inspect", str(released), "--json"]) == 0
+    facts = json.loads(capsys.readouterr().out)
+    assert facts["development_double"] is False
+    assert facts["release"]["model_id"] == "chakaso-slice"
+
+    text = tmp_path / "text.md"
+    text.write_text("The fox ran over the dry sand. " * 24, encoding="utf-8")
+    assert main(["model", "score", str(released), "--text-file", str(text)]) == 0
+    assert "nats per token" in capsys.readouterr().out
+
+    assert (
+        main(
+            [
+                "model",
+                "generate",
+                str(released),
+                "--prompt",
+                "The fox",
+                "--max-new-tokens",
+                "8",
+                "--json",
+            ]
+        )
+        == 0
+    )
+    completion = json.loads(capsys.readouterr().out)
+    assert completion["model_id"] == trained["model"].metadata.model_id  # type: ignore[union-attr]
+    assert completion["new_tokens"] <= 8

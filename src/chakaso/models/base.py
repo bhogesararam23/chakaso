@@ -308,6 +308,25 @@ class StreamingGenerator(Protocol):
         ...
 
 
+@runtime_checkable
+class TextScorer(Protocol):
+    """Implemented by models that can return the boundary's own held-out measurement for a text.
+
+    Separate from :class:`LanguageModel` because scoring is not something every adapter can do: the
+    development double has no distribution to take a cross-entropy over, and a JSON character checkpoint
+    predates the arithmetic. A caller that needs the number asks for this shape instead of assuming the
+    adapter it was handed has it.
+    """
+
+    def score(self, text: str) -> float:
+        """Mean next-token cross-entropy, in nats, over ``text`` at the model's own context length.
+
+        Raises:
+            ModelError: the text is empty or too short to fill one prediction window.
+        """
+        ...
+
+
 @dataclass(frozen=True, slots=True)
 class StructuredResult:
     """A validated structured response.

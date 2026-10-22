@@ -2223,3 +2223,112 @@ def test_persisted_provenance_is_rendered_inert_on_the_terminal() -> None:
 def _db_of(config: Path) -> Path:
     """Derive the durable store path from a temp config file written by _durable_chat."""
     return config.parent / "answers.db"
+
+
+# ---------------------------------------------------------------------------
+# model — the release lifecycle
+# ---------------------------------------------------------------------------
+
+
+def test_model_without_an_action_says_which_ones_exist(
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    assert main(["model"]) == 1
+    assert "choose a model action" in capsys.readouterr().err
+
+
+def test_model_actions_require_their_arguments() -> None:
+    # Every action takes an artifact path, and the ones that write or generate require more: argparse
+    # refusing is the tested behaviour, because a half-specified model command could otherwise export
+    # a release with no licence stated or generate from a prompt nobody gave.
+    for argv in (
+        ["model", "inspect"],
+        ["model", "verify"],
+        ["model", "score", "artifact.pt"],
+        ["model", "generate", "artifact.pt"],
+        ["model", "export", "work-dir"],
+        ["model", "export", "work-dir", "--output", "out", "--model-id", "m"],
+    ):
+        with pytest.raises(SystemExit) as caught:
+            main(argv)
+        assert caught.value.code == 2, argv
+
+
+def test_a_checkpoint_cannot_be_verified_as_a_release(
+    capsys: pytest.CaptureFixture[str], tmp_path: Path
+) -> None:
+    # Verification means the contract document; a bare .pt has nothing to check a contract against, and the
+    # command says which action to use instead of inventing a digest to compare.
+    checkpoint = tmp_path / "E2699-decoder.pt"
+    checkpoint.write_bytes(b"not a release")
+
+    assert main(["model", "verify", str(checkpoint)]) == 1
+    assert "not a release directory" in capsys.readouterr().err
+
+
+def test_model_export_refuses_to_replace_an_existing_release(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    work = tmp_path / "work"
+    work.mkdir()
+    (work / "report.json").write_text("{not json", encoding="utf-8")
+    destination = tmp_path / "release"
+    destination.mkdir()
+    (destination / "model.json").write_text("{}", encoding="utf-8")
+
+    code = main(
+        [
+            "model",
+            "export",
+            str(work),
+            "--output",
+            str(destination),
+            "--model-id",
+            "m",
+            "--model-version",
+            "1",
+            "--summary",
+            "s",
+            "--capability",
+            "generate",
+            "--limitation",
+            "stated",
+            "--licence-model",
+            "Apache-2.0",
+            "--licence-data",
+            "PD",
+            "--redistribution",
+            "yes",
+        ]
+    )
+
+    assert code == 1
+    assert "already holds a release" in capsys.readouterr().err
+
+
+def test_a_model_that_cannot_score_is_refused_rather_than_guessed(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    from argparse import Namespace
+
+    from chakaso.cli import _run_model_score
+    from chakaso.models import Capability, ModelMetadata
+    from chakaso.models.errors import ModelError
+
+    class _NoScoringModel:
+        metadata = ModelMetadata(
+            model_id="no_scorer",
+            display_name="A model without the measurement",
+            context_window=8,
+            capabilities=frozenset({Capability.TOKENIZE}),
+            development_double=False,
+        )
+
+    text = tmp_path / "text.md"
+    text.write_text("something to score", encoding="utf-8")
+    args = Namespace(path="whatever", text_file=text, json=False)
+
+    with pytest.raises(ModelError, match="cannot score text"):
+        _run_model_score(_NoScoringModel(), args)
+
+    assert capsys.readouterr().out == ""

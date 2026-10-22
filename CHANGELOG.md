@@ -10,6 +10,29 @@ capability is implemented or still planned.
 
 ## Unreleased
 
+### 2026-10-22 — the release lifecycle has a command line (node H)
+
+**Implemented**
+
+- `chakaso model inspect|verify|export|generate|stream|score|serve` — one group for the whole life of an
+  artifact, every action a thin handler over the Python API rather than a second implementation of it.
+  `export` turns a run's work directory into a distributable release directory: it copies the checkpoint and
+  the report the run wrote, digests the copies against the originals, and assembles `model.json` from them, so
+  provenance is read rather than typed. `verify` re-hashes a release against its own contract and needs no
+  numerical library at all — a release can be audited on a machine that cannot run it. `generate` and `stream`
+  take the boundary's decoding parameters as flags; `stream` cancels the run at its next step boundary on
+  Ctrl-C rather than finishing an answer nobody is reading. `score` returns the same held-out cross-entropy the
+  experiments report and refuses an adapter that has no measurement to make. `serve` starts the local HTTP
+  endpoint on loopback and warns on the terminal when an operator names an address beyond it.
+- `chakaso.models.export_release` and a `TextScorer` protocol at the boundary, so "this model can measure a
+  text" is a shape a caller asks for instead of an attribute it hopes for.
+- The first use of `model export` on this repository's own pilot artifact produced a refusal rather than a
+  release: the pilot's report named the transformer schema for a decoder file, and the contract builder now
+  rejects provenance that contradicts itself. That is the check working on the first real input, and it is the
+  bug `8fc0c0d` fixed for every run after the pilot.
+- **Not claimed:** `chakaso model serve` was verified by hand against arm A's artifact on this machine
+  (`/health` reporting `chakaso-base@0.1.0`, a completion returned over a real socket), not in CI.
+
 ### 2026-10-22 — the developer-facing documentation catches up with the runtime (nodes N, P)
 
 **Implemented**

@@ -86,7 +86,9 @@ application uses, so a turn is a list of messages and a policy is one parameter 
 from chakaso.models import GenerationParams, Message, Role
 from chakaso.models.decoding import AbortSignal
 
-params = GenerationParams(max_new_tokens=64, temperature=0.7, top_k=40, seed=7, stop_sequences=("\n\n",))
+params = GenerationParams(
+    max_new_tokens=64, temperature=0.7, top_k=40, seed=7, stop_sequences=("\n\n",)
+)
 messages = [Message(role=Role.USER, content="The retrieval layer owns")]
 signal = AbortSignal()
 
@@ -99,37 +101,53 @@ for index, chunk in enumerate(model.stream(messages, params, signal=signal)):
         signal.abort()  # a caller that has seen enough: the step loop stops at the next boundary
 ```
 
-A release directory is what a consumer is handed, and building one is a call, not a manual: it assembles
-`model.json` from the run's own report and the checkpoint's own facts, then every load verifies the artifact's
-digest before reading a weight. The optional HTTP adapter is also a call, not a service to install:
+A release directory is what a consumer is handed, and building one is one command: it assembles `model.json`
+from the run's own report and the checkpoint's own facts, copies the two files beside it, and every later load
+verifies the artifact's digest before reading a weight.
+
+```bash
+chakaso model export data/experiments/E2608/decoder --output dist/chakaso-base \
+  --model-id chakaso-base --model-version 0.1.0 --summary "What the run did, in one paragraph." \
+  --capability tokenize --capability generate --capability stream --capability score \
+  --limitation "Generations repeat: measured, not fixed." \
+  --licence-model Apache-2.0 --licence-data "Public domain in the United States (Project Gutenberg)" \
+  --redistribution "Weights may be redistributed with this document attached."
+chakaso model verify dist/chakaso-base           # re-hash the artifact against its own contract
+chakaso model inspect dist/chakaso-base --json   # what the weights, the runtime and the contract state
+chakaso model generate dist/chakaso-base --prompt "The whale" --max-new-tokens 24
+chakaso model stream dist/chakaso-base --prompt "The whale" --temperature 0.7 --seed 7
+chakaso model score dist/chakaso-base --text-file docs/training.md
+chakaso model serve dist/chakaso-base --port 8765   # loopback by default, no auth, Ctrl-C to stop
+```
+
+The same operations are Python calls, because the terminal is a thin handler over them and a trained
+checkpoint must be usable without one:
 
 ```python
 from pathlib import Path
 
-from chakaso.models import load_model
-from chakaso.models.release import build_release, write_release
+from chakaso.models import export_release, load_model
 from chakaso.serve.server import serve
 
 work = Path("data/experiments/E2608/decoder")
-release = build_release(
+release = export_release(  # copies the checkpoint and report, then writes model.json beside them
     work,
+    Path("dist/chakaso-base"),
     model_id="chakaso-base",
     model_version="0.1.0",
     summary="What the run did, in one paragraph, for someone deciding whether to load it.",
     capabilities=("tokenize", "generate", "stream", "score"),
     known_limitations=("Generations repeat: measured, not fixed.",),  # required, and non-empty
-    checkpoint_name="E2608-decoder.pt",
     licence_model="Apache-2.0",
     licence_training_data="Public domain in the United States (Project Gutenberg)",
     redistribution="Weights may be redistributed with this document attached.",
     created_utc="2026-10-22T00:00:00Z",
     reproduce="chakaso experiment model --work-dir data/experiments/E2608/decoder",
 )
-write_release(release, work)
 
-model = load_model(str(work))                     # the directory: verified, then loaded
+model = load_model("dist/chakaso-base")  # the directory: verified against the contract, then loaded
 service = serve(str(work / "E2608-decoder.pt")).start()
-print(service.base_url, service.loopback_only)     # http://127.0.0.1:<port>, True by default
+print(service.base_url, service.loopback_only)  # http://127.0.0.1:<port>, True by default
 service.stop()
 ```
 

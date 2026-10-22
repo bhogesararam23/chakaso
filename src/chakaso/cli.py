@@ -37,7 +37,7 @@ import sys
 from collections.abc import Sequence
 from dataclasses import replace
 from pathlib import Path
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
     from chakaso.training.dataset_report import DatasetReport
@@ -848,6 +848,129 @@ def _build_parsers() -> tuple[argparse.ArgumentParser, argparse.ArgumentParser]:
         "--overwrite", action="store_true", help="replace an existing report at --output"
     )
 
+    model_parser = subparsers.add_parser(
+        "model",
+        help="inspect, verify, export, run and serve a trained checkpoint or release",
+        description=(
+            "The release lifecycle for an artifact this project trained. Every action takes a checkpoint "
+            "path or a release directory and does the same thing the Python API does — the model lives in "
+            "the library, these handlers only format it. Loading a trained checkpoint needs the optional "
+            "[train] and [nn] extras; a missing one is reported by name rather than answered by the "
+            "development double."
+        ),
+    )
+    model_subparsers = model_parser.add_subparsers(dest="model_command", metavar="ACTION")
+
+    model_inspect = model_subparsers.add_parser(
+        "inspect", help="report what a checkpoint or release says about itself"
+    )
+    model_inspect.add_argument("path", help="a checkpoint file or a release directory")
+    model_inspect.add_argument("--json", action="store_true", help="machine-readable output")
+
+    model_verify = model_subparsers.add_parser(
+        "verify", help="re-hash a release directory's artifact and report the digests"
+    )
+    model_verify.add_argument("path", help="the release directory to verify")
+    model_verify.add_argument("--json", action="store_true", help="machine-readable output")
+
+    model_export = model_subparsers.add_parser(
+        "export",
+        help="assemble a distributable release directory from a run's work directory",
+        description=(
+            "Copies the run's checkpoint and report into the output directory and writes model.json beside "
+            "them, with provenance read from the report rather than typed here. An existing release is not "
+            "replaced unless --overwrite says so."
+        ),
+    )
+    model_export.add_argument(
+        "work_dir", help="the run's working directory (report.json + checkpoint)"
+    )
+    model_export.add_argument(
+        "--output", type=Path, required=True, help="the release directory to write"
+    )
+    model_export.add_argument("--model-id", required=True, help="the name a consumer selects")
+    model_export.add_argument("--model-version", required=True, help="the version of this artifact")
+    model_export.add_argument(
+        "--summary", required=True, help="one paragraph, for a reader deciding"
+    )
+    model_export.add_argument(
+        "--capability",
+        action="append",
+        required=True,
+        metavar="NAME",
+        help="a capability the model honours; repeat for each (tokenize, generate, stream, score)",
+    )
+    model_export.add_argument(
+        "--limitation",
+        action="append",
+        required=True,
+        metavar="TEXT",
+        help="a measured limitation this release states; repeat for each",
+    )
+    model_export.add_argument(
+        "--licence-model", required=True, help="the licence the weights carry"
+    )
+    model_export.add_argument(
+        "--licence-data", required=True, help="the licence of the corpus it was trained on"
+    )
+    model_export.add_argument(
+        "--redistribution", required=True, help="what may be redistributed, and how"
+    )
+    model_export.add_argument(
+        "--reproduce", default=None, help="the command line that reproduces this artifact"
+    )
+    model_export.add_argument(
+        "--created-utc", default=None, help="export timestamp; defaults to now, in UTC"
+    )
+    model_export.add_argument(
+        "--overwrite", action="store_true", help="replace an existing release"
+    )
+
+    model_generate = model_subparsers.add_parser(
+        "generate", help="continuate a prompt and print the text"
+    )
+    _add_generation_arguments(model_generate)
+    model_generate.add_argument("--json", action="store_true", help="machine-readable output")
+
+    model_stream = model_subparsers.add_parser(
+        "stream",
+        help="print tokens as they are produced",
+        description=(
+            "The same generation, written out chunk by chunk. Ctrl-C cancels the run at the next step "
+            "boundary instead of finishing it unseen."
+        ),
+    )
+    _add_generation_arguments(model_stream)
+
+    model_score = model_subparsers.add_parser(
+        "score", help="mean next-token cross-entropy of a text, in nats"
+    )
+    model_score.add_argument("path", help="a checkpoint file or a release directory")
+    model_score.add_argument("--text-file", type=Path, required=True, help="the text to score")
+    model_score.add_argument("--json", action="store_true", help="machine-readable output")
+
+    model_serve = model_subparsers.add_parser(
+        "serve",
+        help="run the local HTTP inference endpoint",
+        description=(
+            "Serves /health, /v1/models, /v1/completions and /v1/chat/completions for one artifact, over "
+            "the standard library, on loopback by default. No authentication exists, so naming another host "
+            "is a decision you are making on the command line. Ctrl-C stops it through the same shutdown "
+            "path the Python API uses."
+        ),
+    )
+    model_serve.add_argument("path", help="a checkpoint file or a release directory")
+    model_serve.add_argument(
+        "--host", default=None, help="bind address; defaults to 127.0.0.1 (ADR-0038)"
+    )
+    model_serve.add_argument("--port", type=int, default=None, help="port; defaults to 8765")
+    model_serve.add_argument(
+        "--max-concurrent", type=int, default=None, help="generations served at once before a 429"
+    )
+    model_serve.add_argument(
+        "--max-input-characters", type=int, default=None, help="prompt length ceiling per request"
+    )
+
     storage_parser = subparsers.add_parser(
         "storage",
         help="check or migrate a durable answer store",
@@ -997,6 +1120,49 @@ def _build_parsers() -> tuple[argparse.ArgumentParser, argparse.ArgumentParser]:
     return parser, config_parser
 
 
+def _add_generation_arguments(parser: argparse.ArgumentParser) -> None:
+    """The flags one generation takes, shared by ``model generate`` and ``model stream``.
+
+    One definition, because the two paths must not disagree about what a temperature or a stop sequence
+    means. The prompt template is deliberately absent: a template is chosen when an adapter is built, not
+    per call, and a flag that could not reach the model would be a lie about the surface.
+    """
+    parser.add_argument("path", help="a checkpoint file or a release directory")
+    prompt = parser.add_mutually_exclusive_group(required=True)
+    prompt.add_argument("--prompt", help="the text to continue")
+    prompt.add_argument("--prompt-file", type=Path, help="read the prompt from this file instead")
+    parser.add_argument(
+        "--system", default=None, help="a system turn to place before the prompt (formatting only)"
+    )
+    parser.add_argument(
+        "--max-new-tokens", type=int, default=64, help="ceiling on tokens produced (default: 64)"
+    )
+    parser.add_argument(
+        "--temperature",
+        type=float,
+        default=0.0,
+        help="0.0 is greedy and is the default; above it the run samples and --seed makes it reproducible",
+    )
+    parser.add_argument(
+        "--top-k", type=int, default=None, help="keep only the k likeliest candidates"
+    )
+    parser.add_argument("--top-p", type=float, default=None, help="nucleus threshold")
+    parser.add_argument("--seed", type=int, default=None, help="reproduces a sampling run")
+    parser.add_argument(
+        "--repeat-penalty",
+        type=float,
+        default=None,
+        help="penalty on logits of tokens already produced; diagnostics still report repetition",
+    )
+    parser.add_argument(
+        "--stop",
+        action="append",
+        default=None,
+        metavar="TEXT",
+        help="text that ends generation when it appears in the output; repeat for each",
+    )
+
+
 def _add_config_arguments(parser: argparse.ArgumentParser) -> None:
     parser.add_argument(
         "--config",
@@ -1057,6 +1223,9 @@ def main(argv: Sequence[str] | None = None) -> int:
 
     if args.command == "corpus":
         return _run_corpus_command(args)
+
+    if args.command == "model":
+        return _run_model_command(args)
 
     if args.command == "storage":
         return _run_storage(args)
@@ -2136,6 +2305,287 @@ def _emit_corpus_report(
     for destination in (report_path, card_path):
         if destination is not None:
             print(f"wrote {str(destination)!r}", file=sys.stderr)
+
+
+def _model_request(args: argparse.Namespace) -> tuple[list[Any], Any]:
+    """The messages and the decoding policy a ``model`` action asked for, as the boundary types them.
+
+    ``--system`` is a formatting turn and nothing more: this project's models were not instruction tuned, and
+    the template that renders it is the model's own. The template is deliberately not a flag either — it is
+    chosen when an adapter is built, not per call, and a flag that could not reach the model would
+    misrepresent the surface rather than extend it.
+    """
+    from chakaso.models import GenerationParams, Message, Role
+
+    prompt = (
+        args.prompt_file.read_text(encoding="utf-8")
+        if args.prompt_file is not None
+        else args.prompt
+    )
+    turns: list[Any] = []
+    if args.system is not None:
+        turns.append(Message(role=Role.SYSTEM, content=args.system))
+    turns.append(Message(role=Role.USER, content=prompt))
+    params = GenerationParams(
+        max_new_tokens=args.max_new_tokens,
+        temperature=args.temperature,
+        top_k=args.top_k,
+        top_p=args.top_p,
+        seed=args.seed,
+        stop_sequences=tuple(args.stop or ()),
+        repeat_penalty=1.0 if args.repeat_penalty is None else args.repeat_penalty,
+    )
+    return turns, params
+
+
+def _run_model_generation(model: Any, args: argparse.Namespace, *, streaming: bool) -> int:
+    """Generate, or stream, through the loaded model and print exactly what the boundary returned."""
+    messages, params = _model_request(args)
+    if streaming:
+        from chakaso.models.decoding import AbortSignal
+
+        signal = AbortSignal()
+        produced = 0
+        try:
+            for chunk in model.stream(messages, params, signal=signal):
+                produced += 1
+                print(safe_for_terminal(chunk.text), end="", flush=True)
+            print(flush=True)
+        except KeyboardInterrupt:
+            # The caller walked away; the run stops at its next step boundary rather than finishing unseen.
+            signal.abort()
+            print(f"\n{PROGRAM}: cancelled after {produced} token(s)", file=sys.stderr)
+            return 130
+        return 0
+
+    result = model.generate(messages, params)
+    if args.json:
+        print(
+            json.dumps(
+                {
+                    "model_id": result.model_id,
+                    "text": result.text,
+                    "finish_reason": result.finish_reason.value,
+                    "new_tokens": result.new_tokens,
+                    "prompt_tokens": result.prompt_tokens,
+                    "truncated": result.truncated,
+                    "stopped_by": result.stopped_by,
+                },
+                sort_keys=True,
+                indent=2,
+                ensure_ascii=False,
+            )
+        )
+    else:
+        print(safe_for_terminal(result.text))
+        print(
+            f"{PROGRAM}: {result.model_id} finished {result.finish_reason.value} "
+            f"after {result.new_tokens} token(s), prompt {result.prompt_tokens}",
+            file=sys.stderr,
+        )
+    return 0
+
+
+def _run_model_verify(args: argparse.Namespace) -> int:
+    """Re-hash a release directory's artifact against the contract that names it."""
+    from chakaso.models.release import load_release
+
+    root = Path(args.path)
+    if not root.is_dir():
+        print(
+            f"{PROGRAM}: {str(root)!r} is a checkpoint, not a release directory; a bare artifact carries "
+            "no contract to verify — use 'model inspect', or export it first with 'model export'",
+            file=sys.stderr,
+        )
+        return 1
+    release = load_release(root)
+    if args.json:
+        print(json.dumps(release.to_document(), sort_keys=True, indent=2, ensure_ascii=False))
+    else:
+        checkpoint = release.checkpoint
+        print(f"release {release.model_id}@{release.model_version} verified")
+        print(
+            f"  artifact  {checkpoint['file']}  {checkpoint['sha256'][:16]}…  "
+            f"{checkpoint['schema_version']}  {checkpoint['parameter_count']:,} parameters"
+        )
+        print(
+            f"  contract  {release.checksum[:16]}…  corpus {release.training['corpus']['fingerprint']}"
+        )
+        print(f"  licence   {release.licence['model']} / data {release.licence['training_data']}")
+        print(
+            f"  states    {len(release.known_limitations)} limitation(s): "
+            f"{'; '.join(release.known_limitations)}"
+        )
+    return 0
+
+
+def _export_reproduce(args: argparse.Namespace) -> str:
+    """The command that rebuilds this artifact, or the one the operator supplied.
+
+    The default is the work directory the export was pointed at, because that is the only reproduction a
+    terminal handler can state truthfully; anything more specific — snapshot, fingerprint, budget — belongs
+    in the experiment record, which is where a measured run's command actually lives.
+    """
+    if args.reproduce is None:
+        return f"{PROGRAM} experiment model --work-dir {args.work_dir}"
+    supplied: str = args.reproduce
+    return supplied
+
+
+def _run_model_export(args: argparse.Namespace) -> int:
+    """Assemble the release directory from a run's own artifacts."""
+    from datetime import UTC, datetime
+
+    from chakaso.models import export_release
+
+    created = (
+        datetime.now(UTC).replace(microsecond=0, tzinfo=None).isoformat() + "Z"
+        if args.created_utc is None
+        else args.created_utc
+    )
+    release = export_release(
+        Path(args.work_dir),
+        args.output,
+        model_id=args.model_id,
+        model_version=args.model_version,
+        summary=args.summary,
+        capabilities=tuple(args.capability),
+        known_limitations=tuple(args.limitation),
+        licence_model=args.licence_model,
+        licence_training_data=args.licence_data,
+        redistribution=args.redistribution,
+        created_utc=created,
+        reproduce=_export_reproduce(args),
+        allow_overwrite=args.overwrite,
+    )
+    print(
+        f"{PROGRAM}: released {release.model_id}@{release.model_version} into {str(args.output)!r} "
+        f"(contract {release.checksum[:16]}…)"
+    )
+    return 0
+
+
+def _run_model_serve(args: argparse.Namespace) -> int:
+    """Start the local endpoint and block, so Ctrl-C goes through the service's own shutdown."""
+    from chakaso.serve import server as serving
+
+    settings: dict[str, object] = {}
+    if args.host is not None:
+        settings["host"] = args.host
+    if args.port is not None:
+        settings["port"] = args.port
+    if args.max_concurrent is not None:
+        settings["max_concurrent"] = args.max_concurrent
+    if args.max_input_characters is not None:
+        settings["max_input_characters"] = args.max_input_characters
+    service = serving.serve(args.path, **settings)  # type: ignore[arg-type]
+    if not service.loopback_only:
+        print(
+            f"{PROGRAM}: serving on {service.host} is reachable beyond this machine, and this server has "
+            "no authentication",
+            file=sys.stderr,
+        )
+    print(
+        f"{PROGRAM}: serving on {service.base_url} — /health, /v1/models, /v1/completions, "
+        "/v1/chat/completions. Ctrl-C to stop.",
+        file=sys.stderr,
+    )
+    service.serve_forever()
+    return 0
+
+
+def _run_model_command(args: argparse.Namespace) -> int:
+    """The release lifecycle for one artifact, driven through the library. No model logic lives here.
+
+    ``inspect``, ``generate``, ``stream`` and ``score`` load the model, which pulls the optional extras and
+    reports a missing one by name. ``verify`` and ``export`` do not: a contract is JSON and hashes, so a
+    release can be audited on a machine that cannot run it (ADR-0035's rule, extended to the document).
+    """
+    from chakaso.models import ModelError, load_model
+
+    action = args.model_command
+    if action is None:
+        print(
+            f"{PROGRAM}: choose a model action: 'inspect', 'verify', 'export', 'generate', 'stream', "
+            "'score' or 'serve'",
+            file=sys.stderr,
+        )
+        return 1
+
+    try:
+        if action == "verify":
+            return _run_model_verify(args)
+        if action == "export":
+            return _run_model_export(args)
+        if action == "serve":
+            return _run_model_serve(args)
+
+        model = load_model(args.path)
+        if action == "inspect":
+            _print_model_facts(model, args)
+            return 0
+        if action == "score":
+            return _run_model_score(model, args)
+        return _run_model_generation(model, args, streaming=action == "stream")
+    except (ModelError, OSError, ValueError) as exc:
+        # One boundary for the whole group: a missing extra, an unreadable artifact, a refusal from the
+        # release contract or a prompt the model cannot score all become a named line and exit 1 — never a
+        # traceback, and never an answer from the development double.
+        print(f"{PROGRAM}: {safe_for_terminal(str(exc))}", file=sys.stderr)
+        return 1
+
+
+def _run_model_score(model: Any, args: argparse.Namespace) -> int:
+    """Score a text with the model's own held-out arithmetic, if the adapter can.
+
+    The shape is asked for rather than assumed: the development double has no distribution to take a
+    cross-entropy over, and an adapter that cannot score is a refusal, not a number that means something else.
+    """
+    from chakaso.models.base import TextScorer
+    from chakaso.models.errors import ModelError
+
+    if not isinstance(model, TextScorer):
+        message = (
+            f"model {model.metadata.model_id!r} cannot score text; it does not implement the boundary's "
+            "cross-entropy measurement"
+        )
+        raise ModelError(message)
+    nats = model.score(args.text_file.read_text(encoding="utf-8"))
+    if args.json:
+        print(json.dumps({"nats_per_token": nats}, sort_keys=True))
+    else:
+        print(f"{nats:.4f} nats per token (mean next-token cross-entropy)")
+    return 0
+
+
+def _print_model_facts(model: Any, args: argparse.Namespace) -> None:
+    """Report what a loaded artifact says about itself, and the contract if it travels with one."""
+    facts: dict[str, Any] = {
+        "model_id": model.metadata.model_id,
+        "display_name": model.metadata.display_name,
+        "context_window": model.metadata.context_window,
+        "capabilities": sorted(capability.value for capability in model.metadata.capabilities),
+        "development_double": model.metadata.development_double,
+        "runtime": model.describe(),
+    }
+    root = Path(args.path)
+    if root.is_dir():
+        from chakaso.models.release import load_release
+
+        facts["release"] = load_release(root).to_document()
+
+    if args.json:
+        print(json.dumps(facts, sort_keys=True, indent=2, ensure_ascii=False, default=str))
+        return
+    trained = "development double" if facts["development_double"] else "trained model"
+    print(f"{facts['model_id']} — {facts['display_name']} — {trained}")
+    for key, value in sorted(facts["runtime"].items()):
+        print(f"  {key}: {safe_for_terminal(str(value))}")
+    release = facts.get("release")
+    if isinstance(release, dict):
+        print(f"  released as {release['model_id']}@{release['model_version']}")
+        for limitation in release["known_limitations"]:
+            print(f"  limitation: {safe_for_terminal(str(limitation))}")
 
 
 def _run_corpus_command(args: argparse.Namespace) -> int:

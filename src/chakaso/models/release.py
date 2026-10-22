@@ -31,7 +31,7 @@ from dataclasses import asdict, dataclass, replace
 from pathlib import Path
 from typing import Any
 
-from chakaso.core.atomic import write_text_atomically
+from chakaso.core.atomic import staged_write, write_text_atomically
 from chakaso.models.errors import CorruptedReleaseError, IncompatibleReleaseError
 
 __all__ = [
@@ -39,6 +39,7 @@ __all__ = [
     "RELEASE_SCHEMA_VERSION",
     "ModelRelease",
     "build_release",
+    "export_release",
     "load_model_release",
     "load_release",
     "write_release",
@@ -293,6 +294,17 @@ def build_release(
         )
         raise IncompatibleReleaseError(message) from exc
 
+    declared_schema = model["artifact"]["schema"]
+    if declared_schema != f"chakaso-{report['model_family']}-checkpoint/1":
+        # Both strings are written by the same run, so a report whose family and schema disagree is a report
+        # from before the run stated its own schema — which this project's pilot artifact actually is. A
+        # release must not be assembled from provenance that contradicts itself.
+        message = (
+            f"the report in {str(root)!r} calls its family {report['model_family']!r} but its artifact "
+            f"{declared_schema!r}; a release cannot sign contradictory provenance"
+        )
+        raise IncompatibleReleaseError(message)
+
     release = ModelRelease(
         model_id=model_id,
         model_version=model_version,
@@ -359,6 +371,92 @@ def write_release(
         json.dumps(document, sort_keys=True, indent=2, ensure_ascii=False) + "\n", target
     )
     return target
+
+
+def export_release(
+    source: Path,
+    destination: Path,
+    *,
+    model_id: str,
+    model_version: str,
+    summary: str,
+    capabilities: tuple[str, ...],
+    known_limitations: tuple[str, ...],
+    licence_model: str,
+    licence_training_data: str,
+    redistribution: str,
+    created_utc: str,
+    reproduce: str,
+    report_name: str = "report.json",
+    allow_overwrite: bool = False,
+) -> ModelRelease:
+    """Assemble a distributable release directory from a run's working directory.
+
+    A run writes its checkpoint and its report beside each other; a release is the same two files plus the
+    contract that names them. This copies the bytes rather than re-pointing at them, because a directory a
+    consumer can mail must be self-contained, and it digests the copy against the original, because an export
+    that silently truncated a 45 MB weights file would otherwise be discovered only when somebody loaded it.
+
+    Raises:
+        IncompatibleReleaseError: the source holds no report, no checkpoint the report names, or the copy
+            does not hash to the bytes it came from.
+        ModelError: the destination already holds a release and ``allow_overwrite`` was not given.
+    """
+    root = Path(source)
+    target = Path(destination)
+    released_at = target / RELEASE_DOCUMENT
+    if released_at.exists() and not allow_overwrite:
+        # Checked before anything is read: "a release is never replaced quietly" cannot depend on the source
+        # being parseable, or the guard would only fire on the subset of exports that got far enough to notice.
+        message = (
+            f"{str(target)!r} already holds a release; pass allow_overwrite=True to replace it, or choose "
+            "a distinct directory so the earlier artifact stays downloadable"
+        )
+        raise IncompatibleReleaseError(message)
+
+    report_path = root / report_name
+    if not report_path.is_file():
+        message = f"{str(root)!r} holds no run report named {report_name!r} to release from"
+        raise IncompatibleReleaseError(message)
+    recorded = json.loads(report_path.read_text(encoding="utf-8"))
+    try:
+        checkpoint_name = recorded["transformer"]["artifact"]["path"]
+    except KeyError as exc:
+        message = f"the report in {str(root)!r} does not name the artifact it produced ({exc})"
+        raise IncompatibleReleaseError(message) from exc
+    checkpoint = root / checkpoint_name
+    if not checkpoint.is_file():
+        message = f"the report names {checkpoint_name!r} but {str(checkpoint)!r} does not exist"
+        raise IncompatibleReleaseError(message)
+
+    target.mkdir(parents=True, exist_ok=True)
+    for name, origin in ((checkpoint_name, checkpoint), (report_name, report_path)):
+        copy = target / name
+        with staged_write(copy) as staged:
+            staged.write_bytes(origin.read_bytes())
+        if _digest(copy) != _digest(origin):
+            message = (
+                f"the copy of {name!r} in {str(target)!r} does not match the bytes it came from"
+            )
+            raise IncompatibleReleaseError(message)
+
+    release = build_release(
+        target,
+        model_id=model_id,
+        model_version=model_version,
+        summary=summary,
+        capabilities=capabilities,
+        known_limitations=known_limitations,
+        checkpoint_name=checkpoint_name,
+        licence_model=licence_model,
+        licence_training_data=licence_training_data,
+        redistribution=redistribution,
+        created_utc=created_utc,
+        reproduce=reproduce,
+        report_name=report_name,
+    )
+    write_release(release, target, allow_overwrite=allow_overwrite)
+    return release
 
 
 def load_release(directory: Path) -> ModelRelease:

@@ -27,6 +27,7 @@ from chakaso.models.release import (
     RELEASE_DOCUMENT,
     ModelRelease,
     build_release,
+    export_release,
     load_release,
     write_release,
 )
@@ -233,6 +234,74 @@ def test_an_unknown_release_schema_is_refused(tmp_path: Path) -> None:
 
     with pytest.raises(IncompatibleReleaseError, match="unsupported release schema"):
         ModelRelease.from_document(document)
+
+
+def test_a_release_refuses_a_report_whose_family_and_schema_disagree(tmp_path: Path) -> None:
+    root = tmp_path / "release"
+    root.mkdir()
+    (root / "E2608-decoder.pt").write_bytes(CHECKPOINT_BYTES)
+    contradictory = deepcopy(_report())
+    contradictory["transformer"]["artifact"]["schema"] = "chakaso-transformer-checkpoint/1"
+    (root / "report.json").write_text(json.dumps(contradictory), encoding="utf-8")
+
+    with pytest.raises(IncompatibleReleaseError, match="contradictory provenance"):
+        build_release(
+            root,
+            model_id="m",
+            model_version="1",
+            summary="s",
+            capabilities=("generate",),
+            known_limitations=("stated",),
+            checkpoint_name="E2608-decoder.pt",
+            licence_model="Apache-2.0",
+            licence_training_data="PD",
+            redistribution="yes",
+            created_utc="2026-10-22T00:00:00Z",
+            reproduce="chakaso …",
+        )
+
+
+def test_exporting_a_release_copies_the_bytes_it_names_and_refuses_to_clobber(
+    tmp_path: Path,
+) -> None:
+    source = _directory(tmp_path)
+    target = tmp_path / "distributed"
+
+    release = export_release(
+        source,
+        target,
+        model_id="chakaso-base",
+        model_version="0.1.0",
+        summary="Exported for the contract.",
+        capabilities=("tokenize", "generate"),
+        known_limitations=("Synthetic fixture bytes, not a trained model.",),
+        licence_model="Apache-2.0",
+        licence_training_data="PD",
+        redistribution="with the document",
+        created_utc="2026-10-22T00:00:00Z",
+        reproduce="chakaso model export …",
+    )
+
+    assert (target / "E2608-decoder.pt").read_bytes() == CHECKPOINT_BYTES
+    assert (target / "report.json").is_file()
+    assert release.checkpoint["sha256"] == sha256(CHECKPOINT_BYTES).hexdigest()
+    assert load_release(target).checksum == release.checksum
+
+    with pytest.raises(IncompatibleReleaseError, match="already holds a release"):
+        export_release(
+            source,
+            target,
+            model_id="chakaso-base",
+            model_version="0.2.0",
+            summary="A second export.",
+            capabilities=("tokenize", "generate"),
+            known_limitations=("Synthetic fixture bytes, not a trained model.",),
+            licence_model="Apache-2.0",
+            licence_training_data="PD",
+            redistribution="with the document",
+            created_utc="2026-10-22T00:00:00Z",
+            reproduce="chakaso model export …",
+        )
 
 
 def test_a_release_must_state_its_limitations(tmp_path: Path) -> None:

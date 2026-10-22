@@ -58,6 +58,7 @@ from chakaso.models.registry import (
 from chakaso.models.release import (
     ModelRelease,
     build_release,
+    export_release,
     load_model_release,
     load_release,
     write_release,
@@ -91,6 +92,7 @@ __all__ = [
     "create_adapter",
     "create_model",
     "default_registry",
+    "export_release",
     "generate_structured",
     "load_model",
     "load_model_release",
