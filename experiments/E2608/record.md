@@ -155,6 +155,16 @@ model never saw. The suite is `chakaso.training.generation_eval`: periodic runs,
 block, n-gram repetition ratio, plus the hostile inputs (empty, single character, non-ASCII, oversized). Raw
 sample text is retained in `data/experiments/E2608/generation-*.json`; the aggregate never hides a sample.
 
+**How the suite is run for this experiment, stated before the results.** The run report already carries the
+raw samples, and wiring the generation suite *inside* the experiment driver would mean arm B is executed by
+different code from arm A — a report-shape change is not a training change, but an experiment whose two arms
+are produced by two versions of the driver is a comparison the record would have to qualify. So both arms are
+run by the same commit, and `chakaso.training.generation_eval` is then executed over **both saved artifacts**
+through `chakaso.models.load_model`, one JSON per family with the raw text retained, in the same way E2606 and
+E2607's generation files were produced. The in-report wiring ships with this release and is exercised by the
+next experiment (E2609) rather than retro-fitted onto this one. A run's own `samples` block and the suite's
+output are the same generations, so no second sampling pass decides H3.
+
 ## Success, inconclusive and failure — fixed in advance
 
 - **H1 success:** at least one arm's selected `best_step` is strictly below 2,400. **H1 failure:** both arms
