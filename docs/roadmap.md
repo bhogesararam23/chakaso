@@ -280,6 +280,27 @@ are scored against explicit criteria:
 A niche is not selected because it sounds impressive. The gate exists so that the
 choice can be defended later.
 
+## Handoff phases
+
+The foundation release (nodes A–R, 2026-10-22) ends with a verified, reproducible, integrated model that is not
+yet useful. These seven phases are the prioritized continuation, written so that the next session can start at
+the top without re-deriving what is true. Nothing in this list is a status claim: each phase says what would
+*close* it, and the evidence that closes it does not exist yet.
+
+| Phase | Work | Exit criteria | Do not |
+| --- | --- | --- | --- |
+| **0 — Publish what exists** | The release itself: contract, model card, data cards, three-tier CI, vertical slice, `chakaso model` lifecycle | Level 1 and Level 2 assessed as met in [MODEL_CARD.md](../MODEL_CARD.md) with digests; every doc describing the runtime matches the tree; CI green on all three tiers | Do not describe Level 3 as near, or let the loss number imply a capability |
+| **1 — Make the curve turn** | Raise the token budget until validation loss stops improving inside it: more steps, cheaper evaluation (a fixed held-out subset with the full pass kept for the final report), or a larger batch at the same token count | An arm whose report's `completion` is `converged` rather than `budget_ceiling`, with the turning point in its curve and the wall-clock cost of getting there measured | Do not reduce `eval_every` to afford steps and then compare the resulting loss to a curve sampled differently without saying so |
+| **2 — Put a spread on the reference model** | **E2609**: arm A across five pre-declared seeds, split fixed, using E2606's method unchanged | mean ± sample SD bits per character for the decoder family, the spread stated beside the headline number, and a documented choice of which checkpoint is the reference | Do not choose seeds by their scores; do not call the sample SD a confidence interval |
+| **3 — Answer the architecture question** | A capacity-matched arm (equal parameters by shrinking `d_model`/depth) and a context-matched arm, so H2 is tested without the 3.3× confound E2608 had to accept | a comparison where the two arms share parameters *or* context and the difference is the architecture, with the token budget matched exactly as in E2608 | Do not report E2608's 0.2178 bits as an architecture result; the record already says why it is not one |
+| **4 — Attack degeneration with measurement, not cosmetics** | Two independent lines: decoding (top-p and repeat-penalty sweeps reported *against the generation suite*, not against fluency impressions) and data (author/genre/register diversity beyond 19th-century narrative prose) | repetition ratios and periodic-run counts reported per configuration with raw samples retained, and an explicit position on whether looping is fixed, unfixed, or unfixed-but-quiet | Do not use a repetition penalty to make output *look* varied while the diagnostics stay hidden; the suite's interpretation limit exists for exactly this |
+| **5 — Put a trained model in front of a workload** | Wire a checkpoint into the runtime behind an explicit opt-in (the default stays the double), then measure grounded answering on the E2603/E2604 workload with the model producing the text | a measured grounded-answer result with a real model in the loop, citation and grounding numbers reported with their failures, and K-001 narrowed on evidence rather than on a demo | Do not make a trained model the default configuration before Level 3 is met; do not let a harness oracle score what the model did not say |
+| **6 — Domain selection and adaptation** | The original P11/P12: choose a defensible niche on explicit criteria, build its dataset and benchmark, and adapt | a domain chosen with written reasons, a pinned corpus under a stated licence, and a benchmark that the *domain* work can be measured against | Do not start domain work while Phase 1 has not produced a converged model; adapting a truncated base confounds two unknowns at once |
+
+Phases 1–4 can interleave, and 2 is deliberately cheap next to 1: the seed spread uses E2606's method with no
+new machinery. Phase 5 is the one that changes what the project *is*, and it waits for a model worth putting in
+front of a workload, which is the discipline ADR-0033 exists to keep.
+
 ## Long-term target
 
 ```text

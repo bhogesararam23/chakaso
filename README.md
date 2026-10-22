@@ -253,6 +253,7 @@ makes an uninstalled import fail rather than silently test the working tree
 
 | Document | What it covers |
 | --- | --- |
+| [`MODEL_CARD.md`](MODEL_CARD.md) | The reference artifact: what it is, what it measured, what it cannot do, and which release-gate level it earned |
 | [`docs/training.md`](docs/training.md) | Architecture stages, tokenizer and data pipeline, sizing policy, statuses |
 | [`docs/evaluation.md`](docs/evaluation.md) | Model metrics, harness metrics, benchmarks, regression gates |
 | [`docs/getting-started.md`](docs/getting-started.md) | Install (including the optional extras), running tests, running experiments |
@@ -262,7 +263,7 @@ makes an uninstalled import fail rather than silently test the working tree
 | [`docs/internal/engineering/model-centred-audit.md`](docs/internal/engineering/model-centred-audit.md) | How the repository drifted and what the realignment changed |
 | [`docs/retrieval.md`](docs/retrieval.md), [`docs/correction.md`](docs/correction.md), [`docs/transparency.md`](docs/transparency.md) | The optional application layer |
 | [`docs/roadmap.md`](docs/roadmap.md) | Phases and exit criteria |
-| [`docs/decisions/`](docs/decisions/) | Why the architecture is shaped this way (ADR-0001 … ADR-0036) |
+| [`docs/decisions/`](docs/decisions/) | Why the architecture is shaped this way (ADR-0001 … ADR-0039) |
 | [`docs/agent/CURRENT_STATE.md`](docs/agent/CURRENT_STATE.md) | The current state, precisely |
 
 ## Contributing

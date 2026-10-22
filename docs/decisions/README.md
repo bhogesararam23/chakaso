@@ -131,3 +131,4 @@ creates.
 | [ADR-0036](ADR-0036-corpus-snapshot-recovery-from-history.md) | A recorded corpus is recovered from the revision that pinned it, not re-pinned from the tree | Accepted |
 | [ADR-0037](ADR-0037-reference-model-sized-by-measured-throughput.md) | The reference model is a rotary decoder sized by measured throughput, with a token-matched comparison arm | Accepted |
 | [ADR-0038](ADR-0038-local-http-serving-adapter-from-the-standard-library.md) | The local serving adapter is standard-library HTTP, bound to loopback, and serves only a trained model | Accepted |
+| [ADR-0039](ADR-0039-three-level-model-release-gate.md) | A model release is gated at three levels — contract, reproducible integration, useful behaviour — and the level is awarded on evidence in the model card | Accepted |

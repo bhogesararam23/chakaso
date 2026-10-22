@@ -10,6 +10,42 @@ capability is implemented or still planned.
 
 ## Unreleased
 
+### 2026-10-22 — the foundation release: `chakaso-base@0.1.0`, gated at Level 2 (nodes N–R)
+
+**Released as an artifact, at Level 2 — see [MODEL_CARD.md](MODEL_CARD.md).**
+
+- The reference model is **arm A of [E2608](experiments/E2608/record.md)**: a 3,413,760-parameter rotary
+  decoder, trained from random initialization on 14,490,005 characters of public-domain English prose pinned by
+  content digest (`e9fc2e92f59d88ea`), reaching **1.6865 bits per character** on held-out documents against
+  unigram 3.2263 and uniform 5.5661, in 6,024 seconds on 14 CPU threads. The artifact directory —
+  `E2608-decoder.pt` (SHA-256 `9e832fadf277e848…`), the run's `report.json` and a
+  `chakaso-model-release/1` contract (`9aebe601dc1f12c5…`) — lives under `data/`, is cited by digest, and is not
+  committed, per the artifact policy.
+- **[ADR-0039](docs/decisions/ADR-0039-three-level-model-release-gate.md)** makes the gate explicit: Level 1
+  (artifact contract) and Level 2 (reproducible integration) are **met with named evidence**; Level 3 (useful
+  behaviour) is **not met and not claimed**. The measurement that withholds it is in the card and in the
+  experiment record: five greedy continuations with mean bigram repetition 0.5538, zero tail loops, zero
+  periodic runs of three or more, every sample truncated at its token bound, and no sample anyone would
+  publish. Levels do not imply each other, and this release is the reason that sentence had to be written down.
+- **Verified from a clean install, not from the working tree.** A wheel built from this head was installed into
+  a fresh Python 3.13.5 environment and exercised through the packaged distribution: `chakaso model verify`
+  checks the contract with no numerical library installed at all; `model inspect` in that state names the
+  missing `[nn]` extra and exits 1 instead of answering from the double; after installing
+  `.whl[train,nn]` (torch 2.14.1+cpu, numpy 2.4.6 — a minor version ahead of the development environment,
+  within the declared bounds) the release loads, generates (` I am not a good man to be a good man.`), scores a
+  held-out text at 5.0280 nats per token, and serves `/v1/models` and `/v1/chat/completions` over a real socket
+  with its identity and the not-instruction-tuned note in the body. The corpus snapshot verifies through the
+  installed CLI as well: 919 documents, 14,490,005 characters, matching its pinned fingerprint.
+- The end-to-end sequence is now an automated test — `tests/test_vertical_slice.py`, eleven stages from a run
+  inside the test through load, bounded generation, seeded sampling, streamed cancellation, scoring, release,
+  verification and HTTP, plus a fresh-interpreter check that reaching a checkpoint does not import the
+  conversation runtime — and it runs in CI's `model path` tier, so the joins between the parts are tested on a
+  runner instead of re-checked by hand at release time.
+- The handoff is a dated, prioritized list rather than a wish list: seven phases in
+  [`docs/roadmap.md`](docs/roadmap.md) under *Handoff phases*, each with the exit criteria that would close it
+  and the specific mistake it exists to prevent — including the note that E2608's 0.2178-bit gap between the
+  arms is **not** a controlled architecture result, because the arms differ 3.3× in parameters and 2× in context.
+
 ### 2026-10-22 — a run now measures its own generations, its throughput and its memory (node L)
 
 **Implemented**
