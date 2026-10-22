@@ -12,6 +12,7 @@ import platform
 
 import pytest
 
+from chakaso.core import process_memory
 from chakaso.core.process_memory import MemoryUsage, current_memory, peak_memory
 
 
@@ -20,6 +21,9 @@ def test_a_reading_reports_which_interface_answered() -> None:
 
     assert isinstance(usage, MemoryUsage)
     assert usage.source
+    # The two names are the same call, so an integration test that picks either gets the same account of
+    # which interface answered.
+    assert current_memory().source == usage.source
     if platform.system() in ("Windows", "Linux"):
         assert usage.measured
         assert usage.resident_bytes and usage.peak_resident_bytes
@@ -73,14 +77,34 @@ def test_an_unsupported_platform_returns_a_well_formed_absence(
 def test_a_failing_windows_call_is_reported_as_a_failure_not_a_zero(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    def _no_kernel32(*_args: object, **_kwargs: object) -> object:
+    def _no_kernel32() -> MemoryUsage:
         message = "no kernel32"
         raise OSError(message)
 
-    monkeypatch.setattr("ctypes.WinDLL", _no_kernel32)
+    # Patched one layer out, so the wrapper's error policy is tested on every platform rather than only where
+    # a kernel32 exists to fail.
+    monkeypatch.setattr(process_memory, "_windows_memory_reading", _no_kernel32)
+
+    usage = process_memory._windows_memory()
 
     # The module's contract is that it never raises for a platform reason: an unreadable interface becomes a
     # None reading with the failing source named.
-    usage = current_memory()
+    assert usage.peak_resident_bytes is None
+    assert usage.source == "windows:call-failed:OSError"
 
-    assert isinstance(usage, MemoryUsage)
+
+def test_the_windows_reader_refuses_a_platform_that_has_no_win_dll(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """``WinDLL`` is a Windows build of CPython's name, and calling the reader elsewhere is a stated absence.
+
+    A Linux runner cannot even type-check the attribute, which is what made this a real CI failure rather than
+    a hypothetical one: the code has to answer for the wrong platform instead of raising, and the answer has to
+    be checkable from any operating system.
+    """
+    monkeypatch.setattr(process_memory.sys, "platform", "linux")
+
+    usage = process_memory._windows_memory()
+
+    assert usage.source == "windows:not-a-windows-build"
+    assert not usage.measured

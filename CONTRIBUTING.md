@@ -81,6 +81,10 @@ python -m mypy --config-file configs/mypy-model-path.toml # every module, same s
 The second mypy command is the only one that type-checks the model path: a command-line `--exclude` adds to
 the exclusion configured in `pyproject.toml` instead of lifting it.
 
+Runners are Linux. If your change touches code that branches on the operating system, type-check the other
+platform from wherever you are working — `python -m mypy --platform linux src` — because an attribute that
+exists only in a Windows build of CPython passes every gate on the machine you happen to be on.
+
 ## What a change should contain
 
 | Change | Required |

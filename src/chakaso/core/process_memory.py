@@ -17,6 +17,7 @@ from __future__ import annotations
 
 import ctypes
 import platform
+import sys
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -68,6 +69,14 @@ def _windows_memory() -> MemoryUsage:
 
 
 def _windows_memory_reading() -> MemoryUsage:
+    # ``ctypes.WinDLL`` exists only in a Windows build of CPython, and typeshed declares it under a
+    # ``sys.platform == "win32"`` guard, so a Linux or macOS type check cannot see the name at all. The guard
+    # is what lets one source file be checked on every platform CI runs on: the branch below is analysed only
+    # where the attribute exists. At runtime the dispatcher already selects by ``platform.system()``; this
+    # returns the honest reading for the case where something calls it anyway.
+    if sys.platform != "win32":
+        return MemoryUsage(None, None, "windows:not-a-windows-build")
+
     class _Counters(ctypes.Structure):
         # PROCESS_MEMORY_COUNTERS_EX, field for field. The first two members are DWORDs packed together,
         # so declaring the second one as a pointer shifts every later reading by eight bytes and returns a

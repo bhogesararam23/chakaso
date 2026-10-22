@@ -240,6 +240,12 @@ Before every commit:
   a job. The scope is present now and `.github/workflows/ci.yml` carries `checks`, `train` and `model-path`;
   K-009 records what remains open (no runner result read back for the new jobs yet). Never document a CI job
   that has not landed, and never call a landed job a passed one.
+- **CI runs on Linux; your machine may not, and a green local matrix is not evidence about the other one.**
+  Platform-specific attributes type-check only for the platform you check on: `mypy --platform linux src`
+  found `ctypes.WinDLL` in `core/process_memory.py` on 2026-10-22 after every Windows gate had passed it, and
+  the test beside it patched that Windows-only name, so it described a code path the runner does not have.
+  When a module branches on the operating system, check both (`mypy --platform win32 src`) and write the
+  branch so a reader on either platform can test it.
 - **Checkpoint and corpus bytes stay out of Git.** They live in `data/`, are git-ignored, and are cited by
   fingerprint in the experiment record.
 - **The research log is not a place for opinions.** Entry types are defined in
