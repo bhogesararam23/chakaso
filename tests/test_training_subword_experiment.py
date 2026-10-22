@@ -469,6 +469,8 @@ def test_a_short_character_budget_clamps_its_interval_instead_of_never_reporting
 
 # ------------------------------------------------------------------ architecture families
 def test_a_decoder_family_run_records_the_family_and_its_own_artifact(tmp_path: Path) -> None:
+    import torch
+
     root = _root(tmp_path)
     work = tmp_path / "work-decoder"
 
@@ -486,6 +488,12 @@ def test_a_decoder_family_run_records_the_family_and_its_own_artifact(tmp_path: 
     assert report["character_baseline"]["skipped"] is True
     assert (work / "E2605-decoder.pt").is_file()
     assert (work / "E2605-decoder-resumable.pt").is_file()
+    # The report names the schema the file is actually written under. It used to state the transformer
+    # schema for every family, which described a file the loader would have rebuilt as the wrong
+    # architecture — so the claim is checked against the artifact, not against a constant.
+    artifact = torch.load(work / "E2605-decoder.pt", map_location="cpu", weights_only=True)
+    assert report["transformer"]["artifact"]["schema"] == artifact["schema_version"]
+    assert artifact["schema_version"] == "chakaso-decoder-checkpoint/1"
 
 
 def test_a_skipped_character_baseline_says_why_in_the_report(tmp_path: Path) -> None:

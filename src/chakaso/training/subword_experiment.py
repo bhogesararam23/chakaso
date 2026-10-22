@@ -62,6 +62,7 @@ from chakaso.training.nn_checkpoint import (
     checkpoint_filename,
     load_artifact,
     save_artifact,
+    schema_of,
 )
 from chakaso.training.nn_evaluation import score_model_on_examples
 from chakaso.training.nn_training import (
@@ -988,6 +989,8 @@ def run_experiment(plan: ExperimentPlan, *, verbose: bool = False) -> dict[str, 
         },
         "character_baseline": character,
         "model_family": plan.model_family,
+        # The key is the name three measured records' reports already use and the shape :func:`summarise`
+        # and the release builder read; the family a run trained is stated beside it, not by renaming it.
         "transformer": {
             "architecture": architecture.as_dict(),
             "parameter_count": outcome.parameter_count,
@@ -1032,7 +1035,7 @@ def run_experiment(plan: ExperimentPlan, *, verbose: bool = False) -> dict[str, 
             "artifact": {
                 "path": artifact_path.name,
                 "checksum": artifact.checksum(),
-                "schema": "chakaso-transformer-checkpoint/1",
+                "schema": schema_of(artifact.config),
             },
         },
         "baselines_subword": baseline_metrics(prepared),

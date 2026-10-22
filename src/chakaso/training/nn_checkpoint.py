@@ -52,6 +52,7 @@ __all__ = [
     "describe_environment",
     "load_artifact",
     "save_artifact",
+    "schema_of",
 ]
 
 #: The two architectures this format can carry. A checkpoint names its own; nothing here guesses.
@@ -72,6 +73,16 @@ _FAMILY_BY_SCHEMA = {version: family for family, version in _SCHEMA_BY_FAMILY.it
 def family_of(config: Architecture) -> str:
     """Which architecture family a configuration belongs to, named rather than inferred from a field."""
     return "decoder" if isinstance(config, DecoderConfig) else "transformer"
+
+
+def schema_of(config: Architecture) -> str:
+    """The checkpoint schema a configuration's artifacts are written under.
+
+    Asked of the artifact rather than stated by the caller, because the two families' files differ in tensor
+    names and in the configuration class the loader must build: a report that names the wrong schema describes
+    a file that the loader would refuse, or would rebuild as the wrong architecture.
+    """
+    return _SCHEMA_BY_FAMILY[family_of(config)]
 
 
 def checkpoint_filename(experiment_id: str, family: str = "transformer") -> str:
