@@ -187,10 +187,44 @@ From the throughput measurement in ADR-0037 (12 timed steps per configuration, t
 | A decoder | 1.618 s | 5,081 | ~65 min + evaluation overhead inside the loop | 2,126 MB |
 | B transformer ×2 micro-batches | ~0.60 s (0.300 s per 4,128 tokens) | ~13,760 | ~24 min + evaluation overhead | 928 MB |
 
-Technical pilot `E2608SMOKE` (same corpus, same tokenizer cache, same code path, 8 steps at the full
+Technical pilot `E2608SMOKE2` (same corpus, same tokenizer cache, same code path, 8 steps at the full
 configuration, its own experiment id, run before either arm) measures the end-to-end cost including the
-final held-out scoring, and its numbers are reported here rather than aggregated anywhere: *(filled in when
-the pilot finishes).*
+final held-out scoring, and its numbers are reported here rather than aggregated anywhere. Run 2026-10-22 on
+`Windows-11-10.0.26200-SP0`, Python 3.13.5, torch 2.13.0+cpu, numpy 2.4.0, 14 torch threads, device cpu:
+
+| What | Value |
+| --- | --- |
+| Configuration | d256, 4 layers, 8 heads, feed-forward 640, context 256, vocab 4096, RoPE θ 10,000, tied embeddings — **3,413,760 parameters** |
+| Budget run | 8 steps, warmup 2, evaluation every 4, patience 2, cosine to 0.1, batch 32, no accumulation |
+| Outcome class | `budget_ceiling` (the run was never allowed to converge; this is the expected label for a pilot) |
+| Throughput | **4,561 positions/second** over gradient time only; 8 steps is 65,536 positions |
+| Wall clock | **239.35 s** total, of which 12.98 s was corpus preparation and tokenizer work — so ~226 s for 8 steps, two held-out evaluations, one final evaluation and the samples |
+| Held-out scoring | 1,000,448 positions (2,156,862 characters) scored per evaluation, so the loop's cost is dominated by evaluation, not by the steps |
+| Curve | step 0 train 8.3853 / val 8.3822 → step 4 6.3642 / 6.2774 → step 8 6.1286 / 6.1129 nats |
+| Final test metrics | 4.0808 bits/character, 6.0982 nats/token, perplexity 445.06, token accuracy 0.3557 |
+| Baselines on the same split | unigram 3.2263 bits/character, uniform 5.5661 — the model is still worse than a unigram after 8 steps, which is what 8 steps of a 3.4 M-parameter model means |
+| Tokenizer | fingerprint `b597eb34f13d9058`, 4,096 identifiers, 3,839 merges, minimum frequency 3, **reused from the cache** (so an arm does not pay the ~467 s fit again) |
+| Artifacts | `E2608SMOKE2-decoder.pt` (usable) and `E2608SMOKE2-decoder-resumable.pt`, both written atomically and refused on clobber |
+| Generations | 3 continuations of held-out test-side prompts (`pg120/part-0002.md@954dc8227aca`, `part-0005`, `part-0016`), each 24 tokens, `finish_reason: length`, and each one **24 space characters** |
+
+Three things this pilot was for, and what it said. **The pipeline works end to end** — snapshot verification,
+cached tokenizer, either-family training, checkpoint writing, held-out scoring and generation through
+`chakaso.models.load_model` all ran on the decoder family. It did **not** exercise experiment-level resume:
+neither smoke run reports `resumed_from_step`, so the resume path is covered by unit tests only until an arm
+needs it. **The evaluation, not the training, is the expensive part**: 8 steps
+of gradient work are ~14 s at the measured rate, and the rest of the 239 s is three passes over a million
+held-out positions plus sampling, which is why the arms' declared `eval_every 100` is a cost decision as well
+as a statistical one. **The samples are degenerate at step 8**, which is expected and recorded rather than
+hidden: a pilot is not evidence about capability, and the space-run output is the same failure mode the
+generation suite has reported for every checkpoint in this repository so far.
+
+Two deviations belong to the pilot itself, both fixed after it ran rather than smoothed over. Its report
+stated `chakaso-transformer-checkpoint/1` for an artifact whose own header declares
+`chakaso-decoder-checkpoint/1` — the report's artifact block hardcoded the schema string for every family,
+which would have propagated into a release contract; the block now reads the schema the run wrote (commit
+`ceb96a0`), and the pilot's report predates that fix. And the record's one-epoch arithmetic said 570 steps
+where the run computes 571 (`ceil(train_examples / batch_size)` over 18,252 blocks at batch 32); the figure
+used for the budget statements below is the run's own 571.
 
 ## Known limitations and threats to validity
 
