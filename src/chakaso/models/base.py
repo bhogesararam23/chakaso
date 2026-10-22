@@ -158,8 +158,10 @@ class GenerationParams:
                 f"({self.temperature!r})"
             )
             raise ValueError(message)
-        if self.temperature < 0:
-            message = f"temperature must not be negative, got {self.temperature}"
+        if self.temperature < 0 or self.temperature > 10.0:
+            # The same bound the configuration schema states for ``model.temperature``, so a request and a
+            # configuration cannot disagree about what a temperature is allowed to be.
+            message = f"temperature must be in [0, 10], got {self.temperature}"
             raise ValueError(message)
         if self.top_k is not None and (
             isinstance(self.top_k, bool) or not isinstance(self.top_k, int) or self.top_k < 1

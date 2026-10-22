@@ -194,8 +194,15 @@ def test_boolean_is_not_accepted_as_max_new_tokens() -> None:
 
 
 def test_negative_temperature_is_rejected() -> None:
-    with pytest.raises(ValueError, match="must not be negative"):
+    with pytest.raises(ValueError, match=r"temperature must be in \[0, 10\]"):
         GenerationParams(temperature=-0.1)
+
+
+def test_a_temperature_above_the_stated_bound_is_rejected() -> None:
+    # Above ~10 the distribution is uniform over the vocabulary, so a caller asking for 100 is not asking
+    # for a hotter sample but for a different, unbounded thing. The bound is stated instead.
+    with pytest.raises(ValueError, match=r"temperature must be in \[0, 10\]"):
+        GenerationParams(temperature=10.5)
 
 
 def test_boolean_is_not_accepted_as_temperature() -> None:
