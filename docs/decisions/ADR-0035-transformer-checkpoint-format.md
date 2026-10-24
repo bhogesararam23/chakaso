@@ -7,6 +7,13 @@
   [ADR-0030](ADR-0030-minimal-optional-training-dependency.md),
   [ADR-0033](ADR-0033-model-centred-product-contract.md),
   [ADR-0034](ADR-0034-optional-pytorch-model-extra.md)
+- Amended in part by: [ADR-0037](ADR-0037-reference-model-sized-by-measured-throughput.md), which on
+  2026-10-22 added a second schema in this record's *format* — `chakaso-decoder-checkpoint/1` — for the
+  rotary decoder arm of E2608. The rules below are unchanged by that amendment: one checksummed file, the
+  tokenizer inline, a restricted loader, refuse rather than guess. What changed is "one Transformer schema"
+  to "two Transformer-family schemas, each naming its own architecture", so an artifact from one family
+  cannot be read as the other (`test_the_two_families_cannot_be_read_as_each_other`), the file name states
+  the family, and `nn_checkpoint.schema_of()` reports which one a configuration will produce.
 - Follows up on: ADR-0034's Consequences, which deferred exactly this decision to a record of its own.
 
 ## Context
@@ -95,8 +102,11 @@ how it refuses to be loaded as something it is not.
   readable without `torch`; the project has already accepted `torch` as the model path's dependency, and
   adding a second serialization library to avoid it buys a portability nobody has asked for. If weights are
   ever *released*, the export format becomes a distribution decision with its own record.
-- **The format is versioned, not migrated.** Schema 1 refuses anything else; there is no older artifact to
-  migrate from, so a migration path would be speculative code.
+- **The format is versioned, not migrated.** Each schema refuses anything at another version; when this
+  record was written there was one Transformer schema and no older artifact to migrate from, so a migration
+  path would have been speculative code. [ADR-0037](ADR-0037-reference-model-sized-by-measured-throughput.md)
+  kept that property: the decoder arm got a *new* schema rather than a bumped one, because the two
+  architectures are different artifacts, not two versions of one.
 - **Tied embeddings are stored twice** — torch's own `state_dict` convention — so `parameter_count` is
   reported from the declared architecture rather than by summing stored tensors, and the record says which
   it is reading.
@@ -114,5 +124,7 @@ how it refuses to be loaded as something it is not.
   [ADR-0033](ADR-0033-model-centred-product-contract.md)'s Python-API rule requires; it must not fall back
   to the development double when the extra or the file is missing.
 - An experiment record cites the artifact's checksum, not its bytes.
-- Creates no compatibility shim for the JSON schema/2 character checkpoint: the two artifact kinds are
-  distinct formats with distinct loaders, and a trained character model stays what it is — a measured toy.
+- Creates no compatibility shim for the JSON schema/2 character checkpoint: the artifact kinds are distinct
+  formats with distinct loaders — and since ADR-0037 there are three of them, the character JSON, the
+  Transformer schema and the decoder schema, none of which reads another's file. A trained character model
+  stays what it is — a measured toy.

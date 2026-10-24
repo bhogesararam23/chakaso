@@ -26,29 +26,53 @@ corpus manifest -> tokenizer -> model -> training -> checkpoint -> inference API
                                                                                                                              optional CLI / other interfaces
 ```
 
-Six rules follow from the direction, and each is enforced by a test rather than by review:
+Six rules follow from the direction. Five are enforced by a named test in
+[`tests/test_repository_hygiene.py`](../tests/test_repository_hygiene.py) or the module's own suite rather
+than by review, and the test is given with the rule; the sixth is a reporting rule with no mechanical
+enforcer, which is stated here rather than written as though it were checked (K-011).
 
 * **Model code does not import CLI code**, and training does not need an interactive
   session: `chakaso.training` is callable from Python and `chakaso.cli` only formats what
-  the library returns.
+  the library returns. Checked by `test_no_library_module_imports_the_command_line_interface`.
 * **Inference does not need training alive.** A checkpoint is loadable and generatable on
   its own (`chakaso.models.load_model`), and it carries or verifies everything needed to
   reproduce inference: architecture, tokenizer, vocabulary size, context length, corpus
   fingerprint, seed and training configuration
-  ([ADR-0035](decisions/ADR-0035-transformer-checkpoint-format.md)).
+  ([ADR-0035](decisions/ADR-0035-transformer-checkpoint-format.md)). Checked by
+  `tests/test_models_load.py`, which loads artifacts from disk and refuses a path that is not
+  one rather than falling back, and by
+  `test_loading_a_model_does_not_import_the_conversation_runtime`, which runs the load in a
+  fresh interpreter and fails if the application graph appears in `sys.modules`.
 * **A checkpoint cannot load with an incompatible tokenizer, architecture or
   configuration** — it refuses, as a typed error, and never falls back to another model.
+  Checked by `tests/test_training_nn_checkpoint.py`:
+  `test_a_tensor_shape_that_disagrees_with_the_declared_architecture_is_refused`,
+  `test_a_vocabulary_that_does_not_hash_to_its_recorded_fingerprint_is_refused`, and
+  `test_the_two_families_cannot_be_read_as_each_other`.
 * **Application subsystems do not require the model layer to be importable.** The
   dependency tiers are `[train]` (numpy) and `[nn]` (torch); `import chakaso`,
   `import chakaso.models` and `import chakaso.training` require neither, and only the
   modules [ADR-0034](decisions/ADR-0034-optional-pytorch-model-extra.md) names may
-  import `torch` at all.
+  import `torch` at all. Checked by `test_the_base_install_declares_no_runtime_dependency`,
+  `test_only_the_admitted_model_path_modules_import_torch` with its staleness guard, and
+  `test_torch_is_declared_only_in_the_optional_nn_extra`; the numpy half of the same promise had a
+  prose rule and no check of its own until 2026-10-24, when
+  `test_only_the_admitted_model_path_modules_import_numpy` and its staleness guard were added over
+  the eight modules [ADR-0030](decisions/ADR-0030-minimal-optional-training-dependency.md) now names.
 * **Model evaluation is separate from harness evaluation.** Bits per character, perplexity
   and token accuracy describe a model; retrieval and correction benchmarks, the reference
   oracle and the sufficiency policy describe the plumbing. Neither is reported as the other.
+  **Not enforced by a test.** The two live in separate modules (`chakaso.training.model_metrics`
+  and `chakaso.training.nn_evaluation` for the model, `chakaso.evaluation` and `chakaso.benchmark`
+  for the harness) and neither imports the other's metric, but nothing checks that the numbers a
+  record *reports* are labelled for what they measure. That is held by review and by the status
+  labels in [`../AGENTS.md`](../AGENTS.md), and is recorded as K-011.
 * **No module may produce source identity.** The retrieval layer owns identifiers; the
   model references them ([ADR-0003](decisions/ADR-0003-evidence-identifier-ownership.md)),
-  and that rule does not soften because the model is now the centre.
+  and that rule does not soften because the model is now the centre. Checked for the model path by
+  `test_no_model_path_module_mints_source_identifiers`, which reads the syntax trees of
+  `chakaso.models` and `chakaso.training` for any import of the identifier layer, and for the
+  application side by `tests/test_identifiers.py` and `tests/test_citation_validation.py`.
 
 ## Design rules
 
@@ -319,7 +343,13 @@ returns no evidence — a turn still runs, it simply cites nothing that was not 
    than invented evidence. Only chunks in the pack are visible to generation.
 5. The Model Adapter generates from the conversation plus the evidence, referencing
    evidence by identifier, and the conversation manager records the assistant turn.
-   Prompt templates are not versioned yet, because there is no prompt template.
+   The two renderings are versioned for different reasons: the template that turns
+   messages into model-facing text is `chakaso.models.formatting`, whose registry names
+   `chakaso-plain-v1` (the default, and the shape every measured sample used) and
+   `chakaso-role-labelled-v1`, and an adapter is built with one chosen by version; the
+   evidence block is `chakaso.runtime.context.render_evidence_context`, which is not
+   labelled, so a change to how evidence is presented cannot be attributed in a record
+   the way a template change can (K-012).
 6. The validator checks every identifier cited against the pack, records unknown
    identifiers as errors, and attaches source metadata to the surviving
    references. This exists as `resolve_citations`, and the conversation manager runs

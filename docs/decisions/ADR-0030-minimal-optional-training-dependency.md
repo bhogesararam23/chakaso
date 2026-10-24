@@ -171,6 +171,18 @@ extra, with the model's gradients derived by hand and verified by finite-differe
 - The **full experiment** (a real training curve) runs outside CI on a machine that installs the extra;
   CI carries only a deterministic, tiny mechanics test, which is explicitly *not* presented as
   reproducing the experiment.
+- **Amended 2026-10-24:** "imports `numpy` only where a trainable component genuinely needs it" was, until
+  today, checked by nobody. `test_only_the_admitted_model_path_modules_import_numpy` in
+  [`tests/test_repository_hygiene.py`](../../tests/test_repository_hygiene.py) now reads the permission as a
+  named list and fails on any other module, and `test_the_numpy_allowlist_does_not_go_stale` fails if a
+  listed module stops importing numpy, so the list cannot drift into a permission nobody granted. The eight
+  admitted modules are `training/model.py`, `training/optimizer.py`, `training/checkpoint.py`,
+  `training/controlled.py`, `training/evaluation.py`, `training/loop.py`, `training/subword_experiment.py`
+  and `models/trainedchar.py` — the last being the adapter over the model this record created, which sits at
+  the model boundary rather than above it and is imported lazily by the registry, so `import chakaso.models`
+  still needs no numpy. This is the same shape of enforcement
+  [ADR-0034](ADR-0034-optional-pytorch-model-extra.md) chose for `torch`, whose rule 2 claimed the two were
+  enforced alike when only one was.
 
 ## Memory and performance risks
 

@@ -3,7 +3,9 @@
 Real problems with the current state, including the ones that are only
 inconvenient. An empty file here would mean nobody has looked.
 
-Last reviewed: 2026-10-21.
+Last reviewed: 2026-10-24, as the whole-documentation audit of every doc against the code and the committed
+records. K-011 and K-012 are that pass's findings turned into entries; the rest of its output was corrected
+in the documents themselves.
 
 ## Open
 
@@ -253,6 +255,66 @@ that actually generates references, which is K-001.
 
 **What would close it:** a report over durable answer history that counts `has_unresolved_references`
 against total answers, run against a real generating model.
+
+### K-011 — Three dependency-direction rules were claimed to be test-enforced and were not
+
+**Impact:** Medium, and it is a credibility problem rather than a behaviour bug. Found by the
+2026-10-24 documentation audit of the whole doc surface against the code.
+
+`docs/architecture.md` stated that "six rules follow from the direction, and each is enforced by a test
+rather than by review". Four of the six had nothing behind them — three in whole, one in part:
+
+* *Model code does not import CLI code* — nothing checked it, in either direction, so a handler gaining
+  library logic or a module gaining `from chakaso.cli import …` would have passed every gate.
+* *No module may produce source identity* (ADR-0003) — true of the code, unenforced. The model path is
+  exactly where the tempting shortcut lives: a model that mints an identifier for text it likes produces
+  an answer no pack can resolve, and citation validation can only report it afterwards.
+* *`numpy` stays inside the admitted training modules* — [ADR-0034](../decisions/ADR-0034-optional-pytorch-model-extra.md)'s
+  isolation rule pointed at "the same way the `[train]` numpy isolation is" enforced. The torch half had a
+  named list and two tests; the numpy half had prose. `import chakaso.models` pulling in numpy through a
+  new module would have been invisible until a user on a minimal install hit an ImportError.
+* *Model evaluation is separate from harness evaluation* — no check at all, and one remains open below.
+
+**Fixed on 2026-10-24** by four checks in `tests/test_repository_hygiene.py` —
+`test_no_library_module_imports_the_command_line_interface`,
+`test_no_model_path_module_mints_source_identifiers`, and
+`test_only_the_admitted_model_path_modules_import_numpy` with its staleness guard — and `docs/architecture.md`
+and ADR-0030/ADR-0034 now name the enforcing test for each rule instead of claiming blanket enforcement.
+
+**What still does not close it.** The sixth rule, *model evaluation is separate from harness evaluation*,
+still has no mechanical enforcer. The two do live in separate modules and neither imports the other's
+metrics, so a structural check on the imports is possible; what is not checkable that way is the reporting
+rule — that a number in a record is labelled for what it actually measures. That half belongs with the
+status labels and review, and `docs/architecture.md` now says so in the open rather than implying a test
+exists.
+
+**What would close it:** either an import-direction check between `chakaso.training.model_metrics` /
+`chakaso.training.nn_evaluation` and `chakaso.evaluation` / `chakaso.benchmark`, or a recorded decision that
+this rule is a reporting convention and the sentence in `docs/architecture.md` should stop listing it among
+the tested rules.
+
+### K-012 — The model-facing evidence block is not versioned, so a change to it is not attributable
+
+**Impact:** Medium for grounded-evaluation work; low today, because no model consumes the block usefully.
+
+Design rule 6 of `docs/architecture.md` says prompts and templates are versioned "because a prompt change
+changes measured behaviour and must be attributable in an evaluation record". The template half holds:
+`chakaso.models.formatting` defines `chakaso-plain-v1` and `chakaso-role-labelled-v1`, an adapter is built
+with one named by version, the version is reported by `describe()`, and the registry refuses an unknown
+version rather than defaulting. The evidence half does not. `chakaso.runtime.context.render_evidence_context`
+puts `EVIDENCE_CONTEXT_HEADER` — a sentence that tells the model to cite only the bracketed ids shown — in
+front of one block per chunk, and nothing labels that rendering. Its header is an instruction about format
+sitting outside the versioned prompt surface, so editing it would silently change what a measured grounded
+run fed the model, which is exactly what rule 6 exists to prevent.
+
+**Why it was not fixed in the audit.** The cheap move — a `EVIDENCE_CONTEXT_VERSION = "…-v1"` constant nobody
+reads — would be scaffolding, and the honest move is to decide where the version is *recorded*: on the
+`AnswerRecord`'s provenance beside the retrieved pack, or in the release/evaluation payload. That is an
+interface change to the answer record and needs a decision record, not a rename.
+
+**What would close it:** a version label on the evidence rendering that reaches the same place the prompt
+template version already reaches (`describe()`, the answer's `evaluation_provenance`, and an experiment
+report), with the existing records stating which label they ran under.
 
 ## Resolved
 

@@ -3,9 +3,12 @@
 **Status:** Accepted
 **Date:** 2026-10-22
 **Amends:** [ADR-0033](ADR-0033-model-centred-product-contract.md) (the model is the unit of work),
-[ADR-0034](ADR-0034-optional-pytorch-model-extra.md) (torch stays an optional extra), and it is the first
-decision taken under [ADR-0036](ADR-0036-corpus-snapshot-recovery-from-history.md)'s rule that a measured
-result must stay re-trainable.
+[ADR-0034](ADR-0034-optional-pytorch-model-extra.md) (torch stays an optional extra),
+[ADR-0035](ADR-0035-transformer-checkpoint-format.md) (one Transformer schema becomes two in the same
+family of format rules: `chakaso-decoder-checkpoint/1` carries the rotary base and the decoder keeps the
+checksummed-file, inline-tokenizer, restricted-loader contract), and it is the first decision taken under
+[ADR-0036](ADR-0036-corpus-snapshot-recovery-from-history.md)'s rule that a measured result must stay
+re-trainable.
 **Related:** E2605, E2606, E2607, and the experiment it sizes: E2608.
 
 ## Context

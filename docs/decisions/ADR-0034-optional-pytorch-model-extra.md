@@ -167,6 +167,17 @@ install and the three-version offline CI matrix.
   positions, an explicit attention block with a key/value cache, and masked targets) is admitted as a
   torch-importing module. It is a second architecture beside `transformer`, not a replacement of it, so the
   measured E2605/E2606/E2607 checkpoints keep their own schema and their own meaning.
+- **Amended 2026-10-24, under the rule above:** two corrections to what this record asserted rather than to
+  the decision. (1) The permitted-module list above is the list as of 2026-10-21; the hygiene test now reads
+  seven modules — those five plus `chakaso.training.nn_evaluation`, admitted by
+  [ADR-0035](ADR-0035-transformer-checkpoint-format.md)'s consequences, and `chakaso.training.decoder`,
+  admitted by the amendment above. That is the intended shape of this record (additions land in
+  Consequences, and the staleness guard fails a list that stops matching the code), but the list alone no
+  longer tells a reader the whole permission. (2) "Enforced by test, not by review, in the same way the
+  `[train]` numpy isolation is" was true of the torch half only: the numpy isolation was a prose rule with no
+  check until 2026-10-24, when `test_only_the_admitted_model_path_modules_import_numpy` and its staleness
+  guard landed over the modules [ADR-0030](ADR-0030-minimal-optional-training-dependency.md) names. The two
+  halves are now enforced the same way, which is what this clause always claimed.
 - `mypy src` in the dependency-free matrix must keep excluding the torch-importing modules, for the same
   documented reason `chakaso.training` is already excluded: their type aliases resolve through an optional
   dependency the matrix does not install. They are fully type-checked where the extra is present.

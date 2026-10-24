@@ -9,10 +9,12 @@ it adds no confidence, no instruction, and no interpretation. Fetched or stored 
 here as *data to quote*, never as a directive — a retrieved document cannot steer the system from
 inside a citation (ADR-0003).
 
-Rendering this way is the boundary, not the prompt: there is no prompt template yet (no real
-model to prompt), so what exists is the honest, id-anchored representation a future model
-receives, exercised here. A model that references an identifier absent from this context is
-caught downstream by citation resolution, which resolves only against the pack supplied.
+Rendering this way is the boundary, not the template: `chakaso.models.formatting` owns the versioned
+template that turns messages into model-facing text, and this module owns what the evidence looks like
+*inside* those messages. Unlike a template, this rendering carries no version label, so a change to how
+evidence is presented is not attributable in an evaluation record the way a prompt change is (recorded as
+K-012). A model that references an identifier absent from this context is caught downstream by citation
+resolution, which resolves only against the pack supplied.
 """
 
 from __future__ import annotations

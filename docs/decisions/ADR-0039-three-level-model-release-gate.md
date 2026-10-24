@@ -45,8 +45,11 @@ architecture, tokenizer, corpus identity and licence, budget, measured held-out 
 
 Closed by: `chakaso model verify` succeeding on the release directory; the checkpoint's SHA-256 matching the
 contract; the contract refusing to build when a report's family and its artifact's schema contradict each other
-or when a required statement is absent; a load of the release directory producing the same model as a load of
-the file it names.
+or when a required statement is absent; and a load of the release directory producing the same model as a load
+of the file it names — the last of these was an assertion about identity strings until 2026-10-24, when
+`test_the_release_directory_and_the_file_it_names_are_the_same_model` in
+[`tests/test_vertical_slice.py`](../../tests/test_vertical_slice.py) made it a comparison of what both loads
+actually emit: the same bounded greedy continuation, identifier for identifier.
 
 **Level 2 — Reproducible integration.** A developer can reproduce the artifact from a pinned input and use it
 through a stable interface without a pretrained dependency anywhere on the path.

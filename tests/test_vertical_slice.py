@@ -177,6 +177,30 @@ def test_the_release_directory_is_the_thing_a_consumer_can_load(trained: dict[st
     assert release.known_limitations, "a release without a stated limitation is not a release"
 
 
+def test_the_release_directory_and_the_file_it_names_are_the_same_model(
+    trained: dict[str, object],
+) -> None:
+    """ADR-0039's Level 1 evidence, checked rather than asserted: the release points at these bytes.
+
+    A release document can state a checksum that matches its own copy and still name the wrong file, and a
+    loader can honour that name while a consumer who follows the directory gets a different model. Comparing
+    metadata is not enough — an id string is a claim, an emitted token sequence is a fact — so both loads
+    draw the same bounded greedy continuation and the two must agree identifier for identifier.
+    """
+    _release, from_release = load_model_release(trained["work"])  # type: ignore[arg-type]
+    from_file = load_model(str(trained["checkpoint"]))
+    messages = [Message(role=Role.USER, content="The fox")]
+    params = GenerationParams(max_new_tokens=16, temperature=0.0)
+
+    released = from_release.generate(messages, params)  # type: ignore[union-attr]
+    direct = from_file.generate(messages, params)  # type: ignore[union-attr]
+
+    assert released.token_ids == direct.token_ids
+    assert released.text == direct.text
+    assert released.new_tokens > 0, "two empty generations agree about nothing"
+    assert from_release.describe()["family"] == from_file.describe()["family"]  # type: ignore[union-attr]
+
+
 def test_the_http_adapter_answers_from_the_trained_model_without_a_terminal(
     trained: dict[str, object],
 ) -> None:

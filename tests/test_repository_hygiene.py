@@ -330,6 +330,117 @@ def test_the_training_extra_is_numpy_and_bounded_for_the_python_floor() -> None:
     )
 
 
+# ADR-0030 admits `numpy` as the one numerical dependency of the training path, and says nothing above the
+# model boundary learns that numpy exists. Until 2026-10-22 that was a prose rule with no check, while the
+# torch admission of ADR-0034 had a named list and two tests — so the promise that was actually enforced was
+# the expensive one, and the one a default path could quietly break was not. This is the enforced form: the
+# same allowlist shape, the same staleness guard, for the other extra.
+NUMPY_IMPORT_MODULES = frozenset(
+    {
+        "src/chakaso/training/model.py",
+        "src/chakaso/training/optimizer.py",
+        "src/chakaso/training/checkpoint.py",
+        "src/chakaso/training/controlled.py",
+        "src/chakaso/training/evaluation.py",
+        "src/chakaso/training/loop.py",
+        "src/chakaso/training/subword_experiment.py",
+        "src/chakaso/models/trainedchar.py",
+    }
+)
+
+
+def _imports_name(path: Path, package: str) -> bool:
+    """Whether ``path`` imports ``package`` anywhere, including inside a function body."""
+    tree = ast.parse(path.read_text(encoding="utf-8"), filename=str(path))
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Import):
+            names = [alias.name for alias in node.names]
+        elif isinstance(node, ast.ImportFrom) and node.module:
+            names = [node.module]
+        else:
+            continue
+        if any(name == package or name.startswith(f"{package}.") for name in names):
+            return True
+    return False
+
+
+def _imports_numpy(path: Path) -> bool:
+    return _imports_name(path, "numpy")
+
+
+def test_only_the_admitted_model_path_modules_import_numpy() -> None:
+    offenders: list[str] = []
+    for path in sorted((REPO_ROOT / "src").rglob("*.py")):
+        relative = path.relative_to(REPO_ROOT).as_posix()
+        if relative in NUMPY_IMPORT_MODULES:
+            continue
+        if _imports_numpy(path):
+            offenders.append(relative)
+
+    assert not offenders, (
+        "A module imports numpy outside the allowlist ADR-0030 admits. numpy is an optional [train] "
+        "dependency of the training path only: `import chakaso`, the runtime, retrieval, the CLI and the "
+        "serving adapter must stay installable and importable without it "
+        f"(ADR-0030, ADR-0033): {offenders}"
+    )
+
+
+def test_the_numpy_allowlist_does_not_go_stale() -> None:
+    unused = sorted(
+        relative
+        for relative in NUMPY_IMPORT_MODULES
+        if (REPO_ROOT / relative).is_file() and not _imports_numpy(REPO_ROOT / relative)
+    )
+
+    assert not unused, (
+        "These modules are allowed to import numpy but do not; remove them from the ADR-0030 allowlist: "
+        f"{unused}"
+    )
+
+
+def test_no_library_module_imports_the_command_line_interface() -> None:
+    """The dependency direction says the CLI is a client of the library, never the other way round.
+
+    `AGENTS.md` states it and `docs/architecture.md` lists it as a rule enforced by a test, which — until this
+    test existed — it was not. One handler gaining `from chakaso.cli import …` would put a terminal inside a
+    library call and make `import chakaso` carry argument parsing, and nothing else would notice.
+    """
+    allowed = {"src/chakaso/cli.py", "src/chakaso/__main__.py"}
+    offenders: list[str] = []
+    for path in sorted((REPO_ROOT / "src").rglob("*.py")):
+        relative = path.relative_to(REPO_ROOT).as_posix()
+        if relative in allowed:
+            continue
+        if _imports_name(path, "chakaso.cli"):
+            offenders.append(relative)
+
+    assert not offenders, (
+        "These library modules import the CLI; the CLI formats what the library returns and no core "
+        f"behaviour may live inside it (AGENTS.md, ADR-0033): {offenders}"
+    )
+
+
+def test_no_model_path_module_mints_source_identifiers() -> None:
+    """ADR-0003 gives identifier ownership to the retrieval layer; the model path may not reach for it.
+
+    `docs/architecture.md` lists "no module may produce source identity" among the dependency-direction rules
+    it says a test enforces, and until this test existed none did. The rule needs a check because its
+    violation is invisible in a demo and fatal in a record: a model that mints an identifier for text it
+    likes produces an answer that cannot be resolved against any pack, and `resolve_citations` can only
+    report the unknown id afterwards, not undo the claim.
+    """
+    offenders: list[str] = []
+    for package in ("models", "training"):
+        for path in sorted((REPO_ROOT / "src" / "chakaso" / package).rglob("*.py")):
+            if _imports_name(path, "chakaso.core.identifiers"):
+                offenders.append(path.relative_to(REPO_ROOT).as_posix())
+
+    assert not offenders, (
+        "These model-path modules import the source-identifier layer. Identifiers come from retrieval, the "
+        f"model references them, and nothing else (ADR-0003): {offenders}"
+    )
+
+
 # ADR-0034 admits `torch` as an optional `[nn]` extra, and admits it *only* for the modules listed here.
 # The permission is a named list rather than a rule about import style because the risk is not an import
 # written badly — it is a default path (any CLI command, the runtime, retrieval) silently acquiring a
