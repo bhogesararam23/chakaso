@@ -40,9 +40,32 @@ capability is implemented or still planned.
   the release directory produces "the same model" as a load of the file it names; that rested on an equal
   `model_id` string. A vertical-slice test now compares what the two loads *emit* — the same bounded greedy
   continuation, identifier for identifier — and the record says when the claim got its evidence.
+- **A released decoder no longer calls itself a Transformer trained on Chakaso's own documentation.**
+  `chakaso.models.nntransformer` held one fixed display string for both checkpoint families, and it claimed the
+  model was "trained on the project's own documentation" — false of `chakaso-base@0.1.0`, which is a rotary
+  decoder trained on 919 documents of licensed public-domain prose. The string is printed by
+  `chakaso model inspect`, served at `/v1/models` and stored in an answer record's `model_display_name`, so a
+  false data-provenance claim was shipping inside the product. `metadata.display_name` now derives from the
+  architecture the artifact declares (`Rotary Decoder` / `Subword Transformer`) and names no corpus at all: the
+  corpus is the fingerprint inside the file and the licence line in its contract. The test was written first and
+  failed against the old constant.
 - The public documents were reconciled with what is measured: the record count, the third pinned corpus,
   E2608's result and its confound, the fact that a Level-2 release exists while its bytes are unpublished,
   the command count, and the limitations a release carries (now the artifact's own five, not a paraphrase).
+- Six more entries went into [`docs/agent/KNOWN_ISSUES.md`](docs/agent/KNOWN_ISSUES.md), and the register's own
+  stale entries were corrected. **K-013** — counts are copied into six documents and drift on the next commit,
+  which is how "seven experiment records" and "12 commands" ended up in a README beside eight records and
+  thirteen commands. **K-014** — this arc delivered to `main` directly while `CONVENTIONS.md` requires a branch
+  and a pull request for anything that changes a documented interface, so either the rule or the practice is
+  wrong. **K-015** — a loaded release reports the adapter's `model_id` (`subword_transformer`) while its own
+  contract says `chakaso-base`; filed rather than changed, because that string is served and stored and the
+  choice between the two identities is a decision. **K-016** — `chakaso model serve` is the one lifecycle
+  command no test runs as a command and no CI job starts. **K-017** — E2601–E2604 commit no machine-readable
+  evidence, and E2608's two arm reports are cited by digest alone. **K-018** — `--samples-per-prompt` counts
+  tokens, not samples. K-001 was narrowed by E2606–E2608 and the release without pretending the workload gap
+  had closed, and K-002 was found to be describing as missing the query planner, a dense ranker, durable
+  persistence and the semantic-grounding boundary — all of which have had code for months, which is the reverse
+  failure mode and the reason this entry was rewritten rather than ticked off.
 
 ### 2026-10-22 — the foundation release: `chakaso-base@0.1.0`, gated at Level 2 (nodes N–R)
 
