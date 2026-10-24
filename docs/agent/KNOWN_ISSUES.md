@@ -422,7 +422,10 @@ question because changing it changes what callers key on.
 
 **What would close it:** a decision about which identity governs a loaded release — the release's `model_id`,
 the adapter's, or both as distinct fields — written as a record, because every option is visible in served
-output and in stored answer provenance. The cheap variant (pass the contract's `model_id` through
+output and in stored answer provenance. Note that the string is already historical: `experiments/E2605/results.json`
+records `"model_id": "subword_transformer"` for the samples it committed, so whatever is chosen, a re-run of that
+protocol under a different identity would produce an aggregate that no longer matches the record it reproduces.
+The cheap variant (pass the contract's `model_id` through
 `load_model`) would make `chakaso model inspect dist/chakaso-base` answer `chakaso-base` and needs the slice's
 identity assertion updated in the same commit; the honest variant adds a `trained_as`/`adapter` pair so an
 integrator can tell what the artifact is from what read it.
