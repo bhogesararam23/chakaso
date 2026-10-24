@@ -141,7 +141,8 @@ What is still **Planned** is the rest of the loop: the *autonomous* trigger (not
 own that a turn needs reassessment — since ADR-0029 a follow-up must name a stored answer by its
 identifier, and the reassessment is composed explicitly rather than fired by a decision the system does
 not make), and the *revised
-answer* itself (producing the new wording needs a language model that does not exist, so the record
-carries a decision and a structural summary, not a rewritten sentence). A caller (or `chakaso chat`, on
+answer* itself (producing the new wording needs a model that answers a grounded question, and none of the
+trained checkpoints here does, so the record carries a decision and a structural summary, not a rewritten
+sentence). A caller (or `chakaso chat`, on
 an identifier the user supplied) invokes reassessment on evidence it makes available; the system does
 not yet decide to do it to itself.

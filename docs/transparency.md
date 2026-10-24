@@ -99,8 +99,8 @@ which unsupported claims were avoided — is a metric, not a slogan
 | Claim decomposition and evaluation status | Implemented (`chakaso.claims`; status is supplied-evidence support, never truth) |
 | Support relationships (structural) | Implemented (`chakaso.grounding`); semantic support is a boundary with a fixture-only judge (ADR-0019) |
 | Answer records and correction lineage | Implemented (in-memory **and** a durable SQLite append-only store, `chakaso.answers`, ADR-0017/0018/0021); the durable store survives a process restart |
-| Correction decisions and records | Implemented (decision rule + append-only `CorrectionRecord`, ADR-0016); revised *prose* needs a model that does not exist |
-| Qualitative uncertainty language | Planned (no language model to phrase it) |
+| Correction decisions and records | Implemented (decision rule + append-only `CorrectionRecord`, ADR-0016); revised *prose* needs a model that answers a grounded question, and none here does |
+| Qualitative uncertainty language | Planned (trained models exist and are loadable; none of them produces text anyone should put in an answer, so there is nothing to phrase it with) |
 | Assumption and limitation reporting | Planned |
 | Calibrated confidence | Research — no calibration procedure exists; no number is shown |
 | Semantic claim-support verification | Planned (only the boundary exists; no real semantic evaluator) |

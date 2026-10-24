@@ -762,9 +762,18 @@ were committed. Three checks were added — over the CLI-import direction, the i
 numpy allowlist with a staleness guard — each falsified by adding a violating module rather than only run once.
 ADR-0039's Level-1 evidence got a test that compares what a release directory and the file it names *emit*,
 identifier for identifier. ADR-0030/ADR-0034 carry dated amendments; ADR-0035 and ADR-0037 now point at each
-other across the second checkpoint schema. What could not be checked became an issue rather than a claim:
-**K-011** for the reporting rule that has no mechanical enforcer, **K-012** for the evidence-context rendering
-that design rule 6 implies is versioned and is not.
+other across the second checkpoint schema. One product defect was found and fixed rather than filed:
+`chakaso.models.nntransformer` carried a single display string for both checkpoint families asserting the model
+was "trained on the project's own documentation", which is printed by `chakaso model inspect`, served at
+`/v1/models` and stored in answer provenance — false of the released rotary decoder, which trained on licensed
+public-domain prose. It now derives from the architecture the artifact declares and names no corpus. What could
+not be checked became an issue rather than a claim: **K-011** for the reporting rule that has no mechanical
+enforcer, **K-012** for the evidence-context rendering that design rule 6 implies is versioned and is not,
+**K-013** for the counts copied into six documents, **K-014** for this arc's direct-to-`main` delivery against
+`CONVENTIONS.md`, **K-015** for a loaded release reporting the adapter's identity rather than its contract's,
+**K-016** for the one lifecycle command no test runs as a command, **K-017** for the records with no
+machine-readable evidence, **K-018** for the `--samples-per-prompt` misnomer, and **K-019** for a release
+directory that does not say which code trained it.
 
 **Interpretation.** The failures share one shape: a document stated something the code had since made false, or
 stated a guarantee that had been delegated to review without saying so. Neither is caught by any test suite,

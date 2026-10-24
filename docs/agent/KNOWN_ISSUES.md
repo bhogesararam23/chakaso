@@ -4,8 +4,8 @@ Real problems with the current state, including the ones that are only
 inconvenient. An empty file here would mean nobody has looked.
 
 Last reviewed: 2026-10-24, as the whole-documentation audit of every doc against the code and the committed
-records. K-011 and K-012 are that pass's findings turned into entries; the rest of its output was corrected
-in the documents themselves.
+records. That pass added K-011 through K-019, narrowed K-001, rewrote K-002's stale component list and removed a
+drifting count from K-009; the rest of its output was corrected in the documents themselves.
 
 ## Open
 
@@ -495,6 +495,36 @@ rather than a find-and-replace.
 **What would close it:** `--continuation-tokens` (or `--max-new-tokens-per-prompt`) with the old name kept as a
 deprecated alias until the next record that declares a plan, plus a schema version bump for the plan block so a
 reused report cannot silently mean the other thing.
+
+### K-019 — A release directory does not say which code trained it, and its software block invites confusion with the package version
+
+**Impact:** Medium for a distributed artifact, and it grows with every release.
+
+`data/experiments/E2608/release/model.json` carries `software: {device, numpy, platform, python, torch,
+torch_threads}` — the dependency versions — and no field for the code that produced the weights. The git
+revisions *are* recorded, in the experiment record's "Code that ran the arms" line (`ceb96a0` for arm A,
+`260ab8d` for arm B, each started before the commit that landed during its run), and in the digests of the
+snapshot and the manifest. So the artifact's code identity exists — one document away. A release directory that
+travels alone, which is exactly what a release is for, loses it: a consumer holding `chakaso-base@0.1.0` and
+nothing else cannot tell what code trained it, and `chakaso model verify` will not tell them.
+
+**The confusable half.** The package version is `0.1.0.dev0` (`chakaso --version`, `chakaso info`) and the
+artifact version is `0.1.0` (`model.json`, `MODEL_CARD.md`). They are unrelated numbers that look like one
+series, and nothing states which code version a consumer needs in order to load the artifact — the extras'
+bounds in `pyproject.toml` are the closest thing to a requirement, and they are about numpy and torch, not about
+Chakaso itself.
+
+**Why the audit did not just add a field.** `chakaso-model-release/1` is a versioned contract; writing a new key
+into it is an interface change that either bumps the schema or is documented as an optional addition, and
+`AGENTS.md` requires that decision in the same commit as the change. The cheap version — recording
+`chakaso.__version__` — is nearly useless without the revision, because the package version has not moved since
+the dev series began.
+
+**What would close it:** a `code` block in the release document naming the revision that trained the artifact
+(and the revision that wrote the contract, which can differ), sourced from the plan or the record rather than
+from the working tree, with the contract schema decided in the same commit; `MODEL_CARD.md` and the roadmap's
+distribution phase inheriting it; and a line in the card stating that the artifact version and the package
+version are different series.
 
 ## Resolved
 
