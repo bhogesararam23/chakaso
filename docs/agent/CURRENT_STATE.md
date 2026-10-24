@@ -533,7 +533,7 @@ turn here has ever done that. K-009 closed on 2026-10-22: the `[train]` and `[nn
 back green from GitHub's runners, and the two defects they found on the way — a Windows-only attribute and an
 assertion finer than float32 — are the evidence that the gap was worth closing rather than just documenting.
 
-The 2026-10-24 audit of every document against the code added four more entries, and they are of the same kind
+The 2026-10-24 audit of every document against the code added nine entries, and they are of the same kind
 the project keeps failing to prevent: a claim that had outlived its truth.
 [K-011](KNOWN_ISSUES.md) is that `docs/architecture.md` asserted each of six dependency-direction rules was
 enforced by a test when four were not (three gained tests in the same commit; the fourth, model-versus-harness
@@ -543,7 +543,14 @@ attributable. K-013 is that counts — records, corpora, commands, source files,
 documents and drift on the next commit, which is how "seven experiment records" and "12 commands" ended up in a
 README beside eight records and thirteen commands. K-014 is that this arc delivered straight to `main` while
 `docs/agent/CONVENTIONS.md` still says an interface change goes on a branch and through a pull request, so
-either the rule or the practice is wrong and one of them has to be written down.
+either the rule or the practice is wrong and one of them has to be written down. K-015 is that a loaded release
+reports the adapter's `model_id` where its own contract says `chakaso-base` — found alongside a false
+data-provenance claim in `display_name`, which was fixed the same day rather than filed. K-016 is that
+`chakaso model serve` is the one lifecycle action no test runs as a command and no CI job starts. K-017 is that
+half the measured records commit no machine-readable evidence, so their arithmetic cannot be re-derived without
+the git-ignored tree. K-018 is the `--samples-per-prompt` misnomer, which counts tokens. K-019 is that the
+release directory ships a `software` block with dependency versions and no field for the code that trained the
+weights, while its `model_version` (`0.1.0`) is a different series from the package's (`0.1.0.dev0`).
 
 ## Next step
 
