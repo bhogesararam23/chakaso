@@ -52,8 +52,8 @@ Level 3 is withheld on measurement, not modesty. What would earn it is named in
 ## Degeneration, measured
 
 `chakaso.training.generation_eval`, run over this artifact through `chakaso.models.load_model` — five fixed
-continuation prompts at greedy decoding (48–64 token bounds) plus four hostile inputs. Raw text is retained in
-`data/experiments/E2608/generation-E2608-decoder.json`.
+continuation prompts at greedy decoding (bounds 32, 48, 48, 48 and 64 new tokens) plus four hostile inputs.
+Raw text is retained in `data/experiments/E2608/generation-E2608-decoder.json`.
 
 | Probe | Bigram repetition | Longest repeated block | Periodic run |
 | --- | --- | --- | --- |

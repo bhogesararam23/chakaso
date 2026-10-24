@@ -202,7 +202,7 @@ targets excluded. The aggregate refuses to build if any of those disagree across
 | Statistic (n=3) | Transformer bits/char | Character bits/char | Gap | Unigram | Uniform |
 | --- | --- | --- | --- | --- | --- |
 | mean | **2.017643** | **3.221796** | **1.204153** | 3.611479 | 5.324312 |
-| sample standard deviation | 0.011821 | 0.015325 | 0.004642 | 0.0 | 0.0 |
+| sample standard deviation | 0.011821 | 0.015325 | 0.004425 | 0.0 | 0.0 |
 | median | 2.019749 | 3.227964 | 1.204806 | 3.611479 | 5.324312 |
 | min – max | 2.004910 – 2.028269 | 3.204348 – 3.233075 | 1.199438 – 1.208215 | 3.611479 | 5.324312 |
 | range | 0.023359 | 0.028727 | 0.008777 | 0.0 | 0.0 |
@@ -214,7 +214,7 @@ per-run reports by `--collect-only`; the same statistics were computed a second 
 in the table above and agree.
 
 **The preregistered success condition holds on every seed.** The Transformer is below the character model on
-all three (by 1.1994 to 1.2082 bits per character), below the unigram baseline on all three (by 1.5918 to
+all three (by 1.1994 to 1.2082 bits per character), below the unigram baseline on all three (by 1.5832 to
 1.6066), and below uniform on all three (by 3.2960 to 3.3194). The two trivial baselines are identical across
 seeds, as they must be: they depend on the corpus and the split, both of which are fixed.
 
@@ -353,3 +353,16 @@ on all three seeds, so the level reported here is truncated. Two candidates, var
 step budget on this corpus, or hold the budget and vary the corpus size. Raising the budget first is the
 cheaper inference, because the truncation is measured and its direction is known, and a capacity question asked
 against an unconverged baseline cannot be answered.
+
+## Corrections applied after the run (2026-10-22)
+
+Two numbers in this record disagreed with the per-run reports it aggregates. Corrected in place, with the
+original wording kept, per the rule that a measured record is not silently edited.
+
+| Where | Said | Correct | How it was caught |
+| --- | --- | --- | --- |
+| *Results*, success-condition paragraph | below the unigram baseline "by 1.5918 to 1.6066" | the three gaps are **1.5832, 1.5917, 1.6066** — the range is 1.5832 to 1.6066 (seed 13 has the smallest gap) | recomputed from the three `report.json` files |
+| *Results*, aggregate table | gap sample standard deviation **0.004642** | **0.004425** (digits transposed); the mean 1.204153, median 1.204806, min–max and range columns are unaffected | recomputed from the same three values |
+
+The aggregate `results.json` (digest `efe541727c46c369…`, the value this record already cited) is now committed
+in this directory, so the statistics above can be re-derived without the gitignored `data/` tree.

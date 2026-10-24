@@ -193,8 +193,8 @@ logical CPUs, ~15.4 GB RAM, ~160 GiB free disk, CPython 3.13.5, torch 2.13.0+cpu
 run's `environment` block records the torch and numpy versions, the platform, the device and the torch
 thread count; those are compared, not assumed.
 
-**Runtime, measured rather than estimated.** E2605's full protocol took 513.6 s (Transformer, stopped at
-step 1440 of 2,400) + 69.9 s (character baseline) + 13.2 s (preparation) = **596.7 s per run** on this
+**Runtime, measured rather than estimated.** E2605's full protocol took 513.6 s (Transformer, selected at
+step 1380 of 2,400) + 69.9 s (character baseline) + 13.2 s (preparation) = **596.7 s per run** on this
 machine. A five-seed study is therefore ~50 minutes of training, which fits the machine and the session, so
 the study runs at the full declared budget with all five seeds.
 
@@ -451,7 +451,7 @@ The hypothesis stands on all five seeds, in all three of its parts.
    this one clears it on every draw.
 3. The spread across seeds is **small relative to the gap**: a sample standard deviation of 0.0077 bits/char
    for the Transformer against a mean gap of 1.2143 to the character model — the gap is roughly 158 times the
-   seed-to-seed standard deviation, and the whole observed range (0.0187) is 11 SDs wide, i.e. the five runs
+   seed-to-seed standard deviation, and the whole observed range (0.0187) is 2.4 SDs wide, i.e. the five runs
    sit inside a band one part in 65 of the measured difference.
 
 So E2605's result was not the luck of one seed. It was, however, the luck of the *best* one: seed 7 produced
@@ -531,3 +531,18 @@ the budget that held here (2,400 steps) becomes the thing to vary — on the ext
 the same step count is proportionally fewer epochs, which E2607's record declares as a limitation rather than
 a comparison. If it does not, then every number in this record describes how well a model learned
 Chakaso's own documentation, and the next experiment is about the data, not the model.
+
+## Corrections applied after the run (2026-10-22)
+
+Two statements in this record were wrong against its own artifacts, and a documentation audit found them.
+They are corrected in place with the original wording kept here, because a silent edit to a measured record is
+exactly what the reproducibility rules exist to prevent.
+
+| Where | Said | Correct | How it was caught |
+| --- | --- | --- | --- |
+| *Expected compute* | E2605 "stopped at step 1440 of 2,400" | E2605's **selected** step is 1380; 1440 was the curve's argmin, which lost to `min_delta` (E2605's own record, its *Training and selection* paragraph) | recomputed against `experiments/E2605/results.json` |
+| *Interpretation* item 3 | "the whole observed range (0.0187) is 11 SDs wide" | 0.018695 / 0.007702 = **2.4 SDs** | arithmetic against `results.json` (now committed here, digest `3f8f0175c510ff68…`, the value this record already cited) |
+
+The pilot's projected 610 s per seed was kept as written: it is labelled a projection, and *Results* reports
+the measured 655.78–983.22 s beside it. The pilot's step basis (1,440) was the wrong expectation for a run that
+early-stopped, which the measured wall clock in this record already discloses.

@@ -1,7 +1,16 @@
 # E2608 — the reference model: a rotary decoder at a budget declared to converge, against a token-matched transformer arm
 
+**Status:** completed (both arms ran, both reported, both recorded below) — measured 2026-10-22
 **Type:** Research experiment, **preregistered** (this file was committed before either arm ran)
 **Date preregistered:** 2026-10-22
+**Code that ran the arms:** arm A from the working tree at `ceb96a0` (started 06:14 local, reported 07:57),
+arm B from the tree at `260ab8d` (started 07:57, reported 09:35). The commits that landed *during* those runs
+(`4aa8f0e`, `8244c6b`) touched the CLI, the release contract, the boundary's `TextScorer` protocol and the
+in-report wiring of the generation suite — after each arm's process had already imported the modules it would
+use, so neither run executed code that arrived after its start. That is stated rather than assumed because the
+comparison depends on it: both arms trained and scored with the same code, and their reports carry the same
+shape (no `generation`/`latency`/`resources` block, which is what `8244c6b` added afterwards — see *Deviations*
+item 6 and the generation section below).
 **Decision record:** [ADR-0037](../../docs/decisions/ADR-0037-reference-model-sized-by-measured-throughput.md)
 **Depends on:** E2605 (the measured architecture), E2606 (the seed-spreading method), E2607 (the external
 corpus result and the ceiling finding), ADR-0036 (a measured corpus stays re-trainable)
@@ -54,9 +63,10 @@ ingesting anything and caches each source's documents keyed by that digest. Near
 exact-duplicate count is 0. The largest single source supplies 14.6 % of the characters, so no one author
 dominates this corpus the way one author dominates `chakaso-repo-text-v1`.
 
-**Relation to E2607's corpus.** Three of the 24 titles (`pg11`, `pg84`, `pg6130`… of which `pg11` and `pg84`
-are shared) also appear in `gutenberg-english-prose-v1`. This is recorded, not hidden: E2608 is not a
-holdout for E2607's model, and no cross-experiment claim of independence is made from it. Documents are
+**Relation to E2607's corpus.** **Two** of this corpus's 24 titles are also in `gutenberg-english-prose-v1`:
+`pg11` (*Alice*) and `pg84` (*Frankenstein*); E2607's third source, `pg6130` (*The Iliad*), is not in this
+catalogue. This is recorded, not hidden: E2608 is not a holdout for E2607's model, and no cross-experiment
+claim of independence is made from it. Documents are
 content-addressed, so the shared titles appear here as their own digest pairs, and the split below assigns
 them.
 
@@ -81,7 +91,8 @@ fingerprint and the per-side identifiers are recorded by the run itself; no docu
 Byte-pair encoding (`chakaso.training.subword`), UTF-8 byte base, the named pre-tokenizer
 `word-run|whitespace-run|single-symbol`, target 4,096 identifiers, `min_frequency` 3, fitted on the
 **training side only**. Measured fingerprint `b597eb34f13d9058` at 3,839 merges, produced in 467 s on this
-machine; the fitted file is shared between the arms through the plan's `tokenizer_cache_dir`, which is keyed
+machine (the fit is timed in ADR-0037's measured table, not in these reports, which reused the cache); the
+fitted file is shared between the arms through the plan's `tokenizer_cache_dir`, which is keyed
 by corpus fingerprint, split fingerprint, target size and frequency floor, so a reuse cannot be a tokenizer
 fitted from different data.
 
@@ -406,7 +417,8 @@ Neither curve had turned up by its last evaluation. Arm A's final 100 steps stil
 ### Generation evaluation
 
 Run with `chakaso.training.generation_eval` over each saved artifact through `chakaso.models.load_model`, five
-fixed continuation probes at greedy decoding plus four hostile probes, raw text retained in
+fixed continuation probes at greedy decoding (bounds 32, 48, 48, 48 and 64 new tokens, per probe) plus four
+hostile probes, raw text retained in
 `data/experiments/E2608/generation-E2608-decoder.json` and `…-transformer.json`. This is the procedure the
 protocol section declared before the arms ran: both arms were trained by the same commit, and the in-report
 wiring of this suite (`8244c6b`) landed after them, so the numbers below come from the suite executed over the
@@ -417,7 +429,7 @@ two artifacts rather than from a report field.
 | Tail-looping samples | **0 of 5** | **0 of 5** |
 | Samples with a periodic run of ≥ 3 | **0 of 5** | **1 of 5** (`list-continuation`, 3 repeats) |
 | Mean bigram repetition ratio | **0.5538** | **0.7012** |
-| Longest repeated block, worst sample | `' of the South Testament'` × 2 | `' the whale of the whale of '` × 2 |
+| Longest repeated block, worst sample | `' of the South Testament'` × 2 | `' the whale of the whale of the whale,'` × 2 |
 | Empty outputs | 0 | 0 |
 | Refusals (`ModelError`, documented) | 1 — `empty-prompt` | 1 — `empty-prompt` |
 | Crashes (any other exception) | **0** | **0** |
@@ -436,6 +448,21 @@ to the text:
 
 The suite's own limit travels with these files: *surface statistics only — no semantic quality, usefulness or
 groundedness is measured here, and none may be inferred from these numbers.*
+
+## Artifact provenance
+
+The files below are the evidence for every number above. They are generated artifacts and stay in `data/`
+(git-ignored, per [ADR-0020](../../docs/decisions/ADR-0020-experiment-artifacts.md)); the digests are recorded
+here so a reader who has them can prove they are these files.
+
+| Artifact | SHA-256 (first 16) |
+| --- | --- |
+| `data/experiments/E2608/decoder/report.json` | `984dd2726d114bd7…` |
+| `data/experiments/E2608/transformer/report.json` | `fd6af2c8e6e3ec7f…` |
+| `data/experiments/E2608/generation-E2608-decoder.json` | `66c38f0e559efc56…` |
+| `data/experiments/E2608/generation-E2608-transformer.json` | `82a9b13ce1c88234…` |
+| `data/experiments/E2608/release/E2608-decoder.pt` | `9e832fadf277e848…` (named in `model.json`) |
+| `data/experiments/E2608/release/model.json` (contract) | `9aebe601dc1f12c5…` |
 
 ## Interpretation — which hypothesis held
 
