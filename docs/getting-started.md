@@ -3,15 +3,20 @@
 ## What you can actually run
 
 **A trained model, from Python.** `chakaso.models.load_model(path)` loads a checkpoint this project
-trained — the character toy of E2601, or the subword Transformer of E2605 — and `model.sample(...)`
-generates from it. That path needs the optional extras (`.[train]`, `.[nn]`); the base install stays
-dependency-free, and the trained model is a small one measured on this repository's own text, which its
-own metadata says out loud.
+trained — the character toy of E2601, the subword Transformer of E2605–E2607, the rotary decoder of E2608 — or
+a **release directory** whose `model.json` contract is verified before a weight is read, and `model.sample(...)`
+or `model.generate(messages, params)` produces text from it. That path needs the optional extras (`.[train]`,
+`.[nn]`); the base install stays dependency-free, and what the artifact says about itself through `metadata` and
+`describe()` is that it is a small model measured on a pinned corpus, not a capable assistant.
 
 **The training path itself**, as a library call and as a thin command: `chakaso.training.manifest`,
-`.subword`, `.packing`, `.transformer`, `.nn_training`, `.nn_evaluation` and
+`.subword`, `.packing`, `.transformer`, `.decoder`, `.nn_training`, `.nn_evaluation` and
 `chakaso.training.subword_experiment.run_experiment`, or `python -m chakaso experiment model
---work-dir ...` for the whole E2605 comparison.
+--work-dir ...` for one arm and `python -m chakaso experiment study ...` for a declared seed list.
+
+**`chakaso corpus restore` and `chakaso corpus verify`**, which take a measured run's pinned manifest and its
+repository revision and rebuild the exact bytes it trained on, then check a snapshot against them — the reason a
+result from E2606 onward can be re-trained rather than re-quoted.
 
 **Several local, offline commands:** `chakaso chat`, a conversation shell that grounds each turn
 through the retrieval-aware runtime; `chakaso retrieve`, which ingests named local documents and runs
@@ -19,18 +24,24 @@ lexical retrieval over them (and `--source` restricts a query to named sources);
 list|show` and `chakaso evidence show`, which inventory and inspect the in-memory corpus of sources
 and chunks built from those documents; `chakaso capabilities`, which reports what configuration
 selects; and `chakaso answers list|show|lineage`, which inspects persisted answers and their
-correction lineage; `chakaso benchmark retrieval` and `chakaso benchmark correction`, which
-run the development benchmarks and print their reports; `chakaso experiment run <subject>`, which
-produces a reproducible experiment result; `chakaso storage check` / `chakaso storage migrate`, which
-inspect or initialize a durable answer store; and `chakaso config show` / `chakaso --version`.
+correction lineage; `chakaso benchmark retrieval` / `correction` / `strategies` / `semantic` /
+`grounded`, which run the development benchmarks and print their reports; `chakaso experiment run <subject>` and
+`experiment model` / `experiment study`, which produce reproducible experiment results; `chakaso model
+inspect|verify|export|generate|stream|score|serve`, which is the release lifecycle for a checkpoint or a
+release directory, including the local HTTP endpoint; `chakaso storage check` / `chakaso storage migrate`, which
+inspect or initialize a durable answer store; and `chakaso config show` / `chakaso info` / `chakaso --version`.
 
 **There is no useful language model, and no model in the default runtime path.** The default
 implementation of the model boundary is a deterministic development double that returns fixed text
 describing the request it received; it does not answer questions, and the shell says so before it produces
-anything. What the trained adapters do produce is measured: a 984-parameter character model (E2601/E2602)
-and a subword Transformer of roughly 0.6M parameters (E2605), both trained on this repository's own
-documentation on CPU. They beat the uniform and unigram baselines on held-out text and they do not
-constitute a capable assistant — that distinction is the point of the experiment records.
+anything. What the trained adapters do produce is measured: a 984-parameter character model (E2601/E2602), a
+643,840-parameter subword Transformer (E2605/E2606/E2607, and E2608's comparison arm) and a 3,413,760-parameter
+rotary decoder (E2608), all trained from random initialization on CPU — the first three on this repository's own
+documentation, the last two on licensed public-domain prose. The decoder arm is the artifact this project
+released as `chakaso-base@0.1.0` at Level 2 of [ADR-0039](decisions/ADR-0039-three-level-model-release-gate.md),
+with Level 3 withheld on its measured generation statistics
+([`MODEL_CARD.md`](../MODEL_CARD.md)). They beat the uniform and unigram baselines on held-out text and they do
+not constitute a capable assistant — that distinction is the point of the experiment records.
 
 Retrieval exists but is **local**: it reads the files you name, normalizes and chunks
 them, and ranks them for a query. `chakaso retrieve` ranks lexically (BM25 — shared words,
@@ -40,12 +51,17 @@ hybrid retriever, but their only embedding is a deterministic **non-semantic** f
 reassessment, an answer store (in-memory and, since ADR-0021, a durable SQLite backend that
 survives a process restart) and reproducible experiment records exist as tested code —
 but there is still no model that answers a grounded question, no web fetching on any default path (the
-fetcher is opt-in) and no automatic correction loop. Tokenizers (character and byte-pair subword), a
-document-pinned corpus, a Transformer, mini-batch training, checkpoints and held-out model metrics all
-exist and are tested; none of it has met a real workload (K-001). The benchmark and experiment
-commands report development metrics computed over small synthetic fixtures, not model-quality or
-real-world results. `chakaso config show` inspects configuration, and `chakaso --version` verifies an
-install.
+fetcher is opt-in) and no automatic correction loop. On the model side, all of this exists as tested code: two
+tokenizers (deterministic character, learned byte-pair subword), three pinned corpora with recorded licences and
+per-document digests (two of them with measured data cards), corpus recovery from the revision that recorded
+them, two Transformer-family architectures with a
+mini-batch engine that resumes under a longer budget, two checkpoint schemas plus a release contract that
+verifies its artifact before reading a weight, held-out model metrics, a generation-degeneration suite, bounded
+decoding with streaming and cancellation, and a standard-library HTTP adapter. None of it has met a real
+workload (K-001). The benchmark and experiment commands report development metrics computed over small
+synthetic fixtures; the model commands report measurements over pinned corpora. Neither is a claim about
+language ability, and `chakaso config show` / `chakaso info` say what the current configuration selects and what
+the interpreter actually has installed.
 
 This document describes how to install, verify and run what exists. It will grow as
 the system does, and it will not describe anything that does not exist.
@@ -427,10 +443,17 @@ exist.
 ```text
 src/chakaso/           package source
   config/              typed configuration, loading and provenance
-  core/                identifiers, hashing, terminal-safe text, error base
-  models/              language-model boundary, capabilities, registry
+  core/                identifiers, hashing, terminal-safe text, atomic writes, error base
+  models/              language-model boundary, capabilities, registry, load_model, decoding,
+                       versioned prompt templates, the release contract
+  training/            the model path: manifests, catalogues, snapshots, tokenizers, splits,
+                       packing, the character model, the Transformer and the rotary decoder,
+                       the training engine, checkpoints, metrics, seed studies, experiment drivers
+  serve/               optional standard-library HTTP adapter over one loaded model
   evidence/            source records, evidence chunks, packs, citation resolution
-  retrieval/           normalization, chunking, ingestion, corpus, lexical index and retrieval
+  retrieval/           normalization, chunking, ingestion, corpus, lexical index and retrieval,
+                       dense and hybrid ranking, and the opt-in bounded fetcher with its cache
+  planning/            the query planner that decides whether a turn needs evidence
   conversation/        immutable conversation state, conversation manager
   runtime/             retrieval-aware runtime: plan → retrieve → model → record → store
   app.py               application composition root: configuration → assembled dependencies
@@ -439,20 +462,23 @@ src/chakaso/           package source
   grounding/           grounding evaluators (structural, manual, semantic boundary)
   evaluation/          metric functions and the answer-evaluation combiner
   correction/          decision rule, reassessment, records, metrics, application service
-  benchmark/           versioned cases, fixtures, retrieval and correction runners and reports
+  benchmark/           versioned cases, fixtures, retrieval/correction/grounded runners and reports
   answers/             answer identity, records and the append-only answer store
   experiments/         experiment and result records, the runner, regression comparison
   cli.py               thin command-line entry point
 tests/                 unit, contract and repository-hygiene tests
-configs/               versioned configuration files
+configs/               versioned configuration files, including the corpus catalogues
+experiments/           committed experiment records — the project's measured results
+data/                  corpora, tokenizers, checkpoints and release directories: git-ignored,
+                       cited by digest, rebuilt by the commands each record states
 docs/                  documentation (see docs/README.md)
 ```
 
 Only modules that exist appear here. `docs/architecture.md` describes the modules
 that are planned and their status; a directory is created when it contains
-something real, not in anticipation of it. Experiment records will live at
-`experiments/<experiment-id>/record.md`, and that directory appears with the first
-experiment.
+something real, not in anticipation of it. Eight experiment records are committed at
+`experiments/<experiment-id>/record.md` (E2601–E2608); their generated artifacts stay in `data/` and are cited
+there by digest.
 
 ## Contributing
 

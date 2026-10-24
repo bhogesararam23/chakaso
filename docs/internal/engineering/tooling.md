@@ -62,8 +62,9 @@ checking globally.
 **Two configurations, one package.** `pyproject.toml` excludes `chakaso/training`,
 `chakaso/models/trainedchar` and `chakaso/models/nntransformer` so the dependency-free CI matrix stays green
 without numpy or torch installed. That exclusion is scoping, not exemption: `configs/mypy-model-path.toml`
-runs the same strictness over all 142 source files with no exclusions, and it is the command that checks the
-model path (`mypy --config-file configs/mypy-model-path.toml`, in an environment with `.[dev,train,nn]`).
+runs the same strictness over every module in the package with no exclusions — including the three the default
+config skips — and it is the command that checks the model path (`mypy --config-file
+configs/mypy-model-path.toml`, in an environment with `.[dev,train,nn]`).
 A `--exclude` flag on the command line *adds* to the configured list, so no flag lifts it — the mistake was
 made and corrected here, and a hygiene test keeps the two configurations' strictness identical and fails if
 the exclusion list changes shape.

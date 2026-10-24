@@ -22,12 +22,12 @@ are written so a phase cannot declare itself done.
 | P5 | Correction loop | Challenge → reassessment → correction works on fixed tests | Partial — the decision rule, reassessment over a stored answer, an explicit identifier trigger and a correction development benchmark pass on synthetic tests; no revised prose (no model) and no autonomous loop |
 | P6 | Evaluation harness | Automated grounding, citation, retrieval and conversation benchmarks | Partial — retrieval, correction, strategy-comparison and semantic-evaluation development benchmarks plus structural claim/citation/grounding/answer evaluation exist over synthetic fixtures; no real-workload or model-quality benchmark |
 | P7 | Training pipeline | Tokenizer, data, configuration and checkpoint pipeline runs end to end | **Done** — E2605 ran the whole pipeline end to end on a real, content-pinned corpus (71 documents): manifest → document split → learned byte-pair subword tokenizer → sequence packing → Transformer → mini-batch AdamW with warmup, clipping, early stopping and bit-identical resume → checksummed checkpoint → held-out metrics → `load_model`. What it does *not* include is scale: the corpus is one author's prose and the run was one seed |
-| P8 | Chakaso-0 | Tiny model trains from random initialisation and learns a controlled corpus | Achieved as a measured experiment, twice over — E2601 trained a 984-parameter character model from random init that lowers held-out loss below uniform/unigram baselines, and E2605 trained a 643,840-parameter subword Transformer that reaches 1.8657 bits per character on held-out documents against 3.1343 for the character model. Both are learning-loop demonstrations, not useful models, and both are single-corpus results without an error bar |
-| P9 | Chakaso Base | Small model reaches useful language-model baselines | Not started |
+| P8 | Chakaso-0 | Tiny model trains from random initialisation and learns a controlled corpus | Achieved as a measured experiment and put on a spread — E2601 trained a 984-parameter character model from random init that lowers held-out loss below uniform/unigram baselines, and E2605 trained a 643,840-parameter subword Transformer that reaches 1.8657 bits per character on held-out documents against 3.1343 for the character model. E2606 re-ran that protocol over five pre-declared seeds (**1.8794 ± 0.0077** against **3.0937 ± 0.0267**, seed 7 reproducing E2605's artifact tensor for tensor) and E2607 repeated it on externally licensed prose (**2.0176 ± 0.0118** against **3.2218 ± 0.0153**), so the result is no longer one draw on one corpus. Both are learning-loop demonstrations, not useful models |
+| P9 | Chakaso Base | Small model reaches useful language-model baselines | **Half met, and the half that matters is not met.** E2608's arm A — a 3,413,760-parameter rotary decoder on 919 licensed documents — reaches **1.6865 bits per character**, below its own unigram (3.2263) and uniform (5.5661) baselines and below the measured transformer design (1.9043) at the identical token budget; it is released as `chakaso-base@0.1.0`. "Useful" is a different baseline: its generations have mean bigram repetition 0.5538, every measured sample hit its token bound, and Level 3 is withheld in [MODEL_CARD.md](../MODEL_CARD.md). Both arms selected the step ceiling with validation still falling, so even the loss figure is a floor |
 | P10 | Chakaso Grounded | Instruction, grounding and correction behaviour improve on internal benchmarks | Not started |
 | P11 | Domain selection | A defensible niche is chosen using explicit criteria | Not started |
 | P12 | Domain adaptation | Specialized dataset and benchmark established | Not started |
-| P13 | Research release | Model, code, evaluation and limitations published together | Not started |
+| P13 | Research release | Model, code, evaluation and limitations published together | **Met as a contract, not as a download.** The model (a release directory with a verified artifact and a `chakaso-model-release/1` contract), the code that produced it (an experiment record with its commands), the evaluation (held-out metrics plus generation statistics) and the limitations (five, stated in the contract itself, quoted in [MODEL_CARD.md](../MODEL_CARD.md)) exist together and are reproducible from a clean install. What has not been published is the weight bytes: they stay in git-ignored `data/` and are rebuilt from the record, because the repository's own 1 MiB tracked-file bound excludes them ([`docs/internal/engineering/artifact-policy.md`](internal/engineering/artifact-policy.md)) |
 
 P0 and P1 are deliberately boring and deliberately first. Most of what makes a
 research project unreproducible is decided in the first week.
@@ -141,9 +141,10 @@ The founding work list, now assessed against what actually shipped:
     ADR-0033 deliberately leaves after the model's own measurement.
 11. Reassessment entry point. — **Done** (application-level reassessment over a stored
     answer; explicit identifier trigger, ADR-0029).
-12. Unit and integration tests for all of the above. — **Done** (see `tests/`, 1,405 tests
-    collected at the current head; 1,389 pass in the dependency-free matrix, 16 skip there,
-    and 1,603 pass with `[train,nn]` installed).
+12. Unit and integration tests for all of the above. — **Done** (see `tests/`). The count at the current
+    head lives in [`docs/agent/CURRENT_STATE.md`](agent/CURRENT_STATE.md), which is this repository's
+    authority for "how many", and `python -m pytest -q` reproduces it on either tier — because a number
+    copied into a roadmap is a number that goes stale on the next commit and nobody re-reads it (K-013).
 13. A hand-built evaluation set of modest size, with unacceptable-evidence fields. —
     **Done for development fixtures** (synthetic retrieval and correction benchmarks with
     forbidden-evidence fields) and, since P27, for a **grounded-answer evaluation workload**
@@ -211,11 +212,17 @@ pre-declared seeds with a proper test split (1.80 ± 0.18 nats, below both basel
    and 4.8010 uniform. Early stopping selected step 1380 of 2400; the un-stopped model was 0.1434 nats worse.
    The committed generations loop.
 
-What follows is fixed by the record, in this order: reproduce E2605 across pre-declared seeds so the gap
-carries a spread; obtain an external corpus with a recorded licence, because one author's prose bounds every
-number above; only then ask a capacity question. **P29** (calibrating the retrieval sufficiency policy) and
+What followed was fixed by the record, in this order, and all three steps have now been taken: **E2606**
+reproduced E2605 across five pre-declared seeds so the gap carries a spread (1.8794 ± 0.0077), **E2607**
+obtained an external corpus with a recorded licence because one author's prose bounds every number above
+(105 documents of Project Gutenberg prose, 2.0176 ± 0.0118), and only then the capacity question, which
+**E2608** asked at a matched token budget across two architectures on a 919-document corpus and
+[ADR-0037](decisions/ADR-0037-reference-model-sized-by-measured-throughput.md) sized from measured throughput.
+E2608's own answer carries the confound its record states — the arms differ 3.3× in parameters and 2× in
+context — and both arms hit the step ceiling, so the open question is now budget, capacity or data rather than
+schedule. **P29** (calibrating the retrieval sufficiency policy) and
 **P32** (runtime consumption of that decision) stay deferred — ADR-0033's ordering puts a measured model
-ahead of both, and nothing in E2605 changes their content.
+ahead of both, and nothing in E2605–E2608 changes their content.
 
 ## Grounded-answer evaluation workload (P27)
 
@@ -285,7 +292,9 @@ choice can be defended later.
 The foundation release (nodes A–R, 2026-10-22) ends with a verified, reproducible, integrated model that is not
 yet useful. These seven phases are the prioritized continuation, written so that the next session can start at
 the top without re-deriving what is true. Nothing in this list is a status claim: each phase says what would
-*close* it, and the evidence that closes it does not exist yet.
+*close* it. Phase 0 has since been closed on exactly that evidence — Levels 1 and 2 assessed met in
+[MODEL_CARD.md](../MODEL_CARD.md), three CI tiers read green off the runners, the vertical slice automated — and
+the evidence that closes phases 1 through 6 does not exist yet.
 
 | Phase | Work | Exit criteria | Do not |
 | --- | --- | --- | --- |

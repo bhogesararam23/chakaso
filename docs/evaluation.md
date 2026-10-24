@@ -200,9 +200,11 @@ four measurements that happen to be printed together.
 
 **Measured** ([E2605](../experiments/E2605/record.md), over the pinned 71-document corpus, held-out documents
 only): **1.8657** bits per character for the subword Transformer (643,840 parameters, 2.6936 nats/token,
-perplexity 14.79, token accuracy 0.4501), **3.1343** for the character model E2601 measured (44,084 parameters,
-2.1724 nats/token, 8.78, 0.4059), 3.3224 for the unigram and 4.8010 for the uniform predictor of the
-Transformer's own identifier space. That single run was the best of five draws:
+perplexity 14.79, token accuracy 0.4501), **3.1343** for the character architecture E2601 *designed*, retrained
+at this corpus's scale by E2605 (44,084 parameters — not E2601's own 984-parameter model, which was measured on
+a 344-token hand-written text and is not comparable — 2.1724 nats/token, 8.78, 0.4059), 3.3224 for the unigram
+and 4.8010 for the uniform predictor of the Transformer's own identifier space. That single run was the best of
+five draws:
 [E2606](../experiments/E2606/record.md) re-ran the identical protocol across five pre-declared seeds and reports
 **1.8794 ± 0.0077** for the Transformer against **3.0937 ± 0.0267** for the character architecture, every seed
 under every baseline, with the seed-7 run reproducing E2605's artifact tensor for tensor — so the gap is

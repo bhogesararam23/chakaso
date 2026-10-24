@@ -1,7 +1,9 @@
 # Changelog
 
-Notable changes to Chakaso, newest first. Nothing has been released; every entry
-below is pre-release.
+Notable changes to Chakaso, newest first. Nothing has been *published*: the artifact described under 2026-10-22
+is released **as an artifact under a contract and a gate** (Level 2 of ADR-0039), while its weights, its
+corpus and its tokenizer stay out of Git and no version has been put on an index. Every entry below is
+therefore pre-distribution, not pre-release in the sense of having no release at all.
 
 Entries describe what changed and why it matters to someone using or evaluating
 the project. They do not list edited files, and they do not describe progress
@@ -9,6 +11,38 @@ without a result. Where an entry records a capability, it states whether that
 capability is implemented or still planned.
 
 ## Unreleased
+
+### 2026-10-24 — the documentation was audited against the code, and the records were audited against their own reports
+
+**Corrected**
+
+- Four numbers in two committed experiment records did not match the reports those records aggregate from.
+  E2606 said E2605 "stopped at step 1440 of 2,400" when the step E2605 **selected** is **1,380** (1,440 was the
+  curve's argmin, which lost to `min_delta`), and called its observed range "11 SDs wide" where 0.018695 over
+  a sample SD of 0.007702 is **2.4**. E2607's gap sample standard deviation was **0.004425**, not the
+  transposed 0.004642 it printed, and its unigram-baseline gap range is **1.5832 to 1.6066**, not "1.5918 to
+  1.6066". Each record now carries a dated *Corrections applied after the run* table that quotes the wording
+  it replaced, because a silent edit to a measured record is exactly what the reproducibility rules exist to
+  prevent. The aggregates themselves — `results.json` for E2606 and E2607 — are now committed beside the
+  records that cite them, so the arithmetic is checkable without re-running either study.
+- Three architectural rules that `docs/architecture.md` claimed were test-enforced were not: the CLI-import
+  direction, ADR-0003's identifier ownership over the model path, and the `numpy` admission ADR-0030 states.
+  They have tests now, each falsified by adding a violating module, and ADR-0030/ADR-0034 carry dated
+  amendments naming them. The fourth rule the audit could not check mechanically — model metrics reported
+  separately from harness metrics — stays open as **K-011**, and the unlabelled evidence-context rendering
+  that design rule 6 implies is versioned becomes **K-012**.
+- `docs/architecture.md` said prompt templates "are not versioned yet, because there is no prompt template",
+  and `chakaso.runtime.context` said the same about there being no real model to prompt. Both are false since
+  E2605: `chakaso.models.formatting` defines two versioned templates, the default being the shape every
+  measured sample used. The sentences now say which half of a prompt is attributable in a record and which
+  is not.
+- [ADR-0039](docs/decisions/ADR-0039-three-level-model-release-gate.md)'s Level 1 evidence claimed a load of
+  the release directory produces "the same model" as a load of the file it names; that rested on an equal
+  `model_id` string. A vertical-slice test now compares what the two loads *emit* — the same bounded greedy
+  continuation, identifier for identifier — and the record says when the claim got its evidence.
+- The public documents were reconciled with what is measured: the record count, the third pinned corpus,
+  E2608's result and its confound, the fact that a Level-2 release exists while its bytes are unpublished,
+  the command count, and the limitations a release carries (now the artifact's own five, not a paraphrase).
 
 ### 2026-10-22 — the foundation release: `chakaso-base@0.1.0`, gated at Level 2 (nodes N–R)
 

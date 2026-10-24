@@ -591,3 +591,188 @@ claim they just made), or that this generalizes beyond one author's technical pr
 this shell), no CI job installs `torch` or `numpy` so the model-path tests are unverified remotely (K-009),
 and the subword advantage is partly an artefact of a corpus whose redundancy a 1,024-identifier vocabulary
 compresses well.
+
+---
+
+## 2026-10-21 — The seed study says the gap is real, and the number the project published was its best draw
+
+**Experiment.** E2606 ([`../../experiments/E2606/record.md`](../../experiments/E2606/record.md)),
+preregistered at `fc5f8ff` before any seed ran, repeated E2605's protocol over the five declared seeds
+7, 11, 13, 17 and 19 with the document split drawn once at its own seed and held fixed, so initialization is
+the only thing that moves. The corpus came from `chakaso corpus restore` at revision
+`9b8a47876de7e13c60aefca0b9c7fe501bc03def` — snapshot checksum `84ecbc61cf1e634bbfd92d0bd…` — because the
+working tree had already edited the text E2605 trained on.
+
+**Result (measured).** Bits per character over five runs: Transformer **mean 1.879391, sample SD 0.007702,
+median 1.882356, min 1.865734, max 1.884429, range 0.018695**; character architecture mean 3.093669, SD
+0.026686. The gap to the character architecture is mean 1.214278 with SD 0.033602. Every seed is below every
+baseline, including the worst seed against the unigram mean of 3.322430. All five early-stopped, selecting
+steps between 1,260 and 1,380 (mean 1,320). Seed 7 reproduced E2605's artifact **tensor for tensor**, and its
+1.865734 is the 1.8657 that record published.
+
+**Interpretation.** Two things at once. The comparison survives seed variation: 0.0077 bits of spread against
+1.2143 bits of gap is not a result that could be seed luck. And the single number the project had been quoting
+is the *best of five draws*, which sits 2.4 sample standard deviations below its own mean — so a reader who
+re-runs the protocol should expect to do slightly worse than E2605, and any later comparison must be made
+against the mean, not against 1.8657. The observed range divided by the sample SD is 2.4, not the "11 SDs" this
+record first wrote; that arithmetic error was found by the 2026-10-22 audit and is corrected in the record with
+the original wording kept.
+
+**Conclusion.** Believed: on this corpus the subword Transformer's advantage over the character architecture is
+robust to initialization at the scale measured here, and the training path is reproducible from a recovered
+snapshot to the tensor. Not believed: that 1.8794 transfers to text this project did not write — that question
+is E2607, run next — and no spread in bits per character says anything about whether the model means anything.
+
+**Limitation.** Five seeds on one architecture size and one 71-document corpus. The wall clock of these runs
+(655.78–983.22 s for the Transformer) is not comparable to E2605's 513.63 s: the study ran while the same 18
+logical CPUs were doing other work, and the record makes no timing claim, only noting that the clock is the
+noisiest quantity here (range/mean 37% against 0.41% for the metric).
+
+---
+
+## 2026-10-22 — The gap survives somebody else's prose; the compute budget does not
+
+**Experiment.** E2607 ([`../../experiments/E2607/record.md`](../../experiments/E2607/record.md)),
+preregistered before any run, on a corpus no one in this project authored: three Project Gutenberg texts
+cut into 105 documents, 1,660,274 characters, pinned as `gutenberg-english-prose-v1` with corpus fingerprint
+`931b07a635ca5a0c`, retrieved over TLS with certificate verification after this machine's Python trust store
+rejected the chain (`curl` and a `certifi` bundle both verified; verification was not disabled). Same protocol,
+same split rule (73 / 16 / 16 documents), three declared seeds.
+
+**Result (measured).** Transformer bits per character **2.017643 ± 0.011821** (min 2.004910, max 2.028269)
+against the character architecture's 3.221796 ± 0.015325, with unigram 3.611479 and uniform 5.324312 for the
+same identifier space. Every seed beat every baseline. The gap is 1.1994–1.2082, mean 1.204153, sample SD
+0.004425. **No run early-stopped:** all three selected step 2,400, which is the ceiling of the declared
+budget, with validation loss still falling at the last evaluation.
+
+**Interpretation.** The architecture comparison is not an artefact of one author's house style: the gap
+measured on the repository's own prose (1.214278) and the gap on stranger prose (1.204153) are within a
+hundredth of a bit of each other, on a corpus where both baselines are 0.29–0.52 bits worse. Absolute loss rose
+because external prose is less predictable than a documentation tree a model can memorize — and because the
+budget ran out mid-descent. That is the finding that matters for the next experiment: at this scale the ceiling
+is now the binding constraint, so 2.0176 is a floor, not a converged level, and the record says so rather than
+reporting it as a plateau.
+
+**Conclusion.** Believed: the subword Transformer's advantage generalizes across at least two quite different
+English text distributions at this model size. Believed: the training budget, not the architecture, is what
+currently limits loss. Not believed: that any of these checkpoints produce usable text — their committed
+generations are cycles.
+
+**Limitation.** Three seeds, three books, one language, one era-ish register; a 1,024-identifier vocabulary fit
+to 1.66M characters. The gap's SD is small because the same three documents are split the same way every time,
+so it does not measure corpus sampling error at all. Two numbers in this record disagreed with its own
+aggregate (a transposed 0.004642 for the gap SD, and a unigram-gap range starting at 1.5918 where the smallest
+gap is 1.5832); both were found by the 2026-10-22 audit, corrected in place with the originals kept, and the
+aggregate `results.json` (digest `efe541727c46c369…`) is now committed so a reader can re-derive them.
+
+---
+
+## 2026-10-22 — Two architectures at one token budget: the decoder wins, the confound is stated, and the looping stopped
+
+**Experiment.** E2608 ([`../../experiments/E2608/record.md`](../../experiments/E2608/record.md)),
+preregistered the same day it ran, compared the two Transformer-family architectures on
+`gutenberg-english-prose-v2` — 24 Project Gutenberg texts, 919 documents, 14,490,005 characters, corpus
+fingerprint `e9fc2e92f59d88ea`, no single source supplying more than 14.6% of the text — with **arm A** a
+3,413,760-parameter rotary decoder (d256, 4 layers, context 256, cosine decay to 0.1) and **arm B** a
+1,037,056-parameter transformer of the measured E2605 design (d128, 3 layers, context 128, constant schedule),
+both at seed 7, the same split, the same cached tokenizer (`b597eb34f13d9058`, 4,096 identifiers) and the same
+19,660,800 training positions. Three hypotheses were written down before either arm ran: that the schedule was
+what truncated E2607, that the decoder beats the transformer on held-out loss, and that the decoder's output
+still loops.
+
+**Result (measured).** Arm A **1.6865** bits per character (2.5203 nats/token, perplexity 12.43, token accuracy
+0.5057) against arm B **1.9043** (2.8455, 17.21, 0.4613); both below unigram (3.2263 / 3.2265) and uniform
+(5.5661 / 5.5666) on the same packing. **Both arms still selected step 2,400, the ceiling**, with validation
+loss falling into the last evaluation (arm A 2.5457 → 2.5436 nats over its final 100 steps). Throughput over
+gradient time only: 4,821.2 positions/s for arm A against 12,098.1 for arm B; 100.4 minutes of wall clock
+against 38.7. Generation, measured over the boundary: **zero periodic runs of three or more, zero tail loops**,
+mean bigram repetition 0.5538, and every one of the five samples truncated at its token bound.
+
+**Interpretation.** H1 **failed as declared** — a cosine schedule did not turn a truncated run into a converged
+one, so the binding constraint is budget, capacity or data, not the shape of the learning-rate curve. H2
+**succeeded on its pre-declared condition** (lower held-out loss than arm B, and below both baselines) with a
+confound the record refuses to bury: the arms differ 3.3× in parameters and 2× in context, so what was measured
+is "the larger rotary decoder at equal tokens does better", not "rotary positions, RMSNorm and a key/value
+cache are better". H3 **failed in the direction nobody expected**: for the first time in this project a
+checkpoint's samples are not exact cycles — arm A writes *the Error of the Emperor of the Emperor of the Soule
+of the Soule*, which is phrase-level repetition rather than a metronome — while remaining unusable text.
+
+**Conclusion.** Believed: at this budget a larger rotary decoder reaches lower held-out bits per character than
+the measured transformer design on the same tokens, and its output is measurably less degenerate than every
+checkpoint this repository has produced. Not believed: that this is a controlled architecture result; that
+1.6865 is a converged level; or that repetition measured as surface statistics says anything about meaning.
+The release gate applied to this artifact withholds Level 3 on exactly these numbers.
+
+**Limitation.** One seed per arm, so the 0.2178-bit difference has no spread attached — the transformer
+family's seed spread is measured at ± 0.0077, and nothing equivalent exists for the decoder. Both arms
+truncated. Timings come from a shared machine running other work. The arms were trained by code that landed
+during their own runs (the record names both revisions). The character-model baseline was skipped by declaration
+because its windows at 14.5M characters exceed the memory measured available, and the in-report
+generation/latency/resources blocks were substituted by the documented procedure because the wired code landed
+after the arms started.
+
+---
+
+## 2026-10-22 — There is a release, and a gate that says which of three claims it earns
+
+**Observation.** E2608's arm A became `chakaso-base@0.1.0`: a release directory holding the checkpoint, the
+run's own `report.json`, and a `chakaso-model-release/1` contract assembled from the two (contract checksum
+`9aebe601dc1f12c5…`, artifact SHA-256 `9e832fadf277e848…`), verified before a weight is read at every load.
+[ADR-0039](../decisions/ADR-0039-three-level-model-release-gate.md) was written at the same time because the
+project needed a place to say *how much* a release is claimed to be: Level 1 artifact contract, Level 2
+reproducible integration, Level 3 useful behaviour.
+
+**Result (assessed).** Levels 1 and 2 **met** with named evidence in
+[`MODEL_CARD.md`](../../MODEL_CARD.md); Level 3 **not met and not claimed**, on E2608's generation statistics —
+mean bigram repetition 0.5538, every sample at its bound, no sample a reader would keep. A clean-room check
+carried the Level 2 claim: a wheel built from the head installed into a fresh Python 3.13.5 environment, where
+`model verify` runs with no numerical library installed, `model inspect` names the missing `[nn]` extra and
+exits 1 instead of answering from the development double, and after installing the extras the release loads,
+generates, scores, and serves over a real socket.
+
+**Interpretation.** The gate's purpose is that Levels 1 and 2 passing must not imply Level 3, and this
+artifact is the case that proves the rule: the loss number is the best the project has measured, the pipeline
+behind it is reproducible end to end, and the model still cannot be used for anything. Building the release also
+caught a defect rather than confirming one — `build_release` refused the pilot's stale work directory, whose
+report predated the schema field, which is the contradiction guard working on the project's own history.
+
+**Limitation.** No weight bytes are published: the artifact lives under git-ignored `data/` and is rebuilt from
+the record's commands, so "released" means a contract and a card, not a download. One artifact has been through
+the gate, so Levels 1–2's evidence is one example, not a pattern.
+
+---
+
+## 2026-10-24 — The documentation was audited against the code, and the records against their own reports
+
+**Observation.** A pass over every document in the repository against HEAD found three classes of disparity,
+and none of them was a missing feature. (1) Four measured numbers in two committed records disagreed with the
+aggregates those records cite — E2606's step and its spread arithmetic, E2607's transposed standard deviation
+and its gap range. (2) `docs/architecture.md` stated that each of six dependency-direction rules "is enforced by
+a test rather than by review"; four had no test, including the CLI-import direction and ADR-0003's identifier
+ownership over the model path, and [ADR-0034](../decisions/ADR-0034-optional-pytorch-model-extra.md) claimed the
+numpy admission was checked the way the torch one is when it was not checked at all. (3) Several documents
+still described completed work as running or absent: "seven experiment records", "two corpora are pinned",
+"there is no prompt template" three models after `chakaso.models.formatting` versioned two, "no released
+weights" after a Level-2 release, "12 commands" where the CLI prints 13, and a Level-1 claim in ADR-0039 that
+rested on an equal `model_id` string rather than on the same model.
+
+**Result (corrected).** The record numbers were fixed in place with dated *Corrections applied after the run*
+tables that keep the replaced wording, and the aggregates that prove them (`results.json` for E2606 and E2607)
+were committed. Three checks were added — over the CLI-import direction, the identifier-ownership rule, and the
+numpy allowlist with a staleness guard — each falsified by adding a violating module rather than only run once.
+ADR-0039's Level-1 evidence got a test that compares what a release directory and the file it names *emit*,
+identifier for identifier. ADR-0030/ADR-0034 carry dated amendments; ADR-0035 and ADR-0037 now point at each
+other across the second checkpoint schema. What could not be checked became an issue rather than a claim:
+**K-011** for the reporting rule that has no mechanical enforcer, **K-012** for the evidence-context rendering
+that design rule 6 implies is versioned and is not.
+
+**Interpretation.** The failures share one shape: a document stated something the code had since made false, or
+stated a guarantee that had been delegated to review without saying so. Neither is caught by any test suite,
+because the assertion lives in prose. The project's only defence is that a claim names the file or the command
+that checks it, which is why the corrections name tests where they exist and say "not enforced by a test" where
+they do not — a sentence this repository should keep needing to write.
+
+**Conclusion.** Believed: what the documentation now claims about itself is narrower and truer than before, and
+the two claims it could not back are recorded as open issues rather than left in prose. Not believed: that the
+audit found everything — it checked documents against code and records, and the gap that matters (K-001, that
+nothing here has been executed against a real workload) is a missing experiment, not a missing sentence.

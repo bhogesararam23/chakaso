@@ -5,6 +5,24 @@ Written 2026-10-21 from direct inspection of the working tree at `eaee98d` and o
 that commit. Nothing here is a proposal document: every row is either a checked fact, a measured number,
 or is labelled as an assumption or an open question.
 
+> **This is a snapshot, and it has aged.** It describes the tree at `eaee98d` on 2026-10-21, and it is kept
+> unchanged because its value is the reasoning that moved the project, not its inventory. Read it against
+> [`../../agent/CURRENT_STATE.md`](../../agent/CURRENT_STATE.md), which is the authority on what exists now.
+> What has happened since, in the order a reader of this file would notice it: the model path went from one
+> measured toy to eight experiment records — E2605's Transformer, E2606's five-seed spread, E2607 on licensed
+> external prose, and E2608's two-architecture comparison whose decoder arm is released as
+> `chakaso-base@0.1.0` at Level 2 of [ADR-0039](../../decisions/ADR-0039-three-level-model-release-gate.md);
+> there are now three pinned corpora — the repository's own prose, three Project Gutenberg texts, and a
+> 24-text corpus with a machine-readable catalogue and a measured data card each — plus a corpus-recovery path
+> verified from git
+> history, a checkpoint format per architecture family, a release contract, a streaming and cancellation
+> runtime, a standard-library HTTP adapter, a generation-degeneration suite, and a three-tier CI matrix read
+> green off the runners. Several rows below are therefore marked *verified* about things that have since been
+> built — a missing component in this file is evidence about 2026-10-21, not about today. The
+> 2026-10-24 documentation pass over every document is recorded in
+> [`../../research/research-log.md`](../../research/research-log.md) and in the corrections it produced; this
+> file was deliberately left as written.
+
 Evidence labels used throughout:
 
 | Label | Means |

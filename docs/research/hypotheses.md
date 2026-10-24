@@ -23,7 +23,14 @@ tracking than with prompt-level instruction alone.
 instructions achieve the same result, the architecture is unnecessary overhead.
 
 **Depends on.** Claim decomposition, claim-level support judgement, and a question
-set with evidence where support is known. None exist.
+set with evidence where support is known. **Amended 2026-10-24:** all three exist. Claims are a
+first-class unit (`chakaso.claims`, ADR-0014), support is judged per claim structurally (`chakaso.grounding`,
+ADR-0015) with a semantic boundary whose only judge is a caller-supplied fixture (ADR-0019/ADR-0027), and
+E2603's workload is a labelled question set with gold evidence
+([`../../experiments/E2603/record.md`](../../experiments/E2603/record.md)). The condition this hypothesis
+actually needs is still absent: it compares structured tracking against **the same model asked to be careful
+in a prompt**, and no model in this repository answers a grounded question, so the prompt-instruction arm
+cannot be run. What has been measured is the mechanism, not the comparison.
 
 ---
 
@@ -41,8 +48,13 @@ than with single-pass reconsideration, at equal rates of unnecessary revision.
 agrees with every challenge would score well on persistence and badly on
 unnecessary revision, which is why both metrics are required.
 
-**Depends on.** A correction benchmark with both contradiction and
-non-contradiction cases. Not built.
+**Depends on.** A correction benchmark with both contradiction and non-contradiction cases. **Amended
+2026-10-24:** the cases exist — `chakaso.benchmark.correction` carries six (retain-supported,
+correct-contradiction, qualify-lost-support, review-unsettled-conflict, abstain-total-grounding-loss and an
+irrelevant-evidence control) and a runner that scores the decision rule against them. What this hypothesis
+still lacks is a challenge corpus that came from an interaction rather than from this file: the existing cases
+score a deterministic policy, which is harness evidence, not evidence about a model's persistence under
+correction.
 
 ---
 
@@ -60,7 +72,12 @@ the model or on retrieval. If retrieval-only is nearly as good, that is a findin
 worth publishing rather than a failure.
 
 **Depends on.** A retrieval implementation, a usefulness judgement procedure, and
-a baseline. None exist.
+a baseline. **Amended 2026-10-24:** retrieval exists (lexical BM25, dense and hybrid over an in-memory
+corpus), a trained model exists and is loadable through the boundary, and the grounded-answer workload of
+E2603/E2604 is a labelled question set with gold evidence. What does not exist is the two thirds of this
+hypothesis that make it testable: a usefulness judgement that is not a structural citation check, and a
+retrieval-only baseline to compare a generated answer against. The models measured so far produce no usable
+answer to be judged, so the hypothesis is untestable here for a reason that is not the missing instrument.
 
 ---
 
@@ -79,7 +96,12 @@ layer rather than as a property of retrieval. The hallucination survey cited in
 [`literature.md`](literature.md) reports that retrieval mitigates but does not
 solve the problem; that is background, not evidence about this system.
 
-**Depends on.** A retrieval implementation and an abstention benchmark.
+**Depends on.** A retrieval implementation and an abstention benchmark. **Amended 2026-10-24:** both exist in
+development form — lexical/dense/hybrid retrieval over an in-memory corpus, and E2603's unanswerable cases,
+which measured that retrieval returned false evidence for **3 of 3** abstention questions and surfaced passages
+its own fixture had marked forbidden (K-010). E2604 added a deterministic sufficiency decision that judged all
+three unanswerable cases insufficient while wrongly abstaining on none. What is still missing is the model arm:
+uncertainty behaviour is a property of what generates the answer, and nothing here generates one.
 
 ---
 
@@ -97,7 +119,13 @@ logs.
 realistic or whether it quietly degrades the model while appearing to improve it.
 
 **Depends on.** An evaluation harness that can label outcomes, a trained model to
-train further, and enough logged interactions to matter. None exist.
+train further, and enough logged interactions to matter. **Amended 2026-10-24:** the first two now exist —
+`chakaso.benchmark.grounded_*` labels claims, citations and grounding per answer (E2603/E2604), and there is a
+trained model to continue-train, released at Level 2 (`chakaso-base@0.1.0`, with
+[ADR-0037](../decisions/ADR-0037-reference-model-sized-by-measured-throughput.md)'s engine supporting resume
+under a longer budget). The third does not: no logged interactions exist, because no one has used the system,
+so the hypothesis remains untestable and this line is the reason the roadmap's feedback loop is a phase rather
+than a plan.
 
 ---
 
@@ -115,7 +143,14 @@ a settled engineering default. If it is not a research variable, the project
 should stop treating it as one.
 
 **Depends on.** A tokenizer, a model, a corpus, and enough compute to run
-configurations more than once. None exist.
+configurations more than once. **Amended 2026-10-24:** four of the five prerequisites exist — a learned
+tokenizer (`chakaso.training.subword`), trained models, three pinned corpora, and a seed-study runner that has
+already run a protocol five times over one corpus (E2606) and twice more over another (E2607, E2608). What is
+missing is the comparison this hypothesis names: it contrasts **BPE with Unigram**, and only BPE is
+implemented. The character-versus-subword gap E2605 measured (3.1343 against 1.8657 bits per character) is
+about segmentation, but it moves identifier space, model architecture and training budget together, so it
+cannot be read as H6's answer. A tokenizer-arm study at fixed architecture, fixed context and fixed token
+budget — the design rule E2608 wrote down after its own confound — is what would make this testable.
 
 ---
 

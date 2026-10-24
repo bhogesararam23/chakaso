@@ -39,26 +39,40 @@ measurement over time.
 
 ## Current state
 
-**No experiment testing any of H1–H7 has been run.** Six procedures have been executed, and none is a
-hypothesis test: **E-001** compares lexical, dense and hybrid retrieval over the synthetic development
-fixtures (it exercises the mechanism and the instrument, not a hypothesis — the dense component is a
-non-semantic fixture embedding, so it neither supports nor refutes H7); **E2601**
+**No experiment testing any of H1–H7 as stated here has been run.** Eight procedures have been executed, and
+none is a test of one of these hypotheses: **E-001** compares lexical, dense and hybrid retrieval over the
+synthetic development fixtures (it exercises the mechanism and the instrument, not H7 — the dense component is
+a non-semantic fixture embedding); **E2601**
 ([`../../experiments/E2601/record.md`](../../experiments/E2601/record.md)) trained a character model from
 random initialization and measured its held-out next-token loss beating uniform/unigram baselines; **E2602**
 ([`../../experiments/E2602/record.md`](../../experiments/E2602/record.md)) reproduced that across five seeds
 under a three-way-split early-stopping protocol (mean test loss 1.80 ± 0.18 nats, below both baselines on
 every seed); **E2603** and **E2604** measured retrieval and evidence-sufficiency over a self-authored
-grounded-answer workload; and **E2605**
-([`../../experiments/E2605/record.md`](../../experiments/E2605/record.md)) trained a 643,840-parameter
-subword Transformer from random initialization on the repository's own pinned text and measured **1.8657 bits
-per character** on held-out documents against **3.1343** for the character architecture and 3.3224 / 4.8010
-for the unigram and uniform predictors of its own identifier space (one seed, one author's prose).
+grounded-answer workload; **E2605**
+([`../../experiments/E2605/record.md`](../../experiments/E2605/record.md)) trained a 643,840-parameter subword
+Transformer from random initialization on the repository's own pinned text and measured **1.8657 bits per
+character** on held-out documents against **3.1343** for the character architecture and 3.3224 / 4.8010 for the
+unigram and uniform predictors of its own identifier space; **E2606**
+([`../../experiments/E2606/record.md`](../../experiments/E2606/record.md)) re-ran that protocol across five
+pre-declared seeds and put the spread on it — **1.8794 ± 0.0077** against **3.0937 ± 0.0267**, seed 7
+reproducing E2605's artifact tensor for tensor; **E2607**
+([`../../experiments/E2607/record.md`](../../experiments/E2607/record.md)) moved to externally licensed prose
+and measured **2.0176 ± 0.0118** against **3.2218 ± 0.0153** on three Project Gutenberg texts; and **E2608**
+([`../../experiments/E2608/record.md`](../../experiments/E2608/record.md)) compared the two Transformer-family
+architectures at a matched token budget on a 919-document licensed corpus (**1.6865** for the rotary decoder
+against **1.9043** for the transformer, both truncated at the step ceiling, the arms not capacity-matched — a
+confound the record states).
 
 So: there is a trained model, a learned byte-pair subword tokenizer, a document-level corpus manifest that
-pins content digests, mini-batch training with validation-selected early stopping, a checksummed
-self-describing checkpoint and a Python entry point that loads it. There is still no real embedding, no
-external corpus, no measured result from any *useful* language model, and no error bar on E2605 — the
-committed generations loop, and the record says so. The retrieval, correction and strategy-comparison numbers
-are development instruments over hand-built fixtures (`chakaso.benchmark`); the training numbers are
-single-corpus, single-seed. Everything else in this directory is design reasoning and open questions, and it
-is labelled as such.
+pins content digests, three pinned corpora, mini-batch training with validation-selected early stopping, a
+checksummed self-describing checkpoint, a Python entry point that loads it, a release contract that one
+artifact satisfies at Level 2 of [ADR-0039](../decisions/ADR-0039-three-level-model-release-gate.md), and a
+multi-seed spread on the headline comparison. What is still missing is the thing H1–H7 are about: no real
+semantic embedding, no second subword algorithm to compare segmentation with (H6 needs that, and the project
+has BPE and a character vocabulary, not two subword rules), no usefulness judgement and no retrieval-only
+baseline to answer H3, and no measured result from any *useful* language model — the released artifact's
+generations repeat phrases with mean bigram repetition 0.5538 and every sample hit its token bound, and both
+the card and the record say so. The retrieval, correction and strategy-comparison numbers are development
+instruments over hand-built fixtures (`chakaso.benchmark`); the training numbers are model-quality numbers over
+five seeds on one corpus, three on a second, and one seed per arm on the third. Everything else in this
+directory is design reasoning and open questions, and it is labelled as such.

@@ -94,9 +94,10 @@ headings has no pointable citation position, and overlapping chunks would report
 sentence under several identifiers, which inflates every retrieval metric that counts
 chunks.
 
-Sizes are counted in **characters**, not tokens. There is no tokenizer, so
-`token_count` on a chunk is left unset rather than filled with a character count that
-a later reader would trust.
+Sizes are counted in **characters**, not tokens. This project has tokenizers now
+(`chakaso.training.tokenizer` and `chakaso.training.subword`), and retrieval uses neither: its chunking is
+a text-structure concern, not a model-input concern, so `token_count` on a chunk is left unset rather than
+filled with a character count that a later reader would trust.
 
 Chunking does not read files and does not fetch anything; it is handed text. The stage
 that reads a file is local ingestion, described below — a source with no URL has had an

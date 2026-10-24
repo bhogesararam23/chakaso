@@ -39,6 +39,8 @@ not label it, assume it is Planned and verify against
 | [`retrieval.md`](retrieval.md) | Retrieval pipeline, source records, evidence chunks, citation resolution |
 | [`correction.md`](correction.md) | Reassessment and the correction contract |
 | [`training.md`](training.md) | Tokenizer, dataset pipeline, model stages |
+| [`../MODEL_CARD.md`](../MODEL_CARD.md) | The released artifact: what it is, what it measured, what it cannot do, and which release-gate level it earned |
+| [`data/`](data/) | Data cards for the two externally sourced pinned corpora — measured composition, length distribution and duplication screen, with the licence each source carries |
 | [`evaluation.md`](evaluation.md) | Evaluation layers, metrics and regression gates |
 | [`roadmap.md`](roadmap.md) | Milestones and their exit criteria |
 | [`research/`](research/) | Research log, literature, hypotheses, open questions |
@@ -51,7 +53,7 @@ not label it, assume it is Planned and verify against
 | [`internal/engineering/repository-history.md`](internal/engineering/repository-history.md) | How this repository's history was started, and what it replaced |
 | [`internal/engineering/artifact-policy.md`](internal/engineering/artifact-policy.md) | Where weights, datasets and generated outputs live, and what is never committed |
 | [`internal/engineering/tooling.md`](internal/engineering/tooling.md) | The chosen formatter, linter, type checker and test runner, and why |
-| [`internal/experiments/README.md`](internal/experiments/README.md) | The experiment record format, and the fact that no research experiment has been run |
+| [`internal/experiments/README.md`](internal/experiments/README.md) | The experiment record format, and the eight measured records (E2601–E2608) that follow it |
 
 ## Agent context
 

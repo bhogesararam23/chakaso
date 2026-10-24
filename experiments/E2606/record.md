@@ -532,7 +532,7 @@ the same step count is proportionally fewer epochs, which E2607's record declare
 a comparison. If it does not, then every number in this record describes how well a model learned
 Chakaso's own documentation, and the next experiment is about the data, not the model.
 
-## Corrections applied after the run (2026-10-22)
+## Corrections applied after the run (found 2026-10-22, committed 2026-10-24)
 
 Two statements in this record were wrong against its own artifacts, and a documentation audit found them.
 They are corrected in place with the original wording kept here, because a silent edit to a measured record is

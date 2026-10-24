@@ -118,7 +118,8 @@ puts the hand-written-gradient route (C3) in the position ADR-0030 predicted:
 An *estimate* on the observed character count and typical English subword expansion: ~250,000–320,000
 tokens at a 1,024-entry vocabulary. **Measured later by E2605: 369,371 identifiers over the pinned 780,223
 characters** (240,418 / 82,376 / 46,577 by side, 2.0829 characters per identifier on the test side). The
-estimate assumed 2.26–2.89 characters per identifier; the measured figure is 2.11, so the shortfall is the
+estimate assumed 2.26–2.89 characters per identifier; the measured figure is 2.1123 over the whole corpus
+(780,223 / 369,371, both counts E2605 recorded) and 2.0829 on the test side, so the shortfall is the
 compression assumption rather than the 8% the corpus grew by between the two counts. Which is what an
 unmeasured estimate is for, and why the record quotes the manifest's own numbers and not this paragraph.
 
@@ -146,6 +147,34 @@ be read as anything more. Two experiments are now preregistered against it, each
 Neither answers the workload question this note ends on. A lower held-out loss on somebody else's 19th-century
 prose would say the model learns statistical structure in text it was not written about; it would not say a
 model can answer a question or ground a claim, and K-001 stays open for exactly that reason.
+
+**Addendum, 2026-10-24 (what those two, and the capacity question they were the precondition for, measured).**
+Both ran, all declared seeds completed, and neither result was sorted into a story afterwards:
+
+- **E2606** put the spread on E2605: **1.8794 ± 0.0077** bits per character against
+  **3.0937 ± 0.0267** for the character architecture over seeds 7, 11, 13, 17 and 19, every seed under every
+  baseline, with seed 7 reproducing E2605's artifact tensor for tensor from a snapshot recovered out of git
+  history. The consequence for this note is immediate: 1.8657 was the best of five draws, and every later
+  comparison quotes the mean.
+- **E2607** moved to externally licensed prose (three Project Gutenberg texts, 105 documents, pinned as
+  `gutenberg-english-prose-v1`): **2.0176 ± 0.0118** against **3.2218 ± 0.0153**. The gap survives the change
+  of data — 1.2143 on this repository's prose, 1.2042 on somebody else's — and the absolute level rises, which
+  is the note's own warning about one author's house style being a bound rather than a ceiling. It also found
+  the constraint this note did not anticipate: no run early-stopped, all three selected the 2,400-step ceiling
+  with validation still falling, so the *budget* rather than the architecture became the binding limit.
+- **E2608** then asked the capacity question on a 919-document licensed corpus with both Transformer-family
+  architectures at a matched token budget: the 3,413,760-parameter rotary decoder at **1.6865** bits per
+  character against the 1,037,056-parameter transformer at **1.9043**, both still truncated. Its record states
+  the confound rather than smoothing it — the arms differ 3.3× in parameters and 2× in context, so this is not
+  a controlled architecture answer — and its third hypothesis, that the decoder's output would still loop,
+  failed in the direction nobody expected: zero periodic runs of three or more, zero tail loops, mean bigram
+  repetition still 0.5538, every sample at its bound. That artifact is what got released, at Level 2, with
+  Level 3 withheld on those statistics.
+
+What this note got right was the method: one question per experiment, the comparison unit chosen before the
+run, bits per character as the only tokenizer-independent unit, and rejection of pretrained weights as the
+product. What it could not know was that the binding constraint would turn out to be compute budget rather
+than architecture or data quality, which is now the first line of the next question.
 
 ## Candidate comparison
 

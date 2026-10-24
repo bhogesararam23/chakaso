@@ -2,11 +2,12 @@
 
 Chakaso intends to train its own language model from randomly initialised
 parameters. This document describes that plan, and is explicit about what has and
-has not been executed. As of 2026-10-22 the training pipeline exists
+has not been executed. As of 2026-10-24 the training pipeline exists
 (`chakaso.training`, gated by [ADR-0030](decisions/ADR-0030-minimal-optional-training-dependency.md)
-and, for the model itself, [ADR-0034](decisions/ADR-0034-optional-pytorch-model-extra.md)) and five
+and, for the model itself, [ADR-0034](decisions/ADR-0034-optional-pytorch-model-extra.md)) and six
 experiments have measured from-scratch training: [E2601](../experiments/E2601/record.md) trained a
-984-parameter character model that beats trivial baselines on held-out loss,
+984-parameter character model that beats trivial baselines on held-out loss and
+[E2602](../experiments/E2602/record.md) reproduced that across five seeds,
 [E2605](../experiments/E2605/record.md) trained a 643,840-parameter subword causal Transformer that beats it,
 in bits per character, on held-out documents, [E2606](../experiments/E2606/record.md) put a five-seed spread on
 that result and reproduced its artifact tensor-for-tensor, [E2607](../experiments/E2607/record.md) repeated the
@@ -56,10 +57,12 @@ the project's central claim false.
 No stage past M2 has produced a *useful* model. E2601 wrote a checkpoint and trained a 984-parameter
 character model from random initialization — the project's first measured training result, and a precursor to
 M2. E2605 then trained the Transformer itself and measured it against that precursor and against trivial
-predictors of both identifier spaces. Both checkpoints are reproducible from the seed, config and pinned
-corpus manifest, and **neither is committed to the repository**; there are no released weights. A model that
-answers a grounded question still does not exist: the trained checkpoint is loadable through the
-`LanguageModel` boundary from Python, and no runtime path uses it as a default.
+predictors of both identifier spaces. E2605's and E2607's artifacts are experiment results cited by checksum;
+the released artifact is E2608's decoder arm, whose **contract** is published in
+[`MODEL_CARD.md`](../MODEL_CARD.md) while **no checkpoint bytes are committed to the repository** and no
+version has been put on a package index. A model that answers a grounded question still does not exist: the
+trained checkpoint is loadable through the `LanguageModel` boundary from Python, and no runtime path uses it
+as a default.
 
 ## Sizing policy
 
@@ -149,10 +152,13 @@ what each source states about itself:
 | `gutenberg-english-prose-v1` | 105 | 1,660,274 | Public domain in the United States, distributed under the Project Gutenberg License, whose own preamble tells users outside the United States to check local law | E2607 |
 | `gutenberg-english-prose-v2` | 919 | 14,490,005 | the same Project Gutenberg terms, recorded per source in `configs/corpora/gutenberg-english-prose-v2.toml` | E2608 |
 
-Each corpus has a data card — [`gutenberg-english-prose-v1`](data/gutenberg-english-prose-v1.md),
+The two external corpora each have a data card — [`gutenberg-english-prose-v1`](data/gutenberg-english-prose-v1.md),
 [`gutenberg-english-prose-v2`](data/gutenberg-english-prose-v2.md) — generated from the artifact itself by
 `chakaso corpus report`, carrying the measured composition, the document-length percentiles and the
-near-duplicate screen rather than a description of the collection.
+near-duplicate screen rather than a description of the collection. `chakaso-repo-text-v1` has no card, because
+its composition *is* the repository: a card would restate the manifest and the tracked-file list, which a
+reader already has, and the snapshot a record cites is recovered from a named revision rather than declared
+independently.
 
 A corpus is declared before it is used. `chakaso corpus declare` reads each downloaded file's own header and
 bytes and writes the catalogue; `chakaso corpus prepare` refuses any file whose digest is not the declared
@@ -290,7 +296,7 @@ something nobody defined.
 
 | Item | Status |
 | --- | --- |
-| Corpus and provenance | Implemented — `chakaso.training.corpus` (the self-authored toy text), `chakaso.training.manifest` (pins a real document set by path and content digest and refuses drift), `chakaso.training.snapshot` (recovers a pinned corpus from the revision that recorded it and writes a checksum-verified snapshot), and `chakaso.training.source_corpus` (turns a downloaded external text into a pinned corpus offline). E2605 trained on the pinned repository text: 71 documents, 780,223 characters, fingerprint `e45993f9badf706c`; E2607 trains on 105 documents of Project Gutenberg prose, fingerprint `931b07a635ca5a0c` |
+| Corpus and provenance | Implemented — `chakaso.training.corpus` (the self-authored toy text), `chakaso.training.manifest` (pins a real document set by path and content digest and refuses drift), `chakaso.training.snapshot` (recovers a pinned corpus from the revision that recorded it and writes a checksum-verified snapshot), `chakaso.training.source_corpus` (turns a downloaded external text into a pinned corpus offline) and `chakaso.training.dataset_catalog` / `dataset_report` (the catalogue a corpus is declared from, and the measured data card it generates). E2605/E2606 trained on the pinned repository text: 71 documents, 780,223 characters, fingerprint `e45993f9badf706c`; E2607 on 105 documents of Project Gutenberg prose, fingerprint `931b07a635ca5a0c`; E2608 on 919 documents from 24 texts, 14,490,005 characters, fingerprint `e9fc2e92f59d88ea` |
 | Tokenizer | Implemented — a deterministic character vocabulary (`chakaso.training.tokenizer`, used by E2601/E2602) and a learned byte-pair subword vocabulary (`chakaso.training.subword`, dependency-free, total over Unicode, self-describing and checksum-verified on load) |
 | Dataset pipeline | Implemented — document-level three-way split with deduplication before selection (`chakaso.training.data.split_text_units`), sequence packing with per-position targets (`chakaso.training.packing`), split/manifest fingerprints, and a split seed separate from the model seed so a study can vary initialization without moving the held-out documents |
 | Model code | Implemented and measured — the character MLP (E2601, 984 parameters, every gradient finite-difference verified), the decoder-only causal Transformer (`chakaso.training.transformer`, 643,840 parameters in E2605, autograd gradients cross-checked against hand-computed losses and sampled finite differences per ADR-0034), and since E2608 a second family: `chakaso.training.decoder`, a rotary-position, RMSNorm, tied-embedding decoder with an ignore-index target mask and a key/value cache whose stepped forward pass is tested equal to the full one (3,413,760 parameters measured) |

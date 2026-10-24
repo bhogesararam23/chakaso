@@ -21,26 +21,36 @@ is.**
 | **A release contract** | **Implemented.** `chakaso.models.release` writes a model as one directory: `model.json` assembled from the run's own report plus the checkpoint's declared facts, the artifact's SHA-256 checked at load, licence and redistribution stated, and `known_limitations` required to be non-empty. A release that does not verify is a typed error, never a plausible generation from somebody else's weights. |
 | **An optional local HTTP endpoint** | **Implemented.** `chakaso.serve` puts a loaded model behind `/health`, `/v1/models`, `/v1/completions` and `/v1/chat/completions` with server-sent events, using only the standard library: loopback by default, bounded concurrency, a client that hangs up cancelling the generation, and a refusal to serve the development double or to honour a request field it cannot ([ADR-0038](docs/decisions/ADR-0038-local-http-serving-adapter-from-the-standard-library.md)). Not authenticated, and not a hosted API. |
 | **A tokenizer trained here** | A byte-pair subword vocabulary (`chakaso.training.subword`): byte-level base, so encoding is total; a named pre-tokenizer, so merges never cross a word boundary; deterministic tie-breaking, so the same text yields the same fingerprint; self-describing and checksum-verified on load. A deterministic character vocabulary also exists and is what E2601/E2602 measured. |
-| **A corpus with provenance** | `chakaso.training.manifest` pins a document set by path and content digest, records its licence, and *refuses* to prepare a corpus that has drifted. `chakaso.training.snapshot` recovers a pinned corpus from the revision that recorded it and writes a checksum-verified snapshot, so a measured result stays re-trainable after the repository edits its own text. Two corpora are pinned: Chakaso's own tracked prose (71 documents, 780,223 characters, Apache-2.0, fingerprint `e45993f9badf706c`) and three Project Gutenberg texts (105 documents, 1,660,274 characters, public domain in the US under the Project Gutenberg License, fingerprint `931b07a635ca5a0c`) — the second one because one author's house style bounds what the first can establish. |
-| **Two model architectures, trained from scratch** | `chakaso.training.transformer` (decoder-only, causal attention, pre-norm, GELU, tied head), measured by E2605/E2606/E2607, and `chakaso.training.decoder` (**Implemented**, the family ADR-0037 chose from measured throughput): rotary positions, RMSNorm, biases-free attention, tied embeddings, an ignore-index target mask so padding is visibly not a label, and a key/value cache that makes stepped decoding equal to a full forward pass. Each writes its own checkpoint schema and the loader picks the class from the file, never a guess. `chakaso.training.nn_training` runs either: mini-batches, warmup, cosine decay to a stated floor, gradient accumulation over an effective batch size, gradient clipping, validation-selected early stopping, throughput measured over gradient time only, a completion class that names why the run ended, and resume that refuses a changed identity while allowing a longer budget. Requires the optional `[nn]` extra. |
-| **Measured results** | Seven experiment records, all measured and closed. E2601/E2602: a 984-parameter character model whose held-out loss beats uniform and unigram baselines across five seeds (mean 1.7978 ± 0.1767 nats). E2603/E2604: retrieval and evidence-sufficiency measurements over a self-authored workload. [E2605](experiments/E2605/record.md): the first subword Transformer trained from random initialization on the pinned corpus reaches **1.8657 bits per character** on held-out documents, against 3.1343 for the character architecture, 3.3224 unigram and 4.8010 uniform. [E2606](experiments/E2606/record.md): five pre-declared seeds, with the document split held fixed so only initialization moves — **1.8794 ± 0.0077 bits per character against 3.0937 ± 0.0267**, every seed below every baseline, and the seed-7 run reproducing E2605 **exactly** (all 41 tensors equal) from a corpus recovered out of git history. [E2607](experiments/E2607/record.md): the same protocol on the external corpus, three seeds — **2.0176 ± 0.0118 against 3.2218 ± 0.0153**, so the gap survives the change of data (1.2042 against 1.2143), but no run early-stopped and all three selected the 2,400-step ceiling, which makes that level a floor rather than a converged loss. Every one of these generations loops rather than answers. [E2608](experiments/E2608/record.md) is the experiment now running against that last fact — the rotary decoder against the measured transformer, token-matched, on the larger licensed corpus, preregistered before either arm ran; its pilot is recorded and **no comparison between the two architectures has been measured yet**, so nothing here claims the new family is better. |
+| **A corpus with provenance** | `chakaso.training.manifest` pins a document set by path and content digest, records its licence, and *refuses* to prepare a corpus that has drifted. `chakaso.training.snapshot` recovers a pinned corpus from the revision that recorded it and writes a checksum-verified snapshot, so a measured result stays re-trainable after the repository edits its own text. Three corpora are pinned. `chakaso-repo-text-v1` — Chakaso's own tracked prose, 71 documents, 780,223 characters, Apache-2.0, fingerprint `e45993f9badf706c`, the one E2605/E2606 trained on. `gutenberg-english-prose-v1` — three Project Gutenberg texts, 105 documents, 1,660,274 characters, public domain in the US under the Project Gutenberg License, fingerprint `931b07a635ca5a0c`, the one E2607 trained on; it exists because one author's house style bounds what the first can establish. `gutenberg-english-prose-v2` — 24 Project Gutenberg texts, 919 documents, 14,490,005 characters, fingerprint `e9fc2e92f59d88ea`, the one E2608 trained on, chosen so that no single source supplies more than 14.6 % of the text and a measured data card reports its composition and its duplication screen ([`docs/data/gutenberg-english-prose-v2.md`](docs/data/gutenberg-english-prose-v2.md)). Its bytes stay in `data/`; the catalogue and the per-document digests are committed, so it is rebuildable from its own URLs. |
+| **Two model architectures, trained from scratch** | `chakaso.training.transformer` (decoder-only, causal attention, pre-norm, GELU, tied head), measured by E2605/E2606/E2607 and re-run as E2608's comparison arm, and `chakaso.training.decoder` (**Implemented**, the family ADR-0037 chose from measured throughput, and measured against the transformer by E2608): rotary positions, RMSNorm, biases-free attention, tied embeddings, an ignore-index target mask so padding is visibly not a label, and a key/value cache that makes stepped decoding equal to a full forward pass. Each writes its own checkpoint schema and the loader picks the class from the file, never a guess. `chakaso.training.nn_training` runs either: mini-batches, warmup, cosine decay to a stated floor, gradient accumulation over an effective batch size, gradient clipping, validation-selected early stopping, throughput measured over gradient time only, a completion class that names why the run ended, and resume that refuses a changed identity while allowing a longer budget. Requires the optional `[nn]` extra. |
+| **Measured results** | Eight experiment records, all measured and closed. E2601/E2602: a 984-parameter character model whose held-out loss beats uniform and unigram baselines across five seeds (mean 1.7978 ± 0.1767 nats). E2603/E2604: retrieval and evidence-sufficiency measurements over a self-authored workload. [E2605](experiments/E2605/record.md): the first subword Transformer trained from random initialization on the pinned corpus reaches **1.8657 bits per character** on held-out documents, against 3.1343 for the character architecture, 3.3224 unigram and 4.8010 uniform. [E2606](experiments/E2606/record.md): five pre-declared seeds, with the document split held fixed so only initialization moves — **1.8794 ± 0.0077 bits per character against 3.0937 ± 0.0267**, every seed below every baseline, and the seed-7 run reproducing E2605 **exactly** (all 41 tensors equal) from a corpus recovered out of git history. [E2607](experiments/E2607/record.md): the same protocol on the external corpus, three seeds — **2.0176 ± 0.0118 against 3.2218 ± 0.0153**, so the gap survives the change of data (1.2042 against 1.2143), but no run early-stopped and all three selected the 2,400-step ceiling, which makes that level a floor rather than a converged loss. Every generation those runs produced is an exact repeating cycle. [E2608](experiments/E2608/record.md) compared the two Transformer-family architectures at a matched token budget (19,660,800 positions each, one seed, one split, one tokenizer) on the 919-document licensed corpus: the 3,413,760-parameter rotary decoder reaches **1.6865 bits per character** against **1.9043** for the 1,037,056-parameter transformer, both arms beating unigram (3.2263 / 3.2265) and uniform (5.5661 / 5.5666), and **both still truncated at the step ceiling with validation loss falling**. Its three preregistered hypotheses split: the schedule did not fix the truncation (H1 failed), the decoder beat the transformer **with the confound stated** — 3.3× the parameters and 2× the context, so this is not a controlled architecture answer (H2 succeeded on its declared condition, with the confound), and the exact-cycle degeneration stopped (H3 failed in the direction nobody expected: zero periodic runs of ≥ 3, zero tail loops, for the first time a checkpoint whose samples are phrase-level repetition — "*the Error of the Emperor of the Emperor of the Soule of the Soule*" — rather than a metronome). Mean bigram repetition is still 0.5538, every sample hit its token bound, and no sample is a sentence anyone would publish. That measurement is what withholds Level 3 from `chakaso-base@0.1.0` in [ADR-0039](docs/decisions/ADR-0039-three-level-model-release-gate.md); the artifact's own statement of it is [`MODEL_CARD.md`](MODEL_CARD.md). |
 | **An application layer a model can plug into** | BM25/dense/hybrid retrieval over an in-memory corpus, claims, citation validation, structural and semantic-grounding boundaries, a correction decision rule with application-level reassessment, an append-only answer store (in-memory by default, durable SQLite when configured), and development benchmarks. |
 | **Verification** | Tests, lint, format and strict typing on Python 3.11–3.13 in CI, offline, CPU-only, no secrets and no provider dependency. **Three tiers now run on the runners**: `core` with `.[dev]`, `train` with `.[dev,train]`, and `model path` with `.[dev,train,nn]` from the PyTorch CPU wheel index plus the strict type check over every module — read back green across all eight jobs (runs `39704678913` and `39706259071`, 2026-10-22; model path python 3.13: 2,003 passed / 2 skipped in 79.18 s). The dependency-free tier is what proves the default install needs no numerical library, and it is also where the HTTP serving adapter is tested. Landing the tiers found two defects no local gate could see, recorded in [`docs/internal/engineering/optional-dependency-ci-matrix.md`](docs/internal/engineering/optional-dependency-ci-matrix.md). |
 
 ## What does not exist
 
-* **No useful language model.** The trained models are small — one author's technical prose for
-  E2601/E2605/E2606, three public-domain texts for E2607 — and they generate text that is not a capable
-  assistant. Nothing here answers a grounded question: the runtime's
-  default adapter is a development double that says so, and no model has been wired into it as a default.
+* **No useful language model.** The trained models are small and their data is narrow — one author's
+  technical prose (71 documents, 780,223 characters) for E2601/E2605/E2606, three Project Gutenberg texts
+  (105 documents) for E2607, and 24 Project Gutenberg texts (919 documents, 14,490,005 characters) for E2608,
+  which is the widest corpus this project has trained on. None of them is a capable assistant, and none is
+  wired into anything as a default: the runtime's default adapter is a development double that says so, and no
+  grounded question in this repository is answered by a trained model. E2605–E2607's greedy samples are exact
+  repeating cycles; E2608's decoder arm is the first artifact measured here with **zero periodic runs of three
+  or more and zero tail loops**, and its mean bigram repetition is still 0.5538 with every sample truncated at
+  its token bound — less degenerate, still not text anyone would publish.
 * **No real-workload evaluation, and no claim that an external corpus closes it.** E2605 and E2606 are
-  measured on this repository's own prose; E2607 measures the same protocol on externally licensed prose for
-  exactly that reason. Neither is a workload: no number here comes from a question asked of the model, an
+  measured on this repository's own prose; E2607 and E2608 measure licensed public-domain prose for exactly
+  that reason. Neither is a workload: no number here comes from a question asked of the model, an
   answer checked against evidence, or a task anybody needed doing. That is gap K-001 in
   [`docs/agent/KNOWN_ISSUES.md`](docs/agent/KNOWN_ISSUES.md) and it is the project's frontier.
-* **No released weights, datasets or tokenizers.** Checkpoints are reproducible from a recorded seed and
-  config and are cited by checksum; their bytes stay out of Git. Weights and datasets carry their own policy
-  before any release ([ADR-0004](docs/decisions/ADR-0004-apache-2.0-license.md)).
+* **No published weights, and no Level 3.** A release *contract* exists and one artifact satisfies it:
+  `chakaso-base@0.1.0`, built by `chakaso model export` from E2608's decoder arm and assessed at **Level 2**
+  of [ADR-0039](docs/decisions/ADR-0039-three-level-model-release-gate.md) — reproducible integration, with
+  **Level 3 (useful behaviour) withheld on the measurement above**, not on modesty. What is published is the
+  contract, the card and the commands; the bytes are not. A checkpoint is reproducible from its recorded seed,
+  config and corpus fingerprint, is cited by checksum, and stays out of Git
+  ([ADR-0004](docs/decisions/ADR-0004-apache-2.0-license.md) still reserves weights and datasets for their own
+  distribution decision, which has not been made).
 * **No real semantic judge, no genuine embedding model, no autonomous correction loop, no durable source
   index.** Each boundary exists; what would fill it honestly does not. See
   [`docs/agent/CURRENT_STATE.md`](docs/agent/CURRENT_STATE.md) for the authoritative list.
@@ -76,8 +86,16 @@ application depends on, so `model.generate(messages, params)` works the same way
 two. Scoring a text is equally direct:
 
 ```python
-nats = model.score(open("docs/training.md").read())  # mean held-out cross-entropy, in nats
+from pathlib import Path
+
+text = Path("docs/training.md").read_text(encoding="utf-8")
+nats = model.score(text)  # mean held-out cross-entropy, in nats
 ```
+
+The explicit `encoding` is not decoration. This repository's prose is UTF-8 with em dashes and non-ASCII
+quotes in it, and `open(...).read()` on a Windows default codec reads a different string than the one the
+runner measured — which is exactly the kind of unreproducible difference the rest of this project pins by
+digest.
 
 Generation can be streamed, bounded and cancelled. The same object answers the `LanguageModel` boundary the
 application uses, so a turn is a list of messages and a policy is one parameter object:
@@ -107,11 +125,17 @@ verifies the artifact's digest before reading a weight.
 
 ```bash
 chakaso model export data/experiments/E2608/decoder --output dist/chakaso-base \
-  --model-id chakaso-base --model-version 0.1.0 --summary "What the run did, in one paragraph." \
+  --model-id chakaso-base --model-version 0.1.0 \
+  --summary "A 3,413,760-parameter rotary decoder trained from random initialization on 14,490,005 characters of public-domain English prose, reaching 1.6865 bits per character held out." \
   --capability tokenize --capability generate --capability stream --capability score \
-  --limitation "Generations repeat: measured, not fixed." \
-  --licence-model Apache-2.0 --licence-data "Public domain in the United States (Project Gutenberg)" \
-  --redistribution "Weights may be redistributed with this document attached."
+  --limitation "Generations repeat phrases: mean bigram repetition 0.5538 over five greedy continuations; every sample reached its token bound. No sample is usable text." \
+  --limitation "One seed (7). Seed luck is measured at ± 0.0077 bits on the transformer family; nothing here measures it for this architecture." \
+  --limitation "Selected step 2,400 equals the budget ceiling with validation still falling: this is a floor, not a converged loss." \
+  --limitation "Trained on 19th-century and classical public-domain prose. No instruction data, no questions, no answers, and no grounded question is answered." \
+  --limitation "No semantic quality is measured anywhere in this release; the generation statistics are surface statistics only." \
+  --licence-model "Apache-2.0" --licence-data "Public domain in the United States (Project Gutenberg)" \
+  --redistribution "Weights may be redistributed with model.json attached; the corpus is redistributed from its own source, not from this repository." \
+  --reproduce "chakaso experiment model --work-dir data/experiments/E2608/decoder"
 chakaso model verify dist/chakaso-base           # re-hash the artifact against its own contract
 chakaso model inspect dist/chakaso-base --json   # what the weights, the runtime and the contract state
 chakaso model generate dist/chakaso-base --prompt "The whale" --max-new-tokens 24
@@ -119,6 +143,10 @@ chakaso model stream dist/chakaso-base --prompt "The whale" --temperature 0.7 --
 chakaso model score dist/chakaso-base --text-file docs/training.md
 chakaso model serve dist/chakaso-base --port 8765   # loopback by default, no auth, Ctrl-C to stop
 ```
+
+Those five strings are the ones `chakaso-base@0.1.0` carries, copied from
+[`MODEL_CARD.md`](MODEL_CARD.md) rather than written for this page; a release whose limitations read like
+marketing is not this contract's kind of release.
 
 The same operations are Python calls, because the terminal is a thin handler over them and a trained
 checkpoint must be usable without one:
@@ -135,12 +163,29 @@ release = export_release(  # copies the checkpoint and report, then writes model
     Path("dist/chakaso-base"),
     model_id="chakaso-base",
     model_version="0.1.0",
-    summary="What the run did, in one paragraph, for someone deciding whether to load it.",
+    summary=(
+        "A 3,413,760-parameter rotary decoder trained from random initialization on 14,490,005 characters "
+        "of public-domain English prose, reaching 1.6865 bits per character held out."
+    ),
     capabilities=("tokenize", "generate", "stream", "score"),
-    known_limitations=("Generations repeat: measured, not fixed.",),  # required, and non-empty
+    known_limitations=(  # required, and non-empty: the card's five, verbatim
+        "Generations repeat phrases: mean bigram repetition 0.5538 over five greedy continuations; "
+        "every sample reached its token bound. No sample is usable text.",
+        "One seed (7). Seed luck is measured at ± 0.0077 bits on the transformer family; nothing here "
+        "measures it for this architecture.",
+        "Selected step 2,400 equals the budget ceiling with validation still falling: this is a floor, "
+        "not a converged loss.",
+        "Trained on 19th-century and classical public-domain prose. No instruction data, no questions, "
+        "no answers, and no grounded question is answered.",
+        "No semantic quality is measured anywhere in this release; the generation statistics are surface "
+        "statistics only.",
+    ),
     licence_model="Apache-2.0",
     licence_training_data="Public domain in the United States (Project Gutenberg)",
-    redistribution="Weights may be redistributed with this document attached.",
+    redistribution=(
+        "Weights may be redistributed with model.json attached; the corpus is redistributed from its own "
+        "source, not from this repository."
+    ),
     created_utc="2026-10-22T00:00:00Z",
     reproduce="chakaso experiment model --work-dir data/experiments/E2608/decoder",
 )
@@ -206,11 +251,14 @@ whose parameters, data and training procedure are known. That is why the model c
 
 ## Optional interfaces, and what they are for
 
-The CLI (`python -m chakaso …`) is a secondary developer utility: 12 commands for inspecting
-configuration, retrieving over supplied documents, holding a conversation, running benchmarks and loading
-experiments. Its handlers are thin and call the same Python services the library exposes; no core model
-behaviour lives in a terminal handler. `chakaso chat` is honest about its own engine — it prints what the
-model adapter is before it prints anything else.
+The CLI (`python -m chakaso …`) is a secondary developer utility: 13 commands — `info`, `config`, `chat`,
+`retrieve`, `benchmark`, `experiment`, `corpus`, `model`, `storage`, `capabilities`, `answers`, `sources`,
+`evidence` — for inspecting configuration, retrieving over supplied documents, holding a conversation,
+running benchmarks, recovering a pinned corpus, and driving the whole release lifecycle of a trained
+checkpoint. Its handlers are thin and call the same Python services the library exposes; no core model
+behaviour lives in a terminal handler, and a hygiene test fails if a library module ever imports one.
+`chakaso chat` is honest about its own engine — it prints what the model adapter is before it prints
+anything else.
 
 There is deliberately no web frontend, hosted API or desktop application: an interface in front of a small
 model advertises a capability that does not exist, and
@@ -227,20 +275,24 @@ python -m chakaso chat --file docs/retrieval.md
 
 ```text
 src/chakaso/        the Python package
-  training/         the model path: corpus manifest, splits, tokenizers, packing,
-                    the character model (numpy), the Transformer and its training (torch),
-                    checkpoints, metrics, and the E2605 experiment driver
-  models/           the language-model boundary, the adapter registry, load_model,
-                    the development double and the two checkpoint adapters
+  training/         the model path: corpus manifests, catalogues and snapshots, external-source
+                    ingestion, the character and learned subword tokenizers, document splits and
+                    packing, the character model (numpy), the Transformer and the rotary decoder
+                    with their training engine and checkpoint schemas (torch), held-out metrics,
+                    the generation-evaluation suite, the seed study, and the E2605–E2608 drivers
+  models/           the language-model boundary, the adapter registry and `load_model`,
+                    the development double, the character and subword adapters, bounded decoding,
+                    versioned prompt templates, and the release contract
+  serve/            the optional standard-library HTTP adapter over one loaded model
   retrieval/ evidence/ claims/ citation/ grounding/ correction/ answers/
                     the optional application layer (local-first, offline, tested)
   evaluation/ benchmark/ experiments/   measurement instruments and their fixtures
   config/ core/ runtime/ conversation/ planning/ app.py cli.py
 tests/              unit, contract and repository-hygiene tests
-configs/            versioned configuration, TOML
+configs/            versioned configuration, TOML — including the corpus catalogues
 experiments/        committed experiment records — the project's measured results
-data/               prepared corpora, tokenizers and checkpoints: git-ignored, cited by digest
-docs/               specifications, decisions, research log, agent context
+data/               prepared corpora, tokenizers, checkpoints and releases: git-ignored, cited by digest
+docs/               specifications, decisions, research log, data cards, agent context
 ```
 
 Experiment records live at `experiments/<experiment-id>/record.md`

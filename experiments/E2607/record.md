@@ -354,7 +354,7 @@ step budget on this corpus, or hold the budget and vary the corpus size. Raising
 cheaper inference, because the truncation is measured and its direction is known, and a capacity question asked
 against an unconverged baseline cannot be answered.
 
-## Corrections applied after the run (2026-10-22)
+## Corrections applied after the run (found 2026-10-22, committed 2026-10-24)
 
 Two numbers in this record disagreed with the per-run reports it aggregates. Corrected in place, with the
 original wording kept, per the rule that a measured record is not silently edited.
