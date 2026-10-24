@@ -59,10 +59,22 @@ __all__ = ["SUBWORD_TRANSFORMER_MODEL_ID", "SubwordTransformerModel"]
 #: The registry name for this adapter, and the value ``model.adapter`` takes to select it.
 SUBWORD_TRANSFORMER_MODEL_ID = "subword_transformer"
 
-_DISPLAY_NAME = (
-    "Subword Transformer (Chakaso-trained character model successor; trained on the project's own "
-    "documentation on CPU — a measured small model, not a capable assistant)"
-)
+
+def _display_name(family: str) -> str:
+    """What the artifact says it is, read from the file rather than asserted by the adapter.
+
+    The constant this replaced named the transformer architecture and claimed the model was "trained on the
+    project's own documentation". Both halves are printed by `chakaso model inspect`, served at `/v1/models`
+    and stored in an answer's provenance, and each became false in turn: the second family is not that
+    architecture, and every checkpoint since E2607 was trained on licensed external prose. A display name is a
+    provenance surface, so it states what the artifact itself declares and leaves the corpus to the fingerprint
+    inside it and to the release contract beside that.
+    """
+    architecture = "Rotary Decoder" if family == "decoder" else "Subword Transformer"
+    return (
+        f"{architecture} (Chakaso-trained from random initialization on a content-pinned corpus, "
+        "measured on held-out text — a small research model, not a capable assistant)"
+    )
 
 
 def _request_seed(prompt: str, params: GenerationParams) -> int:
@@ -171,7 +183,7 @@ class SubwordTransformerModel:
         self._scoring_batch = 32
         self._metadata = ModelMetadata(
             model_id=model_id,
-            display_name=_DISPLAY_NAME,
+            display_name=_display_name(family_of(self._artifact.config)),
             context_window=self._context_length,
             capabilities=frozenset({Capability.TOKENIZE, Capability.STREAMING}),
             development_double=False,

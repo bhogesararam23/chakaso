@@ -32,7 +32,12 @@ from chakaso.models.nntransformer import (  # noqa: E402
 from chakaso.models.nntransformer import SubwordTransformerModel  # noqa: E402
 from chakaso.models.registry import default_registry  # noqa: E402
 from chakaso.training.data import TextUnit, split_text_units  # noqa: E402
-from chakaso.training.nn_checkpoint import checkpoint_filename, save_artifact  # noqa: E402
+from chakaso.training.decoder import ChakasoDecoder, DecoderConfig  # noqa: E402
+from chakaso.training.nn_checkpoint import (  # noqa: E402
+    ModelArtifact,
+    checkpoint_filename,
+    save_artifact,
+)
 from chakaso.training.nn_training import TransformerTrainingConfig, train_transformer  # noqa: E402
 from chakaso.training.packing import pack_units  # noqa: E402
 from chakaso.training.subword import DOCUMENT_END, train_subword_vocabulary  # noqa: E402
@@ -109,6 +114,65 @@ def _checkpoint(directory: Path) -> Path:
 def checkpoint(tmp_path_factory: pytest.TempPathFactory) -> Path:
     """One trained artifact for the whole module: the fixture is a real run, not a stub."""
     return _checkpoint(tmp_path_factory.mktemp("adapter"))
+
+
+def test_the_display_name_names_the_architecture_without_inventing_provenance(
+    checkpoint: Path, decoder_checkpoint: Path
+) -> None:
+    """A name the artifact cannot contradict, and no corpus claim the artifact did not earn.
+
+    The string this replaced read "Subword Transformer (… trained on the project's own documentation …)". It
+    was written when E2605 was the only Transformer-family checkpoint this project had measured, and it is false
+    of the released rotary decoder and of every artifact trained on licensed prose since E2607 — while being
+    printed by `chakaso model inspect`, served at `/v1/models` and stored in an answer's provenance. A display
+    name is a provenance surface, so it either derives from the file or it says nothing about the corpus.
+    """
+    transformer = SubwordTransformerModel(str(checkpoint))
+    decoder = SubwordTransformerModel(str(decoder_checkpoint))
+
+    assert "Transformer" in transformer.metadata.display_name
+    assert "decoder" in decoder.metadata.display_name.lower()
+    for model in (transformer, decoder):
+        assert "documentation" not in model.metadata.display_name
+        assert "not a capable assistant" in model.metadata.display_name
+    assert decoder.describe()["family"] == "decoder"
+    assert transformer.describe()["family"] == "transformer"
+
+
+@pytest.fixture(scope="session")
+def decoder_checkpoint(tmp_path_factory: pytest.TempPathFactory) -> Path:
+    """A decoder-family artifact from the same vocabulary, so the adapter reads a real second schema.
+
+    The weights are freshly initialized rather than trained: this fixture exists to prove the adapter reports
+    the architecture the file declares, and an untrained model answers that without a second training run.
+    """
+    directory = tmp_path_factory.mktemp("adapter-decoder")
+    documents = tuple(
+        TextUnit(identifier=f"doc-{index}", text=f"{_TEXT} line {index}\n") for index in range(6)
+    )
+    split = split_text_units(documents, validation_fraction=0.2, test_fraction=0.2, seed=3)
+    vocabulary = train_subword_vocabulary([unit.text for unit in split.train], target_size=280)
+    config = DecoderConfig(
+        vocab_size=vocabulary.size,
+        context_length=_CONTEXT,
+        d_model=16,
+        num_layers=1,
+        num_heads=4,
+        feedforward_dim=32,
+    )
+    torch.manual_seed(1)
+    decoder = ChakasoDecoder(config)
+    artifact = ModelArtifact(
+        config=config,
+        state={name: tensor.clone() for name, tensor in decoder.state_dict().items()},
+        vocabulary=vocabulary,
+        corpus_fingerprint="adapter-fixture",
+        run_metadata={"kind": "usable", "best_step": 0},
+        step=0,
+    )
+    path = directory / checkpoint_filename("ADAPTERD", "decoder")
+    save_artifact(artifact, path)
+    return path
 
 
 class TestSubwordTransformerModel(LanguageModelContract):

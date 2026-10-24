@@ -41,10 +41,24 @@ corpus is one author's technical writing about this project, no question was ask
 grounded in retrieved evidence, and no turn used it. The gap K-001 names is a *workload*, and a measured
 language model on self-authored text is not one.
 
+**Narrowed again, still open, on 2026-10-24 (E2606/E2607/E2608 and the release).** Three things this entry said
+did not exist now do. There is a *spread*: E2606 ran the same protocol over five pre-declared seeds
+(1.8794 ± 0.0077 bits per character). There is a *real corpus* in the sense of text the project did not write:
+E2607 measured on 105 documents of licensed public-domain prose and E2608 on 919 documents from 24 sources, with
+a machine-readable catalogue, per-document digests and a measured data card. And there is a *released* artifact:
+`chakaso-base@0.1.0`, loadable, verifiable, serveable, at Level 2 of
+[ADR-0039](../decisions/ADR-0039-three-level-model-release-gate.md). None of that is this entry's title claim,
+which is about a **workload**: a public-domain book is not a task anybody needed doing, no question was asked of
+any of these models, no answer was grounded in retrieved evidence and checked, and Level 3 — the level that
+would mean the model is good for something — is withheld on the measurement. E2608's samples are less degenerate
+than anything before them and still not text anyone would publish, so the gap moves rather than closes: the
+instruments are now real, and what is missing is still a use.
+
 **What would close it:** a run against a real corpus or a useful model that produces and grounds an
 answer. A local retrieval implementation, a synthetic development benchmark, the evaluation / correction
-foundations, a measured from-scratch training loop and a trained subword Transformer that loads from Python
-all exist and are exercised in tests or in a committed experiment; none of them is a real workload with a real
+foundations, a measured from-scratch training loop with a seed spread and a multi-seed external-corpus study, a
+trained subword Transformer and a rotary decoder that load from Python, and one released artifact at Level 2 all
+exist and are exercised in tests or in a committed experiment; none of them is a real workload with a real
 answer, so the underlying gap remains.
 
 **Not a defect to fix now.** It is recorded so that no document reads as though the
@@ -85,19 +99,32 @@ sides.
 
 ### K-002 — Documentation describes components that do not exist
 
-**Impact:** Medium.
+**Impact:** Medium, and narrower than when it was written.
 
-Some components specified in `docs/architecture.md` still have no code — the query planner, a
-dense ranker, persistence, semantic grounding and the revised answer a model would write. The
-evaluation and correction *foundations* now have code, so this risk is narrower than it was, but a
-reader skimming for mechanism rather than status can still take a Planned component for a real one.
+Some components specified in `docs/architecture.md` still have no code: a real **semantic judge** (the
+grounding boundary exists, its only implementation is a caller-supplied fixture — ADR-0019/ADR-0027), a genuine
+**embedding model** (the dense boundary and its exact index exist over a deterministic non-semantic fixture —
+ADR-0023), an **approximate/vector index**, a **durable source index** (the corpus is rebuilt in memory each
+run), the **revised answer prose** a reassessment would write, an **autonomous correction loop** that decides
+unbidden to reassess, and any model that could be called useful.
+
+**Corrected on 2026-10-24.** The list this entry carried was written before those components were built and had
+never been reconciled: it named the query planner, a dense ranker, persistence and semantic grounding as having
+no code, and all four now do — `chakaso.planning` (ADR-0022, run by the runtime on every `chakaso chat` turn),
+`chakaso.retrieval.dense`/`hybrid` over the fixture embedding (ADR-0023/ADR-0024, measured by E-001),
+`chakaso.answers.SQLiteAnswerStore` surviving a process restart (ADR-0018/ADR-0021), and the semantic grounding
+boundary with evaluator name, version and an explicit error outcome. An issue register that cites a stale
+component list is worse than no register, because it looks like current knowledge: what remains true of the
+original claim is the *shape* of the risk — a reader skimming for mechanism rather than status can take a
+Planned component for a real one — and the honest form of the list is the one above.
 
 **Mitigation in place:** status labels are mandatory and the vocabulary is
 defined in `docs/README.md`; `CURRENT_STATE.md` lists the gaps explicitly.
 
 **Residual risk:** accepted, because writing the specification before the code is
 the point of this phase. It becomes a real problem if a status label is ever left
-at Experimental after the code is deleted.
+at Experimental after the code is deleted — and this entry is the recorded instance of the *reverse*, a gap
+description left standing after the gap was closed.
 
 ### K-003 — Private planning material lives inside the working tree
 
@@ -186,10 +213,12 @@ modules from `mypy src`, and the previously documented escape — `mypy src --ex
 not work: a command-line exclude is *appended* to the configured list, and directory arguments are subject to
 it as well. So the `[train]` and `[nn]` path (27 modules) had never been type-checked anywhere. Checking it
 properly found three dead `# type: ignore` comments and one real typing hole in the byte-pair encoder's pair
-selection, both fixed, and `configs/mypy-model-path.toml` is now the command that checks all 147 source files
-under the same strict settings — clean where both extras are installed, and an honest `import-not-found`
-failure where torch is absent. Two hygiene tests keep the two configurations' strictness identical and pin
-the exclusion list to the modules whose dependency it names.
+selection, both fixed, and `configs/mypy-model-path.toml` is now the command that checks every module in the
+package — the three the default configuration excludes included — under the same strict settings: clean where
+both extras are installed, and an honest `import-not-found` failure where `torch` is absent. Two hygiene tests
+keep the two configurations' strictness identical and pin the exclusion list to the modules whose dependency it
+names. This paragraph used to carry a source-file count in it; the count was removed rather than updated,
+because it is exactly the kind of number K-013 describes drifting, and `mypy` prints the live one on every run.
 
 **Re-verified again (2026-10-21, P33–P36).** The token's scopes were `gist, read:org, repo` — no
 `workflow` — so a push that touches `.github/workflows/*` was refused (GitHub refuses the *whole* push,
@@ -315,6 +344,157 @@ interface change to the answer record and needs a decision record, not a rename.
 **What would close it:** a version label on the evidence rendering that reaches the same place the prompt
 template version already reaches (`describe()`, the answer's `evaluation_provenance`, and an experiment
 report), with the existing records stating which label they ran under.
+
+### K-013 — Counts are copied into six documents and drift on the next commit
+
+**Impact:** Medium, and it is how most of this audit's findings were produced.
+
+Every quantity that changes as the project grows — records, pinned corpora, CLI commands, source files, test
+totals — is written out in more than one place. `README.md`, `docs/getting-started.md`, `docs/roadmap.md`,
+`docs/internal/experiments/README.md`, `docs/agent/CURRENT_STATE.md` and `AGENTS.md` each carried some version
+of "seven experiment records" or "142 source files", and `docs/agent/CONVENTIONS.md` says plainly: "Do not
+duplicate a specification across documents. Link to it. Duplicated text goes stale in one place and stays
+correct in the other."
+
+The 2026-10-24 pass found the drift in the open: seven records where there are eight, two corpora where three
+are pinned, 12 commands where `chakaso --help` prints 13, and 142/147 source files where `mypy` now counts 157.
+Some copies were corrected; the counts in `docs/roadmap.md` and the test census were replaced by a pointer to
+`CURRENT_STATE.md` plus the command that reproduces them, because a number in a phase table is a number nobody
+re-reads before citing it.
+
+**Why it keeps happening.** Nothing checks a prose count. The hygiene tests verify links, tracked-file sizes,
+allowlists and the workflow document — a sentence can say "eight records" next to a directory holding nine and
+every gate stays green.
+
+**What would close it:** one owner per count (`CURRENT_STATE.md` for census figures, `--help` for the command
+list, the `experiments/` directory listing for records) with every other document linking rather than
+restating; optionally a hygiene check that a count stated in a document equals the thing counted, which is easy
+for records and commands and awkward for test totals, since those depend on which extras are installed.
+
+### K-014 — This arc delivered straight to `main` while the conventions require a branch and a PR
+
+**Impact:** High for the process, none for the code.
+
+`docs/agent/CONVENTIONS.md` states: "Bootstrap-scale changes may go directly to `main`. Anything that changes a
+documented interface, adds a dependency, or spans more than one component goes on a branch and through a pull
+request, so that CI runs before it lands." The foundation release did all three of those things — new optional
+extras, new checkpoint schemas, a new serving adapter, a new release contract — in roughly forty commits pushed
+directly to `main`.
+
+**What actually protected the work, and what did not.** Every commit ran the four gates locally before it was
+pushed, and the three CI tiers read back green from the runner after the push — but the rule's stated purpose is
+that *CI runs before it lands*, and here CI ran after. That ordering is what found two defects on 2026-10-22
+(a Windows-only attribute and an assertion finer than float32): they were caught on the runner, which in a
+branch-and-PR flow would have caught them before `main` moved. Direct delivery also means a bad commit is
+`main`'s history the moment it lands, so a revert is a public act rather than a closed pull request.
+
+**Why it was done anyway.** The mission was executed as an autonomous single-operator run, and the branch flow
+assumes a reviewer. That is a reason to change the rule or to state its exception, not to keep breaking it
+quietly — an unenforced convention is a convention that teaches contributors to ignore it.
+
+**What would close it:** either an amendment to `CONVENTIONS.md` naming when direct-to-`main` is permitted (for
+example: solo research arcs with three-tier CI and a documented rollback, never with an unreviewed interface
+change), or a decision record that the branch rule is unconditional and a note in `ACTIVE_TASK.md` that this
+arc's method was out of contract. This entry does not propose which; it records that both cannot be true.
+
+### K-015 — A loaded release reports the adapter's name, not the identity its own contract states
+
+**Impact:** Medium, and it is the identity surface a consumer actually reads.
+
+`load_model_release(directory)` verifies the contract, then calls `load_model` on the checkpoint file the
+contract names. The returned model reports `metadata.model_id == "subword_transformer"` — which is the
+*registry key* of the adapter — while `model.json` beside it says the model is `chakaso-base`.
+`GenerationResult.model_id`, `describe()["model_id"]` and `/health`'s `model_id` field all carry the adapter
+name. Nothing here is exactly false — `subword_transformer` is what reads the file, `describe()["family"]` does
+say `decoder`, and the serving layer already prefers the contract when it can: `ServingApplication.for_path`
+composes `release.model_id@version` as its `model_name`, so `/v1/models` and a completion body answer
+`chakaso-base@0.1.0` while `/health` prints both identities side by side. The disparity is that the *primary*
+interface — the Python library ADR-0033 makes the product — gives a caller no way to ask a loaded release what
+it is called except by loading the contract as a second object and reconciling the two by hand.
+
+**Found alongside a defect that was fixed rather than filed.** The same adapter used to hard-code a display
+name claiming the model was "trained on the project's own documentation" — which is not true of the released
+decoder, nor of any checkpoint since E2607. Since `model inspect`, `/v1/models` and an answer's
+`model_display_name` provenance all print that string, a false data-provenance claim was living inside the
+product. It now derives from the artifact's declared family and names no corpus at all
+(`test_the_display_name_names_the_architecture_without_inventing_provenance`). `model_id` is a separate
+question because changing it changes what callers key on.
+
+**What would close it:** a decision about which identity governs a loaded release — the release's `model_id`,
+the adapter's, or both as distinct fields — written as a record, because every option is visible in served
+output and in stored answer provenance. The cheap variant (pass the contract's `model_id` through
+`load_model`) would make `chakaso model inspect dist/chakaso-base` answer `chakaso-base` and needs the slice's
+identity assertion updated in the same commit; the honest variant adds a `trained_as`/`adapter` pair so an
+integrator can tell what the artifact is from what read it.
+
+### K-016 — `chakaso model serve` is the one lifecycle command no test runs as a command
+
+**Impact:** Low-to-medium, and it is a hole in the claim that the CLI is thin over the library.
+
+`tests/test_serve_server.py` and `tests/test_serve_app.py` exercise the transport and the request logic over a
+real socket (49 tests), and `tests/test_vertical_slice.py` starts a `ServingService` in front of a checkpoint
+trained inside that test. What no test does is invoke the `serve` *action*: nothing calls the handler that
+parses `--host`, `--port`, `--max-concurrent` and `--model-path`, installs the signal handling, and blocks
+until Ctrl-C. The vertical slice's terminal-lifecycle test drives export, verify, inspect, score and generate
+through `main([...])`, and stops there because a blocking command cannot be asserted on without a subprocess
+and a timeout. CI likewise never starts the server as a process.
+
+**Why it is not simply fixed by a test.** A subprocess serving test needs a trained artifact, an available
+port, and a reliable kill path; the failure modes it would catch (a flag name that does not reach the
+application, a default that binds more widely than documented) are exactly the ones a unit test of the
+transport cannot see. The `--host` default in particular is the safety property ADR-0038 rests on, and today
+nothing proves the CLI does not override it.
+
+**What would close it:** one subprocess test that runs `python -m chakaso model serve <fixture release> --port 0`,
+reads the bound address off the health endpoint, asserts `127.0.0.1`, and terminates the process; landed in the
+dependency-free tier only if a double can be substituted, otherwise in `model path`.
+
+### K-017 — Half the measured records have no machine-readable evidence in the repository
+
+**Impact:** Medium for the early records, and inconsistent with what the project now does.
+
+`experiments/E2601`–`E2604` contain `record.md` and nothing else. `E2605` and `E2607` committed their corpus
+manifests, `E2606` and `E2607` gained their aggregates (`results.json`, digests cited in the records) on
+2026-10-24 precisely so a reader could re-derive four corrected numbers without the git-ignored `data/` tree,
+and `E2608` — the record behind the released artifact — still has only `record.md`: its two arm reports, two
+generation-suite outputs and snapshot live under `data/` and are cited by digest alone.
+
+**What that costs.** `AGENTS.md` requires that "a result is aggregated from the reports on disk", and the E2606
+and E2607 corrections were found *by* recomputing against a report. For E2601–E2604 the arithmetic in the prose
+cannot be recomputed at all, and for E2608 a reader without the author's `data/` directory cannot check the
+1.6865 against 1.9043 comparison, the token budget, or the generation statistics that withheld Level 3.
+
+**Why nothing was copied in during the audit.** Committing a byte-identical copy of an artifact changes what the
+record cites (the provenance table names a `data/…` path) and would apply inconsistently across nine records
+unless decided once. It is a policy question for `docs/internal/experiments/README.md` and
+[`artifact-policy.md`](../internal/engineering/artifact-policy.md), not a drive-by file move.
+
+**What would close it:** a stated rule about which generated evidence is committed (the plausible one: any
+machine-readable input to a number printed in a record, up to the 1 MiB tracked-file bound, with the record's
+provenance table naming the committed path), applied to E2605–E2608 first since their statistics are cited in
+the model card, and to E2601–E2604 by regenerating their aggregates from the reports the records already quote.
+
+### K-018 — `--samples-per-prompt` counts tokens, not samples
+
+**Impact:** Low, and it misleads a reader of a measured record.
+
+The flag on `chakaso experiment model` names a quantity that is not what it holds: `samples_per_prompt` is the
+number of *tokens generated* per continuation, and each prompt yields exactly one greedy sample. E2608's
+protocol section says so, its deviation 7 records the misnomer and explains why the name survived — both arms'
+commands are quoted verbatim in the record, and renaming after the fact would make the quoted command line no
+longer the one that ran.
+
+**Why it is filed rather than renamed.** `samples_per_prompt` is a field of the experiment plan, and the plan is
+serialized into every run's report under that key. Renaming it therefore splits the artifact history: reports
+already on disk and quoted by three records name one key, reports after the rename name another. Checking
+`chakaso.training.seed_study` shows the study's enforced protocol identity does *not* include this field
+(`_PROTOCOL_FIELDS` covers corpus, split, tokenizer, architecture, parameter count and the budget), so nothing
+would refuse a study that mixed the two spellings — which is precisely why a rename needs a stated plan version
+rather than a find-and-replace.
+
+**What would close it:** `--continuation-tokens` (or `--max-new-tokens-per-prompt`) with the old name kept as a
+deprecated alias until the next record that declares a plan, plus a schema version bump for the plan block so a
+reused report cannot silently mean the other thing.
 
 ## Resolved
 

@@ -39,23 +39,54 @@ objects the way the present one does. Disk free and RAM were read from the OS (`
    all selected the step ceiling. A decaying schedule is a first-class hypothesis for "the budget did not
    finish", not a side effect to hope for.
 
-**Corrections owed by this unit, recorded here so they are not lost** (each lands in the workstream that
-resolves it, per the brief): the stale-model and stale-tokenizer claims above; `AGENTS.md:75-81` and `:180`
-("four records, E2601–E2604" — there are seven, and E2607's data is not self-authored);
-`docs/agent/CURRENT_STATE.md:77` (five records → seven), `:92` (142 → 147 source files), `:410` ("no training on
-an external corpus"), `:43`/`:65` (`benchmark grounded` missing); `KNOWN_ISSUES.md:30` (K-001 narrowing),
-`:88-89` (K-002 lists implemented components as absent), `:171` (142 → 147); `README.md:23`/`:25`/`:29-30`/
-`:129-130`/`:185` (record statuses, test counts, "one author's prose", 11 → 12 commands, ADR-0036 missing);
-`docs/roadmap.md:144-146` (test counts), `:214-218` (first two "next" steps are measured); `docs/training.md:7`
-and `:275` (E2606/E2607 are measured, not "running"), `:42` (stage M0 "In progress");
-`docs/evaluation.md:205-208` and `:332-335` (error bars now exist; `1.8657` is the best of five draws and must
-be quoted with the mean); `docs/research/README.md:42`/`:59`/`:61-62`; `docs/README.md:54`;
-`docs/internal/experiments/README.md:1-3`; `docs/research/next-model-experiment.md:131-144`/`:195` (future tense
-over completed studies); `ADR-0033.md:32-34` and `ADR-0036.md:12` (13 → 19 drifted documents);
-`docs/architecture.md:174`/`:178`/`:225-247`/`:315` (model boundary under-documents `load_model`, `sample`,
-`score`, seed study; "no prompt template" is now a rule to honour rather than a fact); and
-`experiments/E2606/record.md:197` (E2605 selected step 1,380, not 1,440 — historical records otherwise stay
-immutable, this one is a transcription error against E2605's own table).
+**Corrections owed by this unit — discharged on 2026-10-24.** The list below is kept as the record of what the
+starting audit found and what became of each item, because an owed-list that silently disappears is how a
+documentation debt gets forgiven without being paid.
+
+*Landed as corrections:* `AGENTS.md` ("four records, E2601–E2604" → eight, E2601–E2608; the measured-results
+paragraph) — which landed first, at `201c19b` on 2026-10-22, so this arc's own owed list was already stale about
+it; `docs/agent/CURRENT_STATE.md` (record counts, corpus counts, the 142-file claim, the missing
+`benchmark grounded` and `corpus declare|prepare|report` commands, four negative claims about KV cache,
+streaming, nucleus sampling and gradient accumulation that the code had since disproved, the serving row's "not
+yet run against a trained artifact", the missing ADR-0036–0039 rows, the test census, and the "next real unit"
+paragraph that named E2608 as future work); `KNOWN_ISSUES.md` (K-001 narrowed with E2606–E2608 and the release,
+K-002's stale absent-component list corrected, K-009's file count removed rather than re-copied);
+`README.md` (three pinned corpora, eight records, E2608's measured result with its confound, the Level-2
+release replacing "no released weights", 13 commands, the release's own five limitations instead of a
+paraphrase, `encoding="utf-8"` in the scoring snippet, the layout block missing `training/`'s real scope and
+`serve/`); `docs/getting-started.md`, `docs/training.md` (six measured training records, the third corpus, the
+two-card truth about data cards), `docs/evaluation.md` (E2605's character arm is the E2601 *architecture*
+retrained at 44,084 parameters, not E2601's 984-parameter model), `docs/retrieval.md` ("no tokenizer" qualified),
+`docs/roadmap.md` (P8/P9/P13 statuses, the counts replaced by a pointer per K-013, the two "next" steps that
+were already measured, Phase 0's exit evidence), `docs/README.md`, `docs/internal/experiments/README.md` (eight
+closed records, not five plus two running), `docs/internal/engineering/artifact-policy.md` (the checkpoint now
+has a measured size — 17,906,053 bytes usable, 45,254,464 resumable — so the weights question is a hosting
+question, and the tokenizer file's 39,139 bytes answer the size half of its own open question),
+`docs/internal/engineering/tooling.md`, `docs/research/README.md`, `docs/research/hypotheses.md` (four "None
+exist" dependency lines that were no longer true, each rewritten to say which half is still missing),
+`docs/research/next-model-experiment.md` (the 2.1123/2.0829 distinction and an addendum recording what E2606,
+E2607 and E2608 measured), `docs/research/research-log.md` (the four entries the arc owed, plus this audit as a
+dated result), `docs/architecture.md` (the six-rules enforcement claim named per rule, the "no prompt template"
+contradiction, and two reassessment rows that said "there is no model"), `docs/decisions/ADR-0030`, `ADR-0034`,
+`ADR-0035`, `ADR-0037` and `ADR-0039` (dated amendments under each record's own "not edited after acceptance
+except to correct an error" rule, with the decision text untouched); `experiments/E2606/record.md:197` and the
+E2607 rows (transcription and arithmetic errors against their own reports, with the original wording kept and
+the aggregates committed).
+
+*Judged not a defect, and recorded as such:* `ADR-0033.md:32-34` ("No application interface to a trained
+checkpoint exists") and `ADR-0036.md:12` ("13 of its 71 documents were edited after the pin") are **Context**
+sections of dated records — they describe the state that motivated the decision, and
+[`docs/decisions/README.md`](../decisions/README.md) states that "records describe decisions, not status". They
+were left as written; `docs/agent/CONVENTIONS.md`'s "never edit an accepted record's decision" is what protects
+them from being read as current.
+
+*Raised as issues instead of fixed:* K-011 (the one architecture rule that cannot be mechanically enforced),
+K-012 (the unlabelled evidence-context rendering), K-013 (counts duplicated across six documents), K-014 (this
+arc's direct-to-`main` delivery against `CONVENTIONS.md`'s branch-and-PR rule), K-015 (a loaded release reports
+the adapter's `model_id`, not the identity its own contract states — found together with a false provenance
+claim in `display_name`, which *was* fixed the same day), K-016 (`chakaso model serve` is never run as a command
+by a test or by CI), K-017 (E2601–E2604 have no machine-readable evidence and E2608's arm reports are cited by
+digest only), and K-018 (`--samples-per-prompt` counts tokens, not samples).
 
 **Definition of done.** Nodes B–L delivered as tested code, node G executed on verified licensed data with its
 preregistration written before the run, node M's CI matrix landed and its remote result read from the runner,
@@ -81,13 +112,14 @@ loops stay visible.
 | I | Inference runtime and decoding controls | B, H | `models/base.py`, `models/decoding.py`, `models/nntransformer.py` | done | `34c5af3` (`TokenSelector`, `StopScanner`, `AbortSignal`, `truncate_prompt`, full `GenerationParams` surface, `FinishReason`, batched scoring shared with `score()`) and `1399c9e` (one temperature bound for request and configuration) | the shared contract suite plus decoding-policy tests: selection, stop scanning, truncation, seeding, refusal of out-of-range values |
 | J | Streaming and versioned prompt formatting | I | `models/formatting.py`, `stream()` | done | `0b22414` — generation is a step loop, so a stream yields as it is produced and a cancellation stops the work; templates are versioned with `chakaso-plain-v1` as the default because that is the shape the measured runs used | an abort test that caught the first version collecting everything before yielding; template rendering is deterministic and named |
 | K | Optional local HTTP serving adapter | I, J | `serve/` (new), ADR-0038 | done | `f0757e9` — standard-library transport, loopback by default, bounded concurrency, SSE, disconnect aborts through the boundary's own signal, release directory verified before a weight is read; ADR-0038 records the stdlib-over-framework decision and the measured Windows disconnect behaviour | 49 tests: 38 request-logic without a socket (contract, refusals, streaming, the four loader refusals including the development double), 11 over a real socket (event order, `[DONE]`, cancellation proven by tokens actually stopping, the concurrency ceiling, 413 before read, `stop()` not deadlocking) |
-| L | Generation-quality evaluation wired into a run | G, I | `training/generation_eval.py`, report shape | pending | the suite exists and is what reported the pilot's degenerate samples; wiring its scores into the run report and the outcome classes is the open half | — |
+| L | Generation-quality evaluation wired into a run | G, I | `training/generation_eval.py`, report shape | done | `8244c6b` — `subword_experiment.run_experiment` now attaches the suite's `generation` block, a `latency` block stating the conditions of its own measurement, and a `resources` block from the operating system's peak-RSS call (or a named absence where the platform will not say), and `summarise()` speaks them. The suite also separates **refused** from **crashed**, so a model that correctly declines to continue nothing is no longer recorded like one that fell over. Both E2608 arms carry the blocks; the pilot's report does not, and the record states why (its process imported modules that predated the wiring) | the pilot and both arms' generation statistics are in the record; E2608 deviation 6 names the substitute procedure rather than implying the arms ran the wired code |
 | M | CI dependency matrix (`[train]`, `[nn]`, serving) | K | `.github/workflows/ci.yml` | done | `e5e850c` shipped the three tiers; the runners then found two real defects — `5e1b641` (a Windows-only `ctypes.WinDLL` that every local gate passed) and `b99ffee` (an assertion finer than float32). Runs `39704678913` and `39706259071` are green across all eight jobs; `4446517` records it and closes K-009 | five hygiene tests read the shipped file: jobs vs `pyproject` extras, `run:` commands vs the contributor contract, no silent failure, `serve/` free of numpy and torch, and this document vs the file |
-| N | End-to-end vertical slice from a clean environment | G, K | integration tests | done | `3805849` adds `tests/test_vertical_slice.py` (11 stages over an artifact the test trains, plus a fresh-interpreter check that loading a model does not import the conversation runtime); the clean-install half was verified by hand at this head: wheel built, installed into a fresh 3.13.5 venv with no extras (`model verify` works, `model inspect` names the missing extra and exits 1, `corpus verify` re-hashes 919 documents / 14,490,005 characters), then with `.whl[train,nn]` (torch 2.14.1+cpu, numpy 2.4.6) generating, scoring at 5.0280 nats and serving `/v1/models` + `/v1/chat/completions` over a real socket | the slice runs in CI's `model path` tier; the clean-install run is recorded in the CHANGELOG with its numbers |
+| N | End-to-end vertical slice from a clean environment | G, K | integration tests | done | `3805849` adds `tests/test_vertical_slice.py` (stages over an artifact the test trains, plus a fresh-interpreter check that loading a model does not import the conversation runtime); `1ac54d2`'s audit pass added `test_the_release_directory_and_the_file_it_names_are_the_same_model`, which is the evidence ADR-0039's Level 1 cites: both loads must emit the same bounded greedy continuation identifier for identifier, not merely agree about an id string. Twelve stages now. The clean-install half was verified by hand at this head: wheel built, installed into a fresh 3.13.5 venv with no extras (`model verify` works, `model inspect` names the missing extra and exits 1, `corpus verify` re-hashes 919 documents / 14,490,005 characters), then with `.whl[train,nn]` (torch 2.14.1+cpu, numpy 2.4.6) generating, scoring at 5.0280 nats and serving `/v1/models` + `/v1/chat/completions` over a real socket | the slice runs in CI's `model path` tier; the clean-install run is recorded in the CHANGELOG with its numbers; the `serve` **action** is the uncovered part (K-016) |
 | O | Release gate level awarded on evidence | N, L | `MODEL_CARD.md`, ADR-0039 | done | `MODEL_CARD.md` states Level 1 met, Level 2 met, Level 3 not met with the measurement that withholds it (mean bigram repetition 0.5538, 0 tail loops, every sample bound-truncated, no sample publishable); [ADR-0039](../decisions/ADR-0039-three-level-model-release-gate.md) defines the levels, the evidence that closes each, and the rule that passing 1 and 2 implies nothing about 3 | the card's Level 1 and 2 rows are checkable commands (`model verify`, the pinned-snapshot re-run, the slice); Level 3 has no evidence and says so |
-| P | Packaging, model card, data card, recipe, release note | O | `MODEL_CARD.md`, `pyproject.toml`, `docs/`, `CHANGELOG.md` | done | the card ships at the repository root and is linked from README's document table; data cards for all three pinned corpora already exist under `docs/data/`; the training recipe covers corpus declare → prepare → report → train either family → export → verify → serve; the release note is the CHANGELOG's 2026-10-22 section with the gate verdict and the clean-install evidence | wheel builds from the head (`chakaso-0.1.0.dev0-py3-none-any.whl`) and installs into a clean environment with the declared bounds holding against a newer torch |
+| P | Packaging, model card, data card, recipe, release note | O | `MODEL_CARD.md`, `pyproject.toml`, `docs/`, `CHANGELOG.md` | done | the card ships at the repository root and is linked from README's document table; data cards exist for **two of the three** pinned corpora (`docs/data/gutenberg-english-prose-v1.md`, `…-v2.md`) — `chakaso-repo-text-v1` has none, because its composition *is* the tracked tree and a card would restate the manifest, as `docs/training.md` now says; the training recipe covers corpus declare → prepare → report → train either family → export → verify → serve; the release note is the CHANGELOG's 2026-10-22 section with the gate verdict and the clean-install evidence | wheel builds from the head (`chakaso-0.1.0.dev0-py3-none-any.whl`) and installs into a clean environment with the declared bounds holding against a newer torch |
 | Q | Handoff roadmap, phases 0–6 | P | `docs/roadmap.md` | done | seven phases under *Handoff phases* — publish, make the curve turn, seed spread (E2609), capacity-matched architecture comparison, degeneration attacked by decoding and by data diversity, a trained model in front of a workload, domain selection — each with exit criteria and the mistake it prevents; the existing P0–P13 milestone table is left as dated history rather than renumbered | no phase is marked started; the roadmap claims nothing ahead of the evidence |
-| R | Final gates, history review, push, remote verification | A–Q | — | pending | every commit this arc made is pushed and the pushes were verified against `origin/main`; remote CI verified in M | — |
+| R | Final gates, history review, push, remote verification | A–Q | — | pending | every commit this arc made is pushed and the pushes were verified against `origin/main`; remote CI verified in M, and re-verified for the post-delivery commits below | — |
+| S | The documentation audit the delivery triggered (2026-10-24, beyond the brief's node list) | R | every document, `tests/test_repository_hygiene.py`, two records | in progress | `a5efeef` (three rules given the tests their own document claimed; ADR-0030/0034/0035/0037/0039 amendments; K-011 and K-012 filed), `1ac54d2` (every public document reconciled against the measured records), and the agent-context pass in the commit this row is part of. Four numbers in E2606/E2607 had already been corrected at `3823899`, with their aggregates committed and the replaced wording kept | each new hygiene check was falsified by adding a violating module before it was run green; the record corrections were recomputed against `results.json` and then re-derived by hand outside the study code |
 
 A node moves to complete only when its acceptance criteria are evidenced here. Nothing in this table is marked
 from the existence of a file.
