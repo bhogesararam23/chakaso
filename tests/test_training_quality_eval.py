@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import copy
 from collections.abc import Callable, Iterator
+from pathlib import Path
 
 import pytest
 
@@ -25,6 +26,8 @@ from chakaso.training.data import TextUnit
 from chakaso.training.quality_eval import (
     DEFAULT_CONFIGS,
     GATES,
+    HELD_OUT_TEST_FRACTION,
+    HELD_OUT_VALIDATION_FRACTION,
     DecodingConfig,
     GateSpec,
     HeldOutPrompt,
@@ -32,7 +35,10 @@ from chakaso.training.quality_eval import (
     compare_quality_reports,
     distinct_ratio,
     evaluate_quality,
+    heldout_test_units,
+    run_release_quality,
     select_heldout_prompts,
+    summarise_quality,
     text_statistics,
     words,
 )
@@ -116,6 +122,20 @@ def test_text_statistics_flags_a_tail_loop_and_a_replacement_character() -> None
     assert stats["replacement_characters"] == 1
     assert stats["periodic_run_repeats"] >= 3
     assert stats["distinct1"] is not None and stats["distinct1"] < 0.7
+
+
+def test_trailing_whitespace_is_not_a_loop_but_a_repeated_phrase_still_is() -> None:
+    # Regression: a sampled continuation ending in "\n     " was flagged as a tail loop of one space.
+    trailing = (
+        "He attended to the employed feeling, and showed a sensible tone to put off the\n     "
+    )
+    looping = "He said so. " + "and so it went " * 6
+
+    assert text_statistics(trailing)["tail_loop"] is False
+    assert (
+        text_statistics("Chapter one.\n\n\n\n\nChapter two begins here")["periodic_run_repeats"] < 3
+    )
+    assert text_statistics(looping)["tail_loop"] is True
 
 
 def test_prompt_selection_is_deterministic_and_takes_one_prompt_per_document() -> None:
@@ -315,3 +335,78 @@ def test_gate_bands_are_two_sided_and_declared_as_data() -> None:
     assert not assess_gates(aggregate, reference, GateSpec(distinct1_band=0.04))["distinct1"][
         "passed"
     ]
+
+
+def _snapshot(directory: Path, documents: int = 14) -> Path:
+    from chakaso.training.manifest import build_manifest, write_snapshot
+
+    docs = directory / "docs"
+    docs.mkdir(parents=True)
+    for index in range(documents):
+        (docs / f"book-{index:02d}.md").write_text(
+            f"Book {index}. " + _PROSE * 12, encoding="utf-8", newline="\n"
+        )
+    manifest = build_manifest(
+        directory,
+        name="quality-test",
+        version="1",
+        licence="Apache-2.0",
+        source="built by tests",
+        include=("docs/",),
+        extensions=(".md",),
+    )
+    target = directory / "snapshot.json"
+    write_snapshot(manifest, target)
+    return target
+
+
+def test_the_held_out_documents_are_the_experiment_drivers_test_side(tmp_path: Path) -> None:
+    from chakaso.training.data import split_text_units
+    from chakaso.training.manifest import read_snapshot
+
+    snapshot = _snapshot(tmp_path)
+
+    held_out = heldout_test_units(snapshot, split_seed=7)
+    expected = split_text_units(
+        read_snapshot(snapshot).manifest.text_units(),
+        validation_fraction=0.15,
+        test_fraction=0.15,
+        seed=7,
+    )
+
+    assert held_out == tuple(expected.test)
+    train_ids = {unit.identifier for unit in expected.train}
+    validation_ids = {unit.identifier for unit in expected.validation}
+    assert held_out
+    assert not {unit.identifier for unit in held_out} & (train_ids | validation_ids)
+
+
+def test_a_different_split_seed_holds_out_different_documents(tmp_path: Path) -> None:
+    snapshot = _snapshot(tmp_path)
+
+    assert heldout_test_units(snapshot, split_seed=7) != heldout_test_units(snapshot, split_seed=8)
+
+
+def test_the_quality_suite_refuses_a_model_with_no_trained_vocabulary(tmp_path: Path) -> None:
+    snapshot = _snapshot(tmp_path)
+
+    with pytest.raises(ModelError, match="no trained vocabulary"):
+        run_release_quality(_Scripted(_human_like), snapshot, split_seed=7)
+
+
+def test_the_summary_table_names_each_failed_gate() -> None:
+    looper = _Scripted(lambda _prompt, _params: "and the world of the " * 8)
+    report = evaluate_quality(looper, _PROMPT_SET, configs=(DEFAULT_CONFIGS[0],), max_new_tokens=8)
+
+    table = summarise_quality(report)
+
+    assert "human" in table
+    assert "FAIL" in table and "distinct1" in table and "looping" in table
+
+
+def test_the_split_fractions_match_the_experiment_driver() -> None:
+    pytest.importorskip("torch")
+    from chakaso.training import subword_experiment
+
+    assert HELD_OUT_VALIDATION_FRACTION == subword_experiment._VALIDATION_FRACTION
+    assert HELD_OUT_TEST_FRACTION == subword_experiment._TEST_FRACTION

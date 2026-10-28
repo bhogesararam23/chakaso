@@ -949,6 +949,30 @@ def _build_parsers() -> tuple[argparse.ArgumentParser, argparse.ArgumentParser]:
     model_score.add_argument("--text-file", type=Path, required=True, help="the text to score")
     model_score.add_argument("--json", action="store_true", help="machine-readable output")
 
+    model_quality = model_subparsers.add_parser(
+        "quality",
+        help="calibrated generation quality on held-out prompts, against the human reference",
+    )
+    model_quality.add_argument("path", help="a checkpoint file or a release directory")
+    model_quality.add_argument(
+        "--snapshot",
+        type=Path,
+        required=True,
+        help="the pinned corpus snapshot the model trained on",
+    )
+    model_quality.add_argument(
+        "--split-seed", type=int, required=True, help="the split seed the model's run declared"
+    )
+    model_quality.add_argument("--prompts", type=int, default=24, help="held-out prompts to draw")
+    model_quality.add_argument("--max-new-tokens", type=int, default=64, help="tokens per sample")
+    model_quality.add_argument("--out", type=Path, help="write the machine-readable report here")
+    model_quality.add_argument(
+        "--baseline", type=Path, help="an earlier report over the same prompts to compare against"
+    )
+    model_quality.add_argument(
+        "--overwrite", action="store_true", help="replace an existing --out file"
+    )
+
     model_serve = model_subparsers.add_parser(
         "serve",
         help="run the local HTTP inference endpoint",
@@ -2507,7 +2531,7 @@ def _run_model_command(args: argparse.Namespace) -> int:
     if action is None:
         print(
             f"{PROGRAM}: choose a model action: 'inspect', 'verify', 'export', 'generate', 'stream', "
-            "'score' or 'serve'",
+            "'score', 'quality' or 'serve'",
             file=sys.stderr,
         )
         return 1
@@ -2526,6 +2550,8 @@ def _run_model_command(args: argparse.Namespace) -> int:
             return 0
         if action == "score":
             return _run_model_score(model, args)
+        if action == "quality":
+            return _run_model_quality(model, args)
         return _run_model_generation(model, args, streaming=action == "stream")
     except (ModelError, OSError, ValueError) as exc:
         # One boundary for the whole group: a missing extra, an unreadable artifact, a refusal from the
@@ -2555,6 +2581,36 @@ def _run_model_score(model: Any, args: argparse.Namespace) -> int:
         print(json.dumps({"nats_per_token": nats}, sort_keys=True))
     else:
         print(f"{nats:.4f} nats per token (mean next-token cross-entropy)")
+    return 0
+
+
+def _run_model_quality(model: Any, args: argparse.Namespace) -> int:
+    """Run the calibrated quality suite through the library and print its table. No metric lives here."""
+    from chakaso.core.atomic import write_text_atomically
+    from chakaso.training.quality_eval import (
+        compare_quality_reports,
+        run_release_quality,
+        summarise_quality,
+    )
+
+    if args.out is not None and args.out.exists() and not args.overwrite:
+        message = f"{str(args.out)!r} exists; pass --overwrite to replace a report"
+        raise ValueError(message)
+    report = run_release_quality(
+        model,
+        args.snapshot,
+        split_seed=args.split_seed,
+        count=args.prompts,
+        max_new_tokens=args.max_new_tokens,
+    )
+    print(summarise_quality(report))
+    if args.baseline is not None:
+        baseline = json.loads(args.baseline.read_text(encoding="utf-8"))
+        print(json.dumps(compare_quality_reports(baseline, report), sort_keys=True, indent=2))
+    if args.out is not None:
+        write_text_atomically(
+            json.dumps(report, sort_keys=True, indent=2, ensure_ascii=False) + "\n", args.out
+        )
     return 0
 
 

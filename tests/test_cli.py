@@ -2332,3 +2332,34 @@ def test_a_model_that_cannot_score_is_refused_rather_than_guessed(
         _run_model_score(_NoScoringModel(), args)
 
     assert capsys.readouterr().out == ""
+
+
+def test_model_quality_requires_the_snapshot_and_split_seed_it_reproduces_the_holdout_from() -> (
+    None
+):
+    with pytest.raises(SystemExit) as caught:
+        main(["model", "quality", "some-release"])
+    assert caught.value.code == 2
+
+
+def test_model_quality_refuses_to_replace_a_report_unasked(tmp_path: Path) -> None:
+    from argparse import Namespace
+
+    from chakaso.cli import _run_model_quality
+
+    report = tmp_path / "report.json"
+    report.write_text("{}", encoding="utf-8")
+    arguments = Namespace(
+        out=report,
+        overwrite=False,
+        snapshot=tmp_path / "s.json",
+        split_seed=7,
+        prompts=2,
+        max_new_tokens=8,
+        baseline=None,
+    )
+
+    with pytest.raises(ValueError, match="--overwrite"):
+        _run_model_quality(object(), arguments)
+
+    assert report.read_text(encoding="utf-8") == "{}"

@@ -39,16 +39,21 @@ import random
 import re
 from collections.abc import Sequence
 from dataclasses import dataclass
+from pathlib import Path
 from typing import Any
 
 from chakaso.models import GenerationParams, LanguageModel, Message, ModelError, Role
-from chakaso.training.data import TextUnit
+from chakaso.models.base import StreamingGenerator
+from chakaso.training.data import TextUnit, split_text_units
 from chakaso.training.generation_eval import detect_loop, longest_periodic_run
+from chakaso.training.manifest import read_snapshot
 from chakaso.training.subword import SubwordVocabulary
 
 __all__ = [
     "DEFAULT_CONFIGS",
     "GATES",
+    "HELD_OUT_TEST_FRACTION",
+    "HELD_OUT_VALIDATION_FRACTION",
     "PROMPT_PROCEDURE",
     "QUALITY_SCHEMA",
     "DecodingConfig",
@@ -58,7 +63,10 @@ __all__ = [
     "compare_quality_reports",
     "distinct_ratio",
     "evaluate_quality",
+    "heldout_test_units",
+    "run_release_quality",
     "select_heldout_prompts",
+    "summarise_quality",
     "text_statistics",
     "words",
 ]
@@ -71,6 +79,7 @@ QUALITY_SCHEMA = "chakaso-generation-quality/1"
 #: The seeds a sampled configuration is repeated over. Fixed in code, not chosen from scores.
 DEFAULT_SEEDS: tuple[int, ...] = (11, 23, 37)
 
+_SPACE_RUN = re.compile(r"\s+")
 _WORD = re.compile(r"[\w\u2019']+")
 #: Fewest words a text needs before a distinct-n ratio means anything; below it the ratio is undefined.
 _MINIMUM_WORDS = 8
@@ -196,15 +205,22 @@ def distinct_ratio(tokens: Sequence[str], n: int) -> float | None:
 
 
 def text_statistics(text: str) -> dict[str, Any]:
-    """Every per-text number the gates use, from the emitted characters alone."""
+    """Every per-text number the gates use, from the emitted characters alone.
+
+    Loop and periodic-run detection run on the text with whitespace collapsed to single spaces and the ends
+    trimmed. Prose legitimately ends on, or contains, runs of newlines and indentation; counting a trailing
+    ``"\\n     "`` as a repeated block flagged a sampled continuation that was not looping at all (found on
+    the first baseline run). The human reference goes through the same function, so the treatment is shared.
+    """
     tokens = words(text)
-    _, run_repeats = longest_periodic_run(text)
+    squeezed = _SPACE_RUN.sub(" ", text).strip()
+    _, run_repeats = longest_periodic_run(squeezed)
     return {
         "words": len(tokens),
         "distinct1": distinct_ratio(tokens, 1),
         "distinct2": distinct_ratio(tokens, 2),
         "distinct3": distinct_ratio(tokens, 3),
-        "tail_loop": detect_loop(text).looping,
+        "tail_loop": detect_loop(squeezed).looping,
         "periodic_run_repeats": run_repeats,
         "replacement_characters": text.count("\ufffd"),
     }
@@ -314,14 +330,18 @@ def _check_determinism(
     try:
         first = model.generate(messages, params)
         second = model.generate(messages, params)
-        streamed = "".join(chunk.text for chunk in model.stream(messages, params))
+        streamed = (
+            "".join(chunk.text for chunk in model.stream(messages, params))
+            if isinstance(model, StreamingGenerator)
+            else None
+        )
     except ModelError as exc:
         # A refusal is a named outcome, not a reason to lose the whole report.
         return {"config": config.name, "refused": f"{type(exc).__name__}: {exc}"}
     return {
         "config": config.name,
         "repeat_identical": first.text == second.text and first.token_ids == second.token_ids,
-        "stream_equals_generate": streamed == first.text,
+        "stream_equals_generate": None if streamed is None else streamed == first.text,
     }
 
 
@@ -465,6 +485,85 @@ def assess_gates(
         item["passed"] for key, item in verdict.items() if key != "all_passed"
     )
     return verdict
+
+
+#: The split fractions every subword experiment uses. Repeated here because importing them from the
+#: experiment driver would pull in torch; a gated test asserts the two stay equal.
+HELD_OUT_VALIDATION_FRACTION = 0.15
+HELD_OUT_TEST_FRACTION = 0.15
+
+
+def heldout_test_units(snapshot_path: Path, *, split_seed: int) -> tuple[TextUnit, ...]:
+    """The documents a run with this ``split_seed`` held out for testing, read from a verified snapshot.
+
+    :func:`~chakaso.training.manifest.read_snapshot` re-checks every digest, so the text returned is the
+    pinned corpus rather than whatever is on disk. The split is the experiment driver's own (same
+    function, fractions and seed), so these are the documents the model never trained on or selected by.
+    """
+    snapshot = read_snapshot(snapshot_path)
+    split = split_text_units(
+        snapshot.manifest.text_units(),
+        validation_fraction=HELD_OUT_VALIDATION_FRACTION,
+        test_fraction=HELD_OUT_TEST_FRACTION,
+        seed=split_seed,
+    )
+    return tuple(split.test)
+
+
+def run_release_quality(
+    model: LanguageModel,
+    snapshot_path: Path,
+    *,
+    split_seed: int,
+    count: int = 24,
+    max_new_tokens: int = 64,
+    prompt_seed: int = 1234,
+) -> dict[str, Any]:
+    """Evaluate a loaded trained model on prompts drawn from its own held-out documents.
+
+    Raises:
+        ModelError: the model exposes no vocabulary (the development double), so a human reference cannot
+            be cut into its tokens and nothing honest can be measured.
+    """
+    artifact = getattr(model, "artifact", None)
+    vocabulary = getattr(artifact, "vocabulary", None)
+    if vocabulary is None:
+        message = (
+            "this model carries no trained vocabulary; the quality suite measures trained models"
+        )
+        raise ModelError(message)
+    units = heldout_test_units(snapshot_path, split_seed=split_seed)
+    prompts = select_heldout_prompts(units, vocabulary, count=count, seed=prompt_seed)
+    report = evaluate_quality(model, prompts, max_new_tokens=max_new_tokens)
+    report["split_seed"] = split_seed
+    report["heldout_documents"] = len(units)
+    return report
+
+
+def summarise_quality(report: dict[str, Any]) -> str:
+    """A fixed-width table: one row per configuration against the human reference and the gates."""
+    reference = report["reference"]
+    lines = [
+        f"{report['schema']} model={report['model_id']} prompts={len(report['prompts'])} "
+        f"max_new_tokens={report['max_new_tokens']} digest={report['prompt_digest'][:12]}",
+        f"{'config':<14}{'n':>5}{'dist1':>8}{'dist2':>8}{'dist3':>8}{'loop':>7}{'period':>8}{'fffd':>6}  gates",
+        f"{'human':<14}{reference['samples']:>5}{reference['distinct1']:>8.3f}"
+        f"{reference['distinct2']:>8.3f}{reference['distinct3']:>8.3f}",
+    ]
+    for name, entry in report["configs"].items():
+        agg, gates = entry["aggregate"], entry["gates"]
+        failed = [key for key, item in gates.items() if key != "all_passed" and not item["passed"]]
+        verdict = "PASS" if gates["all_passed"] else "FAIL " + ",".join(failed)
+        lines.append(
+            f"{name:<14}{agg['samples']:>5}{_cell(agg['distinct1'])}{_cell(agg['distinct2'])}"
+            f"{_cell(agg['distinct3'])}{_cell(agg['looping_fraction'], 7, 2)}"
+            f"{_cell(agg['periodic_fraction'], 8, 2)}{agg['replacement_characters']:>6}  {verdict}"
+        )
+    return "\n".join(lines)
+
+
+def _cell(value: float | None, width: int = 8, places: int = 3) -> str:
+    return f"{'n/a':>{width}}" if value is None else f"{value:>{width}.{places}f}"
 
 
 def compare_quality_reports(baseline: dict[str, Any], candidate: dict[str, Any]) -> dict[str, Any]:
