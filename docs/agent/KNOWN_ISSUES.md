@@ -3,7 +3,7 @@
 Real problems with the current state, including the ones that are only
 inconvenient. An empty file here would mean nobody has looked.
 
-Last reviewed: 2026-10-24, as the whole-documentation audit of every doc against the code and the committed
+Last reviewed: 2026-10-29 (K-020 and K-021 added by the E2610 diagnosis); before that 2026-10-24, as the whole-documentation audit of every doc against the code and the committed
 records. That pass added K-011 through K-019, narrowed K-001, rewrote K-002's stale component list and removed a
 drifting count from K-009; the rest of its output was corrected in the documents themselves.
 
@@ -528,6 +528,33 @@ the dev series began.
 from the working tree, with the contract schema decided in the same commit; `MODEL_CARD.md` and the roadmap's
 distribution phase inheriting it; and a line in the card stating that the artifact version and the package
 version are different series.
+
+### K-020 — The quality gates measure repetition, and a passing setting can still write nonsense
+
+**Impact:** High for anyone tempted to read a green gate as a quality statement.
+
+[E2610](../../experiments/E2610/record.md) found configurations that pass every gate of
+`chakaso.training.quality_eval` while producing invented words and no argument (`greedy_rp1.1`, `t1.0`; raw
+samples are in the record). The gates are distinct-n bands around a human reference, tail-loop and periodic-run
+fractions and a U+FFFD count. They are necessary conditions for non-degenerate text and say nothing about
+coherence, truth or usefulness. There is no semantic judge and no human rating in this repository.
+
+**What would close it:** a measure of coherence that is not a repetition statistic — a held-out conditional
+likelihood of each generation under an independent model, a human-rated sample with a recorded protocol, or a
+task with a checkable answer. Until then Level 3 of ADR-0039 cannot be awarded by this suite, and the suite's
+`interpretation_limit` travels in every report for that reason.
+
+### K-021 — The zero-U+FFFD gate cannot tell a model error from a character cut by the token bound
+
+**Impact:** Low, and it can fail a model for the wrong reason.
+
+A generation that ends at `max_new_tokens` inside a multi-byte character flushes one replacement character (the
+correct behaviour: `7895b1c`), and `quality_eval` counts it exactly like a replacement emitted mid-text, which is
+a genuine model error. E2610's transformer arm shows one of each. The gate was not changed after seeing the data
+(deviation 1 of the record).
+
+**What would close it:** count only replacement characters that are not the final character of a sample that
+finished on `length`, declared in a new record rather than applied to E2610's numbers.
 
 ## Resolved
 

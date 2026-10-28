@@ -141,6 +141,7 @@ chakaso model inspect dist/chakaso-base --json   # what the weights, the runtime
 chakaso model generate dist/chakaso-base --prompt "The whale" --max-new-tokens 24
 chakaso model stream dist/chakaso-base --prompt "The whale" --temperature 0.7 --seed 7
 chakaso model score dist/chakaso-base --text-file docs/training.md
+chakaso model quality dist/chakaso-base --snapshot <corpus snapshot> --split-seed 7   # repetition vs human text, gated
 chakaso model serve dist/chakaso-base --port 8765   # loopback by default, no auth, Ctrl-C to stop
 ```
 

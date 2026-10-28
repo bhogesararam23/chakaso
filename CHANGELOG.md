@@ -14,6 +14,16 @@ capability is implemented or still planned.
 
 ### 2026-10-29 — a character split across two generated tokens was destroyed
 
+**Added**
+
+- `chakaso model quality` and `chakaso.training.quality_eval`: held-out prompts drawn from a split's test side,
+  each with its real continuation as a human reference; word-level repetition per decoding configuration and
+  seed; two-sided gates declared as data; baseline comparison refused across different prompt sets.
+  **Experimental.** [E2610](experiments/E2610/record.md) used it on `chakaso-base@0.1.0`: greedy word distinct-1
+  is 0.505 against a human 0.853, unconstrained sampling at temperature 1.0 is 0.890, so the repetition is a
+  property of greedy decoding, not of the training path (each stage of which was checked). Settings that pass every
+  gate still write invented words; the gates do not measure coherence (K-020), and Level 3 stays not met.
+
 **Fixed**
 
 - Generation decoded each token on its own with `errors="replace"`. A character whose UTF-8 bytes span two

@@ -70,6 +70,26 @@ Hostile inputs: a single character, non-ASCII text and an oversized prompt all g
 produced a typed refusal (`ModelError`), which is the boundary's documented contract and is counted as a
 refusal, not a crash. **Zero crashes across nine probes.**
 
+### Calibrated against human text (E2610, added 2026-10-29)
+
+The table above reports *character*-bigram ratios, which a reader cannot interpret without a reference:
+the same statistic on real held-out prose of the same length is **0.3355**, and the five probes above were
+markdown about this repository, which this model never trained on. The calibrated suite
+(`chakaso model quality`, [E2610](experiments/E2610/record.md)) draws 24 prompts from held-out *books'* own
+text, keeps the true continuation as a human reference, and measures word distinct-n. On 24 prompts:
+
+| Decoding | Word distinct-1 | Distinct-2 | Distinct-3 | Passes the declared gates |
+| --- | --- | --- | --- | --- |
+| human continuation | 0.853 | 0.969 | 0.982 | (the reference) |
+| greedy | 0.505 | 0.688 | 0.794 | No — fails all three diversity gates and the periodic gate |
+| temperature 1.0, 3 seeds | 0.890 | 0.996 | 0.999 | Yes, on both prompt sets |
+
+The repetition is therefore a property of **greedy decoding of a distribution that is itself human-diverse**,
+not a defect in training data, packing, tokenization, positions or the cache (each checked; see the
+[research log](docs/research/research-log.md)). It is *not* evidence the model writes well: settings that pass
+every gate produce invented words (`Meshiciety`, `Puhaberlap`) and no argument, and the preregistered claim that
+a decoding setting repairs repetition was **inconclusive** (K-020). Level 3 stays **not met**.
+
 The suite's own limit travels with the data: these are *surface statistics* — repetition, length, termination
 and refusal behaviour computed from emitted characters. No semantic quality, usefulness or groundedness is
 measured here, and none may be inferred from these numbers.
@@ -79,7 +99,9 @@ measured here, and none may be inferred from these numbers.
 Stated in the release contract, verbatim:
 
 1. Generations repeat phrases: mean bigram repetition 0.5538 over five greedy continuations; every sample
-   reached its token bound. No sample is usable text.
+   reached its token bound. No sample is usable text. (Calibrated: that is a character statistic whose human
+   value is 0.3355; the word-level gap is 0.505 against 0.853 distinct-1 for greedy. The sentence quoted here
+   is the release contract's own and is not edited; the section above is the correction.)
 2. One seed (7). Seed luck is measured at ± 0.0077 bits on the transformer family; nothing here measures it for
    this architecture.
 3. Selected step 2,400 equals the budget ceiling with validation still falling: this is a floor, not a

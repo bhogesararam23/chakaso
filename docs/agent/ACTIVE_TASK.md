@@ -1,6 +1,37 @@
 # Active task
 
-## Current unit: nodes A–R — Chakaso Scratch LM Foundation v0.1
+## Current unit: model-quality diagnosis — why the released checkpoint repeats (2026-10-29, from `fc31782`)
+
+**Goal.** Establish, with measurement, whether `chakaso-base@0.1.0`'s repetition is a pipeline defect, a
+decoding property or a model limit; fix verified defects; replace the uncalibrated repetition number with an
+instrument that can carry a claim. Not a restart of the foundation work below, which stays delivered.
+
+**State at the start (measured).** `main` == `origin/main` == `fc31782`, tree clean; dependency-free matrix and
+`[train,nn]` matrix green (2,029 passed / 1 skipped with the extras on this machine, 142 s). Machine: 18
+logical CPUs, no CUDA device (an Intel Arc iGPU is present and unused), 16.2 GB RAM with ~3 GB free. A
+2,400-step decoder run costs ~100 minutes here, which bounded what could be run. Local artifacts present:
+the E2608 decoder and transformer checkpoints, the release directory, the pinned snapshot and the tokenizer cache.
+
+| Node | Task | Depends on | Acceptance | Status | Evidence |
+| --- | --- | --- | --- | --- | --- |
+| Q0 | Baseline and environment | — | tests run, resources read | done | 2,029 passed / 1 skipped; resources above |
+| Q1 | Diagnose the training and data path | Q0 | each suspect checked by measurement, not by reading | done | packing/targets, tokenizer round trip (0/138 failures), position flatness, KV cache equality all **sound**; see the 2026-10-29 research-log entry |
+| Q2 | Fix verified defects | Q1 | regression test that fails before and passes after | done | `7895b1c` — per-token UTF-8 decode destroyed split characters; two adapter tests fail on the old code |
+| Q3 | Calibrated, gated, reproducible quality suite | Q1 | human reference, held-out prompts, multi-seed, gates declared as data, determinism and baseline comparison | done | `54574f5`, the `model quality` action and the sweep (`chakaso.training.quality_eval`, 30 tests) |
+| Q4 | Controlled experiment, preregistered | Q3 | record committed before the run, selection rule fixed, confirmation on unseen documents | done | E2610: `132839b` (preregistered) then `92d3120` (results). H1 inconclusive, H2 failed as worded, H3 supported |
+| Q5 | Documentation reconciled | Q4 | card, issues, roadmap, state, log carry measured results | done | this commit; K-020, K-021 filed |
+| Q6 | Training-side experiment (budget / data / scale) | Q3 | a preregistered arm against the E2608 baseline | **not run** | no hypothesis justified ~100 min of CPU; the stop condition below applies |
+| Q7 | A coherence measure that is not a repetition statistic | Q3 | closes K-020 | open | needs a conditional-likelihood judge or a human-rated protocol |
+
+**Stop conditions, declared at the start.** Do not train a new arm unless a preregistered hypothesis predicts
+a difference the suite can see; do not award Level 3 on repetition statistics alone; do not change a gate after
+reading the results that it gates.
+
+**What this unit found.** The repetition is the mode of a human-diverse distribution (greedy word distinct-1
+0.505 against a human 0.853; sampled at T = 1.0, 0.890), not a pipeline defect; one real decoding bug was fixed;
+and no decoding setting yields coherent text. Details: [E2610](../../experiments/E2610/record.md).
+
+## Previous unit (delivered): nodes A–R — Chakaso Scratch LM Foundation v0.1
 
 **Goal.** Turn the measured research implementation into a complete, versioned, integration-ready
 language-model foundation: an artifact contract, a config-driven training engine, a Python inference runtime

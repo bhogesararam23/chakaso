@@ -785,3 +785,39 @@ they do not — a sentence this repository should keep needing to write.
 the two claims it could not back are recorded as open issues rather than left in prose. Not believed: that the
 audit found everything — it checked documents against code and records, and the gap that matters (K-001, that
 nothing here has been executed against a real workload) is a missing experiment, not a missing sentence.
+
+## 2026-10-29 — The repetition number was never calibrated; the model's own distribution is not degenerate, and one real decoding bug was found on the way
+
+**Type:** diagnosis + measured result ([E2610](../../experiments/E2610/record.md)). **Question:** why does
+`chakaso-base@0.1.0` repeat, and is the cause in the data/training path or in how it is decoded?
+
+**Checked and found sound** (each by direct measurement on the released checkpoint, not by reading code alone):
+packing and targets (`packing.py`: per-side, document-terminated, shifted by one); tokenizer round trip (0
+failures over all 138 held-out documents); position and context handling (teacher-forced loss by position is flat
+from position ~16 to 255: 2.58 → 2.54 nats, so the model uses its whole window); the key/value cache (greedy
+output equals the no-cache full forward on 6 held-out prompts).
+
+**Found broken:** generation decoded each token alone with `errors="replace"`, so a character whose UTF-8
+bytes span two tokens (`£` = `C2 A3`) was emitted as two U+FFFD characters. 1 of 180 sampled continuations of
+the released checkpoint showed it. Fixed (`7895b1c`); a scripted-logits regression test fails on the old code.
+This did not cause the repetition (greedy output on the recorded probes was unaffected).
+
+**Found misleading:** the headline "bigram repetition 0.5538" is a **character**-bigram ratio over ~100–250
+characters, and the same statistic on real held-out prose of the same length is 0.3355. The suite had no human
+reference and used out-of-distribution prompts (markdown about this repository). A word-level, human-calibrated
+suite replaces it as the instrument for new claims (`chakaso.training.quality_eval`).
+
+**Measured (E2610, 24 + 24 held-out prompts, 3 seeds for sampled settings):** greedy decoding fails the diversity
+gates by ~0.35 in word distinct-1 (0.505 against a human 0.853); the model's *unconstrained* samples (T = 1.0)
+match the human value (0.890 against 0.853; 0.896 against 0.877 on unseen documents). So the diversity of the
+distribution is human-level and the repetition is produced by taking its mode. The decoder arm is less repetitive
+than the E2608 transformer arm on identical prompts (greedy distinct-1 0.505 against 0.358).
+
+**Not established, and said plainly:** that any setting produces *good* text. The samples that pass every gate
+contain invented words (`Meshiciety`, `Puhaberlap`). Repetition gates are necessary and nowhere near sufficient;
+a repetition penalty (`greedy_rp1.1`) passes them on one set by writing nonsense. The preregistered H1 was
+**inconclusive** (the selected setting failed confirmation by 0.009), not confirmed.
+
+**What this changes:** the cheapest lever on repetition is decoding, and it is exhausted as a route to
+usefulness; what remains is the model — data volume and diversity, token budget, scale — which this session did
+not test (a 2,400-step arm costs ~100 minutes on this machine; no hypothesis here justified spending it).
