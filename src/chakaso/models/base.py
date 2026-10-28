@@ -275,9 +275,9 @@ class GenerationChunk:
     """One streamed piece of a generation.
 
     Attributes:
-        text: The decoded text of this step, which may be an incomplete multi-byte sequence's replacement
-            when a token ends mid-character; a caller that renders chunk-by-chunk should keep the previous
-            text and re-render rather than trusting one chunk.
+        text: The text this step completes. A token that only begins a multi-byte character contributes an
+            empty string and the character arrives whole with the token that finishes it; a run that ends
+            inside a character delivers one replacement character on the final chunk.
         token_id: The identifier just produced.
         final: Set on the last chunk, which also carries the finish reason.
         finish_reason: Only meaningful when ``final`` is true.
