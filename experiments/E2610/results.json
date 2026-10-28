@@ -1,0 +1,3530 @@
+{
+ "note": "per-configuration aggregates and gate verdicts copied from the reports named; raw samples stay in data/ (git-ignored) and are identified by digest",
+ "reports": {
+  "baseline_default_v0.1.0": {
+   "config_set": null,
+   "configs": {
+    "greedy": {
+     "aggregate": {
+      "bound_fraction": 1.0,
+      "distinct1": 0.505369,
+      "distinct1_defined": 24,
+      "distinct1_sd": 0.133267,
+      "distinct2": 0.688039,
+      "distinct2_defined": 24,
+      "distinct2_sd": 0.168399,
+      "distinct3": 0.794303,
+      "distinct3_defined": 24,
+      "distinct3_sd": 0.183463,
+      "looping_fraction": 0.0,
+      "mean_words": 29.5,
+      "periodic_fraction": 0.083333,
+      "refused": 0,
+      "replacement_characters": 0,
+      "samples": 24
+     },
+     "config": {
+      "name": "greedy",
+      "repeat_penalty": 1.0,
+      "temperature": 0.0,
+      "top_k": null,
+      "top_p": null
+     },
+     "gates": {
+      "all_passed": false,
+      "distinct1": {
+       "band": 0.05,
+       "direction": "repetitive",
+       "gap": -0.347628,
+       "human": 0.852997,
+       "observed": 0.505369,
+       "passed": false
+      },
+      "distinct2": {
+       "band": 0.03,
+       "direction": "repetitive",
+       "gap": -0.281217,
+       "human": 0.969256,
+       "observed": 0.688039,
+       "passed": false
+      },
+      "distinct3": {
+       "band": 0.02,
+       "direction": "repetitive",
+       "gap": -0.187547,
+       "human": 0.98185,
+       "observed": 0.794303,
+       "passed": false
+      },
+      "looping": {
+       "limit": 0.0,
+       "observed": 0.0,
+       "passed": true
+      },
+      "periodic": {
+       "limit": 0.05,
+       "observed": 0.083333,
+       "passed": false
+      },
+      "replacement_characters": {
+       "limit": 0,
+       "observed": 0,
+       "passed": true
+      }
+     }
+    },
+    "greedy_rp1.2": {
+     "aggregate": {
+      "bound_fraction": 0.166667,
+      "distinct1": 0.971917,
+      "distinct1_defined": 24,
+      "distinct1_sd": 0.041881,
+      "distinct2": 1.0,
+      "distinct2_defined": 24,
+      "distinct2_sd": 0.0,
+      "distinct3": 1.0,
+      "distinct3_defined": 24,
+      "distinct3_sd": 0.0,
+      "looping_fraction": 0.0,
+      "mean_words": 11.791667,
+      "periodic_fraction": 0.0,
+      "refused": 0,
+      "replacement_characters": 0,
+      "samples": 24
+     },
+     "config": {
+      "name": "greedy_rp1.2",
+      "repeat_penalty": 1.2,
+      "temperature": 0.0,
+      "top_k": null,
+      "top_p": null
+     },
+     "gates": {
+      "all_passed": false,
+      "distinct1": {
+       "band": 0.05,
+       "direction": "over_diverse",
+       "gap": 0.11892,
+       "human": 0.852997,
+       "observed": 0.971917,
+       "passed": false
+      },
+      "distinct2": {
+       "band": 0.03,
+       "direction": "over_diverse",
+       "gap": 0.030744,
+       "human": 0.969256,
+       "observed": 1.0,
+       "passed": false
+      },
+      "distinct3": {
+       "band": 0.02,
+       "direction": "within",
+       "gap": 0.01815,
+       "human": 0.98185,
+       "observed": 1.0,
+       "passed": true
+      },
+      "looping": {
+       "limit": 0.0,
+       "observed": 0.0,
+       "passed": true
+      },
+      "periodic": {
+       "limit": 0.05,
+       "observed": 0.0,
+       "passed": true
+      },
+      "replacement_characters": {
+       "limit": 0,
+       "observed": 0,
+       "passed": true
+      }
+     }
+    },
+    "t0.7_p0.9": {
+     "aggregate": {
+      "bound_fraction": 1.0,
+      "distinct1": 0.740261,
+      "distinct1_defined": 72,
+      "distinct1_sd": 0.087945,
+      "distinct2": 0.9521,
+      "distinct2_defined": 72,
+      "distinct2_sd": 0.047907,
+      "distinct3": 0.994882,
+      "distinct3_defined": 72,
+      "distinct3_sd": 0.015404,
+      "looping_fraction": 0.0,
+      "mean_words": 27.305556,
+      "periodic_fraction": 0.0,
+      "refused": 0,
+      "replacement_characters": 0,
+      "samples": 72
+     },
+     "config": {
+      "name": "t0.7_p0.9",
+      "repeat_penalty": 1.0,
+      "temperature": 0.7,
+      "top_k": null,
+      "top_p": 0.9
+     },
+     "gates": {
+      "all_passed": false,
+      "distinct1": {
+       "band": 0.05,
+       "direction": "repetitive",
+       "gap": -0.112736,
+       "human": 0.852997,
+       "observed": 0.740261,
+       "passed": false
+      },
+      "distinct2": {
+       "band": 0.03,
+       "direction": "within",
+       "gap": -0.017156,
+       "human": 0.969256,
+       "observed": 0.9521,
+       "passed": true
+      },
+      "distinct3": {
+       "band": 0.02,
+       "direction": "within",
+       "gap": 0.013032,
+       "human": 0.98185,
+       "observed": 0.994882,
+       "passed": true
+      },
+      "looping": {
+       "limit": 0.0,
+       "observed": 0.0,
+       "passed": true
+      },
+      "periodic": {
+       "limit": 0.05,
+       "observed": 0.0,
+       "passed": true
+      },
+      "replacement_characters": {
+       "limit": 0,
+       "observed": 0,
+       "passed": true
+      }
+     }
+    },
+    "t0.8_k40": {
+     "aggregate": {
+      "bound_fraction": 1.0,
+      "distinct1": 0.797917,
+      "distinct1_defined": 72,
+      "distinct1_sd": 0.077866,
+      "distinct2": 0.971258,
+      "distinct2_defined": 72,
+      "distinct2_sd": 0.04117,
+      "distinct3": 0.996281,
+      "distinct3_defined": 72,
+      "distinct3_sd": 0.012924,
+      "looping_fraction": 0.0,
+      "mean_words": 27.291667,
+      "periodic_fraction": 0.013889,
+      "refused": 0,
+      "replacement_characters": 0,
+      "samples": 72
+     },
+     "config": {
+      "name": "t0.8_k40",
+      "repeat_penalty": 1.0,
+      "temperature": 0.8,
+      "top_k": 40,
+      "top_p": null
+     },
+     "gates": {
+      "all_passed": false,
+      "distinct1": {
+       "band": 0.05,
+       "direction": "repetitive",
+       "gap": -0.05508,
+       "human": 0.852997,
+       "observed": 0.797917,
+       "passed": false
+      },
+      "distinct2": {
+       "band": 0.03,
+       "direction": "within",
+       "gap": 0.002002,
+       "human": 0.969256,
+       "observed": 0.971258,
+       "passed": true
+      },
+      "distinct3": {
+       "band": 0.02,
+       "direction": "within",
+       "gap": 0.014431,
+       "human": 0.98185,
+       "observed": 0.996281,
+       "passed": true
+      },
+      "looping": {
+       "limit": 0.0,
+       "observed": 0.0,
+       "passed": true
+      },
+      "periodic": {
+       "limit": 0.05,
+       "observed": 0.013889,
+       "passed": true
+      },
+      "replacement_characters": {
+       "limit": 0,
+       "observed": 0,
+       "passed": true
+      }
+     }
+    },
+    "t1.0": {
+     "aggregate": {
+      "bound_fraction": 0.972222,
+      "distinct1": 0.890355,
+      "distinct1_defined": 71,
+      "distinct1_sd": 0.056982,
+      "distinct2": 0.996146,
+      "distinct2_defined": 71,
+      "distinct2_sd": 0.014729,
+      "distinct3": 0.999458,
+      "distinct3_defined": 71,
+      "distinct3_sd": 0.004565,
+      "looping_fraction": 0.0,
+      "mean_words": 24.652778,
+      "periodic_fraction": 0.0,
+      "refused": 0,
+      "replacement_characters": 0,
+      "samples": 72
+     },
+     "config": {
+      "name": "t1.0",
+      "repeat_penalty": 1.0,
+      "temperature": 1.0,
+      "top_k": null,
+      "top_p": null
+     },
+     "gates": {
+      "all_passed": true,
+      "distinct1": {
+       "band": 0.05,
+       "direction": "within",
+       "gap": 0.037358,
+       "human": 0.852997,
+       "observed": 0.890355,
+       "passed": true
+      },
+      "distinct2": {
+       "band": 0.03,
+       "direction": "within",
+       "gap": 0.02689,
+       "human": 0.969256,
+       "observed": 0.996146,
+       "passed": true
+      },
+      "distinct3": {
+       "band": 0.02,
+       "direction": "within",
+       "gap": 0.017608,
+       "human": 0.98185,
+       "observed": 0.999458,
+       "passed": true
+      },
+      "looping": {
+       "limit": 0.0,
+       "observed": 0.0,
+       "passed": true
+      },
+      "periodic": {
+       "limit": 0.05,
+       "observed": 0.0,
+       "passed": true
+      },
+      "replacement_characters": {
+       "limit": 0,
+       "observed": 0,
+       "passed": true
+      }
+     }
+    }
+   },
+   "determinism": [
+    {
+     "config": "greedy",
+     "repeat_identical": true,
+     "stream_equals_generate": true
+    },
+    {
+     "config": "t0.7_p0.9",
+     "repeat_identical": true,
+     "stream_equals_generate": true
+    }
+   ],
+   "gates": {
+    "distinct1_band": 0.05,
+    "distinct2_band": 0.03,
+    "distinct3_band": 0.02,
+    "max_looping_fraction": 0.0,
+    "max_periodic_fraction": 0.05,
+    "max_replacement_characters": 0
+   },
+   "max_new_tokens": 64,
+   "model_id": "subword_transformer",
+   "prompt_digest": "c3614be7182eff877793a23fbf405ffd970c62a410757efb082bef8e25dce665",
+   "prompt_offset": null,
+   "reference": {
+    "distinct1": 0.852997,
+    "distinct1_defined": 24,
+    "distinct1_sd": 0.094172,
+    "distinct2": 0.969256,
+    "distinct2_defined": 24,
+    "distinct2_sd": 0.070075,
+    "distinct3": 0.98185,
+    "distinct3_defined": 24,
+    "distinct3_sd": 0.052866,
+    "looping_fraction": 0.0,
+    "mean_words": 25.333333,
+    "periodic_fraction": 0.0,
+    "replacement_characters": 0,
+    "samples": 24
+   },
+   "schema": "chakaso-generation-quality/1",
+   "seeds": [
+    11,
+    23,
+    37
+   ],
+   "source_sha256": "cfa4d3382b6b02295cd93caeb514f8ea2a35f71f7369e3018e3e1b7bc7d925be",
+   "split_seed": 7
+  },
+  "confirmation": {
+   "config_set": "sweep",
+   "configs": {
+    "greedy": {
+     "aggregate": {
+      "bound_fraction": 1.0,
+      "distinct1": 0.525179,
+      "distinct1_defined": 24,
+      "distinct1_sd": 0.115406,
+      "distinct2": 0.713599,
+      "distinct2_defined": 24,
+      "distinct2_sd": 0.15412,
+      "distinct3": 0.805357,
+      "distinct3_defined": 24,
+      "distinct3_sd": 0.152932,
+      "looping_fraction": 0.041667,
+      "mean_words": 30.125,
+      "periodic_fraction": 0.041667,
+      "refused": 0,
+      "replacement_characters": 0,
+      "samples": 24
+     },
+     "config": {
+      "name": "greedy",
+      "repeat_penalty": 1.0,
+      "temperature": 0.0,
+      "top_k": null,
+      "top_p": null
+     },
+     "gates": {
+      "all_passed": false,
+      "distinct1": {
+       "band": 0.05,
+       "direction": "repetitive",
+       "gap": -0.35163,
+       "human": 0.876809,
+       "observed": 0.525179,
+       "passed": false
+      },
+      "distinct2": {
+       "band": 0.03,
+       "direction": "repetitive",
+       "gap": -0.277904,
+       "human": 0.991503,
+       "observed": 0.713599,
+       "passed": false
+      },
+      "distinct3": {
+       "band": 0.02,
+       "direction": "repetitive",
+       "gap": -0.194643,
+       "human": 1.0,
+       "observed": 0.805357,
+       "passed": false
+      },
+      "looping": {
+       "limit": 0.0,
+       "observed": 0.041667,
+       "passed": false
+      },
+      "periodic": {
+       "limit": 0.05,
+       "observed": 0.041667,
+       "passed": true
+      },
+      "replacement_characters": {
+       "limit": 0,
+       "observed": 0,
+       "passed": true
+      }
+     }
+    },
+    "greedy_rp1.05": {
+     "aggregate": {
+      "bound_fraction": 1.0,
+      "distinct1": 0.798857,
+      "distinct1_defined": 24,
+      "distinct1_sd": 0.080835,
+      "distinct2": 0.956289,
+      "distinct2_defined": 24,
+      "distinct2_sd": 0.051435,
+      "distinct3": 0.99108,
+      "distinct3_defined": 24,
+      "distinct3_sd": 0.02042,
+      "looping_fraction": 0.0,
+      "mean_words": 20.416667,
+      "periodic_fraction": 0.083333,
+      "refused": 0,
+      "replacement_characters": 0,
+      "samples": 24
+     },
+     "config": {
+      "name": "greedy_rp1.05",
+      "repeat_penalty": 1.05,
+      "temperature": 0.0,
+      "top_k": null,
+      "top_p": null
+     },
+     "gates": {
+      "all_passed": false,
+      "distinct1": {
+       "band": 0.05,
+       "direction": "repetitive",
+       "gap": -0.077952,
+       "human": 0.876809,
+       "observed": 0.798857,
+       "passed": false
+      },
+      "distinct2": {
+       "band": 0.03,
+       "direction": "repetitive",
+       "gap": -0.035214,
+       "human": 0.991503,
+       "observed": 0.956289,
+       "passed": false
+      },
+      "distinct3": {
+       "band": 0.02,
+       "direction": "within",
+       "gap": -0.00892,
+       "human": 1.0,
+       "observed": 0.99108,
+       "passed": true
+      },
+      "looping": {
+       "limit": 0.0,
+       "observed": 0.0,
+       "passed": true
+      },
+      "periodic": {
+       "limit": 0.05,
+       "observed": 0.083333,
+       "passed": false
+      },
+      "replacement_characters": {
+       "limit": 0,
+       "observed": 0,
+       "passed": true
+      }
+     }
+    },
+    "greedy_rp1.1": {
+     "aggregate": {
+      "bound_fraction": 0.958333,
+      "distinct1": 0.905659,
+      "distinct1_defined": 24,
+      "distinct1_sd": 0.062486,
+      "distinct2": 0.994792,
+      "distinct2_defined": 24,
+      "distinct2_sd": 0.025516,
+      "distinct3": 0.997222,
+      "distinct3_defined": 24,
+      "distinct3_sd": 0.013608,
+      "looping_fraction": 0.0,
+      "mean_words": 17.5,
+      "periodic_fraction": 0.041667,
+      "refused": 0,
+      "replacement_characters": 0,
+      "samples": 24
+     },
+     "config": {
+      "name": "greedy_rp1.1",
+      "repeat_penalty": 1.1,
+      "temperature": 0.0,
+      "top_k": null,
+      "top_p": null
+     },
+     "gates": {
+      "all_passed": true,
+      "distinct1": {
+       "band": 0.05,
+       "direction": "within",
+       "gap": 0.02885,
+       "human": 0.876809,
+       "observed": 0.905659,
+       "passed": true
+      },
+      "distinct2": {
+       "band": 0.03,
+       "direction": "within",
+       "gap": 0.003289,
+       "human": 0.991503,
+       "observed": 0.994792,
+       "passed": true
+      },
+      "distinct3": {
+       "band": 0.02,
+       "direction": "within",
+       "gap": -0.002778,
+       "human": 1.0,
+       "observed": 0.997222,
+       "passed": true
+      },
+      "looping": {
+       "limit": 0.0,
+       "observed": 0.0,
+       "passed": true
+      },
+      "periodic": {
+       "limit": 0.05,
+       "observed": 0.041667,
+       "passed": true
+      },
+      "replacement_characters": {
+       "limit": 0,
+       "observed": 0,
+       "passed": true
+      }
+     }
+    },
+    "greedy_rp1.2": {
+     "aggregate": {
+      "bound_fraction": 0.041667,
+      "distinct1": 0.970481,
+      "distinct1_defined": 23,
+      "distinct1_sd": 0.047053,
+      "distinct2": 1.0,
+      "distinct2_defined": 23,
+      "distinct2_sd": 0.0,
+      "distinct3": 1.0,
+      "distinct3_defined": 23,
+      "distinct3_sd": 0.0,
+      "looping_fraction": 0.0,
+      "mean_words": 11.375,
+      "periodic_fraction": 0.0,
+      "refused": 0,
+      "replacement_characters": 0,
+      "samples": 24
+     },
+     "config": {
+      "name": "greedy_rp1.2",
+      "repeat_penalty": 1.2,
+      "temperature": 0.0,
+      "top_k": null,
+      "top_p": null
+     },
+     "gates": {
+      "all_passed": false,
+      "distinct1": {
+       "band": 0.05,
+       "direction": "over_diverse",
+       "gap": 0.093672,
+       "human": 0.876809,
+       "observed": 0.970481,
+       "passed": false
+      },
+      "distinct2": {
+       "band": 0.03,
+       "direction": "within",
+       "gap": 0.008497,
+       "human": 0.991503,
+       "observed": 1.0,
+       "passed": true
+      },
+      "distinct3": {
+       "band": 0.02,
+       "direction": "within",
+       "gap": 0.0,
+       "human": 1.0,
+       "observed": 1.0,
+       "passed": true
+      },
+      "looping": {
+       "limit": 0.0,
+       "observed": 0.0,
+       "passed": true
+      },
+      "periodic": {
+       "limit": 0.05,
+       "observed": 0.0,
+       "passed": true
+      },
+      "replacement_characters": {
+       "limit": 0,
+       "observed": 0,
+       "passed": true
+      }
+     }
+    },
+    "t0.5": {
+     "aggregate": {
+      "bound_fraction": 1.0,
+      "distinct1": 0.714106,
+      "distinct1_defined": 72,
+      "distinct1_sd": 0.084806,
+      "distinct2": 0.928706,
+      "distinct2_defined": 72,
+      "distinct2_sd": 0.06754,
+      "distinct3": 0.98169,
+      "distinct3_defined": 72,
+      "distinct3_sd": 0.040443,
+      "looping_fraction": 0.0,
+      "mean_words": 28.722222,
+      "periodic_fraction": 0.0,
+      "refused": 0,
+      "replacement_characters": 0,
+      "samples": 72
+     },
+     "config": {
+      "name": "t0.5",
+      "repeat_penalty": 1.0,
+      "temperature": 0.5,
+      "top_k": null,
+      "top_p": null
+     },
+     "gates": {
+      "all_passed": false,
+      "distinct1": {
+       "band": 0.05,
+       "direction": "repetitive",
+       "gap": -0.162703,
+       "human": 0.876809,
+       "observed": 0.714106,
+       "passed": false
+      },
+      "distinct2": {
+       "band": 0.03,
+       "direction": "repetitive",
+       "gap": -0.062797,
+       "human": 0.991503,
+       "observed": 0.928706,
+       "passed": false
+      },
+      "distinct3": {
+       "band": 0.02,
+       "direction": "within",
+       "gap": -0.01831,
+       "human": 1.0,
+       "observed": 0.98169,
+       "passed": true
+      },
+      "looping": {
+       "limit": 0.0,
+       "observed": 0.0,
+       "passed": true
+      },
+      "periodic": {
+       "limit": 0.05,
+       "observed": 0.0,
+       "passed": true
+      },
+      "replacement_characters": {
+       "limit": 0,
+       "observed": 0,
+       "passed": true
+      }
+     }
+    },
+    "t0.5_p0.9": {
+     "aggregate": {
+      "bound_fraction": 1.0,
+      "distinct1": 0.676402,
+      "distinct1_defined": 72,
+      "distinct1_sd": 0.0871,
+      "distinct2": 0.901735,
+      "distinct2_defined": 72,
+      "distinct2_sd": 0.06786,
+      "distinct3": 0.975548,
+      "distinct3_defined": 72,
+      "distinct3_sd": 0.041583,
+      "looping_fraction": 0.0,
+      "mean_words": 29.097222,
+      "periodic_fraction": 0.0,
+      "refused": 0,
+      "replacement_characters": 0,
+      "samples": 72
+     },
+     "config": {
+      "name": "t0.5_p0.9",
+      "repeat_penalty": 1.0,
+      "temperature": 0.5,
+      "top_k": null,
+      "top_p": 0.9
+     },
+     "gates": {
+      "all_passed": false,
+      "distinct1": {
+       "band": 0.05,
+       "direction": "repetitive",
+       "gap": -0.200407,
+       "human": 0.876809,
+       "observed": 0.676402,
+       "passed": false
+      },
+      "distinct2": {
+       "band": 0.03,
+       "direction": "repetitive",
+       "gap": -0.089768,
+       "human": 0.991503,
+       "observed": 0.901735,
+       "passed": false
+      },
+      "distinct3": {
+       "band": 0.02,
+       "direction": "repetitive",
+       "gap": -0.024452,
+       "human": 1.0,
+       "observed": 0.975548,
+       "passed": false
+      },
+      "looping": {
+       "limit": 0.0,
+       "observed": 0.0,
+       "passed": true
+      },
+      "periodic": {
+       "limit": 0.05,
+       "observed": 0.0,
+       "passed": true
+      },
+      "replacement_characters": {
+       "limit": 0,
+       "observed": 0,
+       "passed": true
+      }
+     }
+    },
+    "t0.5_p0.95": {
+     "aggregate": {
+      "bound_fraction": 1.0,
+      "distinct1": 0.695252,
+      "distinct1_defined": 72,
+      "distinct1_sd": 0.097179,
+      "distinct2": 0.914102,
+      "distinct2_defined": 72,
+      "distinct2_sd": 0.069277,
+      "distinct3": 0.981783,
+      "distinct3_defined": 72,
+      "distinct3_sd": 0.039942,
+      "looping_fraction": 0.0,
+      "mean_words": 28.708333,
+      "periodic_fraction": 0.0,
+      "refused": 0,
+      "replacement_characters": 0,
+      "samples": 72
+     },
+     "config": {
+      "name": "t0.5_p0.95",
+      "repeat_penalty": 1.0,
+      "temperature": 0.5,
+      "top_k": null,
+      "top_p": 0.95
+     },
+     "gates": {
+      "all_passed": false,
+      "distinct1": {
+       "band": 0.05,
+       "direction": "repetitive",
+       "gap": -0.181557,
+       "human": 0.876809,
+       "observed": 0.695252,
+       "passed": false
+      },
+      "distinct2": {
+       "band": 0.03,
+       "direction": "repetitive",
+       "gap": -0.077401,
+       "human": 0.991503,
+       "observed": 0.914102,
+       "passed": false
+      },
+      "distinct3": {
+       "band": 0.02,
+       "direction": "within",
+       "gap": -0.018217,
+       "human": 1.0,
+       "observed": 0.981783,
+       "passed": true
+      },
+      "looping": {
+       "limit": 0.0,
+       "observed": 0.0,
+       "passed": true
+      },
+      "periodic": {
+       "limit": 0.05,
+       "observed": 0.0,
+       "passed": true
+      },
+      "replacement_characters": {
+       "limit": 0,
+       "observed": 0,
+       "passed": true
+      }
+     }
+    },
+    "t0.7": {
+     "aggregate": {
+      "bound_fraction": 1.0,
+      "distinct1": 0.797384,
+      "distinct1_defined": 72,
+      "distinct1_sd": 0.072868,
+      "distinct2": 0.981237,
+      "distinct2_defined": 72,
+      "distinct2_sd": 0.026142,
+      "distinct3": 0.999466,
+      "distinct3_defined": 72,
+      "distinct3_sd": 0.004533,
+      "looping_fraction": 0.0,
+      "mean_words": 27.513889,
+      "periodic_fraction": 0.0,
+      "refused": 0,
+      "replacement_characters": 0,
+      "samples": 72
+     },
+     "config": {
+      "name": "t0.7",
+      "repeat_penalty": 1.0,
+      "temperature": 0.7,
+      "top_k": null,
+      "top_p": null
+     },
+     "gates": {
+      "all_passed": false,
+      "distinct1": {
+       "band": 0.05,
+       "direction": "repetitive",
+       "gap": -0.079425,
+       "human": 0.876809,
+       "observed": 0.797384,
+       "passed": false
+      },
+      "distinct2": {
+       "band": 0.03,
+       "direction": "within",
+       "gap": -0.010266,
+       "human": 0.991503,
+       "observed": 0.981237,
+       "passed": true
+      },
+      "distinct3": {
+       "band": 0.02,
+       "direction": "within",
+       "gap": -0.000534,
+       "human": 1.0,
+       "observed": 0.999466,
+       "passed": true
+      },
+      "looping": {
+       "limit": 0.0,
+       "observed": 0.0,
+       "passed": true
+      },
+      "periodic": {
+       "limit": 0.05,
+       "observed": 0.0,
+       "passed": true
+      },
+      "replacement_characters": {
+       "limit": 0,
+       "observed": 0,
+       "passed": true
+      }
+     }
+    },
+    "t0.7_p0.9": {
+     "aggregate": {
+      "bound_fraction": 1.0,
+      "distinct1": 0.768343,
+      "distinct1_defined": 72,
+      "distinct1_sd": 0.071824,
+      "distinct2": 0.966147,
+      "distinct2_defined": 72,
+      "distinct2_sd": 0.041582,
+      "distinct3": 0.998491,
+      "distinct3_defined": 72,
+      "distinct3_sd": 0.007296,
+      "looping_fraction": 0.0,
+      "mean_words": 28.277778,
+      "periodic_fraction": 0.0,
+      "refused": 0,
+      "replacement_characters": 0,
+      "samples": 72
+     },
+     "config": {
+      "name": "t0.7_p0.9",
+      "repeat_penalty": 1.0,
+      "temperature": 0.7,
+      "top_k": null,
+      "top_p": 0.9
+     },
+     "gates": {
+      "all_passed": false,
+      "distinct1": {
+       "band": 0.05,
+       "direction": "repetitive",
+       "gap": -0.108466,
+       "human": 0.876809,
+       "observed": 0.768343,
+       "passed": false
+      },
+      "distinct2": {
+       "band": 0.03,
+       "direction": "within",
+       "gap": -0.025356,
+       "human": 0.991503,
+       "observed": 0.966147,
+       "passed": true
+      },
+      "distinct3": {
+       "band": 0.02,
+       "direction": "within",
+       "gap": -0.001509,
+       "human": 1.0,
+       "observed": 0.998491,
+       "passed": true
+      },
+      "looping": {
+       "limit": 0.0,
+       "observed": 0.0,
+       "passed": true
+      },
+      "periodic": {
+       "limit": 0.05,
+       "observed": 0.0,
+       "passed": true
+      },
+      "replacement_characters": {
+       "limit": 0,
+       "observed": 0,
+       "passed": true
+      }
+     }
+    },
+    "t0.7_p0.95": {
+     "aggregate": {
+      "bound_fraction": 1.0,
+      "distinct1": 0.7705,
+      "distinct1_defined": 72,
+      "distinct1_sd": 0.070766,
+      "distinct2": 0.967972,
+      "distinct2_defined": 72,
+      "distinct2_sd": 0.036717,
+      "distinct3": 0.995893,
+      "distinct3_defined": 72,
+      "distinct3_sd": 0.015913,
+      "looping_fraction": 0.0,
+      "mean_words": 27.888889,
+      "periodic_fraction": 0.0,
+      "refused": 0,
+      "replacement_characters": 0,
+      "samples": 72
+     },
+     "config": {
+      "name": "t0.7_p0.95",
+      "repeat_penalty": 1.0,
+      "temperature": 0.7,
+      "top_k": null,
+      "top_p": 0.95
+     },
+     "gates": {
+      "all_passed": false,
+      "distinct1": {
+       "band": 0.05,
+       "direction": "repetitive",
+       "gap": -0.106309,
+       "human": 0.876809,
+       "observed": 0.7705,
+       "passed": false
+      },
+      "distinct2": {
+       "band": 0.03,
+       "direction": "within",
+       "gap": -0.023531,
+       "human": 0.991503,
+       "observed": 0.967972,
+       "passed": true
+      },
+      "distinct3": {
+       "band": 0.02,
+       "direction": "within",
+       "gap": -0.004107,
+       "human": 1.0,
+       "observed": 0.995893,
+       "passed": true
+      },
+      "looping": {
+       "limit": 0.0,
+       "observed": 0.0,
+       "passed": true
+      },
+      "periodic": {
+       "limit": 0.05,
+       "observed": 0.0,
+       "passed": true
+      },
+      "replacement_characters": {
+       "limit": 0,
+       "observed": 0,
+       "passed": true
+      }
+     }
+    },
+    "t0.8": {
+     "aggregate": {
+      "bound_fraction": 0.972222,
+      "distinct1": 0.841296,
+      "distinct1_defined": 72,
+      "distinct1_sd": 0.069344,
+      "distinct2": 0.986534,
+      "distinct2_defined": 72,
+      "distinct2_sd": 0.025606,
+      "distinct3": 0.998882,
+      "distinct3_defined": 72,
+      "distinct3_sd": 0.006684,
+      "looping_fraction": 0.0,
+      "mean_words": 26.708333,
+      "periodic_fraction": 0.027778,
+      "refused": 0,
+      "replacement_characters": 0,
+      "samples": 72
+     },
+     "config": {
+      "name": "t0.8",
+      "repeat_penalty": 1.0,
+      "temperature": 0.8,
+      "top_k": null,
+      "top_p": null
+     },
+     "gates": {
+      "all_passed": true,
+      "distinct1": {
+       "band": 0.05,
+       "direction": "within",
+       "gap": -0.035513,
+       "human": 0.876809,
+       "observed": 0.841296,
+       "passed": true
+      },
+      "distinct2": {
+       "band": 0.03,
+       "direction": "within",
+       "gap": -0.004969,
+       "human": 0.991503,
+       "observed": 0.986534,
+       "passed": true
+      },
+      "distinct3": {
+       "band": 0.02,
+       "direction": "within",
+       "gap": -0.001118,
+       "human": 1.0,
+       "observed": 0.998882,
+       "passed": true
+      },
+      "looping": {
+       "limit": 0.0,
+       "observed": 0.0,
+       "passed": true
+      },
+      "periodic": {
+       "limit": 0.05,
+       "observed": 0.027778,
+       "passed": true
+      },
+      "replacement_characters": {
+       "limit": 0,
+       "observed": 0,
+       "passed": true
+      }
+     }
+    },
+    "t0.8_p0.9": {
+     "aggregate": {
+      "bound_fraction": 1.0,
+      "distinct1": 0.80013,
+      "distinct1_defined": 72,
+      "distinct1_sd": 0.083166,
+      "distinct2": 0.97257,
+      "distinct2_defined": 72,
+      "distinct2_sd": 0.039205,
+      "distinct3": 0.996949,
+      "distinct3_defined": 72,
+      "distinct3_sd": 0.014551,
+      "looping_fraction": 0.0,
+      "mean_words": 27.291667,
+      "periodic_fraction": 0.0,
+      "refused": 0,
+      "replacement_characters": 0,
+      "samples": 72
+     },
+     "config": {
+      "name": "t0.8_p0.9",
+      "repeat_penalty": 1.0,
+      "temperature": 0.8,
+      "top_k": null,
+      "top_p": 0.9
+     },
+     "gates": {
+      "all_passed": false,
+      "distinct1": {
+       "band": 0.05,
+       "direction": "repetitive",
+       "gap": -0.076679,
+       "human": 0.876809,
+       "observed": 0.80013,
+       "passed": false
+      },
+      "distinct2": {
+       "band": 0.03,
+       "direction": "within",
+       "gap": -0.018933,
+       "human": 0.991503,
+       "observed": 0.97257,
+       "passed": true
+      },
+      "distinct3": {
+       "band": 0.02,
+       "direction": "within",
+       "gap": -0.003051,
+       "human": 1.0,
+       "observed": 0.996949,
+       "passed": true
+      },
+      "looping": {
+       "limit": 0.0,
+       "observed": 0.0,
+       "passed": true
+      },
+      "periodic": {
+       "limit": 0.05,
+       "observed": 0.0,
+       "passed": true
+      },
+      "replacement_characters": {
+       "limit": 0,
+       "observed": 0,
+       "passed": true
+      }
+     }
+    },
+    "t0.8_p0.95": {
+     "aggregate": {
+      "bound_fraction": 1.0,
+      "distinct1": 0.817736,
+      "distinct1_defined": 72,
+      "distinct1_sd": 0.072238,
+      "distinct2": 0.985233,
+      "distinct2_defined": 72,
+      "distinct2_sd": 0.02434,
+      "distinct3": 0.999504,
+      "distinct3_defined": 72,
+      "distinct3_sd": 0.004209,
+      "looping_fraction": 0.0,
+      "mean_words": 27.444444,
+      "periodic_fraction": 0.0,
+      "refused": 0,
+      "replacement_characters": 0,
+      "samples": 72
+     },
+     "config": {
+      "name": "t0.8_p0.95",
+      "repeat_penalty": 1.0,
+      "temperature": 0.8,
+      "top_k": null,
+      "top_p": 0.95
+     },
+     "gates": {
+      "all_passed": false,
+      "distinct1": {
+       "band": 0.05,
+       "direction": "repetitive",
+       "gap": -0.059073,
+       "human": 0.876809,
+       "observed": 0.817736,
+       "passed": false
+      },
+      "distinct2": {
+       "band": 0.03,
+       "direction": "within",
+       "gap": -0.00627,
+       "human": 0.991503,
+       "observed": 0.985233,
+       "passed": true
+      },
+      "distinct3": {
+       "band": 0.02,
+       "direction": "within",
+       "gap": -0.000496,
+       "human": 1.0,
+       "observed": 0.999504,
+       "passed": true
+      },
+      "looping": {
+       "limit": 0.0,
+       "observed": 0.0,
+       "passed": true
+      },
+      "periodic": {
+       "limit": 0.05,
+       "observed": 0.0,
+       "passed": true
+      },
+      "replacement_characters": {
+       "limit": 0,
+       "observed": 0,
+       "passed": true
+      }
+     }
+    },
+    "t0.9": {
+     "aggregate": {
+      "bound_fraction": 1.0,
+      "distinct1": 0.862028,
+      "distinct1_defined": 72,
+      "distinct1_sd": 0.062382,
+      "distinct2": 0.992546,
+      "distinct2_defined": 72,
+      "distinct2_sd": 0.016024,
+      "distinct3": 1.0,
+      "distinct3_defined": 72,
+      "distinct3_sd": 0.0,
+      "looping_fraction": 0.0,
+      "mean_words": 26.083333,
+      "periodic_fraction": 0.0,
+      "refused": 0,
+      "replacement_characters": 0,
+      "samples": 72
+     },
+     "config": {
+      "name": "t0.9",
+      "repeat_penalty": 1.0,
+      "temperature": 0.9,
+      "top_k": null,
+      "top_p": null
+     },
+     "gates": {
+      "all_passed": true,
+      "distinct1": {
+       "band": 0.05,
+       "direction": "within",
+       "gap": -0.014781,
+       "human": 0.876809,
+       "observed": 0.862028,
+       "passed": true
+      },
+      "distinct2": {
+       "band": 0.03,
+       "direction": "within",
+       "gap": 0.001043,
+       "human": 0.991503,
+       "observed": 0.992546,
+       "passed": true
+      },
+      "distinct3": {
+       "band": 0.02,
+       "direction": "within",
+       "gap": 0.0,
+       "human": 1.0,
+       "observed": 1.0,
+       "passed": true
+      },
+      "looping": {
+       "limit": 0.0,
+       "observed": 0.0,
+       "passed": true
+      },
+      "periodic": {
+       "limit": 0.05,
+       "observed": 0.0,
+       "passed": true
+      },
+      "replacement_characters": {
+       "limit": 0,
+       "observed": 0,
+       "passed": true
+      }
+     }
+    },
+    "t0.9_p0.9": {
+     "aggregate": {
+      "bound_fraction": 1.0,
+      "distinct1": 0.845783,
+      "distinct1_defined": 72,
+      "distinct1_sd": 0.055015,
+      "distinct2": 0.989955,
+      "distinct2_defined": 72,
+      "distinct2_sd": 0.021835,
+      "distinct3": 0.999396,
+      "distinct3_defined": 72,
+      "distinct3_sd": 0.005124,
+      "looping_fraction": 0.0,
+      "mean_words": 26.763889,
+      "periodic_fraction": 0.0,
+      "refused": 0,
+      "replacement_characters": 0,
+      "samples": 72
+     },
+     "config": {
+      "name": "t0.9_p0.9",
+      "repeat_penalty": 1.0,
+      "temperature": 0.9,
+      "top_k": null,
+      "top_p": 0.9
+     },
+     "gates": {
+      "all_passed": true,
+      "distinct1": {
+       "band": 0.05,
+       "direction": "within",
+       "gap": -0.031026,
+       "human": 0.876809,
+       "observed": 0.845783,
+       "passed": true
+      },
+      "distinct2": {
+       "band": 0.03,
+       "direction": "within",
+       "gap": -0.001548,
+       "human": 0.991503,
+       "observed": 0.989955,
+       "passed": true
+      },
+      "distinct3": {
+       "band": 0.02,
+       "direction": "within",
+       "gap": -0.000604,
+       "human": 1.0,
+       "observed": 0.999396,
+       "passed": true
+      },
+      "looping": {
+       "limit": 0.0,
+       "observed": 0.0,
+       "passed": true
+      },
+      "periodic": {
+       "limit": 0.05,
+       "observed": 0.0,
+       "passed": true
+      },
+      "replacement_characters": {
+       "limit": 0,
+       "observed": 0,
+       "passed": true
+      }
+     }
+    },
+    "t0.9_p0.95": {
+     "aggregate": {
+      "bound_fraction": 1.0,
+      "distinct1": 0.857872,
+      "distinct1_defined": 72,
+      "distinct1_sd": 0.066565,
+      "distinct2": 0.988182,
+      "distinct2_defined": 72,
+      "distinct2_sd": 0.024002,
+      "distinct3": 0.998792,
+      "distinct3_defined": 72,
+      "distinct3_sd": 0.010248,
+      "looping_fraction": 0.0,
+      "mean_words": 26.458333,
+      "periodic_fraction": 0.0,
+      "refused": 0,
+      "replacement_characters": 0,
+      "samples": 72
+     },
+     "config": {
+      "name": "t0.9_p0.95",
+      "repeat_penalty": 1.0,
+      "temperature": 0.9,
+      "top_k": null,
+      "top_p": 0.95
+     },
+     "gates": {
+      "all_passed": true,
+      "distinct1": {
+       "band": 0.05,
+       "direction": "within",
+       "gap": -0.018937,
+       "human": 0.876809,
+       "observed": 0.857872,
+       "passed": true
+      },
+      "distinct2": {
+       "band": 0.03,
+       "direction": "within",
+       "gap": -0.003321,
+       "human": 0.991503,
+       "observed": 0.988182,
+       "passed": true
+      },
+      "distinct3": {
+       "band": 0.02,
+       "direction": "within",
+       "gap": -0.001208,
+       "human": 1.0,
+       "observed": 0.998792,
+       "passed": true
+      },
+      "looping": {
+       "limit": 0.0,
+       "observed": 0.0,
+       "passed": true
+      },
+      "periodic": {
+       "limit": 0.05,
+       "observed": 0.0,
+       "passed": true
+      },
+      "replacement_characters": {
+       "limit": 0,
+       "observed": 0,
+       "passed": true
+      }
+     }
+    },
+    "t1.0": {
+     "aggregate": {
+      "bound_fraction": 0.986111,
+      "distinct1": 0.895667,
+      "distinct1_defined": 72,
+      "distinct1_sd": 0.057889,
+      "distinct2": 0.99645,
+      "distinct2_defined": 72,
+      "distinct2_sd": 0.013927,
+      "distinct3": 0.999369,
+      "distinct3_defined": 72,
+      "distinct3_sd": 0.005357,
+      "looping_fraction": 0.0,
+      "mean_words": 24.736111,
+      "periodic_fraction": 0.013889,
+      "refused": 0,
+      "replacement_characters": 0,
+      "samples": 72
+     },
+     "config": {
+      "name": "t1.0",
+      "repeat_penalty": 1.0,
+      "temperature": 1.0,
+      "top_k": null,
+      "top_p": null
+     },
+     "gates": {
+      "all_passed": true,
+      "distinct1": {
+       "band": 0.05,
+       "direction": "within",
+       "gap": 0.018858,
+       "human": 0.876809,
+       "observed": 0.895667,
+       "passed": true
+      },
+      "distinct2": {
+       "band": 0.03,
+       "direction": "within",
+       "gap": 0.004947,
+       "human": 0.991503,
+       "observed": 0.99645,
+       "passed": true
+      },
+      "distinct3": {
+       "band": 0.02,
+       "direction": "within",
+       "gap": -0.000631,
+       "human": 1.0,
+       "observed": 0.999369,
+       "passed": true
+      },
+      "looping": {
+       "limit": 0.0,
+       "observed": 0.0,
+       "passed": true
+      },
+      "periodic": {
+       "limit": 0.05,
+       "observed": 0.013889,
+       "passed": true
+      },
+      "replacement_characters": {
+       "limit": 0,
+       "observed": 0,
+       "passed": true
+      }
+     }
+    },
+    "t1.0_p0.9": {
+     "aggregate": {
+      "bound_fraction": 1.0,
+      "distinct1": 0.871954,
+      "distinct1_defined": 72,
+      "distinct1_sd": 0.061826,
+      "distinct2": 0.992171,
+      "distinct2_defined": 72,
+      "distinct2_sd": 0.016569,
+      "distinct3": 0.999486,
+      "distinct3_defined": 72,
+      "distinct3_sd": 0.004365,
+      "looping_fraction": 0.0,
+      "mean_words": 26.402778,
+      "periodic_fraction": 0.0,
+      "refused": 0,
+      "replacement_characters": 0,
+      "samples": 72
+     },
+     "config": {
+      "name": "t1.0_p0.9",
+      "repeat_penalty": 1.0,
+      "temperature": 1.0,
+      "top_k": null,
+      "top_p": 0.9
+     },
+     "gates": {
+      "all_passed": true,
+      "distinct1": {
+       "band": 0.05,
+       "direction": "within",
+       "gap": -0.004855,
+       "human": 0.876809,
+       "observed": 0.871954,
+       "passed": true
+      },
+      "distinct2": {
+       "band": 0.03,
+       "direction": "within",
+       "gap": 0.000668,
+       "human": 0.991503,
+       "observed": 0.992171,
+       "passed": true
+      },
+      "distinct3": {
+       "band": 0.02,
+       "direction": "within",
+       "gap": -0.000514,
+       "human": 1.0,
+       "observed": 0.999486,
+       "passed": true
+      },
+      "looping": {
+       "limit": 0.0,
+       "observed": 0.0,
+       "passed": true
+      },
+      "periodic": {
+       "limit": 0.05,
+       "observed": 0.0,
+       "passed": true
+      },
+      "replacement_characters": {
+       "limit": 0,
+       "observed": 0,
+       "passed": true
+      }
+     }
+    },
+    "t1.0_p0.95": {
+     "aggregate": {
+      "bound_fraction": 1.0,
+      "distinct1": 0.894398,
+      "distinct1_defined": 72,
+      "distinct1_sd": 0.055361,
+      "distinct2": 0.997265,
+      "distinct2_defined": 72,
+      "distinct2_sd": 0.010084,
+      "distinct3": 1.0,
+      "distinct3_defined": 72,
+      "distinct3_sd": 0.0,
+      "looping_fraction": 0.0,
+      "mean_words": 25.916667,
+      "periodic_fraction": 0.0,
+      "refused": 0,
+      "replacement_characters": 0,
+      "samples": 72
+     },
+     "config": {
+      "name": "t1.0_p0.95",
+      "repeat_penalty": 1.0,
+      "temperature": 1.0,
+      "top_k": null,
+      "top_p": 0.95
+     },
+     "gates": {
+      "all_passed": true,
+      "distinct1": {
+       "band": 0.05,
+       "direction": "within",
+       "gap": 0.017589,
+       "human": 0.876809,
+       "observed": 0.894398,
+       "passed": true
+      },
+      "distinct2": {
+       "band": 0.03,
+       "direction": "within",
+       "gap": 0.005762,
+       "human": 0.991503,
+       "observed": 0.997265,
+       "passed": true
+      },
+      "distinct3": {
+       "band": 0.02,
+       "direction": "within",
+       "gap": 0.0,
+       "human": 1.0,
+       "observed": 1.0,
+       "passed": true
+      },
+      "looping": {
+       "limit": 0.0,
+       "observed": 0.0,
+       "passed": true
+      },
+      "periodic": {
+       "limit": 0.05,
+       "observed": 0.0,
+       "passed": true
+      },
+      "replacement_characters": {
+       "limit": 0,
+       "observed": 0,
+       "passed": true
+      }
+     }
+    }
+   },
+   "determinism": [
+    {
+     "config": "greedy",
+     "repeat_identical": true,
+     "stream_equals_generate": true
+    },
+    {
+     "config": "t0.5",
+     "repeat_identical": true,
+     "stream_equals_generate": true
+    }
+   ],
+   "gates": {
+    "distinct1_band": 0.05,
+    "distinct2_band": 0.03,
+    "distinct3_band": 0.02,
+    "max_looping_fraction": 0.0,
+    "max_periodic_fraction": 0.05,
+    "max_replacement_characters": 0
+   },
+   "max_new_tokens": 64,
+   "model_id": "subword_transformer",
+   "prompt_digest": "269ff2a2d03497f05427a96d616abf3a247e6fdfa34cc8658d6eb6b16f7c20be",
+   "prompt_offset": 24,
+   "reference": {
+    "distinct1": 0.876809,
+    "distinct1_defined": 24,
+    "distinct1_sd": 0.057605,
+    "distinct2": 0.991503,
+    "distinct2_defined": 24,
+    "distinct2_sd": 0.017139,
+    "distinct3": 1.0,
+    "distinct3_defined": 24,
+    "distinct3_sd": 0.0,
+    "looping_fraction": 0.0,
+    "mean_words": 25.291667,
+    "periodic_fraction": 0.0,
+    "replacement_characters": 0,
+    "samples": 24
+   },
+   "schema": "chakaso-generation-quality/1",
+   "seeds": [
+    11,
+    23,
+    37
+   ],
+   "source_sha256": "114a62aa396cb53a834cef847a5871b0a5c39452c07d626abc36b18960099d71",
+   "split_seed": 7
+  },
+  "transformer_tuning_default": {
+   "config_set": "default",
+   "configs": {
+    "greedy": {
+     "aggregate": {
+      "bound_fraction": 1.0,
+      "distinct1": 0.357513,
+      "distinct1_defined": 24,
+      "distinct1_sd": 0.104808,
+      "distinct2": 0.50575,
+      "distinct2_defined": 24,
+      "distinct2_sd": 0.154582,
+      "distinct3": 0.634519,
+      "distinct3_defined": 24,
+      "distinct3_sd": 0.203579,
+      "looping_fraction": 0.041667,
+      "mean_words": 30.541667,
+      "periodic_fraction": 0.291667,
+      "refused": 0,
+      "replacement_characters": 0,
+      "samples": 24
+     },
+     "config": {
+      "name": "greedy",
+      "repeat_penalty": 1.0,
+      "temperature": 0.0,
+      "top_k": null,
+      "top_p": null
+     },
+     "gates": {
+      "all_passed": false,
+      "distinct1": {
+       "band": 0.05,
+       "direction": "repetitive",
+       "gap": -0.495484,
+       "human": 0.852997,
+       "observed": 0.357513,
+       "passed": false
+      },
+      "distinct2": {
+       "band": 0.03,
+       "direction": "repetitive",
+       "gap": -0.463506,
+       "human": 0.969256,
+       "observed": 0.50575,
+       "passed": false
+      },
+      "distinct3": {
+       "band": 0.02,
+       "direction": "repetitive",
+       "gap": -0.347331,
+       "human": 0.98185,
+       "observed": 0.634519,
+       "passed": false
+      },
+      "looping": {
+       "limit": 0.0,
+       "observed": 0.041667,
+       "passed": false
+      },
+      "periodic": {
+       "limit": 0.05,
+       "observed": 0.291667,
+       "passed": false
+      },
+      "replacement_characters": {
+       "limit": 0,
+       "observed": 0,
+       "passed": true
+      }
+     }
+    },
+    "greedy_rp1.2": {
+     "aggregate": {
+      "bound_fraction": 0.5,
+      "distinct1": 0.920416,
+      "distinct1_defined": 24,
+      "distinct1_sd": 0.056685,
+      "distinct2": 1.0,
+      "distinct2_defined": 24,
+      "distinct2_sd": 0.0,
+      "distinct3": 1.0,
+      "distinct3_defined": 24,
+      "distinct3_sd": 0.0,
+      "looping_fraction": 0.0,
+      "mean_words": 13.583333,
+      "periodic_fraction": 0.333333,
+      "refused": 0,
+      "replacement_characters": 0,
+      "samples": 24
+     },
+     "config": {
+      "name": "greedy_rp1.2",
+      "repeat_penalty": 1.2,
+      "temperature": 0.0,
+      "top_k": null,
+      "top_p": null
+     },
+     "gates": {
+      "all_passed": false,
+      "distinct1": {
+       "band": 0.05,
+       "direction": "over_diverse",
+       "gap": 0.067419,
+       "human": 0.852997,
+       "observed": 0.920416,
+       "passed": false
+      },
+      "distinct2": {
+       "band": 0.03,
+       "direction": "over_diverse",
+       "gap": 0.030744,
+       "human": 0.969256,
+       "observed": 1.0,
+       "passed": false
+      },
+      "distinct3": {
+       "band": 0.02,
+       "direction": "within",
+       "gap": 0.01815,
+       "human": 0.98185,
+       "observed": 1.0,
+       "passed": true
+      },
+      "looping": {
+       "limit": 0.0,
+       "observed": 0.0,
+       "passed": true
+      },
+      "periodic": {
+       "limit": 0.05,
+       "observed": 0.333333,
+       "passed": false
+      },
+      "replacement_characters": {
+       "limit": 0,
+       "observed": 0,
+       "passed": true
+      }
+     }
+    },
+    "t0.7_p0.9": {
+     "aggregate": {
+      "bound_fraction": 1.0,
+      "distinct1": 0.745082,
+      "distinct1_defined": 72,
+      "distinct1_sd": 0.085744,
+      "distinct2": 0.953598,
+      "distinct2_defined": 72,
+      "distinct2_sd": 0.049154,
+      "distinct3": 0.995678,
+      "distinct3_defined": 72,
+      "distinct3_sd": 0.013836,
+      "looping_fraction": 0.0,
+      "mean_words": 27.791667,
+      "periodic_fraction": 0.013889,
+      "refused": 0,
+      "replacement_characters": 0,
+      "samples": 72
+     },
+     "config": {
+      "name": "t0.7_p0.9",
+      "repeat_penalty": 1.0,
+      "temperature": 0.7,
+      "top_k": null,
+      "top_p": 0.9
+     },
+     "gates": {
+      "all_passed": false,
+      "distinct1": {
+       "band": 0.05,
+       "direction": "repetitive",
+       "gap": -0.107915,
+       "human": 0.852997,
+       "observed": 0.745082,
+       "passed": false
+      },
+      "distinct2": {
+       "band": 0.03,
+       "direction": "within",
+       "gap": -0.015658,
+       "human": 0.969256,
+       "observed": 0.953598,
+       "passed": true
+      },
+      "distinct3": {
+       "band": 0.02,
+       "direction": "within",
+       "gap": 0.013828,
+       "human": 0.98185,
+       "observed": 0.995678,
+       "passed": true
+      },
+      "looping": {
+       "limit": 0.0,
+       "observed": 0.0,
+       "passed": true
+      },
+      "periodic": {
+       "limit": 0.05,
+       "observed": 0.013889,
+       "passed": true
+      },
+      "replacement_characters": {
+       "limit": 0,
+       "observed": 0,
+       "passed": true
+      }
+     }
+    },
+    "t0.8_k40": {
+     "aggregate": {
+      "bound_fraction": 1.0,
+      "distinct1": 0.761123,
+      "distinct1_defined": 72,
+      "distinct1_sd": 0.087917,
+      "distinct2": 0.959275,
+      "distinct2_defined": 72,
+      "distinct2_sd": 0.044292,
+      "distinct3": 0.993544,
+      "distinct3_defined": 72,
+      "distinct3_sd": 0.017318,
+      "looping_fraction": 0.0,
+      "mean_words": 27.680556,
+      "periodic_fraction": 0.027778,
+      "refused": 0,
+      "replacement_characters": 0,
+      "samples": 72
+     },
+     "config": {
+      "name": "t0.8_k40",
+      "repeat_penalty": 1.0,
+      "temperature": 0.8,
+      "top_k": 40,
+      "top_p": null
+     },
+     "gates": {
+      "all_passed": false,
+      "distinct1": {
+       "band": 0.05,
+       "direction": "repetitive",
+       "gap": -0.091874,
+       "human": 0.852997,
+       "observed": 0.761123,
+       "passed": false
+      },
+      "distinct2": {
+       "band": 0.03,
+       "direction": "within",
+       "gap": -0.009981,
+       "human": 0.969256,
+       "observed": 0.959275,
+       "passed": true
+      },
+      "distinct3": {
+       "band": 0.02,
+       "direction": "within",
+       "gap": 0.011694,
+       "human": 0.98185,
+       "observed": 0.993544,
+       "passed": true
+      },
+      "looping": {
+       "limit": 0.0,
+       "observed": 0.0,
+       "passed": true
+      },
+      "periodic": {
+       "limit": 0.05,
+       "observed": 0.027778,
+       "passed": true
+      },
+      "replacement_characters": {
+       "limit": 0,
+       "observed": 0,
+       "passed": true
+      }
+     }
+    },
+    "t1.0": {
+     "aggregate": {
+      "bound_fraction": 0.986111,
+      "distinct1": 0.89475,
+      "distinct1_defined": 71,
+      "distinct1_sd": 0.061523,
+      "distinct2": 0.99709,
+      "distinct2_defined": 71,
+      "distinct2_sd": 0.010696,
+      "distinct3": 1.0,
+      "distinct3_defined": 71,
+      "distinct3_sd": 0.0,
+      "looping_fraction": 0.0,
+      "mean_words": 24.75,
+      "periodic_fraction": 0.0,
+      "refused": 0,
+      "replacement_characters": 2,
+      "samples": 72
+     },
+     "config": {
+      "name": "t1.0",
+      "repeat_penalty": 1.0,
+      "temperature": 1.0,
+      "top_k": null,
+      "top_p": null
+     },
+     "gates": {
+      "all_passed": false,
+      "distinct1": {
+       "band": 0.05,
+       "direction": "within",
+       "gap": 0.041753,
+       "human": 0.852997,
+       "observed": 0.89475,
+       "passed": true
+      },
+      "distinct2": {
+       "band": 0.03,
+       "direction": "within",
+       "gap": 0.027834,
+       "human": 0.969256,
+       "observed": 0.99709,
+       "passed": true
+      },
+      "distinct3": {
+       "band": 0.02,
+       "direction": "within",
+       "gap": 0.01815,
+       "human": 0.98185,
+       "observed": 1.0,
+       "passed": true
+      },
+      "looping": {
+       "limit": 0.0,
+       "observed": 0.0,
+       "passed": true
+      },
+      "periodic": {
+       "limit": 0.05,
+       "observed": 0.0,
+       "passed": true
+      },
+      "replacement_characters": {
+       "limit": 0,
+       "observed": 2,
+       "passed": false
+      }
+     }
+    }
+   },
+   "determinism": [
+    {
+     "config": "greedy",
+     "repeat_identical": true,
+     "stream_equals_generate": true
+    },
+    {
+     "config": "t0.7_p0.9",
+     "repeat_identical": true,
+     "stream_equals_generate": true
+    }
+   ],
+   "gates": {
+    "distinct1_band": 0.05,
+    "distinct2_band": 0.03,
+    "distinct3_band": 0.02,
+    "max_looping_fraction": 0.0,
+    "max_periodic_fraction": 0.05,
+    "max_replacement_characters": 0
+   },
+   "max_new_tokens": 64,
+   "model_id": "subword_transformer",
+   "prompt_digest": "c3614be7182eff877793a23fbf405ffd970c62a410757efb082bef8e25dce665",
+   "prompt_offset": 0,
+   "reference": {
+    "distinct1": 0.852997,
+    "distinct1_defined": 24,
+    "distinct1_sd": 0.094172,
+    "distinct2": 0.969256,
+    "distinct2_defined": 24,
+    "distinct2_sd": 0.070075,
+    "distinct3": 0.98185,
+    "distinct3_defined": 24,
+    "distinct3_sd": 0.052866,
+    "looping_fraction": 0.0,
+    "mean_words": 25.333333,
+    "periodic_fraction": 0.0,
+    "replacement_characters": 0,
+    "samples": 24
+   },
+   "schema": "chakaso-generation-quality/1",
+   "seeds": [
+    11,
+    23,
+    37
+   ],
+   "source_sha256": "5e1fc96ad12199df2893d2446e4e67f6e0972b42ce5b407fe5d69aff6ce6ee42",
+   "split_seed": 7
+  },
+  "tuning": {
+   "config_set": "sweep",
+   "configs": {
+    "greedy": {
+     "aggregate": {
+      "bound_fraction": 1.0,
+      "distinct1": 0.505369,
+      "distinct1_defined": 24,
+      "distinct1_sd": 0.133267,
+      "distinct2": 0.688039,
+      "distinct2_defined": 24,
+      "distinct2_sd": 0.168399,
+      "distinct3": 0.794303,
+      "distinct3_defined": 24,
+      "distinct3_sd": 0.183463,
+      "looping_fraction": 0.0,
+      "mean_words": 29.5,
+      "periodic_fraction": 0.083333,
+      "refused": 0,
+      "replacement_characters": 0,
+      "samples": 24
+     },
+     "config": {
+      "name": "greedy",
+      "repeat_penalty": 1.0,
+      "temperature": 0.0,
+      "top_k": null,
+      "top_p": null
+     },
+     "gates": {
+      "all_passed": false,
+      "distinct1": {
+       "band": 0.05,
+       "direction": "repetitive",
+       "gap": -0.347628,
+       "human": 0.852997,
+       "observed": 0.505369,
+       "passed": false
+      },
+      "distinct2": {
+       "band": 0.03,
+       "direction": "repetitive",
+       "gap": -0.281217,
+       "human": 0.969256,
+       "observed": 0.688039,
+       "passed": false
+      },
+      "distinct3": {
+       "band": 0.02,
+       "direction": "repetitive",
+       "gap": -0.187547,
+       "human": 0.98185,
+       "observed": 0.794303,
+       "passed": false
+      },
+      "looping": {
+       "limit": 0.0,
+       "observed": 0.0,
+       "passed": true
+      },
+      "periodic": {
+       "limit": 0.05,
+       "observed": 0.083333,
+       "passed": false
+      },
+      "replacement_characters": {
+       "limit": 0,
+       "observed": 0,
+       "passed": true
+      }
+     }
+    },
+    "greedy_rp1.05": {
+     "aggregate": {
+      "bound_fraction": 1.0,
+      "distinct1": 0.808756,
+      "distinct1_defined": 24,
+      "distinct1_sd": 0.094169,
+      "distinct2": 0.955226,
+      "distinct2_defined": 24,
+      "distinct2_sd": 0.052434,
+      "distinct3": 0.991269,
+      "distinct3_defined": 24,
+      "distinct3_sd": 0.02004,
+      "looping_fraction": 0.041667,
+      "mean_words": 20.625,
+      "periodic_fraction": 0.041667,
+      "refused": 0,
+      "replacement_characters": 0,
+      "samples": 24
+     },
+     "config": {
+      "name": "greedy_rp1.05",
+      "repeat_penalty": 1.05,
+      "temperature": 0.0,
+      "top_k": null,
+      "top_p": null
+     },
+     "gates": {
+      "all_passed": false,
+      "distinct1": {
+       "band": 0.05,
+       "direction": "within",
+       "gap": -0.044241,
+       "human": 0.852997,
+       "observed": 0.808756,
+       "passed": true
+      },
+      "distinct2": {
+       "band": 0.03,
+       "direction": "within",
+       "gap": -0.01403,
+       "human": 0.969256,
+       "observed": 0.955226,
+       "passed": true
+      },
+      "distinct3": {
+       "band": 0.02,
+       "direction": "within",
+       "gap": 0.009419,
+       "human": 0.98185,
+       "observed": 0.991269,
+       "passed": true
+      },
+      "looping": {
+       "limit": 0.0,
+       "observed": 0.041667,
+       "passed": false
+      },
+      "periodic": {
+       "limit": 0.05,
+       "observed": 0.041667,
+       "passed": true
+      },
+      "replacement_characters": {
+       "limit": 0,
+       "observed": 0,
+       "passed": true
+      }
+     }
+    },
+    "greedy_rp1.1": {
+     "aggregate": {
+      "bound_fraction": 0.75,
+      "distinct1": 0.901212,
+      "distinct1_defined": 24,
+      "distinct1_sd": 0.064696,
+      "distinct2": 0.991597,
+      "distinct2_defined": 24,
+      "distinct2_sd": 0.031049,
+      "distinct3": 0.996795,
+      "distinct3_defined": 24,
+      "distinct3_sd": 0.015702,
+      "looping_fraction": 0.0,
+      "mean_words": 16.916667,
+      "periodic_fraction": 0.166667,
+      "refused": 0,
+      "replacement_characters": 0,
+      "samples": 24
+     },
+     "config": {
+      "name": "greedy_rp1.1",
+      "repeat_penalty": 1.1,
+      "temperature": 0.0,
+      "top_k": null,
+      "top_p": null
+     },
+     "gates": {
+      "all_passed": false,
+      "distinct1": {
+       "band": 0.05,
+       "direction": "within",
+       "gap": 0.048215,
+       "human": 0.852997,
+       "observed": 0.901212,
+       "passed": true
+      },
+      "distinct2": {
+       "band": 0.03,
+       "direction": "within",
+       "gap": 0.022341,
+       "human": 0.969256,
+       "observed": 0.991597,
+       "passed": true
+      },
+      "distinct3": {
+       "band": 0.02,
+       "direction": "within",
+       "gap": 0.014945,
+       "human": 0.98185,
+       "observed": 0.996795,
+       "passed": true
+      },
+      "looping": {
+       "limit": 0.0,
+       "observed": 0.0,
+       "passed": true
+      },
+      "periodic": {
+       "limit": 0.05,
+       "observed": 0.166667,
+       "passed": false
+      },
+      "replacement_characters": {
+       "limit": 0,
+       "observed": 0,
+       "passed": true
+      }
+     }
+    },
+    "greedy_rp1.2": {
+     "aggregate": {
+      "bound_fraction": 0.166667,
+      "distinct1": 0.971917,
+      "distinct1_defined": 24,
+      "distinct1_sd": 0.041881,
+      "distinct2": 1.0,
+      "distinct2_defined": 24,
+      "distinct2_sd": 0.0,
+      "distinct3": 1.0,
+      "distinct3_defined": 24,
+      "distinct3_sd": 0.0,
+      "looping_fraction": 0.0,
+      "mean_words": 11.791667,
+      "periodic_fraction": 0.0,
+      "refused": 0,
+      "replacement_characters": 0,
+      "samples": 24
+     },
+     "config": {
+      "name": "greedy_rp1.2",
+      "repeat_penalty": 1.2,
+      "temperature": 0.0,
+      "top_k": null,
+      "top_p": null
+     },
+     "gates": {
+      "all_passed": false,
+      "distinct1": {
+       "band": 0.05,
+       "direction": "over_diverse",
+       "gap": 0.11892,
+       "human": 0.852997,
+       "observed": 0.971917,
+       "passed": false
+      },
+      "distinct2": {
+       "band": 0.03,
+       "direction": "over_diverse",
+       "gap": 0.030744,
+       "human": 0.969256,
+       "observed": 1.0,
+       "passed": false
+      },
+      "distinct3": {
+       "band": 0.02,
+       "direction": "within",
+       "gap": 0.01815,
+       "human": 0.98185,
+       "observed": 1.0,
+       "passed": true
+      },
+      "looping": {
+       "limit": 0.0,
+       "observed": 0.0,
+       "passed": true
+      },
+      "periodic": {
+       "limit": 0.05,
+       "observed": 0.0,
+       "passed": true
+      },
+      "replacement_characters": {
+       "limit": 0,
+       "observed": 0,
+       "passed": true
+      }
+     }
+    },
+    "t0.5": {
+     "aggregate": {
+      "bound_fraction": 1.0,
+      "distinct1": 0.701278,
+      "distinct1_defined": 72,
+      "distinct1_sd": 0.093644,
+      "distinct2": 0.925741,
+      "distinct2_defined": 72,
+      "distinct2_sd": 0.067773,
+      "distinct3": 0.990229,
+      "distinct3_defined": 72,
+      "distinct3_sd": 0.029114,
+      "looping_fraction": 0.0,
+      "mean_words": 28.277778,
+      "periodic_fraction": 0.0,
+      "refused": 0,
+      "replacement_characters": 0,
+      "samples": 72
+     },
+     "config": {
+      "name": "t0.5",
+      "repeat_penalty": 1.0,
+      "temperature": 0.5,
+      "top_k": null,
+      "top_p": null
+     },
+     "gates": {
+      "all_passed": false,
+      "distinct1": {
+       "band": 0.05,
+       "direction": "repetitive",
+       "gap": -0.151719,
+       "human": 0.852997,
+       "observed": 0.701278,
+       "passed": false
+      },
+      "distinct2": {
+       "band": 0.03,
+       "direction": "repetitive",
+       "gap": -0.043515,
+       "human": 0.969256,
+       "observed": 0.925741,
+       "passed": false
+      },
+      "distinct3": {
+       "band": 0.02,
+       "direction": "within",
+       "gap": 0.008379,
+       "human": 0.98185,
+       "observed": 0.990229,
+       "passed": true
+      },
+      "looping": {
+       "limit": 0.0,
+       "observed": 0.0,
+       "passed": true
+      },
+      "periodic": {
+       "limit": 0.05,
+       "observed": 0.0,
+       "passed": true
+      },
+      "replacement_characters": {
+       "limit": 0,
+       "observed": 0,
+       "passed": true
+      }
+     }
+    },
+    "t0.5_p0.9": {
+     "aggregate": {
+      "bound_fraction": 1.0,
+      "distinct1": 0.668839,
+      "distinct1_defined": 72,
+      "distinct1_sd": 0.097953,
+      "distinct2": 0.901193,
+      "distinct2_defined": 72,
+      "distinct2_sd": 0.072027,
+      "distinct3": 0.980708,
+      "distinct3_defined": 72,
+      "distinct3_sd": 0.0363,
+      "looping_fraction": 0.0,
+      "mean_words": 28.083333,
+      "periodic_fraction": 0.0,
+      "refused": 0,
+      "replacement_characters": 0,
+      "samples": 72
+     },
+     "config": {
+      "name": "t0.5_p0.9",
+      "repeat_penalty": 1.0,
+      "temperature": 0.5,
+      "top_k": null,
+      "top_p": 0.9
+     },
+     "gates": {
+      "all_passed": false,
+      "distinct1": {
+       "band": 0.05,
+       "direction": "repetitive",
+       "gap": -0.184158,
+       "human": 0.852997,
+       "observed": 0.668839,
+       "passed": false
+      },
+      "distinct2": {
+       "band": 0.03,
+       "direction": "repetitive",
+       "gap": -0.068063,
+       "human": 0.969256,
+       "observed": 0.901193,
+       "passed": false
+      },
+      "distinct3": {
+       "band": 0.02,
+       "direction": "within",
+       "gap": -0.001142,
+       "human": 0.98185,
+       "observed": 0.980708,
+       "passed": true
+      },
+      "looping": {
+       "limit": 0.0,
+       "observed": 0.0,
+       "passed": true
+      },
+      "periodic": {
+       "limit": 0.05,
+       "observed": 0.0,
+       "passed": true
+      },
+      "replacement_characters": {
+       "limit": 0,
+       "observed": 0,
+       "passed": true
+      }
+     }
+    },
+    "t0.5_p0.95": {
+     "aggregate": {
+      "bound_fraction": 1.0,
+      "distinct1": 0.693619,
+      "distinct1_defined": 72,
+      "distinct1_sd": 0.111575,
+      "distinct2": 0.913314,
+      "distinct2_defined": 72,
+      "distinct2_sd": 0.083537,
+      "distinct3": 0.983922,
+      "distinct3_defined": 72,
+      "distinct3_sd": 0.048516,
+      "looping_fraction": 0.0,
+      "mean_words": 28.388889,
+      "periodic_fraction": 0.013889,
+      "refused": 0,
+      "replacement_characters": 0,
+      "samples": 72
+     },
+     "config": {
+      "name": "t0.5_p0.95",
+      "repeat_penalty": 1.0,
+      "temperature": 0.5,
+      "top_k": null,
+      "top_p": 0.95
+     },
+     "gates": {
+      "all_passed": false,
+      "distinct1": {
+       "band": 0.05,
+       "direction": "repetitive",
+       "gap": -0.159378,
+       "human": 0.852997,
+       "observed": 0.693619,
+       "passed": false
+      },
+      "distinct2": {
+       "band": 0.03,
+       "direction": "repetitive",
+       "gap": -0.055942,
+       "human": 0.969256,
+       "observed": 0.913314,
+       "passed": false
+      },
+      "distinct3": {
+       "band": 0.02,
+       "direction": "within",
+       "gap": 0.002072,
+       "human": 0.98185,
+       "observed": 0.983922,
+       "passed": true
+      },
+      "looping": {
+       "limit": 0.0,
+       "observed": 0.0,
+       "passed": true
+      },
+      "periodic": {
+       "limit": 0.05,
+       "observed": 0.013889,
+       "passed": true
+      },
+      "replacement_characters": {
+       "limit": 0,
+       "observed": 0,
+       "passed": true
+      }
+     }
+    },
+    "t0.7": {
+     "aggregate": {
+      "bound_fraction": 1.0,
+      "distinct1": 0.765336,
+      "distinct1_defined": 72,
+      "distinct1_sd": 0.082546,
+      "distinct2": 0.965443,
+      "distinct2_defined": 72,
+      "distinct2_sd": 0.041306,
+      "distinct3": 0.996929,
+      "distinct3_defined": 72,
+      "distinct3_sd": 0.011998,
+      "looping_fraction": 0.0,
+      "mean_words": 27.402778,
+      "periodic_fraction": 0.0,
+      "refused": 0,
+      "replacement_characters": 0,
+      "samples": 72
+     },
+     "config": {
+      "name": "t0.7",
+      "repeat_penalty": 1.0,
+      "temperature": 0.7,
+      "top_k": null,
+      "top_p": null
+     },
+     "gates": {
+      "all_passed": false,
+      "distinct1": {
+       "band": 0.05,
+       "direction": "repetitive",
+       "gap": -0.087661,
+       "human": 0.852997,
+       "observed": 0.765336,
+       "passed": false
+      },
+      "distinct2": {
+       "band": 0.03,
+       "direction": "within",
+       "gap": -0.003813,
+       "human": 0.969256,
+       "observed": 0.965443,
+       "passed": true
+      },
+      "distinct3": {
+       "band": 0.02,
+       "direction": "within",
+       "gap": 0.015079,
+       "human": 0.98185,
+       "observed": 0.996929,
+       "passed": true
+      },
+      "looping": {
+       "limit": 0.0,
+       "observed": 0.0,
+       "passed": true
+      },
+      "periodic": {
+       "limit": 0.05,
+       "observed": 0.0,
+       "passed": true
+      },
+      "replacement_characters": {
+       "limit": 0,
+       "observed": 0,
+       "passed": true
+      }
+     }
+    },
+    "t0.7_p0.9": {
+     "aggregate": {
+      "bound_fraction": 1.0,
+      "distinct1": 0.740261,
+      "distinct1_defined": 72,
+      "distinct1_sd": 0.087945,
+      "distinct2": 0.9521,
+      "distinct2_defined": 72,
+      "distinct2_sd": 0.047907,
+      "distinct3": 0.994882,
+      "distinct3_defined": 72,
+      "distinct3_sd": 0.015404,
+      "looping_fraction": 0.0,
+      "mean_words": 27.305556,
+      "periodic_fraction": 0.0,
+      "refused": 0,
+      "replacement_characters": 0,
+      "samples": 72
+     },
+     "config": {
+      "name": "t0.7_p0.9",
+      "repeat_penalty": 1.0,
+      "temperature": 0.7,
+      "top_k": null,
+      "top_p": 0.9
+     },
+     "gates": {
+      "all_passed": false,
+      "distinct1": {
+       "band": 0.05,
+       "direction": "repetitive",
+       "gap": -0.112736,
+       "human": 0.852997,
+       "observed": 0.740261,
+       "passed": false
+      },
+      "distinct2": {
+       "band": 0.03,
+       "direction": "within",
+       "gap": -0.017156,
+       "human": 0.969256,
+       "observed": 0.9521,
+       "passed": true
+      },
+      "distinct3": {
+       "band": 0.02,
+       "direction": "within",
+       "gap": 0.013032,
+       "human": 0.98185,
+       "observed": 0.994882,
+       "passed": true
+      },
+      "looping": {
+       "limit": 0.0,
+       "observed": 0.0,
+       "passed": true
+      },
+      "periodic": {
+       "limit": 0.05,
+       "observed": 0.0,
+       "passed": true
+      },
+      "replacement_characters": {
+       "limit": 0,
+       "observed": 0,
+       "passed": true
+      }
+     }
+    },
+    "t0.7_p0.95": {
+     "aggregate": {
+      "bound_fraction": 1.0,
+      "distinct1": 0.771006,
+      "distinct1_defined": 72,
+      "distinct1_sd": 0.088882,
+      "distinct2": 0.968854,
+      "distinct2_defined": 72,
+      "distinct2_sd": 0.040727,
+      "distinct3": 0.994814,
+      "distinct3_defined": 72,
+      "distinct3_sd": 0.018079,
+      "looping_fraction": 0.0,
+      "mean_words": 27.75,
+      "periodic_fraction": 0.0,
+      "refused": 0,
+      "replacement_characters": 0,
+      "samples": 72
+     },
+     "config": {
+      "name": "t0.7_p0.95",
+      "repeat_penalty": 1.0,
+      "temperature": 0.7,
+      "top_k": null,
+      "top_p": 0.95
+     },
+     "gates": {
+      "all_passed": false,
+      "distinct1": {
+       "band": 0.05,
+       "direction": "repetitive",
+       "gap": -0.081991,
+       "human": 0.852997,
+       "observed": 0.771006,
+       "passed": false
+      },
+      "distinct2": {
+       "band": 0.03,
+       "direction": "within",
+       "gap": -0.000402,
+       "human": 0.969256,
+       "observed": 0.968854,
+       "passed": true
+      },
+      "distinct3": {
+       "band": 0.02,
+       "direction": "within",
+       "gap": 0.012964,
+       "human": 0.98185,
+       "observed": 0.994814,
+       "passed": true
+      },
+      "looping": {
+       "limit": 0.0,
+       "observed": 0.0,
+       "passed": true
+      },
+      "periodic": {
+       "limit": 0.05,
+       "observed": 0.0,
+       "passed": true
+      },
+      "replacement_characters": {
+       "limit": 0,
+       "observed": 0,
+       "passed": true
+      }
+     }
+    },
+    "t0.8": {
+     "aggregate": {
+      "bound_fraction": 1.0,
+      "distinct1": 0.825267,
+      "distinct1_defined": 72,
+      "distinct1_sd": 0.062527,
+      "distinct2": 0.986536,
+      "distinct2_defined": 72,
+      "distinct2_sd": 0.02391,
+      "distinct3": 0.998396,
+      "distinct3_defined": 72,
+      "distinct3_sd": 0.007751,
+      "looping_fraction": 0.0,
+      "mean_words": 26.597222,
+      "periodic_fraction": 0.013889,
+      "refused": 0,
+      "replacement_characters": 0,
+      "samples": 72
+     },
+     "config": {
+      "name": "t0.8",
+      "repeat_penalty": 1.0,
+      "temperature": 0.8,
+      "top_k": null,
+      "top_p": null
+     },
+     "gates": {
+      "all_passed": true,
+      "distinct1": {
+       "band": 0.05,
+       "direction": "within",
+       "gap": -0.02773,
+       "human": 0.852997,
+       "observed": 0.825267,
+       "passed": true
+      },
+      "distinct2": {
+       "band": 0.03,
+       "direction": "within",
+       "gap": 0.01728,
+       "human": 0.969256,
+       "observed": 0.986536,
+       "passed": true
+      },
+      "distinct3": {
+       "band": 0.02,
+       "direction": "within",
+       "gap": 0.016546,
+       "human": 0.98185,
+       "observed": 0.998396,
+       "passed": true
+      },
+      "looping": {
+       "limit": 0.0,
+       "observed": 0.0,
+       "passed": true
+      },
+      "periodic": {
+       "limit": 0.05,
+       "observed": 0.013889,
+       "passed": true
+      },
+      "replacement_characters": {
+       "limit": 0,
+       "observed": 0,
+       "passed": true
+      }
+     }
+    },
+    "t0.8_p0.9": {
+     "aggregate": {
+      "bound_fraction": 1.0,
+      "distinct1": 0.801623,
+      "distinct1_defined": 72,
+      "distinct1_sd": 0.065015,
+      "distinct2": 0.974579,
+      "distinct2_defined": 72,
+      "distinct2_sd": 0.035112,
+      "distinct3": 0.998951,
+      "distinct3_defined": 72,
+      "distinct3_sd": 0.006248,
+      "looping_fraction": 0.0,
+      "mean_words": 27.194444,
+      "periodic_fraction": 0.0,
+      "refused": 0,
+      "replacement_characters": 0,
+      "samples": 72
+     },
+     "config": {
+      "name": "t0.8_p0.9",
+      "repeat_penalty": 1.0,
+      "temperature": 0.8,
+      "top_k": null,
+      "top_p": 0.9
+     },
+     "gates": {
+      "all_passed": false,
+      "distinct1": {
+       "band": 0.05,
+       "direction": "repetitive",
+       "gap": -0.051374,
+       "human": 0.852997,
+       "observed": 0.801623,
+       "passed": false
+      },
+      "distinct2": {
+       "band": 0.03,
+       "direction": "within",
+       "gap": 0.005323,
+       "human": 0.969256,
+       "observed": 0.974579,
+       "passed": true
+      },
+      "distinct3": {
+       "band": 0.02,
+       "direction": "within",
+       "gap": 0.017101,
+       "human": 0.98185,
+       "observed": 0.998951,
+       "passed": true
+      },
+      "looping": {
+       "limit": 0.0,
+       "observed": 0.0,
+       "passed": true
+      },
+      "periodic": {
+       "limit": 0.05,
+       "observed": 0.0,
+       "passed": true
+      },
+      "replacement_characters": {
+       "limit": 0,
+       "observed": 0,
+       "passed": true
+      }
+     }
+    },
+    "t0.8_p0.95": {
+     "aggregate": {
+      "bound_fraction": 1.0,
+      "distinct1": 0.821939,
+      "distinct1_defined": 72,
+      "distinct1_sd": 0.066702,
+      "distinct2": 0.990046,
+      "distinct2_defined": 72,
+      "distinct2_sd": 0.018598,
+      "distinct3": 1.0,
+      "distinct3_defined": 72,
+      "distinct3_sd": 0.0,
+      "looping_fraction": 0.0,
+      "mean_words": 26.902778,
+      "periodic_fraction": 0.0,
+      "refused": 0,
+      "replacement_characters": 0,
+      "samples": 72
+     },
+     "config": {
+      "name": "t0.8_p0.95",
+      "repeat_penalty": 1.0,
+      "temperature": 0.8,
+      "top_k": null,
+      "top_p": 0.95
+     },
+     "gates": {
+      "all_passed": true,
+      "distinct1": {
+       "band": 0.05,
+       "direction": "within",
+       "gap": -0.031058,
+       "human": 0.852997,
+       "observed": 0.821939,
+       "passed": true
+      },
+      "distinct2": {
+       "band": 0.03,
+       "direction": "within",
+       "gap": 0.02079,
+       "human": 0.969256,
+       "observed": 0.990046,
+       "passed": true
+      },
+      "distinct3": {
+       "band": 0.02,
+       "direction": "within",
+       "gap": 0.01815,
+       "human": 0.98185,
+       "observed": 1.0,
+       "passed": true
+      },
+      "looping": {
+       "limit": 0.0,
+       "observed": 0.0,
+       "passed": true
+      },
+      "periodic": {
+       "limit": 0.05,
+       "observed": 0.0,
+       "passed": true
+      },
+      "replacement_characters": {
+       "limit": 0,
+       "observed": 0,
+       "passed": true
+      }
+     }
+    },
+    "t0.9": {
+     "aggregate": {
+      "bound_fraction": 0.986111,
+      "distinct1": 0.85379,
+      "distinct1_defined": 72,
+      "distinct1_sd": 0.072894,
+      "distinct2": 0.99062,
+      "distinct2_defined": 72,
+      "distinct2_sd": 0.018423,
+      "distinct3": 1.0,
+      "distinct3_defined": 72,
+      "distinct3_sd": 0.0,
+      "looping_fraction": 0.0,
+      "mean_words": 25.666667,
+      "periodic_fraction": 0.013889,
+      "refused": 0,
+      "replacement_characters": 0,
+      "samples": 72
+     },
+     "config": {
+      "name": "t0.9",
+      "repeat_penalty": 1.0,
+      "temperature": 0.9,
+      "top_k": null,
+      "top_p": null
+     },
+     "gates": {
+      "all_passed": true,
+      "distinct1": {
+       "band": 0.05,
+       "direction": "within",
+       "gap": 0.000793,
+       "human": 0.852997,
+       "observed": 0.85379,
+       "passed": true
+      },
+      "distinct2": {
+       "band": 0.03,
+       "direction": "within",
+       "gap": 0.021364,
+       "human": 0.969256,
+       "observed": 0.99062,
+       "passed": true
+      },
+      "distinct3": {
+       "band": 0.02,
+       "direction": "within",
+       "gap": 0.01815,
+       "human": 0.98185,
+       "observed": 1.0,
+       "passed": true
+      },
+      "looping": {
+       "limit": 0.0,
+       "observed": 0.0,
+       "passed": true
+      },
+      "periodic": {
+       "limit": 0.05,
+       "observed": 0.013889,
+       "passed": true
+      },
+      "replacement_characters": {
+       "limit": 0,
+       "observed": 0,
+       "passed": true
+      }
+     }
+    },
+    "t0.9_p0.9": {
+     "aggregate": {
+      "bound_fraction": 1.0,
+      "distinct1": 0.844091,
+      "distinct1_defined": 72,
+      "distinct1_sd": 0.07301,
+      "distinct2": 0.986583,
+      "distinct2_defined": 72,
+      "distinct2_sd": 0.032347,
+      "distinct3": 0.997917,
+      "distinct3_defined": 72,
+      "distinct3_sd": 0.017678,
+      "looping_fraction": 0.0,
+      "mean_words": 26.805556,
+      "periodic_fraction": 0.013889,
+      "refused": 0,
+      "replacement_characters": 0,
+      "samples": 72
+     },
+     "config": {
+      "name": "t0.9_p0.9",
+      "repeat_penalty": 1.0,
+      "temperature": 0.9,
+      "top_k": null,
+      "top_p": 0.9
+     },
+     "gates": {
+      "all_passed": true,
+      "distinct1": {
+       "band": 0.05,
+       "direction": "within",
+       "gap": -0.008906,
+       "human": 0.852997,
+       "observed": 0.844091,
+       "passed": true
+      },
+      "distinct2": {
+       "band": 0.03,
+       "direction": "within",
+       "gap": 0.017327,
+       "human": 0.969256,
+       "observed": 0.986583,
+       "passed": true
+      },
+      "distinct3": {
+       "band": 0.02,
+       "direction": "within",
+       "gap": 0.016067,
+       "human": 0.98185,
+       "observed": 0.997917,
+       "passed": true
+      },
+      "looping": {
+       "limit": 0.0,
+       "observed": 0.0,
+       "passed": true
+      },
+      "periodic": {
+       "limit": 0.05,
+       "observed": 0.013889,
+       "passed": true
+      },
+      "replacement_characters": {
+       "limit": 0,
+       "observed": 0,
+       "passed": true
+      }
+     }
+    },
+    "t0.9_p0.95": {
+     "aggregate": {
+      "bound_fraction": 1.0,
+      "distinct1": 0.855636,
+      "distinct1_defined": 72,
+      "distinct1_sd": 0.068457,
+      "distinct2": 0.989715,
+      "distinct2_defined": 72,
+      "distinct2_sd": 0.022213,
+      "distinct3": 0.998414,
+      "distinct3_defined": 72,
+      "distinct3_sd": 0.007667,
+      "looping_fraction": 0.0,
+      "mean_words": 26.083333,
+      "periodic_fraction": 0.0,
+      "refused": 0,
+      "replacement_characters": 0,
+      "samples": 72
+     },
+     "config": {
+      "name": "t0.9_p0.95",
+      "repeat_penalty": 1.0,
+      "temperature": 0.9,
+      "top_k": null,
+      "top_p": 0.95
+     },
+     "gates": {
+      "all_passed": true,
+      "distinct1": {
+       "band": 0.05,
+       "direction": "within",
+       "gap": 0.002639,
+       "human": 0.852997,
+       "observed": 0.855636,
+       "passed": true
+      },
+      "distinct2": {
+       "band": 0.03,
+       "direction": "within",
+       "gap": 0.020459,
+       "human": 0.969256,
+       "observed": 0.989715,
+       "passed": true
+      },
+      "distinct3": {
+       "band": 0.02,
+       "direction": "within",
+       "gap": 0.016564,
+       "human": 0.98185,
+       "observed": 0.998414,
+       "passed": true
+      },
+      "looping": {
+       "limit": 0.0,
+       "observed": 0.0,
+       "passed": true
+      },
+      "periodic": {
+       "limit": 0.05,
+       "observed": 0.0,
+       "passed": true
+      },
+      "replacement_characters": {
+       "limit": 0,
+       "observed": 0,
+       "passed": true
+      }
+     }
+    },
+    "t1.0": {
+     "aggregate": {
+      "bound_fraction": 0.972222,
+      "distinct1": 0.890355,
+      "distinct1_defined": 71,
+      "distinct1_sd": 0.056982,
+      "distinct2": 0.996146,
+      "distinct2_defined": 71,
+      "distinct2_sd": 0.014729,
+      "distinct3": 0.999458,
+      "distinct3_defined": 71,
+      "distinct3_sd": 0.004565,
+      "looping_fraction": 0.0,
+      "mean_words": 24.652778,
+      "periodic_fraction": 0.0,
+      "refused": 0,
+      "replacement_characters": 0,
+      "samples": 72
+     },
+     "config": {
+      "name": "t1.0",
+      "repeat_penalty": 1.0,
+      "temperature": 1.0,
+      "top_k": null,
+      "top_p": null
+     },
+     "gates": {
+      "all_passed": true,
+      "distinct1": {
+       "band": 0.05,
+       "direction": "within",
+       "gap": 0.037358,
+       "human": 0.852997,
+       "observed": 0.890355,
+       "passed": true
+      },
+      "distinct2": {
+       "band": 0.03,
+       "direction": "within",
+       "gap": 0.02689,
+       "human": 0.969256,
+       "observed": 0.996146,
+       "passed": true
+      },
+      "distinct3": {
+       "band": 0.02,
+       "direction": "within",
+       "gap": 0.017608,
+       "human": 0.98185,
+       "observed": 0.999458,
+       "passed": true
+      },
+      "looping": {
+       "limit": 0.0,
+       "observed": 0.0,
+       "passed": true
+      },
+      "periodic": {
+       "limit": 0.05,
+       "observed": 0.0,
+       "passed": true
+      },
+      "replacement_characters": {
+       "limit": 0,
+       "observed": 0,
+       "passed": true
+      }
+     }
+    },
+    "t1.0_p0.9": {
+     "aggregate": {
+      "bound_fraction": 1.0,
+      "distinct1": 0.876465,
+      "distinct1_defined": 72,
+      "distinct1_sd": 0.071864,
+      "distinct2": 0.995715,
+      "distinct2_defined": 72,
+      "distinct2_sd": 0.012223,
+      "distinct3": 1.0,
+      "distinct3_defined": 72,
+      "distinct3_sd": 0.0,
+      "looping_fraction": 0.0,
+      "mean_words": 26.013889,
+      "periodic_fraction": 0.013889,
+      "refused": 0,
+      "replacement_characters": 0,
+      "samples": 72
+     },
+     "config": {
+      "name": "t1.0_p0.9",
+      "repeat_penalty": 1.0,
+      "temperature": 1.0,
+      "top_k": null,
+      "top_p": 0.9
+     },
+     "gates": {
+      "all_passed": true,
+      "distinct1": {
+       "band": 0.05,
+       "direction": "within",
+       "gap": 0.023468,
+       "human": 0.852997,
+       "observed": 0.876465,
+       "passed": true
+      },
+      "distinct2": {
+       "band": 0.03,
+       "direction": "within",
+       "gap": 0.026459,
+       "human": 0.969256,
+       "observed": 0.995715,
+       "passed": true
+      },
+      "distinct3": {
+       "band": 0.02,
+       "direction": "within",
+       "gap": 0.01815,
+       "human": 0.98185,
+       "observed": 1.0,
+       "passed": true
+      },
+      "looping": {
+       "limit": 0.0,
+       "observed": 0.0,
+       "passed": true
+      },
+      "periodic": {
+       "limit": 0.05,
+       "observed": 0.013889,
+       "passed": true
+      },
+      "replacement_characters": {
+       "limit": 0,
+       "observed": 0,
+       "passed": true
+      }
+     }
+    },
+    "t1.0_p0.95": {
+     "aggregate": {
+      "bound_fraction": 1.0,
+      "distinct1": 0.878645,
+      "distinct1_defined": 72,
+      "distinct1_sd": 0.066846,
+      "distinct2": 0.995629,
+      "distinct2_defined": 72,
+      "distinct2_sd": 0.017424,
+      "distinct3": 1.0,
+      "distinct3_defined": 72,
+      "distinct3_sd": 0.0,
+      "looping_fraction": 0.0,
+      "mean_words": 25.694444,
+      "periodic_fraction": 0.0,
+      "refused": 0,
+      "replacement_characters": 0,
+      "samples": 72
+     },
+     "config": {
+      "name": "t1.0_p0.95",
+      "repeat_penalty": 1.0,
+      "temperature": 1.0,
+      "top_k": null,
+      "top_p": 0.95
+     },
+     "gates": {
+      "all_passed": true,
+      "distinct1": {
+       "band": 0.05,
+       "direction": "within",
+       "gap": 0.025648,
+       "human": 0.852997,
+       "observed": 0.878645,
+       "passed": true
+      },
+      "distinct2": {
+       "band": 0.03,
+       "direction": "within",
+       "gap": 0.026373,
+       "human": 0.969256,
+       "observed": 0.995629,
+       "passed": true
+      },
+      "distinct3": {
+       "band": 0.02,
+       "direction": "within",
+       "gap": 0.01815,
+       "human": 0.98185,
+       "observed": 1.0,
+       "passed": true
+      },
+      "looping": {
+       "limit": 0.0,
+       "observed": 0.0,
+       "passed": true
+      },
+      "periodic": {
+       "limit": 0.05,
+       "observed": 0.0,
+       "passed": true
+      },
+      "replacement_characters": {
+       "limit": 0,
+       "observed": 0,
+       "passed": true
+      }
+     }
+    }
+   },
+   "determinism": [
+    {
+     "config": "greedy",
+     "repeat_identical": true,
+     "stream_equals_generate": true
+    },
+    {
+     "config": "t0.5",
+     "repeat_identical": true,
+     "stream_equals_generate": true
+    }
+   ],
+   "gates": {
+    "distinct1_band": 0.05,
+    "distinct2_band": 0.03,
+    "distinct3_band": 0.02,
+    "max_looping_fraction": 0.0,
+    "max_periodic_fraction": 0.05,
+    "max_replacement_characters": 0
+   },
+   "max_new_tokens": 64,
+   "model_id": "subword_transformer",
+   "prompt_digest": "c3614be7182eff877793a23fbf405ffd970c62a410757efb082bef8e25dce665",
+   "prompt_offset": 0,
+   "reference": {
+    "distinct1": 0.852997,
+    "distinct1_defined": 24,
+    "distinct1_sd": 0.094172,
+    "distinct2": 0.969256,
+    "distinct2_defined": 24,
+    "distinct2_sd": 0.070075,
+    "distinct3": 0.98185,
+    "distinct3_defined": 24,
+    "distinct3_sd": 0.052866,
+    "looping_fraction": 0.0,
+    "mean_words": 25.333333,
+    "periodic_fraction": 0.0,
+    "replacement_characters": 0,
+    "samples": 24
+   },
+   "schema": "chakaso-generation-quality/1",
+   "seeds": [
+    11,
+    23,
+    37
+   ],
+   "source_sha256": "485c205e076f04ad926d3ccf8c5852fb84abf3de658cf4cf466212e0b2172d69",
+   "split_seed": 7
+  }
+ },
+ "schema": "chakaso-e2610-aggregates/1"
+}
