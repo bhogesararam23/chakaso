@@ -52,7 +52,7 @@ from chakaso.models.formatting import PLAIN_CONTINUATION, render, template_for
 from chakaso.training.decoder import ChakasoDecoder, KeyValueCache
 from chakaso.training.errors import CheckpointError, TrainingError
 from chakaso.training.nn_checkpoint import ModelArtifact, family_of, load_artifact
-from chakaso.training.subword import DOCUMENT_END
+from chakaso.training.subword import DOCUMENT_END, IncrementalDecoder
 
 __all__ = ["SUBWORD_TRANSFORMER_MODEL_ID", "SubwordTransformerModel"]
 
@@ -113,7 +113,8 @@ class _DecodeRun:
         cache: The key/value cache for a family that supports one; ``None`` otherwise.
         step_input: What the next forward pass consumes, or ``None`` once the run is over.
         produced: Identifiers emitted as content so far.
-        texts: Their decoded text, in order.
+        decoder: Turns identifiers into text without splitting a multi-byte character across tokens.
+        texts: Their decoded text, in order; a token that only starts a character contributes ``""``.
         reason: Why the run ended, filled in by the last step that ran.
         stopped_by: The marker that ended it, when a marker did.
     """
@@ -124,12 +125,14 @@ class _DecodeRun:
     selector: TokenSelector
     scanner: StopScanner
     cache: KeyValueCache | None
+    decoder: IncrementalDecoder
     step_input: tuple[int, ...] | None = None
     produced: list[int] = field(default_factory=list)
     texts: list[str] = field(default_factory=list)
     reason: FinishReason = FinishReason.LENGTH
     stopped_by: str | None = None
     signal: AbortSignal | None = None
+    flushed: bool = False
 
     def __post_init__(self) -> None:
         self.step_input = tuple(self.window)
@@ -260,7 +263,18 @@ class SubwordTransformerModel:
                 document_end_id=DOCUMENT_END,
             ),
             cache=self._cache(),
+            decoder=self._artifact.vocabulary.incremental_decoder(),
         )
+
+    def _finish(self, run: _DecodeRun) -> str:
+        """Flush bytes of a character the run ended inside of; recorded once, so safe to call twice."""
+        if run.flushed:
+            return ""
+        run.flushed = True
+        tail = run.decoder.finish()
+        if tail:
+            run.texts.append(tail)
+        return tail
 
     def _advance(self, run: _DecodeRun) -> GenerationChunk | None:
         """Produce one more token, or return ``None`` once the run has ended.
@@ -282,7 +296,8 @@ class SubwordTransformerModel:
             run.stopped_by = "document-end"
             run.step_input = None
             return None
-        text = self._artifact.vocabulary.decode([identifier])
+
+        text = run.decoder.feed(identifier)
         verdict = run.scanner.feed(text, identifier)
         run.selector.note(identifier)
         run.produced.append(identifier)
@@ -358,9 +373,9 @@ class SubwordTransformerModel:
     ) -> Iterator[GenerationChunk]:
         """Yield each generated step as it happens, and stop when the caller aborts.
 
-        A chunk is one token's decoded text, which may be an incomplete multi-byte sequence: a caller
-        rendering live output should accumulate and re-render rather than trust one chunk. The final chunk
-        carries ``finish_reason``, so a consumer can tell a complete answer from one cut off by a ceiling.
+        A chunk is the text one token completes: empty while a multi-byte character is still arriving, never
+        half a character. The final chunk carries ``finish_reason`` and any bytes of a character the run was
+        cut off inside, so a consumer can tell a complete answer from one cut off by a ceiling.
         """
         run = self._begin(messages, params)
         run.signal = signal
@@ -369,7 +384,9 @@ class SubwordTransformerModel:
             # caller's first word by a whole step. The end of the run is its own marker chunk instead.
             while (chunk := self._advance(run)) is not None:
                 yield chunk
-        yield GenerationChunk(text="", token_id=-1, final=True, finish_reason=run.reason)
+        yield GenerationChunk(
+            text=self._finish(run), token_id=-1, final=True, finish_reason=run.reason
+        )
 
     def _decode(
         self,
@@ -388,6 +405,7 @@ class SubwordTransformerModel:
         with torch.no_grad():
             while self._advance(run) is not None:
                 continue
+        self._finish(run)
         return GenerationResult(
             text="".join(run.texts),
             model_id=self._metadata.model_id,

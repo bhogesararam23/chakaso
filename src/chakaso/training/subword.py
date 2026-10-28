@@ -33,6 +33,7 @@ dependency-free CI matrix, without a numerical framework in the way.
 
 from __future__ import annotations
 
+import codecs
 import json
 import re
 from collections import Counter
@@ -53,6 +54,7 @@ __all__ = [
     "DOCUMENT_END",
     "FIRST_MERGED_ID",
     "RESERVED_DOCUMENT_END_ID",
+    "IncrementalDecoder",
     "SubwordVocabulary",
     "pre_tokenize",
     "train_subword_vocabulary",
@@ -81,6 +83,35 @@ PIECE_PATTERN = re.compile(r"\w+|\s+|[^\w\s]", re.UNICODE)
 def pre_tokenize(text: str) -> tuple[str, ...]:
     """Split ``text`` into pieces that may be merged internally, never across a boundary."""
     return tuple(PIECE_PATTERN.findall(text))
+
+
+class IncrementalDecoder:
+    """Turns a stream of identifiers into text without splitting a multi-byte character.
+
+    :meth:`feed` returns only the characters the bytes so far complete (possibly none, mid-character);
+    :meth:`finish` flushes what is left, replacing a truly truncated character exactly as
+    :meth:`SubwordVocabulary.decode` does. Feeding every identifier and then finishing yields the same text
+    as one bulk ``decode``, which is the property the tests hold it to.
+    """
+
+    def __init__(self, vocabulary: SubwordVocabulary) -> None:
+        self._vocabulary = vocabulary
+        self._decoder = codecs.getincrementaldecoder("utf-8")(errors="replace")
+
+    def feed(self, symbol: int) -> str:
+        """The text newly completed by ``symbol``; empty for the separator or an unfinished character."""
+        if symbol == RESERVED_DOCUMENT_END_ID:
+            return ""
+        if symbol < 0 or symbol >= self._vocabulary.size:
+            message = (
+                f"identifier {symbol} is outside this vocabulary (size {self._vocabulary.size})"
+            )
+            raise CorpusError(message)
+        return self._decoder.decode(self._vocabulary.symbol_to_bytes(symbol))
+
+    def finish(self) -> str:
+        """Flush a character the stream ended inside of, as a replacement character."""
+        return self._decoder.decode(b"", final=True)
 
 
 @dataclass(frozen=True, slots=True)
@@ -246,6 +277,14 @@ class SubwordVocabulary:
                 raise CorpusError(message)
             buffer.extend(self.symbol_to_bytes(symbol))
         return buffer.decode("utf-8", errors="replace")
+
+    def incremental_decoder(self) -> IncrementalDecoder:
+        """A decoder for text that arrives one identifier at a time, as it does during generation.
+
+        :meth:`decode` on a single identifier cannot be joined with its neighbours: a character whose UTF-8
+        bytes span two tokens is replaced in each half, and the replacement is permanent.
+        """
+        return IncrementalDecoder(self)
 
     def token_count(self, text: str) -> int:
         """How many identifiers ``text`` occupies — the denominator of every bits-per-token number."""

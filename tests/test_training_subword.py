@@ -227,6 +227,48 @@ def test_pieces_report_the_separator_and_every_learned_symbol() -> None:
     assert all(piece for piece in pieces[: vocabulary.size])
 
 
+def test_an_incremental_decoder_never_emits_half_a_character() -> None:
+    vocabulary = _trained()
+    # U+00A3 is the two bytes C2 A3: two identifiers, neither valid text on its own.
+    first, second = 0xC2, 0xA3
+    assert vocabulary.decode([first]) == "\ufffd"  # the per-token path this decoder replaces
+
+    decoder = vocabulary.incremental_decoder()
+
+    assert decoder.feed(ord("a")) == "a"
+    assert decoder.feed(first) == ""
+    assert decoder.feed(second) == "\u00a3"
+    assert decoder.finish() == ""
+
+
+def test_an_incremental_decode_equals_the_bulk_decode_on_any_stream() -> None:
+    vocabulary = _trained()
+    text = "naive caf\u00e9 \u65e5\u672c\u8a9e \U0001f600 \u00a3 end"
+    identifiers = [*vocabulary.encode(text), DOCUMENT_END]
+
+    decoder = vocabulary.incremental_decoder()
+    pieces = [decoder.feed(identifier) for identifier in identifiers]
+    pieces.append(decoder.finish())
+
+    assert "".join(pieces) == vocabulary.decode(identifiers) == text
+
+
+def test_a_stream_that_ends_inside_a_character_is_flushed_as_a_replacement() -> None:
+    vocabulary = _trained()
+    decoder = vocabulary.incremental_decoder()
+
+    assert decoder.feed(0xC2) == ""
+    assert decoder.finish() == "\ufffd"
+    assert decoder.finish() == ""
+
+
+def test_an_incremental_decoder_refuses_an_identifier_outside_the_vocabulary() -> None:
+    vocabulary = _trained()
+
+    with pytest.raises(CorpusError):
+        vocabulary.incremental_decoder().feed(vocabulary.size)
+
+
 def test_a_multi_byte_character_split_across_tokens_still_decodes() -> None:
     vocabulary = _trained()
     text = "日本語 text"

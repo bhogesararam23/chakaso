@@ -557,3 +557,54 @@ def test_a_chat_template_reaches_the_model_as_labelled_text(checkpoint: Path) ->
     assert labelled.truncated is True
     assert unlabelled.truncated is False
     assert labelled.prompt_tokens == unlabelled.prompt_tokens == 8
+
+
+def _scripted(model: SubwordTransformerModel, identifiers: list[int]) -> None:
+    """Make the model choose exactly ``identifiers``, one per step, whatever the weights say."""
+    size = model.artifact.vocabulary.size
+    queue = list(identifiers)
+
+    def logits(_ids: object, _cache: object) -> list[float]:
+        row = [0.0] * size
+        row[queue.pop(0)] = 50.0
+        return row
+
+    model._logits = logits  # type: ignore[method-assign]
+
+
+def test_a_character_split_across_two_generated_tokens_is_not_destroyed(checkpoint: Path) -> None:
+    # Regression: each token used to be decoded on its own with errors="replace", so the two bytes of a
+    # pound sign (C2 A3) became two replacement characters that no later join could repair. Found by a
+    # sampled run over the released checkpoint, where it surfaced as "ordifferent \ufffd\ufffd 1600".
+    model = SubwordTransformerModel(str(checkpoint))
+    _scripted(model, [ord("a"), 0xC2, 0xA3, ord("b")])
+
+    result = model.generate(_messages(), GenerationParams(max_new_tokens=4, temperature=0.0))
+
+    assert result.text == "a\u00a3b"
+    assert result.token_ids == (ord("a"), 0xC2, 0xA3, ord("b"))
+
+
+def test_a_streamed_split_character_arrives_whole_and_chunks_join_to_the_result(
+    checkpoint: Path,
+) -> None:
+    model = SubwordTransformerModel(str(checkpoint))
+    _scripted(model, [ord("a"), 0xC2, 0xA3, ord("b")])
+
+    chunks = list(model.stream(_messages(), GenerationParams(max_new_tokens=4, temperature=0.0)))
+
+    assert all("\ufffd" not in chunk.text for chunk in chunks)
+    assert "".join(chunk.text for chunk in chunks) == "a\u00a3b"
+    assert chunks[-1].final
+
+
+def test_a_run_cut_off_inside_a_character_flushes_one_replacement(checkpoint: Path) -> None:
+    model = SubwordTransformerModel(str(checkpoint))
+    _scripted(model, [ord("a"), 0xC2])
+
+    chunks = list(model.stream(_messages(), GenerationParams(max_new_tokens=2, temperature=0.0)))
+    _scripted(model, [ord("a"), 0xC2])
+    result = model.generate(_messages(), GenerationParams(max_new_tokens=2, temperature=0.0))
+
+    assert "".join(chunk.text for chunk in chunks) == "a\ufffd"
+    assert result.text == "a\ufffd"

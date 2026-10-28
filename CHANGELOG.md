@@ -12,6 +12,18 @@ capability is implemented or still planned.
 
 ## Unreleased
 
+### 2026-10-29 — a character split across two generated tokens was destroyed
+
+**Fixed**
+
+- Generation decoded each token on its own with `errors="replace"`. A character whose UTF-8 bytes span two
+  byte-level tokens (a pound sign is `C2 A3`) came out as two U+FFFD characters in `generate`, in `stream`
+  chunks and in anything computed from them. Found by sampling the released checkpoint (1 of 180 sampled
+  continuations: `"ordifferent \ufffd\ufffd 1600"` against the correct `"£ 1600"` from a bulk decode). The adapter
+  now decodes incrementally (`SubwordVocabulary.incremental_decoder`): a token that only starts a character
+  yields an empty chunk, and the final stream chunk carries any flush. Greedy output was never affected on the
+  recorded probes; a model that emits non-ASCII text was. Joined streamed text now equals the bulk decode.
+
 ### 2026-10-24 — the documentation was audited against the code, and the records were audited against their own reports
 
 **Corrected**
