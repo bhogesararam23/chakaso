@@ -50,12 +50,14 @@ from chakaso.training.manifest import read_snapshot
 from chakaso.training.subword import SubwordVocabulary
 
 __all__ = [
+    "CONFIG_SETS",
     "DEFAULT_CONFIGS",
     "GATES",
     "HELD_OUT_TEST_FRACTION",
     "HELD_OUT_VALIDATION_FRACTION",
     "PROMPT_PROCEDURE",
     "QUALITY_SCHEMA",
+    "SWEEP_CONFIGS",
     "DecodingConfig",
     "GateSpec",
     "HeldOutPrompt",
@@ -130,6 +132,25 @@ DEFAULT_CONFIGS: tuple[DecodingConfig, ...] = (
     DecodingConfig("t0.8_k40", temperature=0.8, top_k=40),
     DecodingConfig("t1.0", temperature=1.0),
 )
+
+
+#: The decoding sweep: temperature x nucleus for sampling, plus greedy with a repetition penalty. Declared
+#: here so a sweep is a named set rather than whatever a script happened to loop over.
+SWEEP_CONFIGS: tuple[DecodingConfig, ...] = (
+    DecodingConfig("greedy"),
+    *(DecodingConfig(f"greedy_rp{p}", repeat_penalty=p) for p in (1.05, 1.1, 1.2)),
+    *(
+        DecodingConfig(f"t{t}_p{p}" if p else f"t{t}", temperature=t, top_p=p)
+        for t in (0.5, 0.7, 0.8, 0.9, 1.0)
+        for p in (None, 0.9, 0.95)
+    ),
+)
+
+#: Named configuration sets a runner may select.
+CONFIG_SETS: dict[str, tuple[DecodingConfig, ...]] = {
+    "default": DEFAULT_CONFIGS,
+    "sweep": SWEEP_CONFIGS,
+}
 
 
 @dataclass(frozen=True, slots=True)
@@ -234,6 +255,7 @@ def select_heldout_prompts(
     prompt_chars: int = 240,
     reference_tokens: int = 64,
     seed: int = 1234,
+    offset: int = 0,
 ) -> tuple[HeldOutPrompt, ...]:
     """Draw ``count`` prompts, one per document, from ``units`` — which the caller passes as the test side.
 
@@ -241,7 +263,10 @@ def select_heldout_prompts(
     shuffled with ``seed``; each yields one passage that starts at a word boundary, a prompt of about
     ``prompt_chars`` characters ending at a word boundary, and the following ``reference_tokens`` tokens as
     the human continuation. One prompt per document, so no document is over-represented and no two prompts
-    can quote each other.
+    can quote each other. ``offset`` skips that many documents of the shuffled order, so ``offset=count``
+    gives a second set sharing no document with the first: the tuning/confirmation split a decoding sweep
+    needs, so a setting chosen on one set is judged on the other. (Draws are sequential, so a set is a
+    function of ``(units, seed, offset, count)`` together, not of a document alone.)
 
     Raises:
         ValueError: fewer eligible documents than ``count`` (an under-filled suite would report a smaller
@@ -257,16 +282,16 @@ def select_heldout_prompts(
         (unit for unit in units if len(unit.text) >= 400 + prompt_chars + reserve),
         key=lambda unit: unit.identifier,
     )
-    if len(eligible) < count:
+    if offset < 0 or len(eligible) < offset + count:
         message = (
-            f"{len(eligible)} documents are long enough for a prompt and a reference, but {count} were "
-            "requested"
+            f"{len(eligible)} documents are long enough for a prompt and a reference, but "
+            f"{offset + count} were requested (count {count} after skipping {offset})"
         )
         raise ValueError(message)
     rng = random.Random(seed)
     rng.shuffle(eligible)
     chosen: list[HeldOutPrompt] = []
-    for unit in eligible[:count]:
+    for unit in eligible[offset : offset + count]:
         text = unit.text
         start = rng.randrange(200, len(text) - prompt_chars - reserve)
         while start < len(text) and not text[start - 1].isspace():
@@ -518,6 +543,8 @@ def run_release_quality(
     count: int = 24,
     max_new_tokens: int = 64,
     prompt_seed: int = 1234,
+    prompt_offset: int = 0,
+    config_set: str = "default",
 ) -> dict[str, Any]:
     """Evaluate a loaded trained model on prompts drawn from its own held-out documents.
 
@@ -533,8 +560,17 @@ def run_release_quality(
         )
         raise ModelError(message)
     units = heldout_test_units(snapshot_path, split_seed=split_seed)
-    prompts = select_heldout_prompts(units, vocabulary, count=count, seed=prompt_seed)
-    report = evaluate_quality(model, prompts, max_new_tokens=max_new_tokens)
+    if config_set not in CONFIG_SETS:
+        message = f"unknown configuration set {config_set!r}; choose one of {sorted(CONFIG_SETS)}"
+        raise ValueError(message)
+    prompts = select_heldout_prompts(
+        units, vocabulary, count=count, seed=prompt_seed, offset=prompt_offset
+    )
+    report = evaluate_quality(
+        model, prompts, configs=CONFIG_SETS[config_set], max_new_tokens=max_new_tokens
+    )
+    report["config_set"] = config_set
+    report["prompt_offset"] = prompt_offset
     report["split_seed"] = split_seed
     report["heldout_documents"] = len(units)
     return report

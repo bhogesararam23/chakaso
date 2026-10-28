@@ -410,3 +410,31 @@ def test_the_split_fractions_match_the_experiment_driver() -> None:
 
     assert HELD_OUT_VALIDATION_FRACTION == subword_experiment._VALIDATION_FRACTION
     assert HELD_OUT_TEST_FRACTION == subword_experiment._TEST_FRACTION
+
+
+def test_an_offset_gives_a_second_prompt_set_that_shares_no_document() -> None:
+    first = select_heldout_prompts(
+        _units(), _VOCABULARY, count=3, prompt_chars=120, reference_tokens=40, seed=5
+    )
+    second = select_heldout_prompts(
+        _units(), _VOCABULARY, count=3, prompt_chars=120, reference_tokens=40, seed=5, offset=3
+    )
+
+    assert not {p.unit_id for p in first} & {p.unit_id for p in second}
+    assert len(second) == 3
+
+
+def test_an_offset_past_the_available_documents_is_refused() -> None:
+    with pytest.raises(ValueError, match="after skipping 4"):
+        select_heldout_prompts(
+            _units(6), _VOCABULARY, count=3, prompt_chars=120, reference_tokens=40, offset=4
+        )
+
+
+def test_the_declared_sweep_names_are_unique_and_the_sets_are_selectable() -> None:
+    from chakaso.training.quality_eval import CONFIG_SETS, SWEEP_CONFIGS
+
+    names = [config.name for config in SWEEP_CONFIGS]
+
+    assert len(names) == len(set(names)) == 19
+    assert set(CONFIG_SETS) == {"default", "sweep"}

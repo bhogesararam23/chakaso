@@ -965,6 +965,18 @@ def _build_parsers() -> tuple[argparse.ArgumentParser, argparse.ArgumentParser]:
     )
     model_quality.add_argument("--prompts", type=int, default=24, help="held-out prompts to draw")
     model_quality.add_argument("--max-new-tokens", type=int, default=64, help="tokens per sample")
+    model_quality.add_argument(
+        "--prompt-offset",
+        type=int,
+        default=0,
+        help="skip this many held-out documents, for a set disjoint from an earlier one",
+    )
+    model_quality.add_argument(
+        "--config-set",
+        choices=("default", "sweep"),
+        default="default",
+        help="the declared decoding configurations to run",
+    )
     model_quality.add_argument("--out", type=Path, help="write the machine-readable report here")
     model_quality.add_argument(
         "--baseline", type=Path, help="an earlier report over the same prompts to compare against"
@@ -2602,6 +2614,8 @@ def _run_model_quality(model: Any, args: argparse.Namespace) -> int:
         split_seed=args.split_seed,
         count=args.prompts,
         max_new_tokens=args.max_new_tokens,
+        prompt_offset=args.prompt_offset,
+        config_set=args.config_set,
     )
     print(summarise_quality(report))
     if args.baseline is not None:
