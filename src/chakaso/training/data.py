@@ -45,9 +45,11 @@ __all__ = [
     "character_windows",
     "dataset_fingerprint",
     "fit_vocabulary",
+    "groups_per_side",
     "split_corpus",
     "split_text_units",
     "split_three_way",
+    "works_on_multiple_sides",
 ]
 
 
@@ -57,10 +59,17 @@ class TextUnit:
 
     The split layer separates corpora by this unit, so an identifier is what makes a leakage claim
     checkable: two units with the same identifier are the same document.
+
+    ``group`` names the work the document was cut from. A corpus of books is chunked into documents, so
+    a document-level split can put chapter 3 of a book in training and chapter 12 of the same book in the
+    test set — the model is then scored on text whose author, vocabulary and continuation it has already
+    seen. Grouping makes "held out" mean *held-out works*. An empty group means the document is its own
+    work, which is the right default for a corpus of whole files.
     """
 
     identifier: str
     text: str
+    group: str = ""
 
 
 @dataclass(frozen=True, slots=True)
@@ -133,6 +142,7 @@ def split_text_units(
     validation_fraction: float = 0.2,
     test_fraction: float = 0.2,
     seed: int = 0,
+    whole_works: bool = False,
 ) -> UnitSplit:
     """Split whole documents into train/validation/test, deterministically and without leakage.
 
@@ -141,11 +151,21 @@ def split_text_units(
     tested on the other. Documents are deduplicated by content first, then assigned by a seeded shuffle of
     indices, so the same input produces the same sides and the same fingerprint.
 
+    A corpus cut from books is a *two-level* corpus: its documents are chunks of a larger work. Splitting
+    chunks still puts the same book on both sides, so the held-out number measures within-work continuity
+    rather than generalization to a work the model has never read. ``whole_works=True`` assigns every
+    chunk of a work to one side, using the declared character targets to decide how many works each side
+    needs; the split is then held out by *work*, and every unit must name its group.
+
     Raises:
         ValueError: a fraction is outside ``(0, 1)``, the two fractions leave nothing for training, the
             seed is not an integer, there are fewer than three usable documents, a unit has an empty
-            identifier or text, or two units share an identifier.
+            identifier or text, or two units share an identifier. With ``whole_works=True`` it also raises
+            when a unit names no group or there are fewer than three works.
     """
+    if not isinstance(whole_works, bool):
+        message = f"whole_works must be a boolean, got {whole_works!r}"
+        raise ValueError(message)
     for name, value in (
         ("validation_fraction", validation_fraction),
         ("test_fraction", test_fraction),
@@ -194,6 +214,14 @@ def split_text_units(
         )
         raise ValueError(message)
 
+    if whole_works:
+        return _split_whole_works(
+            usable,
+            validation_fraction=validation_fraction,
+            test_fraction=test_fraction,
+            seed=seed,
+        )
+
     order = list(range(len(usable)))
     random.Random(seed).shuffle(order)
 
@@ -219,6 +247,95 @@ def split_text_units(
         validation=tuple(sides["validation"]),
         test=tuple(sides["test"]),
         dropped_duplicates=tuple(dropped),
+    )
+
+
+def groups_per_side(split: UnitSplit) -> dict[str, list[str]]:
+    """The works each side holds, sorted — empty lists for a corpus whose units name no group."""
+    return {
+        side: sorted({unit.group for unit in getattr(split, side) if unit.group})
+        for side in ("train", "validation", "test")
+    }
+
+
+def works_on_multiple_sides(split: UnitSplit) -> int:
+    """How many works appear on more than one side: a split's own leakage count.
+
+    Reported rather than enforced, because the document split is what several measured protocols used and
+    a report that omitted the number would let "held out" mean two different things in two records.
+    """
+    seen: dict[str, int] = {}
+    for names in groups_per_side(split).values():
+        for name in names:
+            seen[name] = seen.get(name, 0) + 1
+    return sum(1 for count in seen.values() if count > 1)
+
+
+def _split_whole_works(
+    units: Sequence[TextUnit],
+    *,
+    validation_fraction: float,
+    test_fraction: float,
+    seed: int,
+) -> UnitSplit:
+    """Assign every unit of a work to one side, aiming at the declared share of characters.
+
+    Works differ in length by an order of magnitude, so counting works rather than characters would let a
+    handful of long books decide the test set. The order of works is sorted and then shuffled, so the
+    assignment depends on the seed and the set of works, not on the order documents happened to arrive in;
+    within a side the units keep their input order, which is what the packing layer expects.
+    """
+    works: dict[str, list[TextUnit]] = {}
+    for unit in units:
+        if not unit.group:
+            message = (
+                f"text unit {unit.identifier!r} declares no group, so a whole-work split cannot place it; "
+                "group every unit by the work it came from, or split by document"
+            )
+            raise ValueError(message)
+        works.setdefault(unit.group, []).append(unit)
+    if len(works) < 3:
+        message = (
+            f"a whole-work split needs at least three distinct works, got {len(works)} "
+            f"from {len(units)} unit(s)"
+        )
+        raise ValueError(message)
+
+    characters = {name: sum(len(unit.text) for unit in items) for name, items in works.items()}
+    total = sum(characters.values())
+    order = sorted(works)
+    random.Random(seed).shuffle(order)
+
+    test_target = total * test_fraction
+    validation_target = total * validation_fraction
+    assignment: dict[str, str] = {}
+    test_characters = 0.0
+    validation_characters = 0.0
+    for name in order:
+        if test_characters < test_target:
+            assignment[name] = "test"
+            test_characters += characters[name]
+        elif validation_characters < validation_target:
+            assignment[name] = "validation"
+            validation_characters += characters[name]
+        else:
+            assignment[name] = "train"
+
+    sides: dict[str, list[TextUnit]] = {"train": [], "validation": [], "test": []}
+    for unit in units:
+        sides[assignment[unit.group]].append(unit)
+    empty = [side for side, items in sides.items() if not items]
+    if empty:
+        message = (
+            f"the declared fractions left no work on the {sorted(empty)} side of a {len(works)}-work "
+            "corpus; adjust the fractions or the corpus"
+        )
+        raise ValueError(message)
+
+    return UnitSplit(
+        train=tuple(sides["train"]),
+        validation=tuple(sides["validation"]),
+        test=tuple(sides["test"]),
     )
 
 

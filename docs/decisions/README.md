@@ -134,3 +134,4 @@ creates.
 | [ADR-0039](ADR-0039-three-level-model-release-gate.md) | A model release is gated at three levels — contract, reproducible integration, useful behaviour — and the level is awarded on evidence in the model card | Accepted |
 | [ADR-0040](ADR-0040-document-boundary-attention-masking.md) | Document-boundary attention masking is an opt-in training option, off by default until a controlled experiment measures it | Accepted |
 | [ADR-0041](ADR-0041-next-training-target-general-base-with-technical-mixture.md) | The next training target is a general base with a technical mixture, and the next unit is an equal-token data experiment, not an architecture change | Accepted |
+| [ADR-0042](ADR-0042-held-out-means-held-out-works.md) | A held-out score is held out by work, not by chunk; the whole-work split is opt-in and every report states whether it ran | Accepted |

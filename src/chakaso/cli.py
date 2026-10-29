@@ -583,6 +583,11 @@ def _build_parsers() -> tuple[argparse.ArgumentParser, argparse.ArgumentParser]:
         help="confine attention to each packed position's own document (decoder family only)",
     )
     experiment_model.add_argument(
+        "--whole-work-splits",
+        action="store_true",
+        help="put every chunk of a work on one side of the split, so the held-out set is held out by work",
+    )
+    experiment_model.add_argument(
         "--json",
         action="store_true",
         help="emit the full machine-readable report instead of the one-line comparison",
@@ -2189,6 +2194,8 @@ def _run_model_experiment(args: argparse.Namespace) -> int:
         overrides["character_baseline"] = False
     if args.document_masking:
         overrides["document_masking"] = True
+    if args.whole_work_splits:
+        overrides["whole_work_splits"] = True
     plan = ExperimentPlan(
         **{
             "root": args.root,

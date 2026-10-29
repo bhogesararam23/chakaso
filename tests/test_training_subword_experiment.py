@@ -757,3 +757,67 @@ def test_a_run_records_its_own_generations_latency_and_memory(tmp_path: Path) ->
 
     line = summarise(report)
     assert "generations:" in line
+
+
+def _grouped_root(tmp_path: Path) -> Path:
+    """Six works of three documents each, so a split can be checked at the work level."""
+    root = tmp_path / "grouped"
+    for work in range(6):
+        for part in range(3):
+            target = root / f"work-{work:02d}" / f"part-{part:04d}.md"
+            target.parent.mkdir(parents=True, exist_ok=True)
+            target.write_text(
+                f"# Work {work} part {part}\n\n"
+                + (f"Work {work} describes the quarry road and its carts. " * 12)
+                + "\n",
+                encoding="utf-8",
+            )
+    return root
+
+
+def _grouped_plan(root: Path, work: Path, **overrides: object) -> ExperimentPlan:
+    corpus = CorpusSpec(
+        name="grouped",
+        version="1.0.0",
+        licence="test fixture",
+        source="test fixture",
+        include=("work-*/*.md",),
+        extensions=(".md",),
+        exact_paths=(),
+    )
+    return _plan(root, work, corpus=corpus, character_baseline=False, **overrides)
+
+
+def test_a_whole_work_plan_never_holds_out_part_of_a_work(tmp_path: Path) -> None:
+    plan = _grouped_plan(_grouped_root(tmp_path), tmp_path / "work", whole_work_splits=True)
+
+    prepared = prepare_corpus(plan)
+
+    sides = {
+        side: {unit.group for unit in getattr(prepared.split, side)}
+        for side in ("train", "validation", "test")
+    }
+    assert sides["train"] and sides["test"]
+    assert not sides["train"] & sides["test"]
+    assert not sides["train"] & sides["validation"]
+    assert not sides["validation"] & sides["test"]
+
+
+def test_the_report_states_whether_works_were_split_and_how_many_crossed(tmp_path: Path) -> None:
+    grouped = _grouped_plan(_grouped_root(tmp_path), tmp_path / "work", whole_work_splits=True)
+    report = run_experiment(grouped)
+
+    assert report["corpus"]["whole_work_splits"] is True
+    assert report["corpus"]["works_on_multiple_sides"] == 0
+    assert report["corpus"]["groups_per_side"]["test"]
+    assert report["transformer"]["budget"]["whole_work_splits"] is True
+
+
+def test_a_document_plan_reports_the_works_it_did_split(tmp_path: Path) -> None:
+    plan = _grouped_plan(_grouped_root(tmp_path), tmp_path / "work")
+
+    report = run_experiment(plan)
+
+    assert report["corpus"]["whole_work_splits"] is False
+    # The fixture has six works; a document split of eighteen chunks puts at least one on two sides.
+    assert report["corpus"]["works_on_multiple_sides"] > 0

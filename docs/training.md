@@ -129,6 +129,13 @@ Data hygiene comes before benchmark optimisation. Leakage, duplication and
 train/test contamination can make a model look better than it is, and a benchmark
 number obtained that way is worse than no number, because it will be trusted.
 
+**The split unit is a declared property of the protocol.** `split_text_units` separates documents by
+default; `whole_works=True` puts every chunk of a work on one side, and a corpus built from books declares
+it. Every report states `whole_work_splits`, `groups_per_side` and `works_on_multiple_sides`, so the
+meaning of "held out" travels with the number. [ADR-0042](decisions/ADR-0042-held-out-means-held-out-works.md)
+records why: E2607, E2608 and E2611 were split by chapter, and every test character in them came from a
+book the model had read other chapters of.
+
 | Data type | Purpose |
 | --- | --- |
 | General text | Learn language structure |

@@ -379,3 +379,18 @@ still invent words); or that this closes K-001 or earns Level 3 of ADR-0039. It 
    independent of this result and remains unrun.
 5. **Do not call this a capability result.** It is a held-out loss comparison on one corpus, one seed,
    one budget, with no question asked or answered. K-001 stands.
+
+## Correction (2026-10-30): the held-out side was held out by chapter, not by work
+
+Measured against the same snapshot both arms trained on, at the 15 %/15 % fractions and split seed 7 this
+protocol used: the corpus is 24 books, **23 of 23 test-side books also appear in the training side, and
+100 % of the test characters (2,165,409 of 2,165,409) come from books the model read other chapters of**.
+
+**What this changes.** Both absolute levels — 1.8077426492 for the decoder and 1.9043151128 for the
+transformer — are within-work estimates, not scores on unseen books.
+
+**What it does not change.** Both arms trained on the same corpus, split and tokenizer, so the difference
+this record exists to measure (−0.0965725 bits, H2) is unaffected: a shared bias cancels in a comparison.
+The same applies to E2608's 0.2178 and to the 44 % survival figure this record derives from it.
+The decision and the code are in
+[ADR-0042](../../docs/decisions/ADR-0042-held-out-means-held-out-works.md).

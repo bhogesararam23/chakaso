@@ -14,9 +14,11 @@ from chakaso.training.data import (
     character_windows,
     dataset_fingerprint,
     fit_vocabulary,
+    groups_per_side,
     split_corpus,
     split_text_units,
     split_three_way,
+    works_on_multiple_sides,
 )
 from chakaso.training.tokenizer import UNK_ID
 
@@ -324,3 +326,109 @@ def test_split_fingerprint_moves_when_the_assignment_moves() -> None:
     )
 
     assert before.fingerprint != after.fingerprint
+
+
+# ---------------------------------------------------------------------------
+# Whole-work splitting: a corpus cut from books must be held out by work.
+# ---------------------------------------------------------------------------
+
+
+def _works(count: int, chunks: int, *, characters: int = 400) -> tuple[TextUnit, ...]:
+    units: list[TextUnit] = []
+    for work in range(count):
+        body = (f"work {work} continues. " * (characters // 20 + 1))[:characters]
+        for chunk in range(chunks):
+            units.append(
+                TextUnit(
+                    identifier=f"pg{work:02d}/part-{chunk:04d}.md",
+                    text=f"{body} chunk {chunk}.\n",
+                    group=f"pg{work:02d}",
+                )
+            )
+    return tuple(units)
+
+
+def test_whole_work_split_never_puts_one_work_on_two_sides() -> None:
+    units = _works(12, 5)
+    for seed in range(16):
+        split = split_text_units(
+            units, validation_fraction=0.2, test_fraction=0.2, seed=seed, whole_works=True
+        )
+        sides = {
+            side: {unit.group for unit in getattr(split, side)}
+            for side in ("train", "validation", "test")
+        }
+        assert sides["train"] and sides["validation"] and sides["test"]
+        assert not sides["train"] & sides["test"]
+        assert not sides["train"] & sides["validation"]
+        assert not sides["validation"] & sides["test"]
+        # Every chunk is still present exactly once; grouping moves units, it does not drop them.
+        assert len(split.train) + len(split.validation) + len(split.test) == len(units)
+
+
+def test_document_split_does_not_need_groups_and_ignores_them() -> None:
+    units = tuple(TextUnit(identifier=f"doc-{i}", text=f"body {i}\n") for i in range(10))
+    ungrouped = split_text_units(units, seed=4)
+    grouped = split_text_units(
+        tuple(
+            TextUnit(identifier=unit.identifier, text=unit.text, group=f"work-{i}")
+            for i, unit in enumerate(units)
+        ),
+        seed=4,
+    )
+    assert ungrouped.fingerprint == grouped.fingerprint
+
+
+def test_whole_work_split_is_deterministic_and_seed_dependent() -> None:
+    units = _works(15, 3)
+    first = split_text_units(units, seed=9, whole_works=True)
+    second = split_text_units(units, seed=9, whole_works=True)
+    other = split_text_units(units, seed=10, whole_works=True)
+
+    assert first.fingerprint == second.fingerprint
+    assert other.fingerprint != first.fingerprint
+
+
+def test_whole_work_split_tracks_the_declared_character_share() -> None:
+    units = _works(30, 4, characters=500)
+    split = split_text_units(
+        units, validation_fraction=0.2, test_fraction=0.2, seed=3, whole_works=True
+    )
+    total = sum(len(unit.text) for unit in units)
+    test_share = sum(len(unit.text) for unit in split.test) / total
+    # Works are indivisible, so the share can only be hit to within one work's size.
+    assert 0.12 <= test_share <= 0.35
+
+
+def test_whole_work_split_refuses_units_without_a_group_or_too_few_works() -> None:
+    ungrouped = tuple(TextUnit(identifier=f"doc-{i}", text=f"body {i}\n") for i in range(6))
+    with pytest.raises(ValueError, match="declares no group"):
+        split_text_units(ungrouped, whole_works=True)
+    two_works = _works(2, 3)
+    with pytest.raises(ValueError, match="at least three distinct works"):
+        split_text_units(two_works, whole_works=True)
+    with pytest.raises(ValueError, match="must be a boolean"):
+        split_text_units(_works(4, 2), whole_works="yes")  # type: ignore[arg-type]
+
+
+def test_a_document_split_puts_one_work_on_several_sides_which_is_why_whole_works_exists() -> None:
+    # The negative control for the test above: with the same corpus and the default document split, a
+    # work's chunks do land on both sides. If this ever stops being true the grouping flag is no longer
+    # buying anything, and the corpus can be split by document again.
+    units = _works(12, 5)
+    split = split_text_units(units, seed=3)
+    in_train = {unit.group for unit in split.train}
+    in_test = {unit.group for unit in split.test}
+    assert in_train & in_test
+
+
+def test_the_split_reports_its_own_work_leakage_count() -> None:
+    units = _works(12, 5)
+    by_document = split_text_units(units, seed=3)
+    by_work = split_text_units(units, seed=3, whole_works=True)
+
+    assert works_on_multiple_sides(by_document) > 0
+    assert works_on_multiple_sides(by_work) == 0
+    assert set(groups_per_side(by_work)) == {"train", "validation", "test"}
+    sides = groups_per_side(by_work)
+    assert not set(sides["train"]) & set(sides["test"])

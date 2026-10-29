@@ -274,12 +274,26 @@ class CorpusManifest:
         return sum(document.byte_count for document in self.documents)
 
     def text_units(self) -> tuple[TextUnit, ...]:
-        """The documents as split-ready units, in the manifest's order."""
-        return tuple(
-            TextUnit(identifier=document.identifier, text=document.text)
-            for document in self.documents
-            if document.text
-        )
+        """The documents as split-ready units, in the manifest's order.
+
+        Each unit's ``group`` is the document's first path segment, which is the source's directory in a
+        corpus built from books (``pg1342/part-0007.md``) and a repository directory in one built from the
+        tracked tree (``docs/architecture.md``). A document with no directory is its own group. Grouping is
+        only consulted when a caller asks for a whole-work split; a document split ignores it.
+        """
+        units: list[TextUnit] = []
+        for document in self.documents:
+            if not document.text:
+                continue
+            head, separator, _ = document.identifier.partition("/")
+            units.append(
+                TextUnit(
+                    identifier=document.identifier,
+                    text=document.text,
+                    group=head if separator else document.identifier,
+                )
+            )
+        return tuple(units)
 
     @property
     def duplicate_paths(self) -> tuple[tuple[str, ...], ...]:

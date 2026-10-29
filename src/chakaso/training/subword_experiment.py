@@ -41,7 +41,9 @@ from chakaso.training.data import (
     Split,
     UnitSplit,
     character_windows,
+    groups_per_side,
     split_text_units,
+    works_on_multiple_sides,
 )
 from chakaso.training.decoder import DecoderConfig
 from chakaso.training.errors import CorpusDriftError, CorpusError
@@ -251,6 +253,10 @@ class ExperimentPlan:
     #: Whether attention is confined to the document each packed position came from. Off by default so
     #: every measured protocol remains reproducible by name; requires the decoder family.
     document_masking: bool = False
+    #: Whether every chunk of a work lands on one side of the split. Off by default because it changes the
+    #: split fingerprint, and a measured protocol's split must not move under its record; a corpus cut from
+    #: books declares it on, or its held-out score is within-work rather than held-out by work.
+    whole_work_splits: bool = False
     #: Whether the character-model baseline runs at all. Its windows are materialized per character, so on a
     #: corpus of tens of millions of characters it costs more memory than this project's machine has; a run
     #: that skips it says so in its report rather than pretending the number was measured.
@@ -295,6 +301,9 @@ class ExperimentPlan:
             raise ValueError(message)
         if not isinstance(self.document_masking, bool):
             message = f"document_masking must be a boolean, got {self.document_masking!r}"
+            raise ValueError(message)
+        if not isinstance(self.whole_work_splits, bool):
+            message = f"whole_work_splits must be a boolean, got {self.whole_work_splits!r}"
             raise ValueError(message)
         if self.document_masking and self.model_family != "decoder":
             message = (
@@ -610,6 +619,7 @@ def prepare_corpus(plan: ExperimentPlan) -> PreparedCorpus:
         validation_fraction=_VALIDATION_FRACTION,
         test_fraction=_TEST_FRACTION,
         seed=plan.effective_split_seed,
+        whole_works=plan.whole_work_splits,
     )
     vocabulary, tokenizer_reused = _fit_or_reuse_vocabulary(plan, work, manifest, split)
     char_vocabulary = CharVocabulary(tuple(unit.text for unit in split.train))
@@ -1011,6 +1021,9 @@ def run_experiment(plan: ExperimentPlan, *, verbose: bool = False) -> dict[str, 
             "split_seed": plan.effective_split_seed,
             "model_seed": plan.seed,
             "split_fingerprint": prepared.split.fingerprint,
+            "whole_work_splits": plan.whole_work_splits,
+            "groups_per_side": groups_per_side(prepared.split),
+            "works_on_multiple_sides": works_on_multiple_sides(prepared.split),
             "documents_per_side": {
                 "train": len(prepared.split.train),
                 "validation": len(prepared.split.validation),
@@ -1063,6 +1076,7 @@ def run_experiment(plan: ExperimentPlan, *, verbose: bool = False) -> dict[str, 
                 "decay_to": plan.decay_to,
                 "grad_accum_steps": plan.grad_accum_steps,
                 "document_masking": plan.document_masking,
+                "whole_work_splits": plan.whole_work_splits,
                 "effective_batch_size": outcome.config.effective_batch_size,
                 "positions_per_second": round(outcome.positions_per_second, 1),
                 "records": len(outcome.records),

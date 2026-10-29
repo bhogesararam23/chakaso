@@ -366,3 +366,27 @@ original wording kept, per the rule that a measured record is not silently edite
 
 The aggregate `results.json` (digest `efe541727c46c369…`, the value this record already cited) is now committed
 in this directory, so the statistics above can be re-derived without the gitignored `data/` tree.
+
+## Correction (2026-10-30): the held-out side was held out by chapter, not by work
+
+Found while preparing the next data experiment, and measured rather than inferred. The corpus is three
+books cut into 105 chapter-sized documents, and the split layer assigned *documents*, so chapters of the
+same book landed on both sides. Re-derived from this experiment's own snapshot at the 15 %/15 % fractions
+the protocol used:
+
+| Split seed | Test characters | From books also in the training side |
+| --- | --- | --- |
+| 7 | 255,765 | 255,765 (100.0 %) |
+| 11 | 256,204 | 256,204 (100.0 %) |
+| 13 | 255,364 | 255,364 (100.0 %) |
+
+**What this changes.** "Held-out documents" in this record means held-out *chapters of books the model read
+other chapters of*, not documents from a book it had never seen. The absolute level (2.0176 ± 0.0118 bits
+per character) is therefore a within-work estimate and is not restated here.
+
+**What it does not change.** All three seeds trained on the same corpus and were split the same way, so the
+comparison the record makes — the spread across seeds, and the gap against the unigram baseline — is
+unaffected. The three-book corpus cannot support a work-level split at all: 15 % of three books is no
+whole book, which is one reason the corpus has to grow before a held-out number can mean what it says.
+The decision and the measured E2608 overlap are in
+[ADR-0042](../../docs/decisions/ADR-0042-held-out-means-held-out-works.md).

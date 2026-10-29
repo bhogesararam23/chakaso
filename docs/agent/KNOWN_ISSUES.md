@@ -3,8 +3,8 @@
 Real problems with the current state, including the ones that are only
 inconvenient. An empty file here would mean nobody has looked.
 
-Last reviewed: 2026-10-29 (K-020 and K-021 added by the E2610 diagnosis, K-022 by the 2026-10-29 data
-review); before that 2026-10-24, as the whole-documentation audit of every doc against the code and the committed
+Last reviewed: 2026-10-30 (K-023 added by the whole-work split correction); before that 2026-10-29
+(K-020 and K-021 added by the E2610 diagnosis, K-022 by the data review); before that 2026-10-24, as the whole-documentation audit of every doc against the code and the committed
 records. That pass added K-011 through K-019, narrowed K-001, rewrote K-002's stale component list and removed a
 drifting count from K-009; the rest of its output was corrected in the documents themselves.
 
@@ -576,6 +576,31 @@ stages and the rules; no corpus beyond v2 is pinned yet.
 **What would close it:** a pinned corpus of at least ~100M tokens (preferably 200–500M) from declared,
 licensed sources, with per-document digests, a measured data card, whole-work train/validation/test splits,
 and a contamination screen. Until then, the honest scale ceiling is a few million parameters, not a hundred.
+
+### K-023 — Every book corpus was held out by chapter, so its scores are within-work
+
+**Impact:** High for how the absolute numbers may be read; none for the arm-to-arm comparisons.
+
+Corpora built from books are cut into chapter-sized documents, and `split_text_units` assigned
+*documents* to train, validation and test. Measured on 2026-10-30 against E2608's own snapshot at the
+15 %/15 % fractions and split seed 7: **23 of 23 test-side books also appear in the training side, and
+100 % of test characters (2,165,409 of 2,165,409) come from books the model read other chapters of.**
+E2607 is the same shape — 100 % of its test characters, on all three of its seeds. So "held-out documents"
+meant held-out chapters, and E2608's 1.6865, E2607's 2.0176 and E2611's 1.8077 are within-work estimates.
+
+**What is fixed.** [ADR-0042](../decisions/ADR-0042-held-out-means-held-out-works.md) adds a whole-work
+split (`TextUnit.group`, `split_text_units(whole_works=True)`, `ExperimentPlan.whole_work_splits`,
+`--whole-work-splits`), and every report now states `whole_work_splits`, `groups_per_side` and
+`works_on_multiple_sides`, so a reader can see what "held out" meant without trusting a record's prose.
+E2607, E2608 and E2611 carry dated corrections; no number in them was restated.
+
+**What is not fixed.** No historical run was repeated. A work-level split of 24 books yields three or four
+test books, which is not an estimate — the corpus has to grow before the evaluation can mean what the
+records say. E2605/E2606 are unaffected in kind: their documents are whole files.
+
+**What would close it:** a measured result on a corpus large enough that a whole-work split puts dozens of
+works on each side — E2612 is the first — and, after that, a re-measure of the reference configuration on
+such a corpus so the released number is not left carrying the qualifier.
 
 ## Resolved
 

@@ -535,3 +535,29 @@ What would change that is named in [`docs/roadmap.md`](../../docs/roadmap.md): a
 validation that has actually turned, a seed spread on this configuration, and a capacity-matched comparison arm
 so the architecture question can be answered instead of hinted at.
 
+
+## Correction (2026-10-30): the held-out side was held out by chapter, not by work
+
+Found while preparing the next data experiment, and measured against this experiment's own snapshot rather
+than inferred. The corpus is 24 books cut into 919 chapter-sized documents, and the split layer assigned
+*documents*, so chapters of the same book landed on both sides. Re-derived at the 15 %/15 % fractions and
+split seed 7 the protocol used:
+
+| Quantity | Measured |
+| --- | --- |
+| Books in the training side | 24 |
+| Books in the test side | 23 |
+| Books on both sides | **23 of 23** |
+| Test characters from books also in the training side | **2,165,409 of 2,165,409 (100.0 %)** |
+
+**What this changes.** "Held-out documents" in this record means held-out chapters of books the model read
+other chapters of. The absolute levels — 1.6865 bits per character for the decoder arm and 1.9043 for the
+transformer arm — are within-work estimates and are not restated here. The model card's citation of 1.6865
+carries the same qualifier.
+
+**What it does not change.** Both arms were split identically, so the arm-to-arm comparison, the token
+match, the baselines on the same scored positions and the generation evidence are all unaffected. A
+work-level split of 24 books would have produced three or four test books, which is why the evaluation
+was not re-run: the corpus must grow before its held-out number can mean what the record's prose says.
+The decision and the code are in
+[ADR-0042](../../docs/decisions/ADR-0042-held-out-means-held-out-works.md).
