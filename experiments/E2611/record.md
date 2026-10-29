@@ -110,11 +110,16 @@ No new data is introduced. Nothing here changes the corpus's duplicate screen, l
 | parameters, declared from configuration | **1,018,240** | **1,037,056** |
 | parameters, reported by the built model | recorded in the results | 1,037,056 |
 | batch × accumulation | **32 × 2** | **32 × 2** |
-| positions per optimizer step | 8,256 (block width 129) | 8,256 |
+| model input positions per optimizer step | 8,192 (32 × 2 × 128) | 8,192 |
 | steps | 2,400 | 2,400 |
-| total training positions | 19,814,400 | 19,814,400 |
+| total model input positions | 19,660,800 | 19,660,800 |
 | schedule | **constant** (the control's) | constant |
 | seed | 7 | 7 |
+
+The batch shape and step count are the control's exactly. (The control's table also quotes 8,256 *packed
+stream* tokens per step, because a block is 129 identifiers wide and the last one is a target rather than an
+input. The model processes 8,192 input positions per step; 19,660,800 is the control's recorded total and the
+number this record matches.)
 
 The parameter counts differ by **18,816 (1.8%)**, which is almost entirely the control's learned position table
 (128 × 128 = 16,384) and its LayerNorm parameters. The match is not exact, and is stated as 98.2% rather than
