@@ -22,7 +22,7 @@ tokenizer cache are present; the snapshot verifies at 919 documents / 14,490,005
 | S4 | Capability benchmarks and integration contract | S1 | workloads, scorers, baselines, contamination controls, consumer checklist | done | [`../research/chakaso-capability-benchmarks.md`](../research/chakaso-capability-benchmarks.md), [`chakaso-integration-contract.md`](../research/chakaso-integration-contract.md) |
 | S5 | Opt-in document-boundary attention masking | S0 | per-token document IDs; decoder mask; default path unchanged; tests falsify the mask; smoke run through the CLI | done | `eb530a9`, ADR-0040, eight focused tests, a masked CLI smoke run |
 | S6 | E2611 capacity/context-matched arm | S0 | preregistered before the run; same data, split, tokenizer, seed, batch, tokens and schedule; result recorded | **measured** | [`../../experiments/E2611/record.md`](../../experiments/E2611/record.md): decoder **1.8077** vs transformer **1.9043**, −0.0966 bits, H2 |
-| S7 | Records reconciled and pushed | S1–S6 | state, task ledger, issues, roadmap, research log, changelog updated; CI read back | **in progress** | this file; K-022; the research log entry |
+| S7 | Records reconciled and pushed | S1–S6 | state, task ledger, issues, roadmap, research log, changelog updated; CI read back | **done** | `7bd7336`, `7394605`; CI run `40801086093` success on all eight jobs; local gates 1,695/25 dependency-free and 2,077/1 with `[train,nn]` |
 | S8 | The equal-token data experiment | S2, S3, S6 | a licensed corpus of ≥68M tokens, whole-work splits, two arms, preregistered success bands | **not started** | ADR-0041; blocked on corpus acquisition (K-022) |
 
 **Stop conditions, declared at the start.** Do not claim Level 3 or any capability from a held-out loss; do
@@ -38,6 +38,51 @@ open-model research says the current 5.8 tokens per parameter and the 6.72M-toke
 the binding constraints; ADR-0041 chooses a general base with a technical mixture and an equal-token data
 experiment as the next unit. Document-boundary masking is implemented and tested but **not measured**; it is
 an option, not a recommendation. K-022 files the data ceiling.
+
+## Delivery record (2026-10-29)
+
+The unit began at `a2416d1` == `origin/main` with a clean tree. Its content head is `7394605` — **11 commits**
+(`e957167..7394605`) — all pushed normally to `main`: no force-push, no branch deleted, no published history
+rewritten, no hook bypassed, no `.github/workflows/*` file touched. This ledger commit follows the content head,
+so read the range between the endpoints rather than `HEAD`.
+
+Remote CI run **`40801086093`** completed **success on all eight jobs** for `7394605` (core 3.11/3.12/3.13,
+train 3.11/3.12/3.13, model path 3.11/3.13). Local gates on the same tree: **1,695 pass / 25 skip**
+dependency-free, **2,077 pass / 1 skip** with `[train,nn]`, `ruff check .` and `ruff format --check .` clean,
+`mypy src` clean over 125 source files, and the model-path configuration clean over **158** source files. The
+model-path mypy check was run with the working `.venv` mypy binary against the `.venv-nn` interpreter because
+this machine's application-control policy blocks `.venv-nn`'s mypy DLL; the check itself covered every module
+with `torch` resolved.
+
+**What shipped.** A sourced six-document research package (open-model landscape with a per-claim ledger, next
+training design, data curriculum, capability benchmarks, compute/scaling plan, integration contract); two
+decision records ([ADR-0040](../decisions/ADR-0040-document-boundary-attention-masking.md) opt-in
+document-boundary masking, [ADR-0041](../decisions/ADR-0041-next-training-target-general-base-with-technical-mixture.md)
+data before architecture); the opt-in document-boundary masking implementation with eight focused tests and a
+CLI smoke run; **E2611**, the capacity- and context-matched decoder arm, with its record and machine-readable
+aggregate; and the reconciled state, task ledger, issues, roadmap, research log, changelog and indexes.
+
+**What was measured.** E2611: **1.8077** bits per character for the 1,018,240-parameter decoder against
+**1.9043** for the 1,037,056-parameter transformer at matched context, data, split, tokenizer, seed, batch
+shape, token budget and schedule — **−0.0966 bits (−5.071%)**, outside the preregistered ±0.02 band, with
+both arms at the 2,400-step ceiling. About 44% of E2608's 0.2178-bit gap survives the match; the measured cause
+is the architecture bundle, not a single component. The secondary quality suite gives greedy word distinct-1
+**0.721** against the human **0.853** and two sampled settings that pass the surface gates; no coherence claim
+is made. The masking change is tested by a logit-isolation property and a CLI smoke run, not by a training
+comparison.
+
+**What is not verified, and would be dishonest to imply.** The equal-token data experiment (S8) was **not
+run** — no licensed corpus beyond 6.72M identifiers exists, and K-022 records that ceiling. E2609's decoder
+seed spread was **not run**, so the 0.0966-bit difference has one seed. Document-boundary masking was **not
+measured** against an unmasked arm; it is an option, not a recommendation. E2611's arms both hit the ceiling,
+so its numbers are floors; the 3.4M decoder against a 3.4M transformer remains unmeasured. No capability,
+grounded answer, instruction following or Level 3 was produced, and K-001 stands. The peak RSS of the control
+report is absent by its shape; the treatment's 1,062.3 MB is reported.
+
+**On the commit count.** The brief's stretch goal was 100+ commits, explicitly not a quota. Eleven content
+commits is what this work supported as separable, reviewable changes: six research/documentation units, one
+preregistration, one measured result, one feature, one state reconciliation and one index pass, plus this
+ledger. Splitting them further would have produced commits that cannot be understood on their own.
 
 ## Previous unit (delivered): model-quality diagnosis — why the released checkpoint repeats (2026-10-29, from `fc31782`)
 
