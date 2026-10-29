@@ -78,9 +78,9 @@ budget. The practical ceilings here are a ~10M-parameter model at context 256–
 before it needs a GPU.
 
 Inference memory is much smaller: a 3.4M-parameter decoder at context 256 has a KV cache of
-`2 × 4 layers × 256 × 256 × 4 bytes ≈ 2.1 MB` for multi-head attention; at 30M parameters and context 1024
-it is ~33 MB, and grouped-query attention reduces it further. The project's inference constraint is CPU
-latency, not memory.
+`2 × 4 layers × 256 × 256 × 4 bytes ≈ 2.1 MB` for multi-head attention; a 30M-parameter, 6-layer,
+`d_model` 512 model at context 1024 is ~24 MB, and grouped-query attention reduces it further. The project's
+inference constraint is CPU latency, not memory.
 
 ## Storage
 
