@@ -165,3 +165,16 @@ with the answer.
    decoding behaviour, not size.
 3. If a run's measured peak RSS exceeds the machine's headroom and timings degrade, the configuration drops
    to the next row in the table and the record states which row and why.
+
+## Amendment, 2026-10-29
+
+The revisit conditions were exercised rather than left as prose. Condition 2's antecedent did not occur:
+E2610 showed the decoder's repetition is a property of greedy decoding of a human-diverse distribution, not
+of capacity or schedule, so degeneration was not the signal to move away from the architecture. E2611 then ran
+the capacity-matched arm this record's follow-up asked for: at ~1M parameters, matched context, data, split,
+tokenizer, seed, batch, token budget and schedule, the decoder reached **1.8077** bits per character against
+the transformer's **1.9043**, a **0.0966-bit** difference outside its preregistered ±0.02 band, with both arms
+still at the 2,400-step ceiling. The decision above stands: the rotary decoder is the reference family, now
+for a measured reason at two scales rather than one. The result does not decompose the architecture bundle and
+does not establish convergence; the next decision is about data and tokens
+([ADR-0041](ADR-0041-next-training-target-general-base-with-technical-mixture.md)), not another architecture.

@@ -163,6 +163,11 @@ one.
 ## What would change this card
 
 A seed spread on this configuration (E2609, declared in the record), a token budget at which validation loss
-actually turns, a capacity-matched comparison arm so the architecture question can be answered rather than
-hinted at, and a generation measurement that a reader disagrees with on the text rather than on the ratio.
-Until then, this card's Level 3 row stays "not met", and the number in its headline stays the interesting part.
+actually turns, and a generation measurement that a reader disagrees with on the text rather than on the ratio.
+The capacity-matched arm this card previously listed as future work has now run: **E2611** compared a
+1,018,240-parameter decoder with the 1,037,056-parameter transformer at the same context, data, split, seed,
+batch and token budget, and the decoder reached **1.8077** bits per character against **1.9043** — a 0.0966-bit
+bundle effect at ~1M parameters, both arms still at the 2,400-step ceiling. That answers E2608's confound at a
+smaller scale; it does not change this artifact's numbers or award Level 3. Until the spread and the
+behaviour measurement exist, this card's Level 3 row stays "not met", and the number in its headline stays the
+interesting part.
