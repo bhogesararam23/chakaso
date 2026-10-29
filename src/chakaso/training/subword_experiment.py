@@ -248,6 +248,9 @@ class ExperimentPlan:
     grad_accum_steps: int = 1
     #: How often the resumable artifact is rewritten; zero means at every evaluation.
     checkpoint_every: int = 0
+    #: Whether attention is confined to the document each packed position came from. Off by default so
+    #: every measured protocol remains reproducible by name; requires the decoder family.
+    document_masking: bool = False
     #: Whether the character-model baseline runs at all. Its windows are materialized per character, so on a
     #: corpus of tens of millions of characters it costs more memory than this project's machine has; a run
     #: that skips it says so in its report rather than pretending the number was measured.
@@ -289,6 +292,15 @@ class ExperimentPlan:
             raise ValueError(message)
         if isinstance(self.checkpoint_every, bool) or self.checkpoint_every < 0:
             message = f"checkpoint_every must be >= 0, got {self.checkpoint_every!r}"
+            raise ValueError(message)
+        if not isinstance(self.document_masking, bool):
+            message = f"document_masking must be a boolean, got {self.document_masking!r}"
+            raise ValueError(message)
+        if self.document_masking and self.model_family != "decoder":
+            message = (
+                "document_masking is implemented for the decoder family; the transformer family's "
+                "encoder path does not expose a per-batch attention mask here"
+            )
             raise ValueError(message)
         if self.model_family == "decoder":
             head_width = self.d_model // self.num_heads
@@ -621,9 +633,24 @@ def prepare_corpus(plan: ExperimentPlan) -> PreparedCorpus:
         split=split,
         vocabulary=vocabulary,
         char_vocabulary=char_vocabulary,
-        train=pack_units(split.train, vocabulary, context_length=plan.context_length),
-        validation=pack_units(split.validation, vocabulary, context_length=plan.context_length),
-        test=pack_units(split.test, vocabulary, context_length=plan.context_length),
+        train=pack_units(
+            split.train,
+            vocabulary,
+            context_length=plan.context_length,
+            track_documents=plan.document_masking,
+        ),
+        validation=pack_units(
+            split.validation,
+            vocabulary,
+            context_length=plan.context_length,
+            track_documents=plan.document_masking,
+        ),
+        test=pack_units(
+            split.test,
+            vocabulary,
+            context_length=plan.context_length,
+            track_documents=plan.document_masking,
+        ),
         char_windows=char_windows,
         timings={"prepare_seconds": round(time.perf_counter() - started, 2)},
         corpus_origin=origin,
@@ -840,6 +867,7 @@ def _training_config(
         decay_to=plan.decay_to,
         grad_accum_steps=plan.grad_accum_steps,
         checkpoint_every=plan.checkpoint_every,
+        document_masking=plan.document_masking,
     )
 
 
@@ -1034,6 +1062,7 @@ def run_experiment(plan: ExperimentPlan, *, verbose: bool = False) -> dict[str, 
                 "schedule": plan.schedule,
                 "decay_to": plan.decay_to,
                 "grad_accum_steps": plan.grad_accum_steps,
+                "document_masking": plan.document_masking,
                 "effective_batch_size": outcome.config.effective_batch_size,
                 "positions_per_second": round(outcome.positions_per_second, 1),
                 "records": len(outcome.records),

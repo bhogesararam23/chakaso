@@ -528,6 +528,7 @@ class ChakasoDecoder(nn.Module):
         positions: torch.Tensor | None = None,
         cache: KeyValueCache | None = None,
         valid: torch.Tensor | None = None,
+        segment_ids: torch.Tensor | None = None,
     ) -> tuple[torch.Tensor, torch.Tensor | None]:
         """Return ``(logits, loss)`` for ``input_ids`` of shape ``(batch, length)``.
 
@@ -542,13 +543,37 @@ class ChakasoDecoder(nn.Module):
             valid: Boolean tensor marking which *key* positions are real, shape ``(batch, past + length)``.
                 Masked-out keys cannot influence any query, which is what makes a padded batch harmless
                 rather than merely inconvenient.
+            segment_ids: Document index of every input position, shape ``(batch, length)``. When present,
+                a query may attend only to keys from its own document (and to no future key): attention
+                cannot cross a packed document boundary. This is a training-time constructor; it is
+                refused with a cache, because a cached past would need its own segment identifiers.
 
         Raises:
             ValueError: shapes disagree, an identifier is outside the vocabulary, a position exceeds the
-                context, a cache disagrees with the identifiers, or every target is padding — a mean over
-                zero positions is not a loss.
+                context, a cache disagrees with the identifiers, document identifiers are supplied with a
+                cache, or every target is padding — a mean over zero positions is not a loss.
         """
         batch, length = self._validate_input(input_ids, cache)
+        if segment_ids is not None:
+            if cache is not None:
+                message = (
+                    "document-boundary masking is a training-time constructor and cannot be combined "
+                    "with a key/value cache: the cached past would need its own segment identifiers"
+                )
+                raise ValueError(message)
+            if segment_ids.shape != (batch, length):
+                message = (
+                    f"segment identifiers must have shape {(batch, length)}, got "
+                    f"{tuple(segment_ids.shape)}"
+                )
+                raise ValueError(message)
+            if segment_ids.dtype not in (torch.int32, torch.int64):
+                message = f"segment identifiers must be integers, got dtype {segment_ids.dtype}"
+                raise ValueError(message)
+            if length and int(segment_ids.min()) < 0:
+                message = "segment identifiers must be non-negative document indices"
+                raise ValueError(message)
+
         already = 0 if cache is None else cache.length
         if positions is None:
             start = torch.arange(length, device=input_ids.device) + already
@@ -556,7 +581,9 @@ class ChakasoDecoder(nn.Module):
         self._validate_positions(positions, batch, length, cache)
         keys = already + length
 
-        if valid is not None:
+        if segment_ids is not None:
+            mask = self._validity_mask(positions, valid, already=already, segments=segment_ids)
+        elif valid is not None:
             expected = (batch, keys)
             if valid.shape != expected:
                 message = (
@@ -606,16 +633,29 @@ class ChakasoDecoder(nn.Module):
 
     @staticmethod
     def _validity_mask(
-        positions: torch.Tensor, valid: torch.Tensor, *, already: int
+        positions: torch.Tensor,
+        valid: torch.Tensor | None,
+        *,
+        already: int,
+        segments: torch.Tensor | None = None,
     ) -> torch.Tensor:
-        """Causality and key validity combined into one additive mask of shape ``(batch, 1, queries, keys)``.
+        """Causality, key validity and document membership combined into one additive mask.
 
-        ``valid`` marks columns, causality marks a triangle under each row's own diagonal, and the mask is
-        their intersection: a query may attend to a key only when the key is real and not in its future.
+        ``valid`` marks real key columns, ``segments`` marks which document each query and key belongs to,
+        and causality marks a triangle under each row's own diagonal. The mask is their intersection: a
+        query may attend to a key only when the key is real, not in its future, and — when document
+        identifiers are supplied — from the same document. The result has shape
+        ``(batch, 1, queries, keys)``.
         """
         queries = (positions - already).unsqueeze(-1)
         keys = torch.arange(already + positions.shape[1], device=positions.device)
-        allowed = (keys[None, None, :] <= queries) & valid[:, None, :]
+        allowed = keys[None, None, :] <= queries
+        if valid is not None:
+            allowed = allowed & valid[:, None, :]
+        if segments is not None:
+            # With a cache this path is refused before it arrives here, so ``already`` is zero and the
+            # segment matrix and the key axis have the same width.
+            allowed = allowed & (segments[:, :, None] == segments[:, None, :])
         mask = torch.zeros(allowed.shape, dtype=torch.float32, device=positions.device)
         return mask.masked_fill(~allowed, float("-inf"))[:, None, :, :]
 

@@ -284,6 +284,20 @@ The plan assumes runs get interrupted:
 - separate data preparation from training so the expensive stage can resume,
 - never assume a single session will finish a run.
 
+## Document boundaries and attention
+
+Packing concatenates documents and terminates each with a separator, but the default attention is causal over
+the whole packed block: a token can read every earlier token, including tokens from unrelated documents.
+[ADR-0040](decisions/ADR-0040-document-boundary-attention-masking.md) adds an **opt-in** document-boundary
+mask. `pack_units(..., track_documents=True)` records the source document of every position;
+`ExperimentPlan.document_masking` (CLI: `--document-masking`) makes the decoder attend only within each
+position's own document. The default is off because every measured protocol in this repository trained with
+full causal attention, and changing that silently would make E2605–E2611 unreproducible by name. The option
+is decoder-only for now; the transformer family refuses it. A masked run states the flag in its report and
+records it in the resumable checkpoint, and a checkpoint written before the field existed is read as
+unmasked. **No benefit is claimed until a controlled masked/unmasked experiment measures one**; the planned
+comparison is a pair of decoder arms at the same corpus, split, seed, architecture, token budget and schedule.
+
 ## Preference optimization
 
 Direct preference optimization is a plausible later stage, because it optimizes
@@ -298,7 +312,7 @@ something nobody defined.
 | --- | --- |
 | Corpus and provenance | Implemented — `chakaso.training.corpus` (the self-authored toy text), `chakaso.training.manifest` (pins a real document set by path and content digest and refuses drift), `chakaso.training.snapshot` (recovers a pinned corpus from the revision that recorded it and writes a checksum-verified snapshot), `chakaso.training.source_corpus` (turns a downloaded external text into a pinned corpus offline) and `chakaso.training.dataset_catalog` / `dataset_report` (the catalogue a corpus is declared from, and the measured data card it generates). E2605/E2606 trained on the pinned repository text: 71 documents, 780,223 characters, fingerprint `e45993f9badf706c`; E2607 on 105 documents of Project Gutenberg prose, fingerprint `931b07a635ca5a0c`; E2608 on 919 documents from 24 texts, 14,490,005 characters, fingerprint `e9fc2e92f59d88ea` |
 | Tokenizer | Implemented — a deterministic character vocabulary (`chakaso.training.tokenizer`, used by E2601/E2602) and a learned byte-pair subword vocabulary (`chakaso.training.subword`, dependency-free, total over Unicode, self-describing and checksum-verified on load) |
-| Dataset pipeline | Implemented — document-level three-way split with deduplication before selection (`chakaso.training.data.split_text_units`), sequence packing with per-position targets (`chakaso.training.packing`), split/manifest fingerprints, and a split seed separate from the model seed so a study can vary initialization without moving the held-out documents |
+| Dataset pipeline | Implemented — document-level three-way split with deduplication before selection (`chakaso.training.data.split_text_units`), sequence packing with per-position targets (`chakaso.training.packing`), split/manifest fingerprints, and a split seed separate from the model seed so a study can vary initialization without moving the held-out documents. Packing can optionally record each position's source document for the document-boundary attention mask (ADR-0040, default off) |
 | Model code | Implemented and measured — the character MLP (E2601, 984 parameters, every gradient finite-difference verified), the decoder-only causal Transformer (`chakaso.training.transformer`, 643,840 parameters in E2605, autograd gradients cross-checked against hand-computed losses and sampled finite differences per ADR-0034), and since E2608 a second family: `chakaso.training.decoder`, a rotary-position, RMSNorm, tied-embedding decoder with an ignore-index target mask and a key/value cache whose stepped forward pass is tested equal to the full one (3,413,760 parameters measured) |
 | Training loop | Implemented and measured — full-batch Adam over the character model (E2601/E2602) and mini-batch AdamW with warmup, gradient clipping, validation-selected early stopping and bit-identical resume for the Transformer (`chakaso.training.nn_training`) |
 | Checkpoints | Implemented — character JSON schema/2 (checksum-verified, vocabulary embedded), and one tensor-plus-metadata file carrying **two** architecture schemas: `chakaso-transformer-checkpoint/1` (ADR-0035) and `chakaso-decoder-checkpoint/1` (ADR-0037). A file names its own family, the loader builds the class from that and never guesses, the checksum covers tensors plus metadata, `weights_only=True` is explicit, incompatible artifacts are refused by name, and usable and resumable kinds are distinguished |

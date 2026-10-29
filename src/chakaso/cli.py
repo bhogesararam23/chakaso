@@ -578,6 +578,11 @@ def _build_parsers() -> tuple[argparse.ArgumentParser, argparse.ArgumentParser]:
         help="skip the character-model baseline, whose windows are materialized per character",
     )
     experiment_model.add_argument(
+        "--document-masking",
+        action="store_true",
+        help="confine attention to each packed position's own document (decoder family only)",
+    )
+    experiment_model.add_argument(
         "--json",
         action="store_true",
         help="emit the full machine-readable report instead of the one-line comparison",
@@ -2182,6 +2187,8 @@ def _run_model_experiment(args: argparse.Namespace) -> int:
         overrides["experiment_id"] = args.experiment
     if args.no_character_baseline:
         overrides["character_baseline"] = False
+    if args.document_masking:
+        overrides["document_masking"] = True
     plan = ExperimentPlan(
         **{
             "root": args.root,

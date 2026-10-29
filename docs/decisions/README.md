@@ -132,4 +132,5 @@ creates.
 | [ADR-0037](ADR-0037-reference-model-sized-by-measured-throughput.md) | The reference model is a rotary decoder sized by measured throughput, with a token-matched comparison arm | Accepted |
 | [ADR-0038](ADR-0038-local-http-serving-adapter-from-the-standard-library.md) | The local serving adapter is standard-library HTTP, bound to loopback, and serves only a trained model | Accepted |
 | [ADR-0039](ADR-0039-three-level-model-release-gate.md) | A model release is gated at three levels — contract, reproducible integration, useful behaviour — and the level is awarded on evidence in the model card | Accepted |
+| [ADR-0040](ADR-0040-document-boundary-attention-masking.md) | Document-boundary attention masking is an opt-in training option, off by default until a controlled experiment measures it | Accepted |
 | [ADR-0041](ADR-0041-next-training-target-general-base-with-technical-mixture.md) | The next training target is a general base with a technical mixture, and the next unit is an equal-token data experiment, not an architecture change | Accepted |

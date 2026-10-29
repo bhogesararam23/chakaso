@@ -419,3 +419,49 @@ def test_parameters_are_float32_on_cpu_because_that_is_what_this_project_verifie
 
     assert model.device.type == "cpu"
     assert {parameter.dtype for parameter in model.parameters()} == {torch.float32}
+
+
+def test_document_masking_stops_attention_into_a_previous_document() -> None:
+    model = _model(seed=0).eval()
+    identifiers = torch.tensor([[1, 2, 3, 4, 5, 6]], dtype=torch.int64)
+    segments = torch.tensor([[0, 0, 0, 1, 1, 1]], dtype=torch.int64)
+    changed = identifiers.clone()
+    changed[0, 0] = 7
+
+    with torch.no_grad():
+        masked, _ = model(identifiers, segment_ids=segments)
+        masked_changed, _ = model(changed, segment_ids=segments)
+        unmasked, _ = model(identifiers)
+        unmasked_changed, _ = model(changed)
+
+    # Positions 3-5 belong to the second document; nothing before position 3 may influence them.
+    assert torch.equal(masked[:, 3:], masked_changed[:, 3:])
+    # Without the mask the same change propagates through attention, which is what the mask prevents.
+    assert not torch.allclose(unmasked[:, 3:], unmasked_changed[:, 3:])
+
+
+def test_document_masking_of_one_document_is_the_causal_mask() -> None:
+    model = _model(seed=0).eval()
+    identifiers = _identifiers(2, 6)
+    segments = torch.zeros_like(identifiers)
+
+    with torch.no_grad():
+        masked, _ = model(identifiers, segment_ids=segments)
+        plain, _ = model(identifiers)
+
+    assert torch.equal(masked, plain)
+
+
+def test_document_masking_is_refused_with_a_cache_or_a_malformed_segment_tensor() -> None:
+    model = _model().eval()
+    identifiers = _identifiers(1, 4)
+    cache = KeyValueCache(len(model.blocks))
+
+    with pytest.raises(ValueError, match="key/value cache"):
+        model(identifiers, cache=cache, segment_ids=torch.zeros_like(identifiers))
+    with pytest.raises(ValueError, match="shape"):
+        model(identifiers, segment_ids=torch.zeros((1, 3), dtype=torch.int64))
+    with pytest.raises(ValueError, match="integers"):
+        model(identifiers, segment_ids=torch.zeros((1, 4), dtype=torch.float32))
+    with pytest.raises(ValueError, match="non-negative"):
+        model(identifiers, segment_ids=torch.tensor([[-1, 0, 0, 0]], dtype=torch.int64))

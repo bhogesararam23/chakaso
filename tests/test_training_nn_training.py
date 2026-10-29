@@ -16,6 +16,7 @@ import pytest
 torch = pytest.importorskip("torch")
 
 from chakaso.training.data import TextUnit, split_text_units  # noqa: E402
+from chakaso.training.decoder import DecoderConfig  # noqa: E402
 from chakaso.training.errors import TrainingError  # noqa: E402
 from chakaso.training.nn_checkpoint import load_artifact, save_artifact  # noqa: E402
 from chakaso.training.nn_training import (  # noqa: E402
@@ -78,6 +79,27 @@ def _config(**settings: object) -> TransformerTrainingConfig:
     }
     values.update(settings)
     return TransformerTrainingConfig(**values)  # type: ignore[arg-type]
+
+
+def test_document_masking_is_refused_for_the_transformer_family() -> None:
+    with pytest.raises(TrainingScheduleError, match="decoder family"):
+        _config(document_masking=True)
+
+
+def test_document_masking_is_available_for_the_decoder_family() -> None:
+    architecture = DecoderConfig(
+        vocab_size=_VOCABULARY.size,
+        context_length=8,
+        d_model=16,
+        num_layers=1,
+        num_heads=4,
+        feedforward_dim=32,
+    )
+
+    config = _config(document_masking=True, architecture=architecture)
+
+    assert config.document_masking is True
+    assert config.as_dict()["document_masking"] is True
 
 
 def _run(

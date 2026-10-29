@@ -92,6 +92,10 @@ class TransformerTrainingConfig:
             ``batch_size`` slices, which buys a larger effective batch on a machine that cannot hold it.
         checkpoint_every: How often to rewrite the resumable artifact. Zero means every evaluation, which
             is what the measured runs did; a long run on a small machine may want it less often.
+        document_masking: Whether attention is confined to the document each packed position came from.
+            Off by default because every measured protocol so far trained with full causal attention across
+            the packed block, and changing it would make those reports unreproducible by name. Requires
+            packed examples that carry ``segment_ids`` and the ``decoder`` family.
     """
 
     batch_size: int
@@ -109,6 +113,7 @@ class TransformerTrainingConfig:
     decay_to: float = 0.1
     grad_accum_steps: int = 1
     checkpoint_every: int = 0
+    document_masking: bool = False
 
     def __post_init__(self) -> None:
         for name in ("batch_size", "max_steps", "warmup_steps", "eval_every", "patience"):
@@ -163,6 +168,16 @@ class TransformerTrainingConfig:
         if self.checkpoint_every < 0:
             message = f"checkpoint_every must be >= 0, got {self.checkpoint_every}"
             raise ValueError(message)
+        if not isinstance(self.document_masking, bool):
+            message = f"document_masking must be a boolean, got {self.document_masking!r}"
+            raise ValueError(message)
+        if self.document_masking and not isinstance(self.architecture, DecoderConfig):
+            message = (
+                "document_masking is implemented for the decoder family; the transformer family would "
+                "need a per-batch attention mask that its encoder path does not expose here. Build a "
+                "decoder, or leave document_masking off."
+            )
+            raise TrainingScheduleError(message)
 
     @property
     def effective_batch_size(self) -> int:
@@ -334,11 +349,32 @@ def choose_validation_best(
     return best_step, best_loss, False
 
 
+def _segment_tensor(examples: Sequence[PackedExample]) -> torch.Tensor:
+    """Stack every example's document identifiers, refusing a masked run over untracked examples.
+
+    Raises:
+        TrainingScheduleError: an example carries no document identifiers. That is the mistake a masked run
+            must not make silently: without identifiers there is no boundary, and the run would report
+            masking while training with full causal attention.
+    """
+    rows: list[list[int]] = []
+    for example in examples:
+        if example.segment_ids is None:
+            message = (
+                "a document-masking run received a packed example with no segment identifiers; pack the "
+                "corpus with track_documents=True so the boundary is a fact rather than an assumption"
+            )
+            raise TrainingScheduleError(message)
+        rows.append(list(example.segment_ids))
+    return torch.tensor(rows, dtype=torch.int64)
+
+
 def evaluate_loss(
     model: CausalTransformer,
     examples: Sequence[PackedExample],
     *,
     batch_size: int,
+    document_masking: bool = False,
 ) -> tuple[float, int]:
     """Mean next-token cross-entropy over *every* position of ``examples``, and the position count.
 
@@ -359,7 +395,10 @@ def evaluate_loss(
             chunk = examples[start : start + batch_size]
             inputs = torch.tensor([list(example.input_ids) for example in chunk], dtype=torch.int64)
             targets = torch.tensor([list(example.targets) for example in chunk], dtype=torch.int64)
-            _, loss = model(inputs, targets)
+            if document_masking:
+                _, loss = model(inputs, targets, segment_ids=_segment_tensor(chunk))
+            else:
+                _, loss = model(inputs, targets)
             assert loss is not None
             count = int(inputs.numel())
             total_nats += float(loss.detach()) * count
@@ -462,8 +501,14 @@ def verify_resume_compatibility(
     recorded = artifact.run_metadata.get("training")
     wanted = config.as_dict()
     if isinstance(recorded, dict):
+        # ``document_masking`` was added after every committed measured run. A checkpoint written before
+        # it existed trained with full causal attention, so a missing key means False — not "different".
+        recorded_settings = dict(recorded)
+        recorded_settings.setdefault("document_masking", False)
         differing = sorted(
-            key for key in set(recorded) | set(wanted) if recorded.get(key) != wanted.get(key)
+            key
+            for key in set(recorded_settings) | set(wanted)
+            if recorded_settings.get(key) != wanted.get(key)
         )
         if differing == ["max_steps"] and int(wanted["max_steps"]) > int(recorded["max_steps"]):
             extended = int(recorded["max_steps"])
@@ -544,7 +589,10 @@ def train_transformer(
         optimizer.load_state_dict(dict(resume_optimizer))
 
     baseline_validation, validation_positions = evaluate_loss(
-        model, validation_examples, batch_size=config.batch_size
+        model,
+        validation_examples,
+        batch_size=config.batch_size,
+        document_masking=config.document_masking,
     )
     # The batch the next update will draw, so a fresh run's first training number is a pre-update number.
     baseline_indices = plan_batch(
@@ -557,6 +605,7 @@ def train_transformer(
         model,
         [train_examples[index] for index in baseline_indices],
         batch_size=config.batch_size,
+        document_masking=config.document_masking,
     )
     records: list[StepRecord] = [
         StepRecord(
@@ -613,7 +662,10 @@ def train_transformer(
             positions += int(inputs.numel())
 
             model.train()
-            _, loss = model(inputs, targets)
+            if config.document_masking:
+                _, loss = model(inputs, targets, segment_ids=_segment_tensor(batch))
+            else:
+                _, loss = model(inputs, targets)
             assert loss is not None
             # Gradients average across micro-batches, so an accumulated step has the same gradient magnitude
             # as one big batch would — otherwise accumulation would silently be a larger learning rate.
@@ -635,7 +687,10 @@ def train_transformer(
 
         if step % config.eval_every == 0 or step == config.max_steps:
             validation_loss, _ = evaluate_loss(
-                model, validation_examples, batch_size=config.batch_size
+                model,
+                validation_examples,
+                batch_size=config.batch_size,
+                document_masking=config.document_masking,
             )
             elapsed = time.perf_counter() - started
             spent = train_seconds - last_train_seconds

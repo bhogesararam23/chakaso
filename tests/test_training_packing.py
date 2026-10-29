@@ -78,6 +78,36 @@ def test_every_document_is_terminated_by_the_separator() -> None:
     assert stream.count(DOCUMENT_END) == 2
 
 
+def test_document_tracking_is_off_by_default() -> None:
+    batch = pack_units(
+        _units("first document body", "second document body"), _VOCABULARY, context_length=2
+    )
+
+    assert all(example.segment_ids is None for example in batch.examples)
+
+
+def test_document_tracking_records_the_source_of_every_position_and_crosses_boundaries() -> None:
+    units = _units(
+        ("first document body is longer than the second " * 2).rstrip(),
+        "second",
+    )
+
+    batch = pack_units(units, _VOCABULARY, context_length=3, track_documents=True)
+
+    for example in batch.examples:
+        assert example.segment_ids is not None
+        assert len(example.segment_ids) == len(example.input_ids)
+    # A block that spans the separator carries both document indices; that is the fact a masking run uses.
+    assert any(len(set(example.segment_ids or ())) > 1 for example in batch.examples)
+
+
+def test_a_segment_identifier_of_the_wrong_length_is_refused() -> None:
+    with pytest.raises(CorpusError, match="segment identifiers"):
+        PackedExample(input_ids=(1, 2, 3), targets=(2, 3, 4), segment_ids=(0, 0))
+    with pytest.raises(CorpusError, match="non-negative"):
+        PackedExample(input_ids=(1, 2, 3), targets=(2, 3, 4), segment_ids=(0, -1, 0))
+
+
 def test_separators_can_be_switched_off_for_a_continuous_stream() -> None:
     units = _units("alpha beta", "gamma delta")
 
