@@ -34,6 +34,28 @@ capability is implemented or still planned.
   yields an empty chunk, and the final stream chunk carries any flush. Greedy output was never affected on the
   recorded probes; a model that emits non-ASCII text was. Joined streamed text now equals the bulk decode.
 
+### 2026-10-29 — the architecture confound was removed at ~1M parameters, and the next unit is data
+
+**Added**
+
+- **E2611** ([record](experiments/E2611/record.md), `results.json`): a 1,018,240-parameter decoder trained with
+  the E2608 transformer control's width, depth, heads, feed-forward, vocabulary, context, corpus, split,
+  tokenizer, seed, batch shape, token budget and schedule. It reached **1.8077** bits per character on held-out
+  documents against the control's **1.9043** — a **0.0966-bit** difference outside the preregistered ±0.02
+  band, with both arms still at the 2,400-step ceiling. About 44% of E2608's 0.2178-bit gap survives the
+  capacity/context match. **Measured; not a capability claim.**
+- The open-model research package: a sourced DeepSeek/Qwen/OLMo/SmolLM/TinyLlama landscape, the next training
+  design, a licensed data curriculum, capability benchmarks, a compute/scaling plan and a consumer integration
+  contract, all in [`docs/research/`](docs/research/).
+- **Document-boundary attention masking** (`pack_units(..., track_documents=True)`,
+  `ExperimentPlan.document_masking`, `chakaso experiment model --document-masking`): packing can record each
+  position's source document, and the decoder can confine attention to that document. Off by default,
+  decoder-only, and **not yet measured**; ADR-0040 records the decision.
+- **ADR-0041**: the next training target is a general base with a technical mixture, and the next unit is an
+  equal-token data experiment, not an architecture change.
+- **K-022**: the data ceiling — 6.72M subword identifiers in one register, already seen ~4.2 times, so a larger
+  model has no licensed data.
+
 ### 2026-10-24 — the documentation was audited against the code, and the records were audited against their own reports
 
 **Corrected**

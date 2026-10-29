@@ -1,6 +1,45 @@
 # Active task
 
-## Current unit: model-quality diagnosis — why the released checkpoint repeats (2026-10-29, from `fc31782`)
+## Current unit: sourced research, a measured architecture answer, and the next data unit (2026-10-29, from `a2416d1`)
+
+**Goal.** Turn the open-model literature into a sourced direction, decide what Chakaso should become first,
+implement the highest-value model-path improvement the audit found, and answer E2608's architecture confound
+with a capacity- and context-matched arm. This is not a restart of E2610; decoding is closed as a route to
+usefulness.
+
+**State at the start (measured).** `main` == `origin/main` == `a2416d1`, clean tree; dependency-free
+**1,692 pass / 25 skip**, `[train,nn]` **2,069 pass / 1 skip**; 18 logical CPUs, no CUDA device, 15.43 GB RAM
+with 0.68 GB available (95% load), 154.1 GB free disk. The E2608 checkpoints, release, pinned snapshot and
+tokenizer cache are present; the snapshot verifies at 919 documents / 14,490,005 characters /
+`e9fc2e92f59d88ea`.
+
+| Node | Task | Depends on | Acceptance | Status | Evidence |
+| --- | --- | --- | --- | --- | --- |
+| S0 | Baseline and environment | — | head, tree, tests, resources, artifact checksums recorded | done | [`starting-state-2026-10-29.md`](../internal/engineering/starting-state-2026-10-29.md) |
+| S1 | Sourced open-model landscape | S0 | each figure tied to a primary source; reported fact vs interpretation separated | done | [`../research/open-model-landscape.md`](../research/open-model-landscape.md) |
+| S2 | Target decision | S1 | general vs science vs code vs research vs modular compared on stated criteria; ADR written | done | [ADR-0041](../decisions/ADR-0041-next-training-target-general-base-with-technical-mixture.md) |
+| S3 | Data curriculum and compute plan | S1, S2 | provenance, licence, filtering, mixture, whole-work splits, measured vs estimated budgets | done | [`../research/chakaso-data-curriculum.md`](../research/chakaso-data-curriculum.md), [`chakaso-compute-and-scaling-plan.md`](../research/chakaso-compute-and-scaling-plan.md) |
+| S4 | Capability benchmarks and integration contract | S1 | workloads, scorers, baselines, contamination controls, consumer checklist | done | [`../research/chakaso-capability-benchmarks.md`](../research/chakaso-capability-benchmarks.md), [`chakaso-integration-contract.md`](../research/chakaso-integration-contract.md) |
+| S5 | Opt-in document-boundary attention masking | S0 | per-token document IDs; decoder mask; default path unchanged; tests falsify the mask; smoke run through the CLI | done | `eb530a9`, ADR-0040, eight focused tests, a masked CLI smoke run |
+| S6 | E2611 capacity/context-matched arm | S0 | preregistered before the run; same data, split, tokenizer, seed, batch, tokens and schedule; result recorded | **measured** | [`../../experiments/E2611/record.md`](../../experiments/E2611/record.md): decoder **1.8077** vs transformer **1.9043**, −0.0966 bits, H2 |
+| S7 | Records reconciled and pushed | S1–S6 | state, task ledger, issues, roadmap, research log, changelog updated; CI read back | **in progress** | this file; K-022; the research log entry |
+| S8 | The equal-token data experiment | S2, S3, S6 | a licensed corpus of ≥68M tokens, whole-work splits, two arms, preregistered success bands | **not started** | ADR-0041; blocked on corpus acquisition (K-022) |
+
+**Stop conditions, declared at the start.** Do not claim Level 3 or any capability from a held-out loss; do
+not change a measured protocol (defaults, gates or data) after seeing a result; do not run the data experiment
+until a licensed corpus and whole-work splits exist; do not describe the architecture bundle as a single
+component effect; do not call an unrun experiment a result.
+
+**What this unit found.** E2611 removed E2608's 3.3× parameter and 2× context confound and still measured a
+**0.0966-bit** decoder advantage at ~1M parameters — about **44%** of E2608's 0.2178 survives the match — with
+both arms truncated at the 2,400-step ceiling. The decoder family is the release path for a measured reason at
+two scales. The architecture question is answered at this scale; the budget/data question is not. The
+open-model research says the current 5.8 tokens per parameter and the 6.72M-token, one-register corpus are
+the binding constraints; ADR-0041 chooses a general base with a technical mixture and an equal-token data
+experiment as the next unit. Document-boundary masking is implemented and tested but **not measured**; it is
+an option, not a recommendation. K-022 files the data ceiling.
+
+## Previous unit (delivered): model-quality diagnosis — why the released checkpoint repeats (2026-10-29, from `fc31782`)
 
 **Goal.** Establish, with measurement, whether `chakaso-base@0.1.0`'s repetition is a pipeline defect, a
 decoding property or a model limit; fix verified defects; replace the uncalibrated repetition number with an

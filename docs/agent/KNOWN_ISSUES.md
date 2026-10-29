@@ -3,7 +3,8 @@
 Real problems with the current state, including the ones that are only
 inconvenient. An empty file here would mean nobody has looked.
 
-Last reviewed: 2026-10-29 (K-020 and K-021 added by the E2610 diagnosis); before that 2026-10-24, as the whole-documentation audit of every doc against the code and the committed
+Last reviewed: 2026-10-29 (K-020 and K-021 added by the E2610 diagnosis, K-022 by the 2026-10-29 data
+review); before that 2026-10-24, as the whole-documentation audit of every doc against the code and the committed
 records. That pass added K-011 through K-019, narrowed K-001, rewrote K-002's stale component list and removed a
 drifting count from K-009; the rest of its output was corrected in the documents themselves.
 
@@ -555,6 +556,26 @@ a genuine model error. E2610's transformer arm shows one of each. The gate was n
 
 **What would close it:** count only replacement characters that are not the final character of a sample that
 finished on `length`, declared in a new record rather than applied to E2610's numbers.
+
+### K-022 — The only licensed corpus is one register and 6.72M tokens, so a larger model has no data
+
+**Impact:** High, and it is the practical ceiling on model scale.
+
+`gutenberg-english-prose-v2` is 24 books, 919 documents, 14,490,005 characters and 6,718,455 subword
+identifiers (E2608). It is one register (19th- and early-20th-century English prose), one language, and it has
+already been seen about 4.2 times by E2608's 3.4M-parameter model. A 10M-parameter model at Chinchilla's
+roughly 20 tokens per parameter needs ~200M tokens — about 30 epochs of this corpus — and repeated epochs have
+diminishing value. The project therefore cannot scale the model honestly until it acquires a larger,
+diverse, licensed corpus with whole-work splits and a data card.
+
+**Why it is not just "download more data".** Gutenberg is the cheapest legal expansion, but it is still mostly
+prose; technical, mathematical and code text need their own licence review and tokenizer decisions. The data
+curriculum in [`../research/chakaso-data-curriculum.md`](../research/chakaso-data-curriculum.md) names the
+stages and the rules; no corpus beyond v2 is pinned yet.
+
+**What would close it:** a pinned corpus of at least ~100M tokens (preferably 200–500M) from declared,
+licensed sources, with per-document digests, a measured data card, whole-work train/validation/test splits,
+and a contamination screen. Until then, the honest scale ceiling is a few million parameters, not a hundred.
 
 ## Resolved
 

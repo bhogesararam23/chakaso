@@ -821,3 +821,66 @@ a repetition penalty (`greedy_rp1.1`) passes them on one set by writing nonsense
 **What this changes:** the cheapest lever on repetition is decoding, and it is exhausted as a route to
 usefulness; what remains is the model — data volume and diversity, token budget, scale — which this session did
 not test (a 2,400-step arm costs ~100 minutes on this machine; no hypothesis here justified spending it).
+
+## 2026-10-29 — The architecture confound is removed at 1M parameters, and the data ceiling becomes the next question
+
+**Type:** experiment + decision ([E2611](../../experiments/E2611/record.md), ADR-0040, ADR-0041).
+
+**Observation.** E2608's 1.6865 against 1.9043 was the project's best loss comparison and could not be read as
+an architecture result: the rotary decoder was 3.3× larger, had twice the context, and ran a different
+schedule. E2610 had just closed decoding as a route to usefulness. The open-model literature and the measured
+corpus together pointed at the same ordering: the small models in the literature spend 560–6,500 tokens per
+parameter, while E2608's 3.4M model had seen 5.8, and the 6.72M-token corpus had already been repeated ~4.2
+times. The binding constraints were data and tokens, not another block.
+
+**Experiment.** E2611 ([`../../experiments/E2611/record.md`](../../experiments/E2611/record.md)) was
+preregistered before its arm ran. It trained a **1,018,240-parameter decoder** with the control transformer's
+width, depth, heads, feed-forward, vocabulary, context (128), corpus (`e9fc2e92f59d88ea`), split seed, tokenizer
+(`b597eb34f13d9058`), seed, batch shape (32 × 2), 2,400 steps and schedule (constant). The control was E2608's
+committed 1,037,056-parameter transformer report. The 18,816-parameter difference (1.8%) is almost entirely
+the control's position table and LayerNorm parameters. The declared materiality band was ±0.02 bits per
+character; H1 was "no material difference", H2 "decoder lower", H3 "decoder higher".
+
+**Result (measured).** The decoder reached **1.8077426492** bits per character on the held-out documents
+against the transformer's **1.9043151128**, a difference of **−0.0965725 bits (−5.071% relative)**. H2 held;
+H1 and H3 did not. Both arms selected step 2,400, the ceiling, with validation still falling (the decoder
+2.7342 → 2.7290 nats over its final 100 steps), so both numbers are floors. The decoder's validation curve was
+below the transformer's at every evaluation after initialization (step 0 differs by 0.0011 nats, in the
+transformer's favour). Throughput was 5,363.1 positions/s (5,169.44 s wall,
+1,062.3 MB peak RSS) against the control's 12,098.1 positions/s; the decoder is slower, which is why the
+control's wall clock is not a like-for-like cost comparison. Greedy generation hit its bound in all five
+samples, with mean bigram repetition 0.6547, zero tail loops and zero periodic runs; the calibrated suite's
+greedy word distinct-1 is 0.721 against a human 0.853 (the released 3.4M decoder's is 0.505), and two sampled
+settings pass the surface gates. None of that is coherence.
+
+**Interpretation.** At matched capacity and context, about **44%** of E2608's 0.2178-bit gap survives, so the
+larger decoder's advantage was not scale and context alone. The measured cause is the architecture bundle —
+rotary positions, RMSNorm, bias-free attention and the decoder's implementation — not any single component,
+because the experiment did not decompose the bundle. The decoder family is the release path for a measured
+reason at two scales. The result does **not** say either arm converged, that the decoder is better at every
+scale, or that its text is useful. The 3.4M decoder against a 3.4M transformer remains unmeasured; E2611
+traded scale for a clean match.
+
+**Decision recorded.** [ADR-0040](../decisions/ADR-0040-document-boundary-attention-masking.md) adds an opt-in,
+decoder-only document-boundary attention mask: packing can record each position's source document, the
+decoder can confine attention to it, the default path stays byte-identical to every measured protocol, and the
+paired masked/unmasked experiment has not run. [ADR-0041](../decisions/ADR-0041-next-training-target-general-base-with-technical-mixture.md)
+chooses the next target — a general base with a technical mixture — and the next unit — an equal-token data
+experiment at the 3.4M decoder scale, not an architecture change. [K-022](../agent/KNOWN_ISSUES.md) files the
+data ceiling: 6.72M identifiers, one register, ~4.2 epochs.
+
+**Limitation.** One seed per arm; one corpus and register; both arms truncated; a 1.8% parameter residual and a
+bundled architecture change; the control is a committed report, not a re-run, and lacks the treatment's
+generation/latency/resource blocks; the quality suite is a secondary observation at its default configuration
+set, not the preregistered test. No human coherence rating and no semantic judge exist.
+
+**Conclusion.** Believed, at this scale and corpus: the decoder bundle is materially better than the measured
+transformer at matched capacity, context, data, seed, batch and tokens, and E2608's gap may no longer be
+attributed to scale alone. Not believed: that a single component is responsible, that the result transfers to
+other scales or corpora, that the model writes coherent text, or that any capability claim is earned. The next
+question is data and tokens, not another architecture; E2609's decoder seed spread is the other open
+measurement.
+
+**Open at this point.** Whether a licensed 68M-token mixed corpus can be acquired and prepared; whether the
+equal-token data experiment improves held-out loss without a prose regression; whether document-boundary
+masking helps at all; and K-001, unchanged — no grounded question has been answered by any model here.

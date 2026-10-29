@@ -310,6 +310,17 @@ Phases 1–4 can interleave, and 2 is deliberately cheap next to 1: the seed spr
 new machinery. Phase 5 is the one that changes what the project *is*, and it waits for a model worth putting in
 front of a workload, which is the discipline ADR-0033 exists to keep.
 
+**Measured update, 2026-10-29.** Phase 3 was run as [E2611](../experiments/E2611/record.md): at ~1M
+parameters, matched context, data, split, seed, batch, token budget and schedule, the decoder reached
+**1.8077** bits per character against the transformer's **1.9043** — 0.0966 bits outside the preregistered
+±0.02 band. About 44% of E2608's 0.2178-bit gap survives the match; the measured cause is the architecture
+bundle, not a single component, and both arms still selected the 2,400-step ceiling. Phase 1 remains open:
+E2611's smaller arm also hit its ceiling, so no arm in this repository has `completion: converged`. Phase 2's
+E2609 has not run. Phase 4's data line is the next unit, through
+[ADR-0041](decisions/ADR-0041-next-training-target-general-base-with-technical-mixture.md) and the
+[data curriculum](research/chakaso-data-curriculum.md); Phase 3's 3.4M decoder against a 3.4M
+transformer is still unmeasured, because E2611 traded scale for a clean match.
+
 ## Long-term target
 
 ```text
