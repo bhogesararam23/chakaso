@@ -149,6 +149,8 @@ ignore = [
 # reports on the parameter line, so per-line suppressions would outnumber the code
 # they annotate.
 "tests/*" = ["T20", "ARG002"]
+# Operator scripts report progress to a terminal; that is their interface.
+"scripts/*" = ["T20"]
 
 [tool.ruff.lint.isort]
 known-first-party = ["chakaso"]
