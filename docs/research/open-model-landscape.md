@@ -1,9 +1,10 @@
-# The open-model landscape: what five families report, and what a CPU-scale project can use
+# The open-model landscape: what nine families report, and what a CPU-scale project can use
 
 **Status:** Research — a sourced comparison, not a measurement of any model here.
-**Date:** 2026-10-29. **Access date for every source:** 2026-10-29.
-**Scope:** DeepSeek-V3/R1, Qwen2.5/Qwen3, OLMo 2/3, SmolLM2/3, TinyLlama, and the scaling, data,
-architecture, optimisation and evaluation literature that bears on a from-scratch small model.
+**Date:** 2026-10-29; extended 2026-10-30 with Llama 3, Mistral/Mixtral, Gemma 2 and Phi-3/Phi-4. **Access date for every source:** the 2026-10-29 entries on 2026-10-29; the added families on 2026-10-30.
+**Scope:** DeepSeek-V3/R1, Qwen2.5/Qwen3, OLMo 2/3, SmolLM2/3, TinyLlama, Llama 3, Mistral 7B and
+Mixtral 8x7B, Gemma 2, Phi-3 and Phi-4, and the scaling, data, architecture, optimisation and evaluation
+literature that bears on a from-scratch small model.
 **What this document is not:** a claim that any recipe below would work at Chakaso's scale. Each section
 separates what a report states from what this project can use, and the last section says what Chakaso has
 actually validated.
@@ -13,8 +14,12 @@ actually validated.
 They span the decisions a from-scratch project actually faces: a frontier mixture-of-experts system whose
 techniques are mostly cluster-bound (DeepSeek), a family that documents dense and MoE trade-offs and a very
 large multilingual tokenizer (Qwen), the most complete open *process* (OLMo), the closest published scale to
-Chakaso's ambition (SmolLM), and a deliberately small, heavily overtrained baseline (TinyLlama). No hosted
-model's answers are used anywhere in this repository; these are research references only.
+Chakaso's ambition (SmolLM), a deliberately small, heavily overtrained baseline (TinyLlama), the reference
+dense family with the largest token budget and vocabulary at 8B (Llama 3), the sliding-window and
+sparse-MoE pair that made efficiency the headline (Mistral, Mixtral), a family trained with distillation
+inside pretraining (Gemma 2), and the family whose thesis is that curated and synthetic data substitutes for
+scale (Phi). No hosted model's answers are used anywhere in this repository; these are research references
+only.
 
 ## Comparison table
 
@@ -31,9 +36,51 @@ itself is released or only described. Licences are the model-weight licences, no
 | OLMo 3 | 7B, 32B | 6T | Dolma 3 released (see composition below) | Pretraining → mid-training → long-context → SFT → DPO (Delta Learning) → RLVR (OlmoRL) | Apache-2.0 | Every stage, checkpoint, data point and dependency released |
 | SmolLM2 | 1.7B (family also documents smaller sizes) | ~11T | Data mixture described; SmolTalk/FineMath/Stack-Edu collections released | Multi-stage pretraining mixing web, math, code; SFT; DPO | Apache-2.0 | Weights, configs, logs and most data released |
 | SmolLM3 | 3B | 11.2T | Pretraining/mid-training/SFT/preference data released as SmolTalk2; mixture described | 3-stage pretraining → 100B-token long-context → 35B reasoning mid-training → 1.8B SFT → APO preference optimisation → model merging | Apache-2.0 | Weights, configs, logs, intermediate checkpoints and data released |
+| Llama 3 / 3.1 | 8B, 70B, 405B (dense) | ~15T multilingual | No pretraining-data release | Pretraining; later instruction and preference stages in the instruct releases | Llama 3 Community License (not an OSI licence) | Weights and recipe described; data not released |
+| Mistral 7B | 7B (dense) | Not stated in the paper | No data release | Pretraining only in the base release | Apache-2.0 | Weights and architecture described; recipe partly undisclosed |
+| Mixtral 8x7B | 47B total / 13B active (sparse MoE, 8 experts) | Not stated in the paper | No data release | Pretraining + instruction tuning in the instruct release | Apache-2.0 | Weights and architecture described; data and training detail undisclosed |
+| Gemma 2 | 2B, 9B, 27B | 2T / 8T / 13T respectively | No data release | Pretraining with distillation into the smaller variants; later instruction and preference stages | Gemma Terms of Use (not an OSI licence) | Weights and technical report; data not released |
+| Phi-3 | 3.8B (mini); 7B (small), 14B (medium); 16x3.8B MoE with 6.6B active | 3.3T (mini); 4.8T (small, medium) | No data release; described as heavily filtered web plus synthetic data | Pretraining, then supervised fine-tuning and preference tuning in the instruct releases | MIT | Weights and reports; data not released |
+| Phi-4 | 14B | Not stated in the abstract | No data release; synthetic data used throughout training | Pretraining with synthetic-data curriculum | MIT | Weights and report; data not released |
 | TinyLlama | 1.1B | 3T | Data mixture described; not released as a reproducible package | Single pretraining run; no post-training stage in the base release | Apache-2.0 | Weights and recipe described; data not reproducible |
 
 ### Reported facts behind the table
+
+**Llama 3 / 3.1.** The paper states that Llama 3 was "pre-trained on a corpus of about 15T multilingual
+tokens, compared to 1.8T tokens for Llama 2", that the family is 8B, 70B and 405B parameters, that the
+tokenizer "use[s] a vocabulary with 128K tokens", and that the models use "grouped query attention (GQA)
+with 8 key-value heads" with a RoPE base frequency raised to 500,000. The 3.1 release extends the context
+window to 128K tokens. The weight licence is the Llama 3 Community License. Two lessons transfer: a
+128K-entry vocabulary is a tokenizer decision a small model has never tested here, and the family's token
+budget is ~1.9 tokens per parameter at 8B, which is below Chinchilla's 20 — the opposite of SmolLM's
+regime, so "tokens per parameter" alone does not predict quality across families.
+
+**Mistral 7B and Mixtral 8x7B.** Mistral 7B is a 7B dense model whose abstract names two efficiency
+choices — "grouped-query attention (GQA) for faster inference, coupled with sliding window attention (SWA)"
+— and reports no training-token count at all. Mixtral is a "Sparse Mixture of Experts (SMoE)" with 8
+feedforward blocks, "47B parameters" of which "13B" are active per token, and a 32k-token window. Both
+weights are Apache-2.0. The transferable lesson is architectural bookkeeping, not scale: GQA and SWA change
+inference cost at fixed parameters, and a sparse MoE changes active parameters at fixed capacity. Neither
+has been measured here, and the MoE needs routing infrastructure that a 3.4M-parameter CPU run cannot
+justify.
+
+**Gemma 2.** The report states the 27B model is "train[ed] ... on 13 trillion tokens of primarily-English
+data, the 9B model on 8 trillion tokens, and the 2B on 2 trillion tokens", with an 8192-token context and a
+"256k entries" vocabulary, and describes interleaving local and global attention and training the smaller
+variants with knowledge distillation. The weights are under the Gemma Terms of Use; the technical report
+itself is CC BY 4.0, and the two licences are not the same thing. The distillation point is the one that
+matters here: a smaller model can be trained against a larger one, which is a *teacher-derived* data source
+and has to be labelled as such wherever it appears.
+
+**Phi-3 and Phi-4.** The Phi-3 report describes "phi-3-mini" at "3.8 billion" parameters trained on "3.3
+trillion tokens", "phi-3-small" and "phi-3-medium" at "4.8T tokens", and a "16 x 3.8B MoE model with 6.6
+billion active parameters", drawing on a curriculum of "heavily filtered publicly available web data and
+synthetic data". Phi-4 is a "14-billion parameter language model" whose abstract says it "strategically
+incorporates synthetic data throughout the training process". Both are MIT-licensed. The lesson is the one
+the family is named for — data quality and a curriculum can move a small model a long way — and the limit
+is equally important: the synthetic data in these reports comes from stronger models, so the recipe is
+teacher-dependent and cannot be reproduced by a project that has no teacher and trains from random
+initialisation.
 
 **DeepSeek-V3.** The technical report states 671B total parameters with 37B activated per token, 14.8T
 training tokens, Multi-head Latent Attention (MLA), a DeepSeekMoE architecture with an auxiliary-loss-free
@@ -144,6 +191,27 @@ if inference memory matters, and a stable optimiser. E2608 already measured a ro
 transformer at one scale; E2611 is the capacity-matched test. The landscape does not justify adding MoE or
 MLA to a model whose total parameter count is smaller than one attention head in a frontier model.
 
+### 6. The families differ in licence, not only in recipe
+
+The nine families are not interchangeable even where their numbers are close. Mistral 7B, Mixtral, Phi-3
+and Phi-4 publish weights under Apache-2.0 or MIT; Qwen and OLMo under Apache-2.0; SmolLM and TinyLlama
+under Apache-2.0. Llama 3 uses the Llama 3 Community License and Gemma 2 the Gemma Terms of Use, neither of
+which is an OSI licence, and both attach use restrictions that a downstream product would have to honour.
+DeepSeek ships under its own model licence. For a project whose product is the model, the licence is part
+of the artifact's provenance, not a footnote: a distilled or fine-tuned weight inherits it, and so does a
+release. Chakaso's own corpora are public-domain or self-authored precisely so that the trained artifact
+carries no third-party restriction; a future teacher, a scraped corpus or a borrowed checkpoint would each
+require its own licence review before it reached `experiments/`.
+
+### 7. Tokens per parameter is a family decision, not a quality scale
+
+The ratio spans nearly three orders of magnitude across these reports: Llama 3 8B at ~15T tokens is ~1,900
+tokens per parameter, TinyLlama's 3T at 1.1B is ~2,700, SmolLM3's 11.2T at 3B is ~3,700, Gemma 2's 27B at
+13T is ~480, and Phi-3-mini's 3.3T at 3.8B is ~870. All of these are "reported good models". The lesson for
+Chakaso is that a tokens-per-parameter target is a *budget rule of thumb*, not a promise: what a small
+model learns depends at least as much on the data's diversity and the length of training as on the ratio,
+which is exactly why the next unit is a data experiment rather than a token count.
+
 ## What transfers, and what does not
 
 | Technique | Where it is reported | Transfers to Chakaso? | Why |
@@ -177,6 +245,11 @@ real but out of reach at this scale; it is not a judgement that the source is wr
 | SmolLM2: 1.7B, ~11T tokens, multi-stage web/math/code/instruction mixture, FineMath/Stack-Edu/SmolTalk | SmolLM2 report, abstract and data sections, Feb 2025 | Small models benefit from a staged mixture that raises math/code late; data curation is the lever | 11T tokens is ~6,500 tokens/parameter, far beyond this CPU; data collection is a project of its own | Mixture plan drafted; no corpus acquired |
 | SmolLM3: 3B, 11.2T tokens, six languages, GQA, NoPE every fourth layer, 4K→32K→64K context, staged mixture, APO, model merging; weights/logs/intermediate checkpoints/data released | SmolLM3 blog, training and release sections, 8 Jul 2025 | A 3B model can be overtrained on ~11T tokens; long-context extension is a stage, not a flag; release the process | APO is off-policy, not on-policy RL; some reasoning traces are synthetic from Qwen3-32B; long-context degradation from preference data is reported | Not implemented; noted as a later-stage option |
 | TinyLlama: 1.1B, 3T tokens, 16 A100-40G, 90 days, GQA, 2048 context | TinyLlama repository/paper, 2024 | A 1B model at 3T tokens (~2,700 tokens/parameter) is a multi-GPU, months-scale project; the token budget is the cost | No data release; a single 2023-era recipe; not a capability benchmark | Not applicable on this CPU; used only as a scale anchor |
+| Llama 3/3.1: ~15T multilingual tokens, 8B/70B/405B, 128K vocabulary, GQA with 8 KV heads, RoPE base 500,000, 128K context in 3.1 | Llama 3 herd paper, §1 and §3.2, revision of 23 Nov 2024 | Vocabulary size and GQA are design choices a small model can reason about; the family's ~1.9 tokens per parameter at 8B shows the ratio alone does not predict quality | Data not released; the licence is not OSI; the 405B result is cluster-scale | Tokenizer held at 4,096 by ADR-0041; GQA not implemented |
+| Mistral 7B: 7B dense, GQA plus sliding-window attention, no training-token count reported | Mistral 7B paper, abstract, Oct 2023 | Efficiency at fixed parameters is a first-class design axis; a report that omits its token count is itself a transparency lesson | The recipe is partly undisclosed and there is no token figure to scale from | Not implemented; SWA not measured here |
+| Mixtral 8x7B: 47B total, 13B active, sparse MoE with 8 feedforward blocks, 32k context | Mixtral paper, abstract, Jan 2024 | A sparse MoE buys capacity per active FLOP; it does not change what one CPU can train | Routing, load balancing and large-batch infrastructure are prerequisites | Not applicable at this scale |
+| Gemma 2: 27B/9B/2B trained on 13T/8T/2T tokens, 8192-token context, 256k vocabulary, smaller variants trained with knowledge distillation | Gemma 2 report, §2-§3.1, Aug 2024 | Distillation inside pretraining is a real lever, and it is a teacher-derived data source that must be labelled wherever it is used | No data release; Gemma Terms of Use, not an OSI licence; the report's CC BY 4.0 applies to the paper, not the weights | No distillation, no teacher; if it is ever used it will be labelled as teacher-derived |
+| Phi-3/Phi-4: phi-3-mini 3.8B on 3.3T tokens, small/medium on 4.8T, a 16x3.8B MoE with 6.6B active; Phi-4 14B with synthetic data throughout | Phi-3 report abstract, Apr 2024; Phi-4 report abstract, Dec 2024 | Curated, heavily filtered and synthetic data can move a small model far; the curriculum, not only the parameter count, is the lever | The synthetic data is produced by stronger models, so the recipe presupposes a teacher and cannot be reproduced from random initialisation | The data curriculum takes the filtering lesson; synthetic teacher data is not available and is not claimed |
 | Chinchilla: parameters and tokens should scale together; ~20 tokens/parameter at the compute-optimal point | Hoffmann et al., abstract and scaling analysis, 2022 | The current 3.4M model at 5.8 tokens/parameter is ~3.4× below the compute-optimal token count; a 10M model needs ~200M tokens | Compute-optimal is not capability-optimal; small models may benefit from more tokens than 20/parameter | Known and stated; the next data experiment targets it |
 | Repeating data has diminishing value beyond a few epochs | Muennighoff et al., 2023 | More epochs of the 6.72M-token corpus is not a substitute for new text | The exact decay depends on data and model; the paper's regimes are larger | Informs the data curriculum; not measured here |
 | Deduplication improves training | Lee et al., 2021 | Remove exact and near duplicates before training; report the screen | Dedup does not replace quality filtering or licence review | Exact digests and near-duplicate screening exist; applied to the v2 corpus |
@@ -199,7 +272,7 @@ from another project's harness would mean anything about this one. K-001 stands.
 
 ## References
 
-All URLs accessed 2026-10-29. Publication dates are the versions read; a technical report may have later
+All URLs accessed 2026-10-29 unless the entry says otherwise. Publication dates are the versions read; a technical report may have later
 revisions.
 
 1. DeepSeek-AI. *DeepSeek-V3 Technical Report.* arXiv:2412.19437, 27 Dec 2024. <https://arxiv.org/abs/2412.19437>
@@ -272,3 +345,17 @@ revisions.
     <https://arxiv.org/abs/2109.07958>
 36. Wei, J. et al. *Emergent Abilities of Large Language Models.* arXiv:2206.07682, Jun 2022.
     <https://arxiv.org/abs/2206.07682>
+37. Grattafiori, A. et al. *The Llama 3 Herd of Models.* arXiv:2407.21783, revision of 23 Nov 2024.
+    <https://arxiv.org/abs/2407.21783>
+38. Jiang, A. Q. et al. *Mistral 7B.* arXiv:2310.06825, Oct 2023. <https://arxiv.org/abs/2310.06825>
+39. Jiang, A. Q. et al. *Mixtral of Experts.* arXiv:2401.04088, Jan 2024. <https://arxiv.org/abs/2401.04088>
+40. Gemma Team, Google DeepMind. *Gemma 2: Improving Open Language Models at a Practical Size.*
+    arXiv:2408.00118, Aug 2024. <https://arxiv.org/abs/2408.00118>
+41. Abdin, M. et al. *Phi-3 Technical Report: A Highly Capable Language Model Locally on Your Phone.*
+    arXiv:2404.14219, Apr 2024. <https://arxiv.org/abs/2404.14219>
+42. Abdin, M. et al. *Phi-4 Technical Report.* arXiv:2412.08905, Dec 2024.
+    <https://arxiv.org/abs/2412.08905>
+43. Model-card licence metadata read from the Hugging Face API for `mistralai/Mistral-7B-v0.1`,
+    `mistralai/Mixtral-8x7B-v0.1`, `microsoft/Phi-3-mini-4k-instruct` and `microsoft/phi-4`
+    (apache-2.0, apache-2.0, mit, mit respectively), accessed 2026-10-30. The Gemma weights are under the
+    Gemma Terms of Use; the model is gated and its licence was read from the model card, not the API.
