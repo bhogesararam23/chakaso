@@ -53,7 +53,7 @@ not label it, assume it is Planned and verify against
 | [`internal/engineering/repository-history.md`](internal/engineering/repository-history.md) | How this repository's history was started, and what it replaced |
 | [`internal/engineering/artifact-policy.md`](internal/engineering/artifact-policy.md) | Where weights, datasets and generated outputs live, and what is never committed |
 | [`internal/engineering/tooling.md`](internal/engineering/tooling.md) | The chosen formatter, linter, type checker and test runner, and why |
-| [`internal/experiments/README.md`](internal/experiments/README.md) | The experiment record format, and the eight measured records (E2601–E2608) that follow it |
+| [`internal/experiments/README.md`](internal/experiments/README.md) | The experiment record format, and the measured records (E2601–E2608, E2610 and E2611) that follow it |
 
 ## Agent context
 

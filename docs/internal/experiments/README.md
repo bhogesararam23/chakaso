@@ -1,7 +1,8 @@
 # Experiments
 
-**Eight experiment records are closed: E2601, E2602, E2603, E2604, E2605, E2606, E2607 and E2608. Every one was
-written and committed before its runs began, and every one reports a measured result.** E2601
+**Ten experiment records are committed: E2601, E2602, E2603, E2604, E2605, E2606, E2607, E2608, E2610 and
+E2611. Every one was written and committed before its runs began, and every one reports a measured result.**
+E2601
 ([`../../../experiments/E2601/record.md`](../../../experiments/E2601/record.md)) is the project's first
 measured result — a from-scratch character model whose held-out next-token loss beats uniform and unigram
 baselines; E2602
@@ -31,11 +32,18 @@ that no run early-stopped and all three selected the step ceiling, making that l
 Transformer-family architectures at a matched token budget on 919 licensed documents — the 3,413,760-parameter
 rotary decoder at **1.6865** bits per character against the 1,037,056-parameter transformer at **1.9043**, both
 truncated, both arms' generations measured for repetition (zero tail loops, zero periodic runs of three or more,
-mean bigram repetition 0.5538) — and it is the record whose arm A became `chakaso-base@0.1.0`.
+mean bigram repetition 0.5538) — and it is the record whose arm A became `chakaso-base@0.1.0`; E2610
+([`../../../experiments/E2610/record.md`](../../../experiments/E2610/record.md)) calibrates that checkpoint's
+repetition against human continuations and finds it is greedy decoding of a human-diverse distribution, not a
+pipeline defect, while no decoding setting produces coherent text; and E2611
+([`../../../experiments/E2611/record.md`](../../../experiments/E2611/record.md)) is the capacity- and
+context-matched comparison E2608 could not make — a 1,018,240-parameter decoder reaches **1.8077** bits per
+character against the 1,037,056-parameter transformer's **1.9043**, a 0.0966-bit bundle effect, both arms still
+at the 2,400-step ceiling.
 
 No *research hypothesis* (H1–H7 in [`../../research/hypotheses.md`](../../research/hypotheses.md)) has been
 tested by any of them: E2608's H1/H2/H3 are that experiment's own preregistered predictions about schedule,
-architecture and degeneration, not the project's hypotheses about grounding and correction. None of the eight
+architecture and degeneration, not the project's hypotheses about grounding and correction. None of the ten
 establishes a research claim about grounding, citation or correction on real language; E2605–E2608 establish
 next-token results on pinned text, not capability. The project also has development benchmarks (retrieval and
 correction) and a reproducible experiment layer (`chakaso.experiments`) — those are regression instruments over

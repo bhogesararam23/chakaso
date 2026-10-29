@@ -86,7 +86,11 @@ evidence-sufficiency measurements over a self-authored workload), and E2605/E260
 initialization: E2605 on this repository's own pinned prose, E2606 the same protocol across five pre-declared
 seeds, reproducing E2605 exactly, E2607 on an externally licensed Project Gutenberg corpus, and E2608 the two
 architectures compared at a matched token budget on a 919-document licensed corpus — 1.6865 against
-1.9043 bits per character, both arms truncated at the step ceiling, neither arm producing usable text). All of
+1.9043 bits per character, both arms truncated at the step ceiling, neither arm producing usable text; E2610
+the calibrated decoding diagnosis of that released checkpoint, which found the repetition is greedy decoding of
+a human-diverse distribution and no setting writes coherent text; and E2611 the capacity- and context-matched
+decoder comparison at ~1M parameters, 1.8077 against 1.9043, a 0.0966-bit architecture-bundle effect with both
+arms still truncated). All of
 them check the shape of a mechanism or a learning loop on hand-built or
 public-domain text, never meaning on a real workload. There
 is no measurement of a real workload and no result from any *useful* language model —
@@ -189,7 +193,7 @@ docs/agent/         this directory's context: current state, conventions, active
 docs/internal/      engineering notes that are not for external readers
 ```
 
-Experiment records live at `experiments/<experiment-id>/record.md`; eight are committed (E2601–E2608) and
+Experiment records live at `experiments/<experiment-id>/record.md`; ten are committed (E2601–E2608, E2610 and E2611) and
 they are the project's only measured results. The format is defined in
 [`docs/internal/experiments/README.md`](docs/internal/experiments/README.md), which requires the record to
 be written **before** the run. Generated artifacts — corpora, checkpoints, logs — belong in `data/` and are

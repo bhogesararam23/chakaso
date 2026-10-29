@@ -6,6 +6,12 @@ specifications.
 | Document | Contents |
 | --- | --- |
 | [`research-log.md`](research-log.md) | Dated entries: observations, decisions, and eventually experiments and results |
+| [`open-model-landscape.md`](open-model-landscape.md) | A sourced comparison of DeepSeek, Qwen, OLMo, SmolLM and TinyLlama, the scaling and data literature, and what transfers to a CPU-scale model |
+| [`chakaso-next-training-design.md`](chakaso-next-training-design.md) | The recommended next model and training strategy: data and tokens before architecture, with the measured evidence and the alternatives rejected |
+| [`chakaso-data-curriculum.md`](chakaso-data-curriculum.md) | The staged corpus plan: public-domain prose, technical/scientific text, mathematics, code, licensing, deduplication, mixture weights and contamination controls |
+| [`chakaso-capability-benchmarks.md`](chakaso-capability-benchmarks.md) | What each capability claim would require: workloads, scorers, baselines, splits, contamination controls and the necessary-versus-sufficient rule |
+| [`chakaso-compute-and-scaling-plan.md`](chakaso-compute-and-scaling-plan.md) | The measured throughput, memory and storage arithmetic for model sizes from 3.4M to 100M parameters, with measured and estimated rows separated |
+| [`chakaso-integration-contract.md`](chakaso-integration-contract.md) | The stable Python and serving contract a future consumer may rely on, with the known gaps named |
 | [`literature.md`](literature.md) | Sources that informed the initial design, and what each one supports |
 | [`hypotheses.md`](hypotheses.md) | Statements the project intends to test, with what would falsify them |
 | [`model-feasibility.md`](model-feasibility.md) | An evidence-bounded assessment of putting a real model behind the boundary (a runnable local model vs a from-scratch training experiment); no experiment run |
@@ -39,7 +45,7 @@ measurement over time.
 
 ## Current state
 
-**No experiment testing any of H1–H7 as stated here has been run.** Eight procedures have been executed, and
+**No experiment testing any of H1–H7 as stated here has been run.** Ten procedures have been executed, and
 none is a test of one of these hypotheses: **E-001** compares lexical, dense and hybrid retrieval over the
 synthetic development fixtures (it exercises the mechanism and the instrument, not H7 — the dense component is
 a non-semantic fixture embedding); **E2601**
@@ -61,7 +67,12 @@ and measured **2.0176 ± 0.0118** against **3.2218 ± 0.0153** on three Project 
 ([`../../experiments/E2608/record.md`](../../experiments/E2608/record.md)) compared the two Transformer-family
 architectures at a matched token budget on a 919-document licensed corpus (**1.6865** for the rotary decoder
 against **1.9043** for the transformer, both truncated at the step ceiling, the arms not capacity-matched — a
-confound the record states).
+confound the record states); **E2610**
+([`../../experiments/E2610/record.md`](../../experiments/E2610/record.md)) calibrated the released checkpoint's
+repetition against human continuations and found it is greedy decoding of a human-diverse distribution, not a
+pipeline defect, while no setting produced coherent text; and **E2611**
+([`../../experiments/E2611/record.md`](../../experiments/E2611/record.md)) is the capacity- and context-matched
+decoder comparison, preregistered before its arm ran.
 
 So: there is a trained model, a learned byte-pair subword tokenizer, a document-level corpus manifest that
 pins content digests, three pinned corpora, mini-batch training with validation-selected early stopping, a
