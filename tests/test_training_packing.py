@@ -207,3 +207,39 @@ def test_an_example_whose_input_and_target_lengths_disagree_is_refused() -> None
         PackedExample(input_ids=(1, 2, 3), targets=(1, 2))
     with pytest.raises(CorpusError, match="no positions"):
         PackedExample(input_ids=(), targets=())
+
+
+# ------------------------------------------------------------------ the training-token cap
+
+
+def test_a_token_cap_stops_at_a_whole_unit_and_says_so() -> None:
+    units = _units(*["the quick red fox ran over the dry sand again"] * 8)
+    per_unit = len(token_stream(units[:1], _VOCABULARY))
+    cap = per_unit * 3 + 1
+
+    capped = pack_units(units, _VOCABULARY, context_length=4, max_tokens=cap)
+    uncapped = pack_units(units, _VOCABULARY, context_length=4)
+
+    # Four whole units reach the cap (three do not), so the stream is at least the cap and at most one
+    # unit's worth over it. Nothing is half packed.
+    assert per_unit * 4 <= capped.tokens_available <= cap + per_unit
+    assert capped.document_count == 4
+    assert capped.tokens_available < uncapped.tokens_available
+    assert capped.tokens_available == len(token_stream(units[:4], _VOCABULARY))
+
+
+def test_a_cap_above_the_whole_corpus_packs_everything() -> None:
+    units = _units(*["the quick red fox ran over the dry sand again"] * 3)
+    full = pack_units(units, _VOCABULARY, context_length=4)
+    capped = pack_units(units, _VOCABULARY, context_length=4, max_tokens=10_000)
+
+    assert capped.tokens_available == full.tokens_available
+    assert capped.document_count == full.document_count
+
+
+def test_the_cap_is_validated() -> None:
+    units = _units("the quick red fox ran over the dry sand again")
+    with pytest.raises(CorpusError, match="max_tokens"):
+        pack_units(units, _VOCABULARY, context_length=4, max_tokens=0)
+    with pytest.raises(CorpusError, match="max_tokens"):
+        pack_units(units, _VOCABULARY, context_length=4, max_tokens=True)  # type: ignore[arg-type]

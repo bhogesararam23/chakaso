@@ -262,6 +262,10 @@ class ExperimentPlan:
     #: only in this field see the same vocabulary and are scored on the same held-out works; that is what
     #: makes an equal-token data-mixture comparison a comparison.
     training_group_prefixes: tuple[str, ...] | None = None
+    #: Stop packing the training side after this many identifiers. ``None`` packs all of it. A corpus can
+    #: be much larger than the positions a run trains on, and packing all of it costs about 46 bytes per
+    #: token; the cap is what lets one corpus serve several budgeted runs on this machine.
+    max_training_tokens: int | None = None
     #: Whether the character-model baseline runs at all. Its windows are materialized per character, so on a
     #: corpus of tens of millions of characters it costs more memory than this project's machine has; a run
     #: that skips it says so in its report rather than pretending the number was measured.
@@ -323,6 +327,16 @@ class ExperimentPlan:
                     f"training_group_prefixes holds an empty or non-string entry: {prefixes!r}"
                 )
                 raise ValueError(message)
+        if self.max_training_tokens is not None and (
+            isinstance(self.max_training_tokens, bool)
+            or not isinstance(self.max_training_tokens, int)
+            or self.max_training_tokens < 1
+        ):
+            message = (
+                "max_training_tokens must be None or an integer >= 1, got "
+                f"{self.max_training_tokens!r}"
+            )
+            raise ValueError(message)
         if self.document_masking and self.model_family != "decoder":
             message = (
                 "document_masking is implemented for the decoder family; the transformer family's "
@@ -683,6 +697,7 @@ def prepare_corpus(plan: ExperimentPlan) -> PreparedCorpus:
             vocabulary,
             context_length=plan.context_length,
             track_documents=plan.document_masking,
+            max_tokens=plan.max_training_tokens,
         ),
         validation=pack_units(
             split.validation,
@@ -1069,6 +1084,9 @@ def run_experiment(plan: ExperimentPlan, *, verbose: bool = False) -> dict[str, 
                     if unit.group.startswith(plan.training_group_prefixes)
                 }
             ),
+            "max_training_tokens": plan.max_training_tokens,
+            "training_documents_packed": prepared.train.document_count,
+            "training_tokens_packed": prepared.train.tokens_available,
             "groups_per_side": groups_per_side(prepared.split),
             "works_on_multiple_sides": works_on_multiple_sides(prepared.split),
             "documents_per_side": {
@@ -1129,6 +1147,7 @@ def run_experiment(plan: ExperimentPlan, *, verbose: bool = False) -> dict[str, 
                     if plan.training_group_prefixes is None
                     else list(plan.training_group_prefixes)
                 ),
+                "max_training_tokens": plan.max_training_tokens,
                 "effective_batch_size": outcome.config.effective_batch_size,
                 "positions_per_second": round(outcome.positions_per_second, 1),
                 "records": len(outcome.records),

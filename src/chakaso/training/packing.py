@@ -127,6 +127,7 @@ def pack_units(
     context_length: int,
     separate_documents: bool = True,
     track_documents: bool = False,
+    max_tokens: int | None = None,
 ) -> PackedBatch:
     """Pack ``units`` into next-token examples of exactly ``context_length`` positions each.
 
@@ -134,6 +135,11 @@ def pack_units(
     because it doubles the per-token bookkeeping for a feature only a document-masking run consumes; a run
     that asks for masking must ask for it here too, and the training engine refuses a masked run over
     examples that carry no document identifiers.
+
+    ``max_tokens`` stops after the first whole unit that takes the stream to at least that many identifiers.
+    A corpus can be far larger than the positions a run trains on, and packing all of it costs about 46
+    bytes per token — a 100M-token corpus is several gigabytes of Python tuples for a run that will read
+    20M of them. The cap is applied to whole units, so no document is ever half packed.
 
     Raises:
         CorpusError: ``context_length`` is not a positive integer, the units produce no usable token
@@ -148,21 +154,29 @@ def pack_units(
         message = f"context_length must be an integer >= 1, got {context_length!r}"
         raise CorpusError(message)
 
-    if track_documents:
-        stream_parts: list[int] = []
-        segment_parts: list[int] = []
-        for document_index, unit in enumerate(units):
-            identifiers = vocabulary.encode(unit.text)
-            stream_parts.extend(identifiers)
+    if max_tokens is not None and (
+        isinstance(max_tokens, bool) or not isinstance(max_tokens, int) or max_tokens < 1
+    ):
+        message = f"max_tokens must be an integer >= 1, got {max_tokens!r}"
+        raise CorpusError(message)
+
+    stream_parts: list[int] = []
+    segment_parts: list[int] = []
+    used_units = 0
+    for document_index, unit in enumerate(units):
+        if max_tokens is not None and len(stream_parts) >= max_tokens:
+            break
+        identifiers = vocabulary.encode(unit.text)
+        stream_parts.extend(identifiers)
+        if track_documents:
             segment_parts.extend([document_index] * len(identifiers))
-            if separate_documents:
-                stream_parts.append(DOCUMENT_END)
+        if separate_documents:
+            stream_parts.append(DOCUMENT_END)
+            if track_documents:
                 segment_parts.append(document_index)
-        stream: tuple[int, ...] = tuple(stream_parts)
-        segments: tuple[int, ...] | None = tuple(segment_parts)
-    else:
-        stream = token_stream(units, vocabulary, separate_documents=separate_documents)
-        segments = None
+        used_units += 1
+    stream: tuple[int, ...] = tuple(stream_parts)
+    segments: tuple[int, ...] | None = tuple(segment_parts) if track_documents else None
 
     width = context_length + 1
     blocks = len(stream) // width
@@ -188,5 +202,5 @@ def pack_units(
         examples=examples,
         tokens_available=len(stream),
         dropped_tail=len(stream) - blocks * width,
-        document_count=len(units),
+        document_count=used_units,
     )

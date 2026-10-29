@@ -899,3 +899,30 @@ def test_training_group_prefixes_are_validated() -> None:
         ExperimentPlan(root=root, work_dir=root / "w", training_group_prefixes=())
     with pytest.raises(ValueError, match="empty or non-string"):
         ExperimentPlan(root=root, work_dir=root / "w", training_group_prefixes=("",))
+
+
+def test_a_token_cap_bounds_what_a_run_packs(tmp_path: Path) -> None:
+    root = _register_root(tmp_path)
+    full = prepare_corpus(_register_plan(root, tmp_path / "a"))
+    capped = prepare_corpus(_register_plan(root, tmp_path / "b", max_training_tokens=150))
+
+    assert capped.train.tokens_available < full.train.tokens_available
+    assert capped.train.document_count < full.train.document_count
+    # The cap must not change what is held out: the vocabulary, split and scored positions are untouched.
+    assert capped.vocabulary.fingerprint == full.vocabulary.fingerprint
+    assert capped.test.tokens_available == full.test.tokens_available
+
+
+def test_the_report_states_the_packing_cap(tmp_path: Path) -> None:
+    plan = _register_plan(_register_root(tmp_path), tmp_path / "work", max_training_tokens=150)
+
+    report = run_experiment(plan)
+
+    assert report["corpus"]["max_training_tokens"] == 150
+    assert report["corpus"]["training_tokens_packed"] >= 150
+    assert report["transformer"]["budget"]["max_training_tokens"] == 150
+
+
+def test_a_bad_token_cap_is_refused() -> None:
+    with pytest.raises(ValueError, match="max_training_tokens"):
+        ExperimentPlan(root=Path(), work_dir=Path() / "w", max_training_tokens=0)

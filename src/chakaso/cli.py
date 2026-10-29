@@ -588,6 +588,12 @@ def _build_parsers() -> tuple[argparse.ArgumentParser, argparse.ArgumentParser]:
         help="put every chunk of a work on one side of the split, so the held-out set is held out by work",
     )
     experiment_model.add_argument(
+        "--max-training-tokens",
+        type=int,
+        default=None,
+        help="stop packing the training side after this many identifiers, so a large corpus is not held in memory",
+    )
+    experiment_model.add_argument(
         "--training-group-prefix",
         action="append",
         metavar="PREFIX",
@@ -2188,6 +2194,7 @@ def _run_model_experiment(args: argparse.Namespace) -> int:
         "checkpoint_every",
         "tokenizer_min_frequency",
         "samples_per_prompt",
+        "max_training_tokens",
         "tokenizer_cache_dir",
         "resume_from",
         "sample_prompts",
