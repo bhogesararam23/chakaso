@@ -257,6 +257,11 @@ class ExperimentPlan:
     #: split fingerprint, and a measured protocol's split must not move under its record; a corpus cut from
     #: books declares it on, or its held-out score is within-work rather than held-out by work.
     whole_work_splits: bool = False
+    #: Group prefixes a training document's work must match to be packed for training. ``None`` trains on
+    #: the whole training side. Validation, test and the tokenizer are untouched, so two arms that differ
+    #: only in this field see the same vocabulary and are scored on the same held-out works; that is what
+    #: makes an equal-token data-mixture comparison a comparison.
+    training_group_prefixes: tuple[str, ...] | None = None
     #: Whether the character-model baseline runs at all. Its windows are materialized per character, so on a
     #: corpus of tens of millions of characters it costs more memory than this project's machine has; a run
     #: that skips it says so in its report rather than pretending the number was measured.
@@ -305,6 +310,19 @@ class ExperimentPlan:
         if not isinstance(self.whole_work_splits, bool):
             message = f"whole_work_splits must be a boolean, got {self.whole_work_splits!r}"
             raise ValueError(message)
+        if self.training_group_prefixes is not None:
+            prefixes = self.training_group_prefixes
+            if not isinstance(prefixes, tuple) or not prefixes:
+                message = (
+                    "training_group_prefixes must be None or a non-empty tuple of strings, got "
+                    f"{prefixes!r}"
+                )
+                raise ValueError(message)
+            if any(not isinstance(prefix, str) or not prefix for prefix in prefixes):
+                message = (
+                    f"training_group_prefixes holds an empty or non-string entry: {prefixes!r}"
+                )
+                raise ValueError(message)
         if self.document_masking and self.model_family != "decoder":
             message = (
                 "document_masking is implemented for the decoder family; the transformer family's "
@@ -588,6 +606,20 @@ def _fit_or_reuse_vocabulary(
     return fitted, False
 
 
+def _training_units(units: tuple[Any, ...], prefixes: tuple[str, ...] | None) -> tuple[Any, ...]:
+    """The training documents this run packs, restricted to the declared group prefixes if any."""
+    if prefixes is None:
+        return units
+    selected = tuple(unit for unit in units if unit.group.startswith(prefixes))
+    if not selected:
+        message = (
+            f"no training document's work starts with any of {list(prefixes)}; the run would train on "
+            "nothing, so it stops before packing"
+        )
+        raise ValueError(message)
+    return selected
+
+
 def prepare_corpus(plan: ExperimentPlan) -> PreparedCorpus:
     """Pin the corpus, split it once by document, and train both tokenizations on the training side only.
 
@@ -621,6 +653,9 @@ def prepare_corpus(plan: ExperimentPlan) -> PreparedCorpus:
         seed=plan.effective_split_seed,
         whole_works=plan.whole_work_splits,
     )
+    training_units = _training_units(split.train, plan.training_group_prefixes)
+    # The vocabulary is fitted on the whole training side whichever prefixes the run trains on: two arms of
+    # a mixture comparison must share one tokenizer, or the loss difference is partly a different alphabet.
     vocabulary, tokenizer_reused = _fit_or_reuse_vocabulary(plan, work, manifest, split)
     char_vocabulary = CharVocabulary(tuple(unit.text for unit in split.train))
 
@@ -632,7 +667,7 @@ def prepare_corpus(plan: ExperimentPlan) -> PreparedCorpus:
         char_windows = {
             side: _character_batches(split_side, char_vocabulary, plan.character_context)
             for side, split_side in (
-                ("train", split.train),
+                ("train", training_units),
                 ("validation", split.validation),
                 ("test", split.test),
             )
@@ -644,7 +679,7 @@ def prepare_corpus(plan: ExperimentPlan) -> PreparedCorpus:
         vocabulary=vocabulary,
         char_vocabulary=char_vocabulary,
         train=pack_units(
-            split.train,
+            training_units,
             vocabulary,
             context_length=plan.context_length,
             track_documents=plan.document_masking,
@@ -1022,6 +1057,18 @@ def run_experiment(plan: ExperimentPlan, *, verbose: bool = False) -> dict[str, 
             "model_seed": plan.seed,
             "split_fingerprint": prepared.split.fingerprint,
             "whole_work_splits": plan.whole_work_splits,
+            "training_group_prefixes": (
+                None if plan.training_group_prefixes is None else list(plan.training_group_prefixes)
+            ),
+            "training_groups": sorted({unit.group for unit in prepared.split.train if unit.group})
+            if plan.training_group_prefixes is None
+            else sorted(
+                {
+                    unit.group
+                    for unit in prepared.split.train
+                    if unit.group.startswith(plan.training_group_prefixes)
+                }
+            ),
             "groups_per_side": groups_per_side(prepared.split),
             "works_on_multiple_sides": works_on_multiple_sides(prepared.split),
             "documents_per_side": {
@@ -1077,6 +1124,11 @@ def run_experiment(plan: ExperimentPlan, *, verbose: bool = False) -> dict[str, 
                 "grad_accum_steps": plan.grad_accum_steps,
                 "document_masking": plan.document_masking,
                 "whole_work_splits": plan.whole_work_splits,
+                "training_group_prefixes": (
+                    None
+                    if plan.training_group_prefixes is None
+                    else list(plan.training_group_prefixes)
+                ),
                 "effective_batch_size": outcome.config.effective_batch_size,
                 "positions_per_second": round(outcome.positions_per_second, 1),
                 "records": len(outcome.records),

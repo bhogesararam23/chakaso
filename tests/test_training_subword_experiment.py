@@ -821,3 +821,81 @@ def test_a_document_plan_reports_the_works_it_did_split(tmp_path: Path) -> None:
     assert report["corpus"]["whole_work_splits"] is False
     # The fixture has six works; a document split of eighteen chunks puts at least one on two sides.
     assert report["corpus"]["works_on_multiple_sides"] > 0
+
+
+def _register_root(tmp_path: Path) -> Path:
+    """Two registers, three works each, so a mixture arm can be told from a prose arm."""
+    root = tmp_path / "registers"
+    for register in ("prose", "science"):
+        for work in range(3):
+            for part in range(3):
+                target = root / f"{register}-{work:02d}" / f"part-{part:04d}.md"
+                target.parent.mkdir(parents=True, exist_ok=True)
+                target.write_text(
+                    f"# {register} {work} part {part}\n\n"
+                    + (f"The {register} work {work} describes its own subject in prose. " * 12)
+                    + "\n",
+                    encoding="utf-8",
+                )
+    return root
+
+
+def _register_plan(root: Path, work: Path, **overrides: object) -> ExperimentPlan:
+    corpus = CorpusSpec(
+        name="registers",
+        version="1.0.0",
+        licence="test fixture",
+        source="test fixture",
+        include=("prose-*/*.md", "science-*/*.md"),
+        extensions=(".md",),
+        exact_paths=(),
+    )
+    return _plan(
+        root,
+        work,
+        corpus=corpus,
+        character_baseline=False,
+        whole_work_splits=True,
+        **overrides,
+    )
+
+
+def test_a_restricted_arm_keeps_the_tokenizer_and_the_test_set(tmp_path: Path) -> None:
+    root = _register_root(tmp_path)
+    prose_only = prepare_corpus(
+        _register_plan(root, tmp_path / "a", training_group_prefixes=("prose-",))
+    )
+    mixed = prepare_corpus(_register_plan(root, tmp_path / "b"))
+
+    # The comparison is only a comparison if the two arms share a vocabulary and are scored on the same
+    # held-out works; only the training documents may differ.
+    assert prose_only.vocabulary.fingerprint == mixed.vocabulary.fingerprint
+    assert prose_only.split.fingerprint == mixed.split.fingerprint
+    assert [unit.identifier for unit in prose_only.split.test] == [
+        unit.identifier for unit in mixed.split.test
+    ]
+    assert prose_only.train.tokens_available < mixed.train.tokens_available
+    assert prose_only.test.tokens_available == mixed.test.tokens_available
+
+
+def test_the_report_names_the_works_a_restricted_arm_trained_on(tmp_path: Path) -> None:
+    plan = _register_plan(
+        _register_root(tmp_path),
+        tmp_path / "work",
+        training_group_prefixes=("prose-",),
+    )
+
+    report = run_experiment(plan)
+
+    assert report["corpus"]["training_group_prefixes"] == ["prose-"]
+    groups = report["corpus"]["training_groups"]
+    assert groups and all(group.startswith("prose-") for group in groups)
+    assert report["transformer"]["budget"]["training_group_prefixes"] == ["prose-"]
+
+
+def test_training_group_prefixes_are_validated() -> None:
+    root = Path()
+    with pytest.raises(ValueError, match="non-empty tuple"):
+        ExperimentPlan(root=root, work_dir=root / "w", training_group_prefixes=())
+    with pytest.raises(ValueError, match="empty or non-string"):
+        ExperimentPlan(root=root, work_dir=root / "w", training_group_prefixes=("",))

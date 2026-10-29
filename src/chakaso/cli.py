@@ -588,6 +588,15 @@ def _build_parsers() -> tuple[argparse.ArgumentParser, argparse.ArgumentParser]:
         help="put every chunk of a work on one side of the split, so the held-out set is held out by work",
     )
     experiment_model.add_argument(
+        "--training-group-prefix",
+        action="append",
+        metavar="PREFIX",
+        help=(
+            "train only on works whose group starts with this prefix (repeatable); the tokenizer, "
+            "validation and test sides are unchanged, so two arms differ only in what they train on"
+        ),
+    )
+    experiment_model.add_argument(
         "--json",
         action="store_true",
         help="emit the full machine-readable report instead of the one-line comparison",
@@ -2196,6 +2205,8 @@ def _run_model_experiment(args: argparse.Namespace) -> int:
         overrides["document_masking"] = True
     if args.whole_work_splits:
         overrides["whole_work_splits"] = True
+    if args.training_group_prefix:
+        overrides["training_group_prefixes"] = tuple(args.training_group_prefix)
     plan = ExperimentPlan(
         **{
             "root": args.root,
