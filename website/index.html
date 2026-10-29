@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#080a0f">
+  <meta name="description" content="Chakaso is an open language-model research project focused on reproducible training, transparent evaluation, and verifiable model artifacts.">
+  <meta property="og:title" content="Chakaso — language-model research">
+  <meta property="og:description" content="Build the model. Measure what it can do. Publish what the evidence supports.">
+  <meta property="og:type" content="website">
+  <title>Chakaso — Language-model research</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="./styles.css">
+  <script src="./script.js" defer></script>
+</head>
+<body>
+  <div class="grain" aria-hidden="true"></div>
+  <header class="nav wrap">
+    <a class="brand" href="#top" aria-label="Chakaso home"><span class="brand-mark">c<span>.</span></span><span>chakaso</span></a>
+    <nav aria-label="Main navigation">
+      <a href="#research">Research</a><a href="#principles">Principles</a><a href="#start">Get started</a>
+      <a class="nav-github" href="https://github.com/bhogesararam23/chakaso" target="_blank" rel="noreferrer">GitHub <span>↗</span></a>
+    </nav>
+    <button class="menu-toggle" aria-label="Toggle navigation" aria-expanded="false">☰</button>
+  </header>
+
+  <main id="top">
+    <section class="hero wrap">
+      <div class="hero-copy">
+        <div class="eyebrow"><span class="pulse"></span> INDEPENDENT MODEL RESEARCH <span class="eyebrow-line"></span> <span>OPEN DEVELOPMENT</span></div>
+        <h1>Build the model.<br><span>Measure the truth.</span></h1>
+        <p class="hero-lede">Chakaso is a language-model research project built around reproducible training, explicit data provenance, and results that say as much about limitations as they do about progress.</p>
+        <div class="hero-actions">
+          <a class="button button-primary" href="#research">Explore the research <span>↘</span></a>
+          <a class="button button-quiet" href="https://github.com/bhogesararam23/chakaso" target="_blank" rel="noreferrer">Read the source <span>↗</span></a>
+        </div>
+        <div class="hero-note"><span class="note-dot"></span> Trained from random initialization. Evaluated in public. No inflated capability claims.</div>
+      </div>
+      <div class="visual" aria-label="Abstract model architecture visualization">
+        <div class="visual-top"><span>CHAKASO / MODEL SYSTEM</span><span class="live"><i></i> RESEARCH BUILD</span></div>
+        <div class="orbital orbital-one"></div><div class="orbital orbital-two"></div><div class="orbital orbital-three"></div>
+        <div class="core"><div class="core-inner">c<span>.</span></div></div>
+        <div class="node node-a"><b>01</b><span>DATA</span><i></i></div>
+        <div class="node node-b"><b>02</b><span>TRAINING</span><i></i></div>
+        <div class="node node-c"><b>03</b><span>EVALUATION</span><i></i></div>
+        <div class="node node-d"><b>04</b><span>RELEASE</span><i></i></div>
+        <div class="visual-bottom"><span>REPRODUCIBILITY IS A FEATURE</span><span>v0.x / EXPERIMENTAL</span></div>
+      </div>
+      <div class="hero-index"><span>01 / 04</span><span>AN OPEN RESEARCH LOG, NOT A BLACK BOX.</span></div>
+    </section>
+
+    <section class="ticker" aria-label="Research priorities"><div class="ticker-track"><span>REPRODUCIBLE TRAINING</span><b>✳</b><span>DATA PROVENANCE</span><b>✳</b><span>MEASURED RESULTS</span><b>✳</b><span>HONEST LIMITATIONS</span><b>✳</b><span>REPRODUCIBLE TRAINING</span><b>✳</b><span>DATA PROVENANCE</span><b>✳</b><span>MEASURED RESULTS</span><b>✳</b><span>HONEST LIMITATIONS</span><b>✳</b></div></section>
+
+    <section class="section wrap" id="research">
+      <div class="section-kicker">01 — THE RESEARCH</div>
+      <div class="section-heading"><h2>A model you can<br><em>interrogate.</em></h2><p>Every result should be traceable to a dataset, a training run, and a method. Chakaso is built to make that chain inspectable.</p></div>
+      <div class="research-grid">
+        <article class="research-card card-large"><div class="card-number">01 / MODEL</div><div class="card-art art-model"><span class="art-ring"></span><span class="art-ring ring-2"></span><span class="art-core">c.</span><span class="art-caption">PARAMETERS → PREDICTIONS</span></div><h3>Built from scratch</h3><p>Decoder-only language-model architectures, a tokenizer trained in-project, and a Python-first interface designed for inspecting the actual model artifact.</p><a href="https://github.com/bhogesararam23/chakaso/tree/main/src/chakaso/training" target="_blank" rel="noreferrer">Explore training code <span>↗</span></a></article>
+        <article class="research-card"><div class="card-number">02 / DATA</div><div class="card-art art-data"><div class="data-lines"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div><span class="data-tag">SOURCE → DIGEST</span></div><h3>Provenance by design</h3><p>Versioned corpus manifests, content fingerprints, documented licences, and recoverable snapshots help keep experiments reproducible.</p><a href="https://github.com/bhogesararam23/chakaso/tree/main/docs/data" target="_blank" rel="noreferrer">Read data cards <span>↗</span></a></article>
+        <article class="research-card"><div class="card-number">03 / EVALUATION</div><div class="card-art art-eval"><div class="chart-grid"></div><svg viewBox="0 0 300 110" role="img" aria-label="Illustrative evaluation curve"><path d="M8 18 C38 20 45 58 77 51 S122 33 145 66 S195 49 220 77 S266 70 292 91" fill="none" stroke="currentColor" stroke-width="2"/><path d="M8 18 C38 20 45 58 77 51 S122 33 145 66 S195 49 220 77 S266 70 292 91 L292 105 L8 105Z" fill="currentColor" opacity=".07"/></svg><span class="eval-label">METHOD BEFORE METRIC</span></div><h3>Results with context</h3><p>Experiments report baselines, seeds, budgets, failure modes, and what the numbers cannot establish. Lower loss is not the same as useful language.</p><a href="https://github.com/bhogesararam23/chakaso/tree/main/experiments" target="_blank" rel="noreferrer">Inspect experiments <span>↗</span></a></article>
+      </div>
+    </section>
+
+    <section class="truth-band">
+      <div class="wrap truth-inner"><div><div class="section-kicker">02 — THE CURRENT REALITY</div><h2>Progress without<br><em>pretending.</em></h2></div><div class="truth-copy"><p>Chakaso has a working training and evaluation pipeline, with measured experiments on small models. The current checkpoints do <strong>not</strong> generate useful, coherent assistant responses. That is a research gap to close, not a detail to hide.</p><a href="https://github.com/bhogesararam23/chakaso/blob/main/MODEL_CARD.md" target="_blank" rel="noreferrer" class="text-link">Read the model card <span>↗</span></a></div></div>
+    </section>
+
+    <section class="section wrap" id="principles">
+      <div class="section-kicker">03 — HOW WE WORK</div>
+      <div class="section-heading"><h2>Evidence over<br><em>impression.</em></h2><p>Research is more useful when other people can verify it, reproduce it, and disagree with it.</p></div>
+      <div class="principles">
+        <div class="principle"><span class="principle-icon">↗</span><div><h3>Reproducible by default</h3><p>Versioned configurations, pinned data, explicit seeds, and artifacts with checksums.</p></div><span class="principle-id">P—01</span></div>
+        <div class="principle"><span class="principle-icon">⌁</span><div><h3>Transparent about failure</h3><p>Negative results and known limitations stay in the record alongside improvements.</p></div><span class="principle-id">P—02</span></div>
+        <div class="principle"><span class="principle-icon">⌘</span><div><h3>Python-first, open engineering</h3><p>The library and model artifacts come first; the interface must never outrun the capability.</p></div><span class="principle-id">P—03</span></div>
+      </div>
+    </section>
+
+    <section class="start-section" id="start"><div class="wrap start-inner"><div class="section-kicker">04 — START HERE</div><h2>Inspect it. Run it.<br><em>Challenge it.</em></h2><p>Start with the source, reproduce an experiment, or open an issue when the evidence says something different.</p><div class="start-actions"><a class="button button-primary" href="https://github.com/bhogesararam23/chakaso" target="_blank" rel="noreferrer">View on GitHub <span>↗</span></a><a class="button button-outline" href="https://github.com/bhogesararam23/chakaso/issues" target="_blank" rel="noreferrer">Discuss a finding <span>↗</span></a></div><div class="install"><span>$</span> git clone https://github.com/bhogesararam23/chakaso.git<button id="copy-command" aria-label="Copy clone command">COPY</button></div></div></section>
+  </main>
+  <footer class="footer wrap"><a class="brand" href="#top"><span class="brand-mark">c<span>.</span></span><span>chakaso</span></a><span class="footer-line">A research project in progress. Claims stay tied to evidence.</span><div class="footer-links"><a href="https://github.com/bhogesararam23/chakaso" target="_blank" rel="noreferrer">GitHub ↗</a><a href="https://huggingface.co/" target="_blank" rel="noreferrer">Hugging Face ↗</a></div><span class="copyright">© <span id="year">2026</span> CHAKASO</span></footer>
+</body>
+</html>
