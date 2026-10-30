@@ -1,14 +1,33 @@
 # Chakaso data curriculum: what to train on, in what order, and under which licence
 
-**Status:** Research and proposal. No corpus described here beyond `gutenberg-english-prose-v2` has been
-acquired, pinned or measured. Every quantity labelled *estimate* is arithmetic or a literature figure, not a
-measurement from this repository.
-**Date:** 2026-10-29.
+**Status:** Research and proposal, amended by a measured acquisition (2026-10-30). One corpus described
+here — `gutenberg-multiregister-v1`, the five-register stage — has now been acquired and pinned, so the
+starting-point section below is superseded by the section that follows it. Every quantity labelled *estimate*
+is arithmetic or a literature figure, not a measurement from this repository.
+**Date:** 2026-10-29; measured status added 2026-10-30.
 **Companions:** [`open-model-landscape.md`](open-model-landscape.md),
 [`chakaso-next-training-design.md`](chakaso-next-training-design.md),
 [`chakaso-compute-and-scaling-plan.md`](chakaso-compute-and-scaling-plan.md).
 
+## What this document's starting point looked like, and what replaced it (measured 2026-10-30)
+
+`gutenberg-multiregister-v1` is pinned and its measurements are in the experiment record rather than repeated
+here: see [`../../experiments/E2612/record.md`](../../experiments/E2612/record.md) for the composition table
+and [`../data/gutenberg-multiregister-v1.md`](../data/gutenberg-multiregister-v1.md) for the generated data
+card. In one line: **430 works across five registers, 9,388 documents, 149,000,499 characters, fingerprint
+`312571f9fa8351a8`**, selected from Project Gutenberg's own catalogue by a rule written down before any
+download ([`scripts/acquire_gutenberg_corpus.py`](../../scripts/acquire_gutenberg_corpus.py)), and split by
+whole work under [ADR-0042](../decisions/ADR-0042-held-out-means-held-out-works.md).
+
+Three of the four limits below are therefore addressed and one is not. The register limit is addressed by the
+five LoCC classes; the split limit is addressed by whole-work grouping, which puts 62 works on the test side;
+the token limit is raised by roughly twenty times, to a corpus whose subword count is measured in the E2612
+record. The **language** limit is untouched, and so is the age of the register: this is 19th- and
+early-20th-century English. Code remains absent, so the mixture proposal's 10 % code share is not runnable
+yet.
+
 ## The starting point, measured
+
 
 The only external corpus this project has pinned is `gutenberg-english-prose-v2`: 24 Project Gutenberg texts,
 919 documents, 14,490,005 characters, corpus fingerprint `e9fc2e92f59d88ea` (E2608). Its tokenizer

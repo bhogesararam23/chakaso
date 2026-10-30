@@ -33,11 +33,18 @@ and the run's post-training evaluation.
 | E2605 Transformer | 643,840 | 128 | 32 | not reported in the same field | 513.6 s | ~2,400 steps × 4,128 |
 | E2608 arm A decoder | 3,413,760 | 256 | 32 × 1 | **4,821.2** | 6,024 s | 19,660,800 |
 | E2608 arm B transformer | 1,037,056 | 128 | 32 × 2 | **12,098.1** | 2,322.9 s | 19,660,800 |
-| E2611 decoder (capacity-matched) | 1,018,240 | 128 | 32 × 2 | reported by its own report | running at the time of writing | 19,660,800 |
+| E2611 decoder (capacity-matched) | 1,018,240 | 128 | 32 × 2 | 5,363.1 | 5,169.4 s | 19,660,800 |
+| E2612 smoke (multi-register corpus) | 2,699,264 | 256 | 32 × 1 | **4,493.7** | 169.05 s (60 steps) | 491,520 |
 
 The E2608 rates imply that pure gradient work was ~4,108 s of arm A's 6,024 s and ~1,638 s of arm B's
 2,323 s; the remaining ~30–40% is evaluation and checkpoint overhead. Any wall-clock estimate below must add
 that overhead, and the estimate is labelled.
+
+The E2612 smoke row is the only one measured on the multi-register corpus, and it is a rate measured with the
+machine also running the operator's session: 60 steps at 4,493.7 positions/s and 1,710 MB peak resident set,
+with preparation (tokenizer fit on a 12M-character sample plus packing) costing 70.4 s. That vocabulary was
+1,024 identifiers rather than the 4,096 the arms declare, so its parameter count is smaller; the E2612 arm
+reports are the rate to use for a 3.4M model on this corpus.
 
 ## What the arithmetic says about model size
 

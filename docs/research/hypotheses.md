@@ -144,7 +144,7 @@ should stop treating it as one.
 
 **Depends on.** A tokenizer, a model, a corpus, and enough compute to run
 configurations more than once. **Amended 2026-10-24:** four of the five prerequisites exist — a learned
-tokenizer (`chakaso.training.subword`), trained models, three pinned corpora, and a seed-study runner that has
+tokenizer (`chakaso.training.subword`), trained models, four pinned corpora, and a seed-study runner that has
 already run a protocol five times over one corpus (E2606) and twice more over another (E2607, E2608). What is
 missing is the comparison this hypothesis names: it contrasts **BPE with Unigram**, and only BPE is
 implemented. The character-versus-subword gap E2605 measured (3.1343 against 1.8657 bits per character) is

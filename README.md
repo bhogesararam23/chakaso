@@ -322,7 +322,7 @@ makes an uninstalled import fail rather than silently test the working tree
 | [`docs/internal/engineering/model-centred-audit.md`](docs/internal/engineering/model-centred-audit.md) | How the repository drifted and what the realignment changed |
 | [`docs/retrieval.md`](docs/retrieval.md), [`docs/correction.md`](docs/correction.md), [`docs/transparency.md`](docs/transparency.md) | The optional application layer |
 | [`docs/roadmap.md`](docs/roadmap.md) | Phases and exit criteria |
-| [`docs/decisions/`](docs/decisions/) | Why the architecture is shaped this way (ADR-0001 … ADR-0041) |
+| [`docs/decisions/`](docs/decisions/) | Why the architecture is shaped this way (ADR-0001 … ADR-0042) |
 | [`docs/agent/CURRENT_STATE.md`](docs/agent/CURRENT_STATE.md) | The current state, precisely |
 
 ## Contributing

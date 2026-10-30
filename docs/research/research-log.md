@@ -884,3 +884,43 @@ measurement.
 **Open at this point.** Whether a licensed 68M-token mixed corpus can be acquired and prepared; whether the
 equal-token data experiment improves held-out loss without a prose regression; whether document-boundary
 masking helps at all; and K-001, unchanged — no grounded question has been answered by any model here.
+
+---
+
+## 2026-10-30 — The held-out number was held out by chapter, and every book corpus had the same leak
+
+**Type:** observation + correction ([ADR-0042](../decisions/ADR-0042-held-out-means-held-out-works.md),
+K-023).
+
+**Observation.** Preparing the next data unit required asking what a book corpus's split actually separates.
+`source_corpus.chunk_paragraphs` cuts each book into chapter-sized documents of at most 16,384 characters,
+and `data.split_text_units` assigns *documents* to train, validation and test. For the repository's first
+corpus — its own tracked files — a document is a whole work, and the split is exactly what it says. For a
+corpus of books it is not: chapters of the same book land on both sides.
+
+**Measured.** Against E2608's own snapshot, at the 15 %/15 % fractions and split seed 7 its protocol used:
+**23 of 23 test-side books also appear in the training side, and 2,165,409 of 2,165,409 test characters
+(100.0 %) come from books the model read other chapters of.** E2607 is the same shape on all three of its
+seeds (100 % of 255,765 / 256,204 / 255,364 test characters). E2605 and E2606 are unaffected in kind: their
+documents are whole files.
+
+**Interpretation.** The absolute figures — E2608's 1.6865 and 1.9043, E2607's 2.0176, E2611's 1.8077 — are
+*within-work* estimates. They are not scores on unseen books. What survives untouched is every comparison
+those records make: both arms of E2608 and both of E2611 trained on the same corpus and the same split, so a
+shared bias cancels in a difference. The records were corrected with dated notes; no number in them was
+restated.
+
+**Why it could not simply be fixed at that corpus size.** A work-level split of 24 books puts three or four
+books on the test side, and a three-book estimate is not an estimate. The evaluation was blocked on the
+corpus growing, which is the same blocker as K-022.
+
+**Decision recorded.** [ADR-0042](../decisions/ADR-0042-held-out-means-held-out-works.md): a text unit names
+the work it came from, `split_text_units(whole_works=True)` assigns every chunk of a work to one side against
+declared character targets, the default stays the document split so recorded protocols reproduce by name, and
+every report now states `whole_work_splits`, `groups_per_side` and `works_on_multiple_sides`. The count is
+reported, never enforced, because the historical records are what they are.
+
+**Limitation.** The leak is measured on the two Gutenberg corpora only. Any future corpus whose documents are
+not chunks of a larger work needs no grouping, and grouping a corpus whose first path segment is not a work
+would invent a boundary the corpus never declared. [K-023](../agent/KNOWN_ISSUES.md) keeps the gap open until
+a measured result exists on a corpus where a work split puts dozens of works on each side.

@@ -75,7 +75,7 @@ pipeline defect, while no setting produced coherent text; and **E2611**
 decoder comparison, preregistered before its arm ran.
 
 So: there is a trained model, a learned byte-pair subword tokenizer, a document-level corpus manifest that
-pins content digests, three pinned corpora, mini-batch training with validation-selected early stopping, a
+pins content digests, four pinned corpora, mini-batch training with validation-selected early stopping, a
 checksummed self-describing checkpoint, a Python entry point that loads it, a release contract that one
 artifact satisfies at Level 2 of [ADR-0039](../decisions/ADR-0039-three-level-model-release-gate.md), and a
 multi-seed spread on the headline comparison. What is still missing is the thing H1–H7 are about: no real

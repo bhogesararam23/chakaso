@@ -52,7 +52,7 @@ reassessment, an answer store (in-memory and, since ADR-0021, a durable SQLite b
 survives a process restart) and reproducible experiment records exist as tested code —
 but there is still no model that answers a grounded question, no web fetching on any default path (the
 fetcher is opt-in) and no automatic correction loop. On the model side, all of this exists as tested code: two
-tokenizers (deterministic character, learned byte-pair subword), three pinned corpora with recorded licences and
+tokenizers (deterministic character, learned byte-pair subword), four pinned corpora with recorded licences and
 per-document digests (two of them with measured data cards), corpus recovery from the revision that recorded
 them, two Transformer-family architectures with a
 mini-batch engine that resumes under a longer budget, two checkpoint schemas plus a release contract that
