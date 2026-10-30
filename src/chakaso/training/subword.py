@@ -469,25 +469,25 @@ def train_subword_vocabulary(
     while FIRST_MERGED_ID + len(merges) < target_size:
         # Most frequent pair wins; a tie breaks on the smaller pair so the rule sequence is a property of
         # the data alone, never of the order two equal counts happened to be stored in.
-        pair: tuple[int, int] | None = None
+        best: tuple[int, int] | None = None
         while heap:
             negative, candidate = heapq.heappop(heap)
             current = pair_counts.get(candidate, 0)
             if current == -negative and current >= min_frequency:
-                pair = candidate
+                best = candidate
                 break
-        if pair is None:
+        if best is None:
             break
         merged = FIRST_MERGED_ID + len(merges)
-        merges.append(pair)
+        merges.append(best)
 
-        affected = pair_to_shapes.pop(pair, set())
+        affected = pair_to_shapes.pop(best, set())
         for shape in affected:
-            frequency = shapes.pop(shape, None)
-            if frequency is None:
+            frequency = shapes.pop(shape, 0)
+            if not frequency:
                 continue
             _remove_shape(pair_counts, pair_to_shapes, shape, frequency)
-            new_shape = tuple(SubwordVocabulary._apply(list(shape), pair, merged))
+            new_shape = tuple(SubwordVocabulary._apply(list(shape), best, merged))
             existing = shapes.pop(new_shape, 0)
             if existing:
                 _remove_shape(pair_counts, pair_to_shapes, new_shape, existing)

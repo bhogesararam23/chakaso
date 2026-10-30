@@ -718,7 +718,7 @@ def _training_units(
     )
     if not selected:
         message = (
-            f"no training document's work starts with any of {list(prefixes)}; the run would train on "
+            f"no training document's work starts with any of {prefixes!r}; the run would train on "
             "nothing, so it stops before packing"
         )
         raise ValueError(message)
