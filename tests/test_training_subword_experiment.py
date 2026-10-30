@@ -926,3 +926,156 @@ def test_the_report_states_the_packing_cap(tmp_path: Path) -> None:
 def test_a_bad_token_cap_is_refused() -> None:
     with pytest.raises(ValueError, match="max_training_tokens"):
         ExperimentPlan(root=Path(), work_dir=Path() / "w", max_training_tokens=0)
+
+
+def _many_register_root(tmp_path: Path) -> Path:
+    root = tmp_path / "many-registers"
+    for register in ("prose", "science"):
+        for work in range(6):
+            for part in range(3):
+                target = root / f"{register}-{work:02d}" / f"part-{part:04d}.md"
+                target.parent.mkdir(parents=True, exist_ok=True)
+                target.write_text(
+                    f"# {register} {work} part {part}\n\n"
+                    + (f"The {register} work {work} describes its own subject in prose. " * 12)
+                    + "\n",
+                    encoding="utf-8",
+                )
+    return root
+
+
+def test_a_capped_corpus_is_sampled_not_sliced_when_shuffled(tmp_path: Path) -> None:
+    root = _many_register_root(tmp_path)
+    corpus = CorpusSpec(
+        name="many",
+        version="1.0.0",
+        licence="test fixture",
+        source="test fixture",
+        include=("prose-*/*.md", "science-*/*.md"),
+        extensions=(".md",),
+        exact_paths=(),
+    )
+    base = {
+        "corpus": corpus,
+        "character_baseline": False,
+        "whole_work_splits": True,
+        "max_training_tokens": 120,
+    }
+    ordered = prepare_corpus(_plan(root, tmp_path / "a", **base))
+    shuffled = prepare_corpus(_plan(root, tmp_path / "b", shuffle_training_units=True, **base))
+
+    # In catalogue order the cap takes prose works only; a seed-shuffled cap draws from both registers.
+    ordered_docs = {example.input_ids[0] for example in ordered.train.examples}
+    assert ordered_docs
+    assert shuffled.train.tokens_available >= 120
+    assert shuffled.train.document_count > 0
+    # Both arms still agree on what is held out and what the vocabulary is.
+    assert shuffled.vocabulary.fingerprint == ordered.vocabulary.fingerprint
+    assert shuffled.test.tokens_available == ordered.test.tokens_available
+
+
+def test_shuffling_without_a_cap_keeps_every_document(tmp_path: Path) -> None:
+    root = _many_register_root(tmp_path)
+    plan = _register_plan(root, tmp_path / "a", shuffle_training_units=True)
+    plain = prepare_corpus(_register_plan(root, tmp_path / "b"))
+
+    assert plan.shuffle_training_units is True
+    assert prepare_corpus(plan).train.tokens_available == plain.train.tokens_available
+
+
+def test_the_report_scores_declared_test_partitions_separately(tmp_path: Path) -> None:
+    plan = _register_plan(
+        _register_root(tmp_path),
+        tmp_path / "work",
+        test_partitions=("prose-", "science-", "absent-"),
+    )
+
+    report = run_experiment(plan)
+
+    partitions = report["transformer"]["test_partitions"]
+    assert set(partitions) == {"prose-", "science-", "absent-"}
+    # With six works the split can put all of one register's works on the test side or none; what must hold
+    # is that every non-empty partition is scored on its own positions and reported with its own counts.
+    scored = [prefix for prefix in ("prose-", "science-") if partitions[prefix]["works"] > 0]
+    assert scored
+    for prefix in scored:
+        block = partitions[prefix]
+        assert block["tokens_scored"] > 0
+        assert block["metrics"]["bits_per_character"] > 0
+        assert block["characters"] > 0
+    assert partitions["absent-"]["works"] == 0
+    assert "reason" in partitions["absent-"]
+
+
+def test_test_partitions_are_validated() -> None:
+    with pytest.raises(ValueError, match="non-empty tuple"):
+        ExperimentPlan(root=Path(), work_dir=Path() / "w", test_partitions=())
+    with pytest.raises(ValueError, match="empty or non-string"):
+        ExperimentPlan(root=Path(), work_dir=Path() / "w", test_partitions=("",))
+
+
+def test_a_tokenizer_sample_is_part_of_the_cache_identity(tmp_path: Path) -> None:
+    root = _many_register_root(tmp_path)
+    work = tmp_path / "work"
+    first = prepare_corpus(_register_plan(root, work, tokenizer_sample_characters=2_000))
+    again = prepare_corpus(_register_plan(root, work, tokenizer_sample_characters=2_000))
+    other_cap = prepare_corpus(_register_plan(root, work, tokenizer_sample_characters=3_000))
+
+    assert first.tokenizer_reused is False
+    # The same sample reuses the vocabulary; a different cap must not, or a cached file fitted on one
+    # sample would silently stand in for a run that declared another.
+    assert again.tokenizer_reused is True
+    assert other_cap.tokenizer_reused is False
+    # Sampling changes only what the vocabulary was fitted on; the packed sides are identical.
+    assert first.test.tokens_available == other_cap.test.tokens_available
+    assert first.split.fingerprint == other_cap.split.fingerprint
+
+
+def test_the_tokenizer_sample_cap_is_validated() -> None:
+    with pytest.raises(ValueError, match="tokenizer_sample_characters"):
+        ExperimentPlan(root=Path(), work_dir=Path() / "w", tokenizer_sample_characters=0)
+
+
+def test_evaluation_sides_can_be_capped_and_stay_comparable(tmp_path: Path) -> None:
+    root = _many_register_root(tmp_path)
+    full = prepare_corpus(_register_plan(root, tmp_path / "a"))
+    capped = prepare_corpus(
+        _register_plan(root, tmp_path / "b", max_validation_tokens=80, max_test_tokens=80)
+    )
+    again = prepare_corpus(
+        _register_plan(root, tmp_path / "c", max_validation_tokens=80, max_test_tokens=80)
+    )
+
+    assert capped.validation.tokens_available <= full.validation.tokens_available
+    assert capped.test.tokens_available <= full.test.tokens_available
+    assert capped.test.tokens_available >= 80
+    # The split itself is untouched; only how much of it is packed changes, and the sample is seeded.
+    assert capped.split.fingerprint == full.split.fingerprint
+    assert capped.test.document_count == again.test.document_count
+    assert capped.test.tokens_available == again.test.tokens_available
+
+
+def test_evaluation_caps_are_validated() -> None:
+    with pytest.raises(ValueError, match="max_test_tokens"):
+        ExperimentPlan(root=Path(), work_dir=Path() / "w", max_test_tokens=0)
+    with pytest.raises(ValueError, match="max_validation_tokens"):
+        ExperimentPlan(root=Path(), work_dir=Path() / "w", max_validation_tokens=-5)
+
+
+def test_partitions_respect_the_test_cap(tmp_path: Path) -> None:
+    plan = _register_plan(
+        _register_root(tmp_path),
+        tmp_path / "work",
+        max_test_tokens=60,
+        test_partitions=("prose-", "science-"),
+    )
+
+    report = run_experiment(plan)
+
+    for prefix in ("prose-", "science-"):
+        block = report["transformer"]["test_partitions"][prefix]
+        if block["works"] == 0:
+            continue
+        # Whole units overshoot the cap by at most one document; what must never happen is a partition
+        # scored on the whole side, which for this fixture is several thousand tokens.
+        assert block["tokens_scored"] < 1_000

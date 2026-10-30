@@ -594,6 +594,35 @@ def _build_parsers() -> tuple[argparse.ArgumentParser, argparse.ArgumentParser]:
         help="stop packing the training side after this many identifiers, so a large corpus is not held in memory",
     )
     experiment_model.add_argument(
+        "--max-validation-tokens",
+        type=int,
+        default=None,
+        help="pack at most this many validation identifiers, sampled over a seeded shuffle",
+    )
+    experiment_model.add_argument(
+        "--max-test-tokens",
+        type=int,
+        default=None,
+        help="pack at most this many test identifiers, sampled over a seeded shuffle",
+    )
+    experiment_model.add_argument(
+        "--tokenizer-sample-characters",
+        type=int,
+        default=None,
+        help="fit the tokenizer on a seeded sample of at most this many training characters",
+    )
+    experiment_model.add_argument(
+        "--test-partition",
+        action="append",
+        metavar="PREFIX",
+        help="score test works whose group starts with this prefix separately (repeatable)",
+    )
+    experiment_model.add_argument(
+        "--shuffle-training-units",
+        action="store_true",
+        help="shuffle training works with the split seed, so a capped corpus is a sample rather than a prefix",
+    )
+    experiment_model.add_argument(
         "--training-group-prefix",
         action="append",
         metavar="PREFIX",
@@ -2195,6 +2224,9 @@ def _run_model_experiment(args: argparse.Namespace) -> int:
         "tokenizer_min_frequency",
         "samples_per_prompt",
         "max_training_tokens",
+        "max_validation_tokens",
+        "max_test_tokens",
+        "tokenizer_sample_characters",
         "tokenizer_cache_dir",
         "resume_from",
         "sample_prompts",
@@ -2214,6 +2246,10 @@ def _run_model_experiment(args: argparse.Namespace) -> int:
         overrides["whole_work_splits"] = True
     if args.training_group_prefix:
         overrides["training_group_prefixes"] = tuple(args.training_group_prefix)
+    if args.shuffle_training_units:
+        overrides["shuffle_training_units"] = True
+    if args.test_partition:
+        overrides["test_partitions"] = tuple(args.test_partition)
     plan = ExperimentPlan(
         **{
             "root": args.root,

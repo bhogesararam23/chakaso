@@ -24,6 +24,7 @@ application layer imports this module: an experiment is a consumer of the librar
 from __future__ import annotations
 
 import json
+import random
 import time
 from dataclasses import asdict, dataclass
 from math import log
@@ -266,6 +267,27 @@ class ExperimentPlan:
     #: be much larger than the positions a run trains on, and packing all of it costs about 46 bytes per
     #: token; the cap is what lets one corpus serve several budgeted runs on this machine.
     max_training_tokens: int | None = None
+    #: Shuffle the selected training works before packing, with the split seed. Without it a capped corpus
+    #: is a prefix in catalogue order, which groups registers together and makes a "mixture" arm whatever
+    #: the alphabet produced; with it any prefix is a sample of the whole. Off by default so a recorded
+    #: protocol's stream order does not move under its record.
+    shuffle_training_units: bool = False
+    #: Group prefixes to score separately on the test side, each packed on its own. A mixture experiment
+    #: needs the technical held-out loss and the prose held-out loss, not their weighted average; a single
+    #: overall number would be dominated by whichever register has more held-out text.
+    test_partitions: tuple[str, ...] | None = None
+    #: Fit the tokenizer on a seeded sample of at most this many characters of the training side instead of
+    #: all of it. Byte-pair fitting holds every distinct word shape in memory and merges across them; on a
+    #: 149M-character corpus that exceeded this machine's free memory. The sample is a seeded shuffle of the
+    #: training works, so it spans registers rather than the catalogue's first alphabetical block, and the
+    #: cap is part of the tokenizer's identity so a cached vocabulary cannot be reused under a different one.
+    tokenizer_sample_characters: int | None = None
+    #: Pack at most this many identifiers for validation and for test, sampled over a seeded shuffle of the
+    #: side's documents. A 149M-character corpus makes a 15 % test side ~10M tokens: too large to score at
+    #: every evaluation and too large to hold beside the training pack. The sample is drawn from documents
+    #: whose works are still wholly held out, and the report states how many were packed.
+    max_validation_tokens: int | None = None
+    max_test_tokens: int | None = None
     #: Whether the character-model baseline runs at all. Its windows are materialized per character, so on a
     #: corpus of tens of millions of characters it costs more memory than this project's machine has; a run
     #: that skips it says so in its report rather than pretending the number was measured.
@@ -326,6 +348,36 @@ class ExperimentPlan:
                 message = (
                     f"training_group_prefixes holds an empty or non-string entry: {prefixes!r}"
                 )
+                raise ValueError(message)
+        if not isinstance(self.shuffle_training_units, bool):
+            message = (
+                f"shuffle_training_units must be a boolean, got {self.shuffle_training_units!r}"
+            )
+            raise ValueError(message)
+        for field_name in ("max_validation_tokens", "max_test_tokens"):
+            value = getattr(self, field_name)
+            if value is not None and (
+                isinstance(value, bool) or not isinstance(value, int) or value < 1
+            ):
+                message = f"{field_name} must be None or an integer >= 1, got {value!r}"
+                raise ValueError(message)
+        if self.tokenizer_sample_characters is not None and (
+            isinstance(self.tokenizer_sample_characters, bool)
+            or not isinstance(self.tokenizer_sample_characters, int)
+            or self.tokenizer_sample_characters < 1
+        ):
+            message = (
+                "tokenizer_sample_characters must be None or an integer >= 1, got "
+                f"{self.tokenizer_sample_characters!r}"
+            )
+            raise ValueError(message)
+        if self.test_partitions is not None:
+            partitions = self.test_partitions
+            if not isinstance(partitions, tuple) or not partitions:
+                message = f"test_partitions must be None or a non-empty tuple of strings, got {partitions!r}"
+                raise ValueError(message)
+            if any(not isinstance(prefix, str) or not prefix for prefix in partitions):
+                message = f"test_partitions holds an empty or non-string entry: {partitions!r}"
                 raise ValueError(message)
         if self.max_training_tokens is not None and (
             isinstance(self.max_training_tokens, bool)
@@ -557,7 +609,12 @@ def _resolve_manifest(
 
 
 def _tokenizer_identity(
-    manifest: CorpusManifest, split: UnitSplit, *, target_size: int, min_frequency: int
+    manifest: CorpusManifest,
+    split: UnitSplit,
+    *,
+    target_size: int,
+    min_frequency: int,
+    sample_characters: int | None = None,
 ) -> str:
     """The digest a fitted tokenizer is cached under: everything its rule sequence can depend on.
 
@@ -571,8 +628,30 @@ def _tokenizer_identity(
         split.fingerprint,
         str(target_size),
         str(min_frequency),
+        "all-training-text" if sample_characters is None else f"sample-{sample_characters}",
     )
     return sha256_hex(payload)[:16]
+
+
+def _tokenizer_sample(plan: ExperimentPlan, split: UnitSplit) -> tuple[str, ...]:
+    """The texts the vocabulary is fitted on: the whole training side, or a seeded sample of it.
+
+    The shuffle matters: training documents arrive in catalogue order, which groups registers together, so
+    the first N characters of that order would fit a vocabulary on one register and encode the rest with it.
+    """
+    cap = plan.tokenizer_sample_characters
+    if cap is None:
+        return tuple(unit.text for unit in split.train)
+    units = list(split.train)
+    random.Random(plan.effective_split_seed).shuffle(units)
+    chosen: list[str] = []
+    total = 0
+    for unit in units:
+        chosen.append(unit.text)
+        total += len(unit.text)
+        if total >= cap:
+            break
+    return tuple(chosen)
 
 
 def _fit_or_reuse_vocabulary(
@@ -591,6 +670,7 @@ def _fit_or_reuse_vocabulary(
         split,
         target_size=plan.vocab_size,
         min_frequency=plan.tokenizer_min_frequency,
+        sample_characters=plan.tokenizer_sample_characters,
     )
     cache = plan.tokenizer_cache_dir if plan.tokenizer_cache_dir is not None else work
     path = cache / f"{manifest.name}-tokenizer-{identity}.json"
@@ -612,7 +692,7 @@ def _fit_or_reuse_vocabulary(
             raise CorpusError(message)
         return stored, True
     fitted = train_subword_vocabulary(
-        (unit.text for unit in split.train),
+        _tokenizer_sample(plan, split),
         target_size=plan.vocab_size,
         min_frequency=plan.tokenizer_min_frequency,
     )
@@ -620,18 +700,33 @@ def _fit_or_reuse_vocabulary(
     return fitted, False
 
 
-def _training_units(units: tuple[Any, ...], prefixes: tuple[str, ...] | None) -> tuple[Any, ...]:
-    """The training documents this run packs, restricted to the declared group prefixes if any."""
-    if prefixes is None:
-        return units
-    selected = tuple(unit for unit in units if unit.group.startswith(prefixes))
+def _training_units(
+    units: tuple[Any, ...],
+    prefixes: tuple[str, ...] | None,
+    *,
+    shuffle_seed: int | None = None,
+) -> tuple[Any, ...]:
+    """The training documents this run packs: filtered by group prefix, and shuffled if asked.
+
+    The shuffle is seeded from the split seed so every arm of one study draws the same order, and so a
+    token-capped run takes a sample of the whole training side rather than the alphabetically first works.
+    """
+    selected = (
+        units
+        if prefixes is None
+        else tuple(unit for unit in units if unit.group.startswith(prefixes))
+    )
     if not selected:
         message = (
             f"no training document's work starts with any of {list(prefixes)}; the run would train on "
             "nothing, so it stops before packing"
         )
         raise ValueError(message)
-    return selected
+    if shuffle_seed is None:
+        return selected
+    shuffled = list(selected)
+    random.Random(shuffle_seed).shuffle(shuffled)
+    return tuple(shuffled)
 
 
 def prepare_corpus(plan: ExperimentPlan) -> PreparedCorpus:
@@ -667,7 +762,11 @@ def prepare_corpus(plan: ExperimentPlan) -> PreparedCorpus:
         seed=plan.effective_split_seed,
         whole_works=plan.whole_work_splits,
     )
-    training_units = _training_units(split.train, plan.training_group_prefixes)
+    training_units = _training_units(
+        split.train,
+        plan.training_group_prefixes,
+        shuffle_seed=plan.effective_split_seed if plan.shuffle_training_units else None,
+    )
     # The vocabulary is fitted on the whole training side whichever prefixes the run trains on: two arms of
     # a mixture comparison must share one tokenizer, or the loss difference is partly a different alphabet.
     vocabulary, tokenizer_reused = _fit_or_reuse_vocabulary(plan, work, manifest, split)
@@ -676,14 +775,19 @@ def prepare_corpus(plan: ExperimentPlan) -> PreparedCorpus:
     # One window per character position of every side: on the repository's own 780 KB that is affordable,
     # on a 14.5M-character corpus it is not, and the machine running the experiment has the last word. A
     # skipped baseline is recorded as skipped rather than quietly omitted.
+    validation_units = _sampled_units(
+        split.validation, plan.max_validation_tokens, plan.effective_split_seed
+    )
+    test_units = _sampled_units(split.test, plan.max_test_tokens, plan.effective_split_seed)
+
     char_windows: dict[str, tuple[Any, Any]] = {}
     if plan.character_baseline:
         char_windows = {
             side: _character_batches(split_side, char_vocabulary, plan.character_context)
             for side, split_side in (
                 ("train", training_units),
-                ("validation", split.validation),
-                ("test", split.test),
+                ("validation", validation_units),
+                ("test", test_units),
             )
         }
 
@@ -700,16 +804,18 @@ def prepare_corpus(plan: ExperimentPlan) -> PreparedCorpus:
             max_tokens=plan.max_training_tokens,
         ),
         validation=pack_units(
-            split.validation,
+            validation_units,
             vocabulary,
             context_length=plan.context_length,
             track_documents=plan.document_masking,
+            max_tokens=plan.max_validation_tokens,
         ),
         test=pack_units(
-            split.test,
+            test_units,
             vocabulary,
             context_length=plan.context_length,
             track_documents=plan.document_masking,
+            max_tokens=plan.max_test_tokens,
         ),
         char_windows=char_windows,
         timings={"prepare_seconds": round(time.perf_counter() - started, 2)},
@@ -902,6 +1008,66 @@ def score_transformer(
     return _metrics(nats, targets, predictions, vocabulary)
 
 
+def _sampled_units(units: tuple[Any, ...], cap: int | None, seed: int) -> tuple[Any, ...]:
+    """Shuffle a side's documents with the split seed, so a token cap samples rather than slices.
+
+    Slicing would take the first works in catalogue order, which is one register; a seeded shuffle makes the
+    capped side a sample of every work the split held out.
+    """
+    if cap is None:
+        return units
+    shuffled = list(units)
+    random.Random(seed).shuffle(shuffled)
+    return tuple(shuffled)
+
+
+def _test_partition_metrics(
+    model: TrainedModel, prepared: PreparedCorpus, plan: ExperimentPlan
+) -> dict[str, Any]:
+    """Score each declared partition of the test side on its own packed stream.
+
+    A partition is a group prefix (a register, in the corpora this experiment uses). Each is packed
+    independently, so its tails differ by a few tokens from a slice of the whole test stream; the report
+    states the tokens and characters each block was scored over, which is what makes the number checkable.
+    """
+    if plan.test_partitions is None:
+        return {}
+    train_targets = [token for example in prepared.train.examples for token in example.targets]
+    baseline = UnigramBaseline.fit(train_targets, prepared.vocabulary.size)
+    uniform_value = log(prepared.vocabulary.size)
+    produced: dict[str, Any] = {}
+    for prefix in plan.test_partitions:
+        units = _sampled_units(
+            tuple(unit for unit in prepared.split.test if unit.group.startswith(prefix)),
+            plan.max_test_tokens,
+            plan.effective_split_seed,
+        )
+        if not units:
+            produced[prefix] = {"works": 0, "reason": "no test work matched this prefix"}
+            continue
+        batch = pack_units(
+            units,
+            prepared.vocabulary,
+            context_length=plan.context_length,
+            track_documents=plan.document_masking,
+            max_tokens=plan.max_test_tokens,
+        )
+        metrics = score_transformer(model, batch, prepared.vocabulary, plan=plan)
+        targets = [token for example in batch.examples for token in example.targets]
+        produced[prefix] = {
+            "works": len({unit.group for unit in units}),
+            "documents": batch.document_count,
+            "characters": sum(len(unit.text) for unit in units),
+            "tokens_scored": len(targets),
+            "metrics": metrics.as_dict(),
+            "uniform_nats": round(uniform_value, 6),
+            "unigram_nats": round(
+                sum(-baseline.log_probability(token) for token in targets) / max(1, len(targets)), 6
+            ),
+        }
+    return produced
+
+
 def _training_config(
     plan: ExperimentPlan, architecture: TransformerConfig | DecoderConfig
 ) -> TransformerTrainingConfig:
@@ -997,6 +1163,7 @@ def run_experiment(plan: ExperimentPlan, *, verbose: bool = False) -> dict[str, 
     artifact = outcome.artifact()
     model = artifact.to_model()
     test_metrics = score_transformer(model, prepared.test, prepared.vocabulary, plan=plan)
+    test_partition_metrics = _test_partition_metrics(model, prepared, plan)
     validation_metrics = score_transformer(
         model, prepared.validation, prepared.vocabulary, plan=plan
     )
@@ -1085,6 +1252,11 @@ def run_experiment(plan: ExperimentPlan, *, verbose: bool = False) -> dict[str, 
                 }
             ),
             "max_training_tokens": plan.max_training_tokens,
+            "max_validation_tokens": plan.max_validation_tokens,
+            "max_test_tokens": plan.max_test_tokens,
+            "validation_documents_packed": prepared.validation.document_count,
+            "test_documents_packed": prepared.test.document_count,
+            "shuffle_training_units": plan.shuffle_training_units,
             "training_documents_packed": prepared.train.document_count,
             "training_tokens_packed": prepared.train.tokens_available,
             "groups_per_side": groups_per_side(prepared.split),
@@ -1106,6 +1278,15 @@ def run_experiment(plan: ExperimentPlan, *, verbose: bool = False) -> dict[str, 
             "merges": prepared.vocabulary.merge_count,
             "fingerprint": prepared.vocabulary.fingerprint,
             "min_frequency": prepared.vocabulary.min_frequency,
+            "sample_characters": plan.tokenizer_sample_characters,
+            "sample_documents": len(_tokenizer_sample(plan, prepared.split))
+            if plan.tokenizer_sample_characters is not None
+            else len(prepared.split.train),
+            "sample_actual_characters": sum(
+                len(text) for text in _tokenizer_sample(plan, prepared.split)
+            )
+            if plan.tokenizer_sample_characters is not None
+            else sum(len(unit.text) for unit in prepared.split.train),
             "reused_from_cache": prepared.tokenizer_reused,
             "tokens_per_side": prepared.tokens,
             "test_characters_decoded": len(prepared.vocabulary.decode(targets)),
@@ -1148,6 +1329,7 @@ def run_experiment(plan: ExperimentPlan, *, verbose: bool = False) -> dict[str, 
                     else list(plan.training_group_prefixes)
                 ),
                 "max_training_tokens": plan.max_training_tokens,
+                "shuffle_training_units": plan.shuffle_training_units,
                 "effective_batch_size": outcome.config.effective_batch_size,
                 "positions_per_second": round(outcome.positions_per_second, 1),
                 "records": len(outcome.records),
@@ -1156,6 +1338,7 @@ def run_experiment(plan: ExperimentPlan, *, verbose: bool = False) -> dict[str, 
             },
             "validation": validation_metrics.as_dict(),
             "test": test_metrics.as_dict(),
+            "test_partitions": test_partition_metrics,
             "curve": [
                 {
                     "step": record.step,
