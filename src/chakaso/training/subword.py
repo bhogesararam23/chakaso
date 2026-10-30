@@ -34,6 +34,7 @@ dependency-free CI matrix, without a numerical framework in the way.
 from __future__ import annotations
 
 import codecs
+import heapq
 import json
 import re
 from collections import Counter
@@ -448,39 +449,80 @@ def train_subword_vocabulary(
     shapes: dict[tuple[int, ...], int] = {
         tuple(piece.encode("utf-8")): frequency for piece, frequency in counts.items()
     }
+    # An index from pair to the shapes that contain it, and a heap of pair counts. The first version of this
+    # loop scanned every shape on every merge, which is O(merges x shapes x shape length): on a
+    # multi-register corpus, where nearly every pre-tokenized piece is unique, that made a 4,096-merge fit
+    # take hours. The index makes a merge touch only the shapes the pair actually occurs in.
     pair_counts: Counter[tuple[int, int]] = Counter()
+    pair_to_shapes: dict[tuple[int, int], set[tuple[int, ...]]] = {}
     for shape, frequency in shapes.items():
         for pair, occurrences in _pair_multiset(shape).items():
             pair_counts[pair] += occurrences * frequency
+            pair_to_shapes.setdefault(pair, set()).add(shape)
+    # Entries are invalidated lazily: an entry is current only if its count still matches the counter.
+    heap: list[tuple[int, tuple[int, int]]] = [
+        (-count, pair) for pair, count in pair_counts.items()
+    ]
+    heapq.heapify(heap)
 
     merges: list[tuple[int, int]] = []
     while FIRST_MERGED_ID + len(merges) < target_size:
         # Most frequent pair wins; a tie breaks on the smaller pair so the rule sequence is a property of
         # the data alone, never of the order two equal counts happened to be stored in.
-        candidates = [
-            (pair, count) for pair, count in pair_counts.items() if count >= min_frequency
-        ]
-        if not candidates:
+        pair: tuple[int, int] | None = None
+        while heap:
+            negative, candidate = heapq.heappop(heap)
+            current = pair_counts.get(candidate, 0)
+            if current == -negative and current >= min_frequency:
+                pair = candidate
+                break
+        if pair is None:
             break
-        pair, _ = max(candidates, key=lambda item: (item[1], -item[0][0], -item[0][1]))
         merged = FIRST_MERGED_ID + len(merges)
         merges.append(pair)
 
-        updated: dict[tuple[int, ...], int] = {}
-        for shape, frequency in shapes.items():
-            if pair not in _pair_multiset(shape):
-                updated[shape] = updated.get(shape, 0) + frequency
+        affected = pair_to_shapes.pop(pair, set())
+        for shape in affected:
+            frequency = shapes.pop(shape, None)
+            if frequency is None:
                 continue
+            _remove_shape(pair_counts, pair_to_shapes, shape, frequency)
             new_shape = tuple(SubwordVocabulary._apply(list(shape), pair, merged))
-            _shift_counts(pair_counts, shape, new_shape, frequency)
-            updated[new_shape] = updated.get(new_shape, 0) + frequency
-        shapes = updated
+            existing = shapes.pop(new_shape, 0)
+            if existing:
+                _remove_shape(pair_counts, pair_to_shapes, new_shape, existing)
+                frequency += existing
+            shapes[new_shape] = frequency
+            for new_pair, occurrences in _pair_multiset(new_shape).items():
+                pair_counts[new_pair] += occurrences * frequency
+                pair_to_shapes.setdefault(new_pair, set()).add(new_shape)
+                heapq.heappush(heap, (-pair_counts[new_pair], new_pair))
 
     return SubwordVocabulary(merges=tuple(merges), min_frequency=min_frequency)
 
 
 def _pair_multiset(shape: Sequence[int]) -> Counter[tuple[int, int]]:
     return Counter(pairwise(shape))
+
+
+def _remove_shape(
+    pair_counts: Counter[tuple[int, int]],
+    pair_to_shapes: dict[tuple[int, int], set[tuple[int, ...]]],
+    shape: tuple[int, ...],
+    frequency: int,
+) -> None:
+    """Subtract one shape's pair contributions from the counters and the index."""
+    for pair, occurrences in _pair_multiset(shape).items():
+        remaining = pair_counts[pair] - occurrences * frequency
+        if remaining > 0:
+            pair_counts[pair] = remaining
+        else:
+            pair_counts.pop(pair, None)
+        holders = pair_to_shapes.get(pair)
+        if holders is not None:
+            holders.discard(shape)
+            if not holders:
+                pair_to_shapes.pop(pair, None)
 
 
 def _shift_counts(
