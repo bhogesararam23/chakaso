@@ -3,7 +3,8 @@
 Real problems with the current state, including the ones that are only
 inconvenient. An empty file here would mean nobody has looked.
 
-Last reviewed: 2026-10-30 (K-023 added by the whole-work split correction); before that 2026-10-29
+Last reviewed: 2026-11-01 (K-024 through K-029 added by the research campaign; K-024 is closed for the
+pre-E2612 records by `cfdcd1a` and left open for its residue); before that 2026-10-30
 (K-020 and K-021 added by the E2610 diagnosis, K-022 by the data review); before that 2026-10-24, as the whole-documentation audit of every doc against the code and the committed
 records. That pass added K-011 through K-019, narrowed K-001, rewrote K-002's stale component list and removed a
 drifting count from K-009; the rest of its output was corrected in the documents themselves.
@@ -601,6 +602,127 @@ records say. E2605/E2606 are unaffected in kind: their documents are whole files
 **What would close it:** a measured result on a corpus large enough that a whole-work split puts dozens of
 works on each side — E2612 is the first — and, after that, a re-measure of the reference configuration on
 such a corpus so the released number is not left carrying the qualifier.
+
+### K-024 — A measured tokenizer was not re-trainable, and the fix moved rather than removed the boundary
+
+**Impact: was Critical for the re-trainability rule; now closed for pre-E2612 records and open as a residue.**
+
+`train_subword_vocabulary` indexes pairs into a lazily invalidated heap. From `6f3274f` until `cfdcd1a` a pair
+whose count *fell* as an earlier merge rewrote its shapes had no remaining live heap entry, so when the stale
+entry surfaced it was discarded and the pair left the candidate set permanently — the loop chose less frequent
+pairs than the rule its docstring states. Measured 2026-11-01: against a brute-force reference the indexed loop
+disagrees from merge rank 8 and differs on 25 of 43 merges on a 43-piece fixture.
+
+The consequence was checked against a measured artifact, not argued. Re-fitting the exact E2608 training side
+(643 documents, 10,129,113 characters, 4,096 identifiers, `min_frequency` 3) under the defect produced
+fingerprint **`a1ef04f64739cd4b`**, not the record's **`b597eb34f13d9058`**, diverging at merge rank 5 across
+3,692 of 3,839 merges, and encoded 20 of its own training documents as 152,939 identifiers against the cached
+vocabulary's 152,053 (+0.583 %). E2608, E2611 and the released `chakaso-base@0.1.0` were therefore not
+re-trainable from `main`, contrary to [ADR-0036](../decisions/ADR-0036-corpus-snapshot-recovery-from-history.md).
+
+**What is fixed.** `cfdcd1a` re-arms a stale heap entry with its current count instead of dropping it. The same
+refit now returns `b597eb34f13d9058` and the 20-document count returns to 152,053, matching the cache exactly.
+Two regression tests compare the indexed loop against the reference on a fixture that triggers the failure; both
+fail against the pre-fix loop. Nothing in the suite caught the original change, because no test stated the rule
+independently of the implementation — the gap the reference function now closes.
+
+**What is not fixed.** (a) **Exactness is slower and the cost is not yet bounded.** 1.0M characters of the
+multi-register corpus fit in 6.6 s and 4.0M in 494 s, against the 29.2 s `6f3274f` measured at 4.0M, so the
+tokenizer sample a future run declares is now a budget decision rather than a formality. (b) **E2612 sits on the
+wrong side of the boundary.** Its vocabulary `434debe82f949347` was fitted by the defective loop, so current
+code cannot re-fit it; the record is reproducible only through
+`data/experiments/E2612/tokenizer/…`, a git-ignored cache. Its arm-to-arm comparison is untouched — both arms
+scored against the one shared vocabulary — but a re-run is a new tokenizer and therefore a new record.
+(c) Tokenizer caches are load-bearing for reproducibility and are excluded from the repository by
+[`../internal/engineering/artifact-policy.md`](../internal/engineering/artifact-policy.md).
+
+**What would close it:** a decision on where a vocabulary that a measured record cites may live, and a dated
+statement in each affected record of which code fitted its tokenizer.
+
+### K-025 — Whole-work runs report `dropped_duplicates: 0` while excluding documents
+
+**Impact:** Low for measurement; **High for provenance**, because the artifact misdescribes itself.
+
+`split_text_units` deduplicates by content digest before assigning sides (`src/chakaso/training/data.py:186-207`)
+and the document-level path carries the count into the split (`data.py:249`). The whole-work path returns
+`_split_whole_works(...)` (`data.py:217-223`), which builds its `UnitSplit` **without** `dropped_duplicates`
+(`data.py:332-336`), so the field defaults to empty and `subword_experiment.py:1268` prints 0.
+
+Measured in both E2612 reports: the pinned manifest maps 6,515 documents to the training side, the split holds
+6,512, and the three excluded are exactly one member of each reported duplicate group (`mathematics-pg634`'s
+`part-0003`, `part-0009`, `part-0011`; the `mathematics-pg633` halves remain). Both members of every pair were
+on the same side, so no leakage was removed and no number here is wrong. The defect is that no whole-work record
+can state its deduplication from its own report — which is the class of thing
+[ADR-0036](../decisions/ADR-0036-corpus-snapshot-recovery-from-history.md) exists to make unnecessary.
+
+**Not fixed.** One line of threading plus a test. **What would close it:** the field carries the count on both
+split paths, and a test asserts it for `whole_works=True`.
+
+### K-026 — Generation probes quote the repository's own headings at models trained on foreign text
+
+**Impact:** Medium. It invalidates the qualitative block of every external-corpus run so far, without touching a
+single loss number.
+
+`SubwordExperimentPlan.sample_prompts` defaults to `"repository"`, whose prompts are the
+`chakaso-repo-text-v1` section titles E2605 sampled with. E2612 trained two arms on Project Gutenberg and then
+described them by continuing `"# Chakaso\n\nChakaso is a"` and `"## Status\n\nThe retrieval layer"`. The plan's
+own comment at `src/chakaso/training/subword_experiment.py:225` states the problem — such a prompt "measures
+memorization of a corpus the model never saw, not behaviour on the corpus it trained on" — and the alternative is
+already implemented and seeded (`held_out`, `subword_experiment.py:979`, taking test-side document openings in
+order). E2608 and E2611 used `held_out` because their corpora *were* repository-derived; from E2612 on the
+default silently became the wrong thing.
+
+**Consequence for the record.** E2612's `looping_fraction` 0.4 against 0.6 and its bigram-repetition comparison
+between arms are reported as a defect, not as a finding about those models' text. Nothing about H1 or H2 depends
+on it.
+
+**Not fixed.** The default is still `repository`. **What would close it:** a run whose corpus is not
+`chakaso-repo-text-v1` either passes `--sample-prompts held_out` or is refused, so the wrong-probe condition
+cannot arise by omission; then E2612's generation block re-measured as a new record.
+
+### K-027 — A partition's `characters` is its population, not the scored denominator
+
+**Impact:** Medium — it is how an aggregate can be mis-weighted by 4.5× the materiality band.
+
+In `test_partitions[k]`, the top-level `characters` and `documents` describe the register's whole held-out pool
+(prose 12,414,225 characters), while `metrics.characters_scored` is what was scored (539,534) — a 23× gap. Both
+are plausible weights, and only one is the declared one. Recomputed from the E2612 artifacts, the technical
+aggregate difference is −0.27584 by scored characters (the preregistered choice), −0.27884 by tokens scored, and
+−0.18650 by the population field: a spread of 0.089 bits per character, and any of the three clears the 0.02
+band, so the **verdict survives the choice while the headline effect size does not**.
+
+**Not fixed.** The field names do not say which is which at the point of use. **What would close it:** the
+report renames the population fields or nests them, and a record that declares an aggregate names the weighting
+field, as E2612 now does in its sensitivity table.
+
+### K-028 — Cited report digests embed timings, so they are not reproducible across machines
+
+**Impact:** Medium for the reproduction contract, none for the measurements.
+
+`chakaso experiment model`'s report digest is the SHA-256 of the report file, and the file body records
+`wall_clock_s`, `positions_per_second`, `peak_resident_bytes` and `torch_threads` — all observed conditions on a
+shared CPU machine. Confirmed 2026-11-01: the "report digest" in E2612's run logs equals the file hash exactly
+(`3764ba3f…`, `295fbc7a…`). A faithful re-run therefore reproduces every metric and cannot reproduce the digest,
+which contradicts the promise that regenerating a report lets the hashes be compared.
+
+**Not fixed.** **What would close it:** either a content digest over the metric-bearing fields alone, printed
+beside the file hash, or documentation that says plainly that reproduction here means the numbers agree and the
+digests are identifiers, not checks.
+
+### K-029 — The corpus a selection rule sampled is not pinned, and the script says it is
+
+**Impact:** Medium. Every Gutenberg catalogue fit inherits it.
+
+`scripts/acquire_gutenberg_corpus.py:8` claims "the catalogue snapshot's digest is recorded beside the
+selection". `data/corpora/gutenberg-multiregister-v1/selection.json` was read: it records `selection_seed`
+20261030, the quotas, the character bounds and each accepted work's `url` and `sha256` — and **no URL, digest or
+retrieval date for the input `pg_catalog.csv`**, which E2612's reproduction block names only as a local file that
+is not in the repository. So the accepted works are pinned and reproducible, while the 61,900-row English
+population the seeded shuffle drew from is not. Measured 2026-11-01 the live catalogue is 5,597,116 bytes,
+last-modified 2026-10-25 — it moves, and a re-run of the rule is not the rule.
+
+**Not fixed.** **What would close it:** the selection report records the catalogue's URL, digest and retrieval
+date at write time, and the acquisition script's docstring is made true.
 
 ## Resolved
 
