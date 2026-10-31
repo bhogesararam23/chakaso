@@ -251,3 +251,105 @@ into training.
    multi-domain corpus. <https://arxiv.org/abs/2512.13961>
 8. Hugging Face. *SmolLM3.* Blog, 8 Jul 2025 — a staged small-model mixture with published ratios.
    <https://huggingface.co/blog/smollm3>
+
+## Annotations from the 2026-11-01 research campaign
+
+Sourced from [the data and licensing review](../internal/engineering/data-and-licensing-research-2026-11-01.md);
+each claim's verification status is in
+[the ledger](../internal/engineering/research-verification-ledger-2026-11-01.md).
+
+**D-01 — Observation, and the campaign's central licensing finding.** A web-corpus licence almost never
+reaches the text. ODC-By says so in its own words: "this license only governs the rights over the Database,
+and not the contents of the Database individually"
+([opendatacommons.org/licenses/by/1-0/](https://opendatacommons.org/licenses/by/1-0/), read 2026-11-01).
+FineWeb, FineWeb-Edu, RefinedWeb, Dolma, HPLT, Zyda and Ultra-FineWeb all license their *packaging* and pass
+the underlying terms to the user. "Free to read" and "free to reuse" are not the same claim, and only
+public-domain *content* closes the gap.
+
+**D-02 — Result.** Three dataset objects state a curator claim that cannot reach their own content:
+`Skylion007/openwebtext` tags a re-release of somebody else's scrape **CC0**;
+`project-numina/NuminaMath-CoT` tags **Apache-2.0** over material its own card says was "collected from online
+exam paper PDFs and mathematics discussion forums"; `hoskinson-center/proof-pile` tags **apache-2.0** over an
+arXiv subset whose text is licensed per author. Each is a licence statement about the wrong object. This is the
+concrete reason the curriculum requires the *source's own* statement rather than a curator's tag.
+
+**D-03 — Result, verified by resolving the identifier rather than trusting the citation.** `arXiv:2404.07944`,
+in circulation as a source for Llama 3's schedule choice, resolves to a quantum-bundles paper
+([ledger V-32](../internal/engineering/research-verification-ledger-2026-11-01.md)). Five identifiers used in
+this project's own drafts were wrong in the same way: BPE is **1508.07909** (07921 is a graph-drawing paper),
+"Beyond neural scaling laws" is **Sorscher et al. 2206.14486** and is about vision pruning, not Besiroglu;
+TinyBERT is **1909.10351**; 2310.12485 is not Mixture-of-Tokens and 2209.01649 is not μP.
+
+**D-04 — Limitation of the current corpus, measured rather than asserted.** Gutenberg cannot supply a modern
+register *by construction*. Its catalogue's `Issued` column is the Project Gutenberg release date, not the
+text's date — 60,360 of 61,900 English works show `Issued` ≥ 2000 — so that field carries no information about
+when the English was written, and no field in the catalogue does. Register **balancing** is available; register
+**modernisation** is not, and any plan that expects Gutenberg to age the corpus forward is wrong about the data.
+
+**D-05 — Observation.** The acquisition route is not blocked, only slow, and the whole collection is one
+object: `pg_catalog.csv.gz` is 5,597,116 bytes, last-modified 2026-10-25, with 79,674 rows of which 61,900 are
+English `Text`; the full plain-text archive `txt-files.tar.zip` is 11,322,987,679 bytes. One request replaces
+~650 politely spaced ones. Headroom for rebalancing is large and costs no new licence: `P` 32,971 /
+`Q`-excluding-`QA` 2,151 / `QA` 127 / `T` 1,514 / `R` 624 available against 220 / 90 / 35 / 60 / 25 pinned.
+
+**D-06 — Result, and a provenance gap in a measured record.** E2612's corpus is pinned at the work level — each
+accepted work's URL and SHA-256 sit in `selection.json` — but **the catalogue the selection rule sampled is
+not pinned**: no URL, no digest, no retrieval date, and E2612's reproduction block names only a local
+`pg_catalog.csv` that is not in the repository. The script's own docstring claims the opposite
+(`scripts/acquire_gutenberg_corpus.py:8`). Filed as **K-029**; under ADR-0036 a re-run of the rule is not the
+same rule.
+
+**D-07 — Recommendation with its licence quoted both halves.** The strongest candidate found is
+`iknowyoursecret/US-PD-Newspapers`: **CC0 over text the card states is public domain** — "All the materials are
+now part of the public domain and have no intellectual property rights remaining" and "The text can be used for
+model training and republished without restriction for reproducibility purposes" — spanning 1690–1963,
+measured at 1,000 parquet objects totalling 151.5 GB with the largest at 626 MB. It is the only large modern-ish
+source whose licence reaches the *text*. The card's own caveat is the work it creates: OCR noise, page headers,
+multi-column layout, so a boilerplate rule is mandatory rather than optional.
+
+**D-08 — Result.** The cheapest modern-English option, `HPLT/HPLT2.0_cleaned`, licenses packaging only — CC0
+over "the actual packaging of these text data", with the curators explicitly declining responsibility for EU
+Copyright Directive 2019/790 and GDPR. Its `eng_Latn_1` shard measured 104,293 rows and a **1,000-document mean
+of 4,122.9 characters → ≈430 million characters**, not the ≈0.9 billion first projected from one document
+([ledger V-20](../internal/engineering/research-verification-ledger-2026-11-01.md)) — one request, no gate,
+239 MB.
+
+**D-09 — Limitation found by looking at the rows, not the card.** That HPLT shard is not technical English.
+Row group 0 is `collection: archivebot`, crawled 2020-08-12, with content types including
+`application/rss+xml` and hosts like `steinarlene.wordpress.com`. Its `u` column carries a full URL and its
+`doc_scores` column carries nine 0–10 per-document quality scores, so **domain-grouped splitting and
+declarative quality selection are available rather than invented** — but the register must be measured on a
+slice before any arm is trained against it.
+
+**D-10 — Result, and the reason code stays out.** `bigcode/the-stack-v2` returned "Access to dataset
+bigcode/the-stack-v2 is restricted… Please log in" to an anonymous card fetch (verified 2026-11-01; `gated=auto`).
+More important than the gate: a *permissive filter* is a curation rule the curator applied, not a licence it
+holds, and BigCode frames the corpus as governance with takedown obligations. `nvidia/Nemotron-CC-v2` is worse
+for this project: a manual agreement, a "model training purposes only" restriction, and — verbatim from its card —
+that a model distributed from it "may be subject to redistribution and use requirements in the Qwen License
+Agreement and the DeepSeek License Agreement". A released `chakaso-base` cannot carry an obligation inherited
+from a teacher model's licence.
+
+**D-11 — Observation.** Claims of dataset withdrawal should be checked at the primary page before being
+written down. The Pile's widely reported 2024 retirement could **not** be verified: `pile.eleuther.ai` and the
+GitHub README read 2026-11-01 carry no notice, and the canonical download URL is the one that went offline.
+What can be stated is that its card names exactly one subset licence and that Books3 and BookCorpus2 have no
+evidence of author consent in either curator statement. Write the licence basis, not the rumour.
+
+**D-12 — Result, and an instrument caution.** HellaSwag's canonical repository `rowanz/hellaswag` is
+**DMCA-blocked** (GitHub API 2026-09-14, notice titled wikiHow), so the MIT licence its card points at cannot be
+read. Combined with a 25 % four-way floor, that makes it a poor basis for a claim — a concrete illustration that
+a named benchmark's licence and its provenance both have to be checkable before a small project cites a score.
+
+**D-13 — Interpretation.** The mixture question is now measurable and has never been measured here. E2612
+changed composition at fixed tokens and got **−0.27584** on technical registers and **+0.03026** on prose, with
+the gain widening monotonically with training (−0.133 → −0.237 across evaluations). The register shares it used
+are the *pool's*, not a design. The next data question is not whether to mix but at what prose share — and
+Shukor et al. (arXiv:2507.09404) report that "**Only 10-20 runs are needed to fit the scaling laws**" for
+mixture weighting, which is a cheaper programme than one capacity step.
+
+**D-14 — Limitation that bounds every conclusion here.** The corpus is one language and an archaic one, and
+E2612's record says plainly that "a result here does not transfer to modern web text without a new corpus and a
+new record". The instrument is also thin where the effect is largest: the mathematics register rests on **5**
+held-out works and medicine on **1** (46,592 scored tokens against ~250,000 elsewhere). A modern partition is
+not a nice-to-have; without one, the archaic-versus-modern question cannot be detected at all.

@@ -626,14 +626,17 @@ Two regression tests compare the indexed loop against the reference on a fixture
 fail against the pre-fix loop. Nothing in the suite caught the original change, because no test stated the rule
 independently of the implementation — the gap the reference function now closes.
 
-**What is not fixed.** (a) **Exactness is slower and the cost is not yet bounded.** 1.0M characters of the
-multi-register corpus fit in 6.6 s and 4.0M in 494 s, against the 29.2 s `6f3274f` measured at 4.0M, so the
-tokenizer sample a future run declares is now a budget decision rather than a formality. (b) **E2612 sits on the
-wrong side of the boundary.** Its vocabulary `434debe82f949347` was fitted by the defective loop, so current
-code cannot re-fit it; the record is reproducible only through
+**What is not fixed.** (a) **Exactness is slower, and the cost is now measured rather than feared.** On the
+multi-register corpus where nearly every piece is unique: 1.0M characters fit in 6.6 s, 4.0M in 494 s, and the
+12,663,402-character E2612 sample in **2,116.4 s (35.3 minutes)** — against the 29.2 s `6f3274f` measured at 4.0M
+and against E2612's own 145.55 s of total preparation. Vocabulary preparation is now a first-class budget item of
+every experiment plan, not a default. (b) **E2612 sits on the wrong side of the boundary.** Refitting its
+12.7M-character sample at 4,096 identifiers and `min_frequency` 3 under the fixed loop yields
+**`3abe4df4b123d4c5`**, not the record's **`434debe82f949347`**: its vocabulary was fitted *by the defect*, so
+current code cannot reproduce it and the record survives only through
 `data/experiments/E2612/tokenizer/…`, a git-ignored cache. Its arm-to-arm comparison is untouched — both arms
-scored against the one shared vocabulary — but a re-run is a new tokenizer and therefore a new record.
-(c) Tokenizer caches are load-bearing for reproducibility and are excluded from the repository by
+scored against the one shared vocabulary, so H1 and H2 stand — but a re-run is a new tokenizer and therefore a new
+record. (c) Tokenizer caches are load-bearing for reproducibility and are excluded from the repository by
 [`../internal/engineering/artifact-policy.md`](../internal/engineering/artifact-policy.md).
 
 **What would close it:** a decision on where a vocabulary that a measured record cites may live, and a dated

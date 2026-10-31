@@ -274,3 +274,76 @@ make the next model's claims falsifiable before it is trained, not to decorate a
 12. *GSM1k* — a contamination-focused re-evaluation of GSM8K-style math data (arXiv:2410.05229, 2024),
     cited as the kind of check this project must run before trusting a public math score.
     <https://arxiv.org/abs/2410.05229>
+
+## Annotations from the 2026-11-01 research campaign
+
+**B-01 — Observation, and the first property an instrument must have.** *The instrument must be able to detect
+the thing the experiment changed.* E2612 could detect a register effect because both arms were scored on
+held-out works of every register, and it reported −0.27584 on technical against +0.03026 on prose. It could
+**not** detect the archaic-versus-modern shift, because no side of any split is modern. That is a property of
+the instrument, not of the model, and it is the strongest argument in this document for adding a modern held-out
+partition.
+
+**B-02 — Result.** Held out means held out by *work* — and for web text, by **domain**. ADR-0042 and E2612's
+measured split (312/56/62 works, `works_on_multiple_sides: 0`) implement the work rule. A scraped corpus puts
+many pages on one host, so document-level splitting re-creates exactly the two-level leak K-023 recorded for
+books. This is available rather than invented: HPLT, FineWeb and FineWeb-Edu all ship a URL column, measured on
+2026-11-01 ([the review](../internal/engineering/data-and-licensing-research-2026-11-01.md)).
+
+**B-03 — Limitation of an existing score, found while reading the artifact.** E2612's medicine partition rests
+on **one** held-out work: 46,592 scored tokens where every other register had ~250,000, because the whole-work
+split placed a single medicine book on the test side. The register carrying 6 % of the weighted technical
+aggregate is the least supported number in the result. Preregistration should state a **minimum number of
+held-out works per partition**, not merely a minimum number of tokens — otherwise a thin register can carry an
+aggregate it cannot evidence.
+
+**B-04 — Result, and a trap that changed a headline number's meaning.** An aggregate can be mis-weighted by
+4.5× the materiality band without changing its verdict. In `test_partitions[k]` the top-level `characters` is the
+register's held-out *population* (prose 12,414,225) while `metrics.characters_scored` is what was *scored* (539,534)
+— 23× apart. E2612's technical difference is −0.27584, −0.27884 and −0.18650 under the three available weightings.
+All three clear the 0.02 band, so H1 survives; the effect size does not. A record that declares an aggregate must
+name the weighting field, which E2612 now does ([ledger V-05, K-027](../internal/engineering/research-verification-ledger-2026-11-01.md)).
+
+**B-05 — Interpretation.** Loss and text quality are decoupled at this scale, and the campaign has now
+measured it twice. E2612's better arm was the **more repetitive** one: `looping_fraction` 0.4 → 0.6 and mean
+bigram repetition 0.675527 → 0.712437 while held-out bits per character improved by 0.10825. Read with E2610's
+decoding diagnosis, the rule is: a held-out loss improvement is not evidence of better text, and a generation
+suite is not evidence of better modelling. Neither instrument may substitute for the other.
+
+**B-06 — Result, and a defect in the current generation block.** Every generation sample in E2612 carries
+`prompt_source: chakaso-repo-text-v1` — the probes continued *this repository's own section headings* against
+models trained on 19th-century Gutenberg text. The code already names the problem and already ships the
+alternative (`sample_prompts`, `subword_experiment.py:225` and `:979`); the default simply was not changed when
+the corpora became external. Filed as **K-026**. Consequence: E2612's qualitative samples describe the wrong
+domain and must not be reused as a finding about these models' behaviour.
+
+**B-07 — Observation.** On multiple-choice instruments the floor *is* the result. HellaSwag is 4-way (25 %),
+BLiMP is a 2-way minimal pair (50 %), and a 3.4M-parameter model trained on archaic prose will sit at or inside
+the noise of both. A floor score measures the instrument's lack of dynamic range, not a weakness in the model.
+That is why the honest instruments here remain loss-per-character on held-out works and per-paradigm deltas —
+and why a benchmark result should never be the first number a record publishes.
+
+**B-08 — Result, and a licence constraint on evaluation itself.** An instrument's licence has to be checkable
+before a score is cited. HellaSwag's canonical repository is **DMCA-blocked** (GitHub API, 2026-09-14, notice
+titled wikiHow), so the MIT licence its card names cannot be read. LAMBADA's two routes are a CC-BY card over
+BookCorpus-derived novels and a "Modified MIT" card that carries GPT-2's non-commercial clause — and
+BookCorpus circulates inside web scrapes, so it is contaminated by default and must be excluded from training by
+exact and n-gram overlap with the result recorded. BLiMP (CC-BY) and WikiText-103 (CC BY-SA) are readable, with
+WikiText usable as an **eval-only side** — a distinction worth writing explicitly, because the admission rule as
+written speaks of corpora, not of scoring.
+
+**B-09 — Recommendation, and the cheapest instrument that would tell us something new.** Add a
+**held-out-era partition**: self-authored modern technical documents, held out of training entirely, plus a
+slice of a modern corpus held out by domain. Self-authored text has no licence question at all, which is the
+right shape for a project that releases weights, and an era axis converts the archaic-transfer disclaimer in
+every current record into a measured number. Gutenberg cannot supply the axis by construction
+([D-04](chakaso-data-curriculum.md)); the newspaper corpus can, because its card carries a per-item `date`.
+
+**B-10 — Limitation, stated so it is inherited rather than rediscovered.** No instrument described in this
+document is evidence of language-model competence, and the campaign added no counter-example. The measurements
+available are about a data mixture, a decoding behaviour, and a training path. Published figures for other
+models are self-reported by their authors with one exception — multi-token prediction, which two independent
+groups measured and both found unmoved on language-modelling loss. A contamination detector is not on the
+roadmap: the published detection methods are documented as brittle (arXiv:2502.17259, 2406.18326, 2509.00072,
+2510.02386) and a project this size should be in the business of knowing what it trained on, not of running
+detectors over it.

@@ -1,6 +1,46 @@
 # Active task
 
-## Current unit: sourced research, a measured architecture answer, and the next data unit (2026-10-29, from `a2416d1`)
+# Active task
+
+## Current unit: settle E2612's confound, calibrate the band, and widen the instrument (2026-11-01, from `c9dd302`)
+
+**Goal.** Turn the 2026-11-01 research campaign's decision matrix into measured results: decide whether E2612's
+prose regression is mixture or dose, give the project its first seed spread for the decoder, fix the two
+measurement defects that would otherwise contaminate the next results, and add the one partition that lets the
+instrument detect the modernity shift every record currently only disclaims. This continues ADR-0041's ordering;
+it does not open an architecture front, because the campaign's evidence closed that route at this scale.
+
+**State at the start (measured).** `main` == `origin/main` == `cfdcd1a`+`c9dd302`; dependency-free
+**1,707 pass / 25 skip**, `[train,nn]` on the two subword modules **96 pass**; `mypy src` clean over 125 files.
+E2612's arms are complete on disk with a committed `results.json`. An arm costs ~90 minutes of CPU and ~2.5 GB
+peak resident at 3.4M parameters and 20M tokens; an exact 4,096-identifier tokenizer fit over a 12.7M-character
+sample costs **35.3 minutes** and is now a budgeted line item, not a default.
+
+**Do not start** the ~9.84M-parameter capacity step. E2612's own decision rule 2 forbids it on this evidence, and
+no source read in the campaign supports a capacity result at 3.4M that data weighting does not first.
+
+| Node | Task | Depends on | Acceptance | Status | Evidence |
+| --- | --- | --- | --- | --- | --- |
+| T0 | Record E2612 from its artifacts | — | results section, matched-condition table, all three weightings, committed aggregate | done | [`E2612/record.md`](../../experiments/E2612/record.md), [`results.json`](../../experiments/E2612/results.json) `0814220` |
+| T1 | Fix the merge-loop defect that broke re-trainability | — | reproduces `b597eb34f13d9058`; tests fail against pre-fix code | done | `cfdcd1a`, ledger V-24…V-29, [K-024](KNOWN_ISSUES.md) |
+| T2 | Campaign: audits, four reviews, 70 annotations, ledger, matrix | T0 | every claim re-checked or marked unverified | done | [`chakaso-research-campaign-2026-11.md`](../research/chakaso-research-campaign-2026-11.md), `c9dd302` |
+| T3 | **E2613 — P½ exposure control** (H8) | T0 | one arm at ~10M prose identifiers alone; prose partition compared against both E2612 arms; run with `--sample-prompts held_out` | **next** | [`hypotheses.md`](../research/hypotheses.md) H8 |
+| T4 | **Decoder seed spread** at the reference configuration | T0 | σ of test bits per character over 3 seeds; the 0.02 band justified or replaced | follows T3 | E2609 remains open; [`chakaso-compute-and-scaling-plan.md`](../research/chakaso-compute-and-scaling-plan.md) C-01 |
+| T5 | Fix the document-masking scorer asymmetry | — | held-out scoring applies masking as training does; a paired masked run becomes interpretable | open | H13 blocked; `nn_evaluation.py:72` vs `nn_training.py:688-694` |
+| T6 | Fix `dropped_duplicates` under whole-work splits | — | the field carries the count on both split paths; test fails pre-fix | open | [K-025](KNOWN_ISSUES.md) |
+| T7 | Acquire `us-pd-press-v1` with an era partition | T3, T4 | pinned snapshot, data card, licence quoted in both halves, per-object digests, selection rule written before download | open | [data review](../internal/engineering/data-and-licensing-research-2026-11-01.md), B-09 |
+| T8 | Prose-share reweighting sweep (H9) | T3 | one shared vocabulary; 25/50/75/100 % arms; declared primary comparison | open | decision matrix rank 3 |
+| T9 | Decide where a cited tokenizer lives | T1 | a written answer to K-024(c) | open | [artifact-policy](../internal/engineering/artifact-policy.md), K-017 |
+
+**Open questions the campaign could not close** are in
+[`open-questions.md`](../research/open-questions.md) (eight, dated 2026-11-01) and the falsifiable ones in
+[`hypotheses.md`](../research/hypotheses.md) (H8–H15). The sharpest: **no instrument in this repository is
+currently known to detect a real improvement in what the model has learned** — in E2612's own data, held-out loss
+and repetition moved in opposite directions.
+
+---
+
+## Previous unit: sourced research, a measured architecture answer, and the next data unit (2026-10-29, from `a2416d1`)
 
 **Goal.** Turn the open-model literature into a sourced direction, decide what Chakaso should become first,
 implement the highest-value model-path improvement the audit found, and answer E2608's architecture confound

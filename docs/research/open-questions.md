@@ -197,3 +197,66 @@ Calibration needs held-out data with outcome labels. Whether a small project can
 produce enough of it for a trustworthy reliability diagram is unknown. Until it is
 known, no numeric confidence is displayed anywhere
 ([transparency](../transparency.md#what-is-withheld)).
+
+## Questions the 2026-11-01 campaign could not close
+
+**Does a 0.02-bit materiality band mean anything without a noise floor?**
+The band is inherited from E2611's declaration, not calibrated. E2612's H1 cleared it 13.8×, which no plausible
+seed noise explains; its H2 missed it by 1.5×, which a single draw easily could. The project has a five-seed
+spread for the *character* model (E2602: mean test loss 1.80 ± 0.18 nats) and **none for the decoder at any
+size** — E2609 was never run. Until a seed spread exists at the reference configuration, every "inside the band"
+in this repository is an absence of evidence about a threshold that has not been measured.
+*What would answer it:* three seeds of the E2612-T configuration, ~4.5 hours, reporting the standard deviation of
+test bits per character.
+
+**Does the mixture damage prose, or did arm T simply read less prose?**
+Declared as a confound before E2612 ran, then measured: the training pool is 50.51 % prose by characters
+(52,513,592 of 103,964,830 over 6,515 documents), so at a shared 20,000,000-identifier cap the mixture arm saw
+roughly 10.1M prose identifiers against the control's 20.0M. The two explanations of the +0.03026 are
+indistinguishable from inside this design, and the honest answer is H8's third arm rather than more argument.
+
+**What does Chakaso's text look like on its own domain?**
+Unanswerable from the current artifacts: every generation sample in E2612 continued this repository's section
+headings while the models trained on Gutenberg (K-026), so the only qualitative evidence about two external-corpus
+models describes a corpus they never saw. The mechanism to fix it is implemented and seeded
+(`--sample-prompts held_out`); the measurement does not exist.
+
+**Which records are re-trainable without a git-ignored cache?**
+The campaign established the boundary's *existence* — E2608's vocabulary cannot be re-fitted by the code that
+shipped between `6f3274f` and `cfdcd1a`, and E2612's cannot be re-fitted by the code after it — but not which
+records survive a clean clone. [K-017](../agent/KNOWN_ISSUES.md) already notes that half the measured records
+carry no machine-readable evidence in the repository. Whether a vocabulary that a measured result cites is an
+artifact or a build input is an unresolved policy question under
+[artifact-policy.md](../internal/engineering/artifact-policy.md), not a bug.
+
+**How much does an exact byte-pair fit actually cost at the sizes the plan needs?**
+Answered for the sizes measured, still open beyond them. 1,002,483 characters of the multi-register corpus fit
+4,096 identifiers in 6.6 s, 4,014,828 in 494 s, and the 12,663,402-character E2612 sample in **2,116.4 s
+(35.3 minutes)** — against the 29.2 s the fast-but-wrong loop measured at 4.0M and the 145.55 s E2612 reported for
+*all* of its preparation. The curve is superlinear, so anything larger than 12.7M is unknown and probably worse.
+Every preparation estimate in this repository's records was made against the wrong loop, which is the same class
+of error as the smoke that was 11–14 % optimistic on throughput.
+
+**Can the model's distribution be judged by anything other than its loss?**
+The campaign strengthened the question rather than answering it. E2612's better arm produced *more* repetitive
+text (`looping_fraction` 0.4 → 0.6; mean bigram repetition 0.675527 → 0.712437), and E2610 already found that no
+decoding setting writes coherent text from the released checkpoint. So a held-out loss improvement and a
+generation-quality readout are not merely weakly correlated here — they moved in opposite directions. What
+instrument could detect a real improvement in *what the model has learned*, given that both current instruments
+disagree, is the open methodological problem, not the open engineering one.
+
+**Is archaic English the binding constraint, or 20M tokens?**
+Both records that could separate them are silent. E2612 says a result on this corpus "does not transfer to modern
+web text without a new corpus and a new record", and the data review found that Gutenberg cannot date its own
+register by construction (`Issued` is the release date; 60,360 of 61,900 English works show ≥ 2000). But no
+partition in any run is modern, so the corpus's *age* has never been measured — only assumed. The cheapest
+disambiguation is a matched-token arm on the licence-clean newspaper corpus, scored on a held-out-era partition;
+that experiment would also say whether 20M tokens is enough to see a register effect at all.
+
+**Should a re-run that cannot reproduce a digest be called a reproduction?**
+The artifacts say report digests are file hashes over bodies that include wall clock, throughput, peak RSS and
+thread count, so a faithful re-run reproduces every metric and no digest ([K-028](../agent/KNOWN_ISSUES.md)).
+`chakaso experiment model`'s own wording invites the hashes to be compared. Either the tool must emit a
+content-only digest over the metric-bearing fields, or the project must state plainly that reproduction means the
+numbers agree and treat digests as identifiers. Right now a reader can be misled in either direction, which is
+worse than an inconvenient hash.

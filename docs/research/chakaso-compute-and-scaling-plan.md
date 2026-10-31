@@ -145,3 +145,100 @@ It does not claim that a 10M-parameter model on 200M tokens will be useful. The 
 are 1–3B parameters and 3–11T tokens; a 10M model is a *learning-loop* scale, not a capability scale. The
 plan's purpose is to make the next measurement affordable and honest: enough data that repetition is not the
 binding constraint, enough tokens that the curve can turn, and a report that states what was actually spent.
+
+## Hardware and compute feasibility, measured 2026-11-01
+
+The E2612 arms are the first runs whose cost was recorded end to end on this machine rather than projected from
+a smoke. Numbers are from the two reports on disk; the arithmetic that uses them is labelled as derived.
+
+| Measured | Arm P (prose) | Arm T (mixture) |
+| --- | ---: | ---: |
+| Training throughput | 3,851.8 positions/s | 3,976.1 positions/s |
+| Wall clock, 2,400 steps including evaluation | 5,426.02 s (90.4 min) | 5,246.90 s (87.4 min) |
+| Preparation (tokenizer fit + packing) | 145.55 s cold | 57.02 s on a warm cache |
+| Peak resident set | 2,040.1 MB | 2,560.8 MB |
+| Identifiers packed for training | 20,000,402 | 20,000,103 |
+| Greedy generation | 59.61 characters/s | 78.34 characters/s |
+
+**C-01 — Result.** The smoke's projection was optimistic by 11–14 %. The record predicted ~73 min per arm from
+4,493.7 positions/s; the arms reported 3,851.8 and 3,976.1 and took 90.4 and 87.4 min. A throughput measured on
+a 60-step smoke with a 1,024-identifier vocabulary is not a rate, and planning against it costs 20 % of every
+subsequent estimate. Use the arm-level number.
+
+**C-02 — Observation.** Peak memory, not speed, is the tighter constraint on this host. 16.6 GB total with
+0.68 GB available at the start of the campaign, and one 3.4M arm peaked at 2,560.8 MB. Anything that multiplies
+the packed corpus in RAM — a larger tokenizer sample, a wider evaluation pack, several arms resident at once —
+bumps against the ceiling before it bumps against the clock.
+
+**C-03 — Result, and the campaign's most expensive surprise.** Exact byte-pair fitting is not free, and the
+number is bigger than expected: on the multi-register corpus where nearly every pre-tokenized piece is unique,
+1,002,483 characters fit in **6.6 s** and 4,014,828 characters in **494 s** — against the 29.2 s at 4.0M that
+the optimising commit measured. On the prose corpus, 10,129,113 characters fit in 25.6 s against 12.3 s. The
+heap may no longer discard work, so a tokenizer sample sized for the fast-but-wrong loop is a different budget
+decision now. See the timing table below.
+
+**C-04 — Result, and the number that changes the plan.** The curve is superlinear and it was measured to the end:
+1.0M characters in 6.6 s, 4.0M in 494 s, and the **12,663,402-character E2612 sample in 2,116.4 s — 35.3 minutes**
+for 3,839 merges. E2612 itself reported 145.55 s of *total* preparation, tokenizer fit and packing together. So
+exact fitting costs roughly **24× more preparation** than the run that produced the current record spent on all of
+it, and a tokenizer sample is now a budgeted experimental parameter rather than a default. Three mitigations are
+available and each trades something different: shrink the sample (the vocabulary is a property of the sample, so
+this changes comparability across records), fit once and cache it (which makes a git-ignored file load-bearing for
+reproducibility — [K-024](../agent/KNOWN_ISSUES.md)), or hold the vocabulary fixed across a whole experiment
+series so the fit is paid once. The third is the only one that costs no methodological clarity, and it should be
+the default for any multi-arm programme.
+
+**C-05 — Result.** An arm is ~90 minutes of CPU and ~2.5 GB of RAM at 3.4M parameters, 256 context and a
+20M-token budget. **Three arms — the E2613 exposure control — is ~4.5 hours, affordable in one evening, with no
+new hardware.** This is the cheapest place in the whole plan to buy a real answer, and it is the campaign's
+first recommendation for exactly that reason.
+
+**C-06 — Observation.** At the measured 3,900 positions/s, the ~9.84M-parameter step in
+[`chakaso-next-training-design.md`](chakaso-next-training-design.md) is not a 2× cost: parameters grow ~2.9×,
+and the same token budget with a wider model means fewer steps per second per parameter. Any capacity step
+should be preceded by a short throughput measurement at the new configuration, because every wall-clock figure
+in this repository has so far been inherited from a different model size.
+
+**C-07 — Result, and a limit no CPU workaround removes.** No amount of scheduling makes 200M+ tokens affordable
+here. At 3,900 positions/s a 200M-token run is ~14.3 hours of continuous CPU *before* evaluation, and the
+data review found no licence-clean corpus at that size that this project could prepare in RAM. GPU access is
+therefore a **data-quantity** requirement, not a speed preference: the point of a GPU is to afford tokens, not to
+finish sooner. Until then the honest plan stays inside the 20–80M-token band.
+
+**C-08 — Interpretation, and the trap in the current numbers.** Every trained artifact so far is truncated:
+E2608, E2611, E2612-P and E2612-T all completed `budget_ceiling` with `stopped_early: false` and validation
+still falling at the last evaluation. That means the repository's *absolute* bits-per-character values are floors,
+and comparisons between two truncated runs at equal tokens are still the most valid comparisons available. It
+also means "extend the budget" is a measurement, not a fix — and E2612's own arms show why: extending budget on a
+fixed pool means repeating it.
+
+**C-09 — Result, and the constraint that caps C-08.** Muennighoff et al. (arXiv:2305.16264) report that
+"training with up to 4 epochs of repeated data yields negligible changes to loss compared to having unique
+data". Chakaso's arms each packed 20,000,000 identifiers and trained 19,660,800 positions — **0.98 epochs of its
+own pool**. Reaching ~20 tokens per parameter by adding steps therefore means ~4 epochs of a fixed pool, which
+the literature says buys little. Xue et al. (arXiv:2305.13230) name dataset size and parameter count as the
+drivers of multi-epoch degradation, so tolerance is plausibly *lower* at 3.4M, not higher. More steps is not a
+substitute for more data; it is a way of measuring how much repetition costs.
+
+**C-10 — Observation.** The ~20 tokens-per-parameter figure has no authority at this scale and should stop
+being quoted as a target. It is arithmetic on Hoffmann's own Table 3 (400M→8.0B; 1B→20.2B — the literal phrase
+"tokens per parameter" does not appear in the text read), re-derived as ≈20 by Besiroglu et al.
+(arXiv:2404.10102) while disputing Hoffmann's confidence intervals, and contested by Schaeffer et al.
+(arXiv:2509.23963) as partly a unit-convention artefact. Chakaso is more than 20× below the smallest model in
+every one, and Hoffmann writes that "projections from very small models lead to different predictions than those
+from larger models". **Use the direction; do not use the number.**
+
+**C-11 — Result, and the one source at genuinely this scale.** Shi et al. (arXiv:2502.01481) ran a six-layer
+transformer over 12M/25M/50M-token slices and conclude that "deploying expansive context windows on constrained
+datasets guarantees suboptimal convergence". At context 256 on a 20M-token budget, Chakaso's context may be
+**too long rather than too short** — the opposite of the intuition the roadmap had. It is the most
+scale-appropriate source found in the campaign and it argues for a context-arm experiment, not a context
+increase.
+
+**C-12 — Result, and a schedule rule that is actually size-relative.** Porian et al. (arXiv:2406.19146;
+900+ runs, 55M–901M parameters) find that a long fixed warmup leaves "models suboptimally trained" and give the
+rule "set the number of warmup tokens to be identical to the model size N". Chakaso warms up for 200 steps ×
+8,192 positions = **1.64M tokens ≈ 0.48 N**, so its warmup is already near the recommended side. Wen et al.
+(arXiv:2410.05192) place the decay at ~10 % of steps, robust between 8 and 12 %. Both are cheap to test because
+they change no other variable — and E2612's still-descending curves are the symptom this class of result
+addresses.

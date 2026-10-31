@@ -359,3 +359,120 @@ revisions.
     `mistralai/Mixtral-8x7B-v0.1`, `microsoft/Phi-3-mini-4k-instruct` and `microsoft/phi-4`
     (apache-2.0, apache-2.0, mit, mit respectively), accessed 2026-10-30. The Gemma weights are under the
     Gemma Terms of Use; the model is gated and its licence was read from the model card, not the API.
+
+## Annotations from the 2026-11-01 research campaign
+
+These entries extend the ledger above with what the campaign's primary-source reading and E2612's measurement
+added. Each is one finding, with its source, what it is evidence for, and what it does not establish. Full
+reviews: [the frontier-family reading](../internal/engineering/open-model-research-llama-mistral-deepseek-2026-11-01.md),
+[the small-model family reading](../internal/engineering/open-model-research-qwen-olmo-gemma-phi-smollm-2026-11-01.md),
+and [the verification ledger](../internal/engineering/research-verification-ledger-2026-11-01.md), which says
+which of these were re-checked, which were corrected and at what confidence.
+
+**L-01 — Observation.** Of eleven frontier mechanisms examined (MQA, GQA, SWA, MoE, MLA, MTP, the 128K
+tokenizer, RoPE base-frequency scaling, WSD, FP8, R1's RL curriculum), the verdict distribution is
+**0 adopt as published, 1 adapt, 2 test experimentally, 8 reject** at 3.4M parameters on CPU. Confidence high
+as a reading of the primaries; it also agrees with E2612's measured direction. *Does not establish* that none
+of them helps — that the sources that invented them have not shown them helping at this scale.
+
+**L-02 — Result.** Llama 2's own Table 1 marks **7B ✗ GQA, 13B ✗ GQA, 70B ✓ GQA**, all at 2.0T tokens
+(arXiv:2307.09288, read in the body 2026-11-01). Grouped-query attention enters that family at 70B. "Llama
+uses GQA" is therefore wrong at 7B, and doubly wrong at 3,413,760 parameters. Independently verified — ledger
+V-31.
+
+**L-03 — Result.** The GQA paper itself (Ainslie et al., arXiv:2305.13245) measured only T5.1.1 Large and XXL:
+average quality 47.2 (MHA) → 47.1 (GQA-8) → 46.6 (MQA), latency 1.51 s → 0.28 s, with **no analysis below
+~0.77B**. Its reported win is serving latency and its quality cost is already negative at 0.8B. At `d_model`
+256 with 8 heads, "8 KV heads" is the identity map and 1 KV head deletes 458,752 parameters — 13.4 % of the
+model.
+
+**L-04 — Result, the most useful negative in the campaign.** Multi-token prediction is the one mechanism with
+two independent measurements, and on Chakaso's own metric both report nothing. Meta states verbatim that
+"**Multi-token prediction models are worse than the baseline for small model sizes, but outperform the
+baseline at scale**" (arXiv:2404.19737; smallest arm 300M). DeepSeek-V3's Table 4 leaves the *language-
+modelling* axis unmoved at 15.7B total — **Pile BPB 0.729 → 0.729**, and 0.658 → 0.657 at 228.7B — while BBH,
+GSM8K and HumanEval move. Chakaso's declared measurement is held-out bits per character: exactly the flat
+axis. REJECT, and specifically rather than by default. Verified from the body — ledger V-30.
+
+**L-05 — Interpretation.** A cargo-cult reading of L-04 would have looked like a win, because MTP's reported
+gains are in generative and math benchmarks — the axis a small project most wants to claim progress on. The
+two groups agree on the downstream movement *and* agree that likelihood metrics do not move. Reporting only
+the moving axis is how a mechanism survives contact with a summary, and it is the failure mode this project's
+"reported versus interpreted" rule exists to catch.
+
+**L-06 — Result.** Gemma 3, one generation after Gemma 2 introduced it, states "**we replace the soft-capping
+of Gemma 2 with QK-norm**" (arXiv:2503.19786, body; verified 2026-11-01, ledger V-19). The same report
+achieves its small-model quality by a different route: "**All Gemma 3 models are trained with knowledge
+distillation**." A trick its own authors drop within one generation is not a quality mechanism; this is the
+cleanest published demonstration of that distinction the campaign found.
+
+**L-07 — Observation.** Gemma 2's other mechanisms fare no better under its own numbers: the local/global
+sliding-window change moved measured quality about 1.63 → 1.64 perplexity, and Gemma 3 reversed the window
+policy (5 local layers per global, 1024-token local window). Gemma 2 used **GeGLU, not PerToken-Fn** — a
+misattribution that arrived in this campaign's own brief and was corrected by reading its Table 1 rather than
+propagated.
+
+**L-08 — Result.** Sliding-window attention is a literal no-op here: Mistral's window is **4,096** and
+Chakaso's entire context is **256**. Its reported wins are 2× throughput at 16K and an 8× cache reduction at
+32K. Adopting it would change the code path and measure nothing.
+
+**L-09 — Observation.** MQA, GQA, MLA, SWA, FP8 and MoE each answer a constraint Chakaso does not have. Its
+KV cache at this configuration is roughly 2 MiB, it has no FP8 unit, it runs one process on 18 CPU cores, and
+its device is why it is slow. These are cluster-economics mechanisms; the primaries measure them on bandwidth,
+tile scaling and dispatch, never on the axes Chakaso reports. Reject them for the reason, not the fashion.
+
+**L-10 — Result.** The vocabulary literature is real and does not reach this scale. Tao et al.
+(arXiv:2407.13623) give **N_vopt ∝ N^γ with γ ≈ 0.83** (verified in the body, ledger V-18) over 33M–3B, and
+Takase et al. (arXiv:2406.16508) find larger vocabularies better from 5k to 500k at a fixed 680M while noting
+that "restricted corpora suppress these advantages". **Neither tests below 33M**, and the 37K–43K figure
+quoted for 33M is the authors' projection from a low-cost measurement, not a measured 33M result.
+
+**L-11 — Interpretation, and why a local vocab sweep is legitimate rather than derivative.** At `d_model` 256
+with tied embeddings, 4,096 identifiers already consume **1,048,576 parameters — 30.7 %** of the model. A 128K
+or 152K table would be several times the size of the entire current model. The published optimum and
+Chakaso's parameter budget pull in opposite directions, and **no source resolves that collision below 10M
+parameters** — which is exactly what makes it an experiment this project can own.
+
+**L-12 — Observation.** Llama 3 justified its 128,256-token vocabulary with a measured compression number
+(3.17 → 3.94 characters per token, gpt2 → Llama-3), not with size. Chakaso already makes the equivalent
+measurement and never reads it comparatively: **2.0993 characters per token** at 4,096 identifiers on the
+E2612 test side. The transferable part of that tokenizer decision is the procedure, not the 128K.
+
+**L-13 — Result.** Warmup-stable-decay is the frontier mechanism whose evidence sits closest to this scale:
+arXiv:2410.05192 measures 0.1B–1.2B models on the Pile at 50/100/200B-token budgets, with WSD-S beating
+cyclic-cosine by about 4×10⁻² and described as "competitive with Cosine-Oracle in a single run". That is two
+orders of magnitude above 3.4M, not three. **TEST**, motivated by E2612's finding that both arms hit the step
+ceiling with validation still falling.
+
+**L-14 — Limitation, and a citation failure worth recording.** The claim that Llama 3 uses WSD could not be
+verified: the herd paper's own sections say cosine, and `arXiv:2404.07944` — the identifier circulating for
+that attribution — resolves to an unrelated quantum-bundles paper (ledger V-32). The WSD case therefore rests
+on 2410.05192 alone. Inheriting a famous model's choice without reading that model's paper is how a fabricated
+rationale enters a research plan.
+
+**L-15 — Observation.** The one thing in these reports that reliably puts capability into *small* models is
+teacher text, not architecture: R1-Distill-Qwen-1.5B reports MATH-500 83.9 from 800k R1 traces, and TinyStories
+reports coherent English below 10 million total parameters on GPT-3.5/GPT-4-generated stories. Both require a
+teacher, and this project's product is a scratch-trained model
+([ADR-0033](../decisions/ADR-0033-model-centred-product-contract.md)), so such data must be labelled
+teacher-derived and kept out of the released line.
+
+**L-16 — Result.** TinyLlama names the regime Chakaso is actually in, warning that scaling-law projections
+"may not predict accurately when smaller models are trained for longer"; it and SmolLM2 sit near 2,727 and
+6–15k tokens per parameter against Chakaso's **5.8**. The gap is not a scaling-law discovery — it is an
+unfinished run. E2611 and E2612 both report `completion: budget_ceiling` with `stopped_early: false`.
+
+**L-17 — Observation.** OLMo's reproducibility claim is concrete about what a run releases — data, logs,
+intermediate checkpoints and per-step traces (arXiv:2402.00838, arXiv:2501.00656) — where Chakaso releases a
+corpus fingerprint, a snapshot, a plan and a seven-point curve. Chakaso is stronger on **data identity** and
+weaker on **trajectory**. The cheap subset worth copying is per-step logs plus a few intermediate checkpoints,
+not the full annal; the review could not confirm a distinct per-batch traces artifact from primary text, so
+that part is not adopted on this reading.
+
+**L-18 — Interpretation, the campaign's synthesis.** The near-scale literature points at **data, schedule and
+tokenizer**; the architecture ledger points away from all eight frontier mechanisms at this size. Chakaso's one
+executed data experiment moved held-out bits per character by **0.27584** — larger than any mechanism in this
+ledger claims at 3.4M — by changing one variable, the corpus. Internal measurement and external reading now
+agree in direction, which is the strongest justification this project has for
+[ADR-0041](../decisions/ADR-0041-next-training-target-general-base-with-technical-mixture.md)'s ordering, and
+the weakest possible justification for an architecture change.

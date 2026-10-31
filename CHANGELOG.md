@@ -12,6 +12,72 @@ capability is implemented or still planned.
 
 ## Unreleased
 
+### 2026-11-01 — a measured result was not re-trainable, and the data lever turned out to cost prose
+
+**Fixed**
+
+- **The byte-pair merge loop no longer silently mis-selects merges** (`cfdcd1a`). The indexed heap added in
+  `6f3274f` for speed discarded a pair whose count fell when an earlier merge rewrote the shapes holding it, so
+  that pair left the candidate set and the loop chose a less frequent pair than the rule in its own docstring.
+  Re-fitting E2608's exact training side under the defect produced `a1ef04f64739cd4b` instead of the measured
+  `b597eb34f13d9058`, diverging at merge rank 5 and encoding that corpus 0.583 % worse — which made E2608, E2611
+  and the released `chakaso-base@0.1.0` unre-trainable from `main` under ADR-0036. The fix reproduces the recorded
+  fingerprint exactly. Two new tests compare the indexed loop against a brute-force reference of the documented
+  rule and fail against the pre-fix code; the previous 1,705-test suite had passed the behaviour change because no
+  test stated the rule independently of the implementation. **The cost is measured and it is real:** an exact
+  4,096-identifier fit over a 12.7M-character sample takes 35.3 minutes, against ~29 s at 4.0M for the
+  fast-but-wrong loop. E2612's own vocabulary was fitted by the defect and is now reproducible only from its
+  cache (K-024).
+
+**Measured**
+
+- **E2612 — the equal-token data experiment, now recorded.** At one fixed model, tokenizer, split, seed and
+  20,000,000-identifier budget, training across five registers instead of prose alone lowered held-out bits per
+  character on technical text by **0.27584** (13.8× the preregistered 0.02 materiality band; better on all four
+  technical partitions, mathematics gaining 0.46584) and won the whole mixed test pack by 0.10825 — while raising
+  prose by **0.03026**, outside the no-damage tolerance by 1.5×. Both arms reached the 2,400-step ceiling with
+  validation still falling, so all are floors. Under the record's own pre-declared rule this is **outcome 2, a
+  trade-off**: reweight before scaling. **No capability claim follows, and the campaign's data argues against one**
+  — the arm with the better loss produced the *more* repetitive text (`looping_fraction` 0.4 → 0.6).
+- **The confound E2612 declared in advance was measured.** Its training pool is 50.51 % prose by characters, so at
+  a shared cap the mixture arm saw roughly 10.1M prose identifiers against the control's 20.0M. The narrow prose
+  regression therefore cannot be attributed to the mixture rather than to dose, and deciding that is a single
+  90-minute third arm (H8), which is now the repository's highest-value open experiment.
+- **E2612's verdict does not depend on how its aggregate is weighted.** The technical difference is −0.27584 by
+  scored characters (the preregistered choice), −0.27884 by tokens scored and −0.18650 by the population field — a
+  0.089-bit spread, 4.5× the band, from identical artifacts. H1 holds under all three.
+- **Hardware feasibility, measured end to end for the first time.** An arm is ~90 minutes of CPU and ~2.5 GB peak
+  resident at 3.4M parameters and 20M tokens; the smoke's projection was 11–14 % optimistic. Three arms — the
+  exposure control — is ~4.5 hours on the current machine, and GPU access is a **data-quantity** requirement
+  rather than a speed preference.
+
+**Research**
+
+- A deep-research phase produced two code audits, four primary-source reviews, **70 numbered annotations** across
+  the research documents and a 33-row verification ledger, indexed in
+  [`docs/research/chakaso-research-campaign-2026-11.md`](docs/research/chakaso-research-campaign-2026-11.md) with
+  a decision matrix and a phased roadmap.
+- **The verdict on frontier architecture at this scale is 0 adopt, 1 adapt, 2 test and 8 reject**, on measured
+  grounds rather than taste: Llama 2's own Table 1 places GQA at 70B and not 7B; Meta states that multi-token
+  models "are worse than the baseline for small model sizes" and DeepSeek's Table 4 leaves language-modelling bits
+  per byte unmoved at 15.7B; Gemma 3 replaced Gemma 2's soft-capping with QK-norm one generation later while
+  keeping distillation; Mistral's 4,096-token sliding window exceeds Chakaso's entire context. Meanwhile the one
+  data experiment this project ran moved held-out loss by more than any of those mechanisms claims at 3.4M.
+- **Licensing finding that changes the data plan:** a web-corpus licence covers the curator's *packaging*, not the
+  text inside it — ODC-By says so in its own words — so FineWeb, FineWeb-Edu, Dolma, RefinedWeb and HPLT are
+  research-arm bases at best. The recommended modern source is a CC0 corpus over public-domain newspaper text
+  whose licence reaches the content, acquired with an **era partition**, because no held-out side in any run so far
+  is modern and the archaic-transfer disclaimer every record carries has never been measured. Gutenberg cannot fix
+  this by construction: its catalogue `Issued` field is the release date, not the text's date.
+- **Six issues filed** (K-024 … K-029). Three make a sentence in tracked text untrue: the acquisition script
+  documents a catalogue digest it never records; whole-work runs report `dropped_duplicates: 0` while excluding
+  documents; and the generation block probes external-corpus models with this repository's own section headings,
+  a misuse its own docstring warns against.
+- **The harness audit found no leak in the comparison machinery**, and that is worth recording as a result:
+  baselines fit training targets only, the tokenizer sample is drawn from the training side only, snapshots
+  re-hash every document body, artifacts are atomic and refuse to clobber, and E2612's arms are equal on ten
+  fields checked individually.
+
 ### 2026-10-29 — a character split across two generated tokens was destroyed
 
 **Added**

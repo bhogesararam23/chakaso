@@ -172,3 +172,70 @@ The fixture embedding built in [ADR-0023](../decisions/ADR-0023-dense-retrieval-
 explicitly non-semantic, so the retrieval-strategy comparison run today
 ([research-log E-001](research-log.md)) does **not** test this hypothesis — over the fixture it
 showed no gain and a small MRR regression. H7 remains untested.
+
+## Hypotheses the 2026-11-01 campaign adds, with what would falsify each
+
+Written after E2612 rather than before it, and each stated so that a single affordable run could overturn it.
+None has been tested; none is a restatement of H1–H7.
+
+**H8 — E2612's prose cost is exposure, not mixture.** *Statement:* at a fixed 20,000,000-identifier budget, an
+arm that sees ~10M prose identifiers and nothing else scores its prose partition within 0.02 bits per character
+of an arm that sees ~10M prose plus ~10M technical identifiers. *Why it is live:* E2612 declared in advance that
+its 20M cap covers ~80 % of the prose pool but ~42 % of the mixture pool, so the control saw roughly twice the
+prose of the treatment — the measurement now shows the pool is 50.51 % prose by characters, and the prose
+partition differs by 0.03026, only 1.5× the band. *Falsified by:* a third arm (P½) landing materially better on
+prose than the mixture arm at equal prose exposure. *Cost:* one 90-minute run, no new machinery.
+
+**H9 — The mixture has an interior optimum in prose share.** *Statement:* held-out bits per character over a
+mixed register corpus is minimised at some prose share strictly between 0 % and 100 %, and that share is
+measurable with a handful of points. *Why:* E2612 moved composition once, at one point (≈42 % of the pool
+reachable), and got −0.27584 technical against +0.03026 prose. The trade-off exists; its shape does not.
+*Falsified by:* a monotone sweep whose optimum sits at a declared boundary. *Cheap because:* Shukor et al.
+(arXiv:2507.09404) report that only 10–20 runs are needed to fit mixture scaling laws — a claim about *their*
+scale that this project should test rather than assume.
+
+**H10 — Budget extension on a fixed pool does not close the truncation gap.** *Statement:* raising the step
+ceiling at a fixed 20M-identifier pool leaves held-out loss above what a same-token run on 20M *unique*
+identifiers reaches. *Why:* every artifact so far completed `budget_ceiling` with validation still falling, so
+"train longer" looks free — and Muennighoff et al. (arXiv:2305.16264) report that up to 4 epochs of repeated data
+yields negligible change versus unique data, while Xue et al. (arXiv:2305.13230) make degradation depend on
+dataset size and parameter count. E2612's arms sat at **0.98 epochs**. *Falsified by:* an epoch-sweep whose held-out
+loss keeps falling at 4 epochs at the same rate it fell from 0 to 1.
+
+**H11 — Context 256 is too long for a 20M-token budget.** *Statement:* at fixed parameters and tokens, a
+shorter context reaches lower held-out bits per character than 256. *Why:* Shi et al. (arXiv:2502.01481) ran a
+six-layer transformer over 12M/25M/50M-token slices and conclude that "deploying expansive context windows on
+constrained datasets guarantees suboptimal convergence" — the most scale-appropriate source the campaign found,
+and it points the opposite way to the roadmap's assumption that context should grow. *Falsified by:* a matched
+64/128/256 sweep where 256 wins outright.
+
+**H12 — Vocabulary 4,096 is not the binding constraint at 3.4M.** *Statement:* sweeping the fitted vocabulary
+over {2k, 4k, 8k, 16k} **with total parameters held fixed** (narrowing the feedforward to pay for a larger table)
+moves held-out bits per character by less than 0.02. *Why:* the published optimum grows with model size
+(γ ≈ 0.83, arXiv:2407.13623) and would put 33M near 37K+, but 4,096 identifiers already consume 1,048,576
+parameters — 30.7 % of this model — so the published direction and this budget collide, and no source resolves it
+below 10M. *Falsified by:* any arm outside the band.
+
+**H13 — Document-boundary masking earns its cost at this context length.** *Statement:* enabling
+`document_masking` lowers held-out bits per character on the shared pack at matched tokens. *Why:* the mechanism
+exists ([ADR-0040](../decisions/ADR-0040-document-boundary-attention-masking.md)) and has never been run; packing
+concatenates documents inside a 256-position window, so attention currently crosses document boundaries.
+*Falsified by:* a masked arm indistinguishable from its unmasked control — a plausible outcome given that
+E2612's documents are ~4 KB chapter slices and a 256-token window rarely spans a boundary. *Note:* the audit
+found masking applied in training and validation loss but **not** in the held-out scorer
+(`nn_evaluation.py:72` against `nn_training.py:688-694`), so this hypothesis cannot be tested honestly until that
+asymmetry is fixed.
+
+**H14 — Technical gains concentrate where control loss is largest.** *Statement:* across register partitions, the
+improvement from adding a register is monotonically related to that partition's control bits per character. *Why:*
+E2612's one observation fits it — mathematics, the partition with the highest control loss (3.04361 against
+1.99522–2.18647), improved most (−0.46584). *Falsified by:* any sweep where a well-modelled register gains more
+than a poorly-modelled one. *Limit:* one experiment, one corpus, and the partitions differ 5× in held-out support.
+
+**H15 — A measured record cannot be re-trained without its git-ignored cache.** *Statement:* with the tokenizer
+and corpus caches removed, a re-run of E2608 or E2612 either fails or produces a different artifact. *Why:* the
+campaign proved the sharp half of this — refitting E2608's train side under the pre-fix loop yielded
+`a1ef04f64739cd4b` instead of the recorded `b597eb34f13d9058`, and after the fix E2612's own vocabulary
+`434debe82f949347`, fitted by the defective loop, can no longer be re-fit at all. *Falsified by:* a clean re-run
+from a fresh clone that reproduces the recorded fingerprints. *This one is testable in an hour and decides whether
+tokenizer caches belong in the repository.*

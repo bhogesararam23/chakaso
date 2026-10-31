@@ -1,7 +1,59 @@
 # Current state
 
-Last updated: 2026-10-29, after E2611, the open-model research package and ADR-0040/ADR-0041. The 2026-10-24
-state below is retained as the context E2611 was run against.
+Last updated: 2026-11-01, after E2612, the 2026-11-01 research campaign and the byte-pair merge-loop fix. The
+2026-10-29 state below is retained as the context E2612 was run against.
+
+**E2612 ran both arms on 2026-10-30 and is now recorded.** At a fixed model, tokenizer, split, seed and
+20,000,000-identifier budget, training across five registers instead of prose alone lowered held-out bits per
+character on the technical aggregate by **0.27584** (13.8× the preregistered 0.02 band; better on all four
+technical partitions; the whole mixed test pack by 0.10825) while raising prose by **0.03026** — outside the
+no-damage tolerance by 1.5×. That is its declared **decision rule 2: a trade-off**, so ADR-0041's capacity step is
+not licensed by it and the data lever is real but not free. Both arms again selected the 2,400-step ceiling with
+validation still falling, so every number is a floor. **No capability claim follows**: the arm with the better
+loss produced the *more* repetitive samples (`looping_fraction` 0.4 → 0.6), which extends E2610's finding rather
+than contradicting it. [E2612](../../experiments/E2612/record.md), with a committed
+[`results.json`](../../experiments/E2612/results.json).
+
+**The declared confound is now measured, and it is the next experiment.** The training pool is 50.51 % prose by
+characters, so at a shared cap the mixture arm saw roughly **10.1M** prose identifiers against the control's
+20.0M. E2612's narrow H2 failure therefore cannot be attributed to the mixture rather than to prose dose, and a
+third arm at ~10M prose identifiers alone (H8) is the cheapest open answer in the repository.
+
+**A measured result was not re-trainable, and now is.** The byte-pair merge loop indexed in `6f3274f` discarded a
+pair whose count fell as an earlier merge rewrote its shapes, so it no longer chose the pair its docstring names.
+Re-fitting E2608's own training side produced `a1ef04f64739cd4b` against the recorded `b597eb34f13d9058`,
+diverging at merge rank 5 and encoding that corpus 0.583 % worse. `cfdcd1a` fixes it and reproduces
+`b597eb34f13d9058` exactly; two regression tests compare the indexed loop against a brute-force reference of the
+documented rule and **both fail against the pre-fix code** — the previous 1,705-test suite passed the behaviour
+change because no test stated the rule independently. Residue: exact fitting costs **35.3 minutes** for a
+12.7M-character sample (against ~29 s at 4.0M for the wrong loop), and E2612's own vocabulary, fitted by the
+defect, is now reproducible only through its git-ignored cache.
+[K-024](KNOWN_ISSUES.md), [ledger V-24…V-29](../internal/engineering/research-verification-ledger-2026-11-01.md).
+
+**The 2026-11-01 research campaign is filed, and it changed no architecture.** Two code audits, four primary-source
+reviews (eleven frontier mechanisms, five small-model families, the scaling and data foundations, and every
+candidate corpus with its licence read at the source), 70 numbered annotations across the research documents, and
+a 33-row verification ledger. Index, decision matrix and roadmap:
+[`chakaso-research-campaign-2026-11.md`](../research/chakaso-research-campaign-2026-11.md); closing report:
+[`research-campaign-report-2026-11-01.md`](../internal/engineering/research-campaign-report-2026-11-01.md).
+The verdict on frontier architecture at this scale is **0 adopt, 1 adapt, 2 test, 8 reject**, on measured grounds:
+Llama 2's own Table 1 puts GQA at 70B, Meta states multi-token models "are worse than the baseline for small
+model sizes", Gemma 3 dropped Gemma 2's soft-capping a generation later, and Mistral's 4,096-token sliding window
+exceeds Chakaso's entire context. Its licensing finding is that a web corpus licenses its **packaging**, not its
+text, so the recommended modern source is a CC0 public-domain newspaper corpus rather than a better-known filtered
+web dump. Five issues were filed alongside K-024 (K-025 … K-029), three of which make a sentence in tracked text
+untrue.
+
+**What the campaign did not find is also state.** It looked for a leak in the measurement comparison machinery and
+did not find one: baselines are fitted on training targets only, the tokenizer sample is drawn from the training
+side only, snapshots re-hash every document body, artifacts are written atomically and refuse to clobber, and
+E2612's arms are equal on ten fields checked individually. **The next unit** is E2613's exposure control, not a
+capacity step, and E2609's decoder seed spread remains open — the 0.02 materiality band is still an inherited
+convention rather than a measured noise floor.
+
+---
+
+Previous state, 2026-10-29, after E2611, the open-model research package and ADR-0040/ADR-0041.
 
 **E2611 answered E2608's confound.** A 1,018,240-parameter decoder — the control's width, depth, heads,
 feed-forward, vocabulary, context, data, split, seed, batch shape, token budget and schedule, with 1.8% fewer
