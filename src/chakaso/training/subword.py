@@ -459,7 +459,10 @@ def train_subword_vocabulary(
         for pair, occurrences in _pair_multiset(shape).items():
             pair_counts[pair] += occurrences * frequency
             pair_to_shapes.setdefault(pair, set()).add(shape)
-    # Entries are invalidated lazily: an entry is current only if its count still matches the counter.
+    # Entries are invalidated lazily: an entry is current only if its count still matches the counter. A
+    # popped entry whose count has moved is re-armed with its current count rather than dropped, because a
+    # pair whose count fell has no other live entry, and discarding it here would hide a still-eligible pair
+    # from the rule that names the most frequent one.
     heap: list[tuple[int, tuple[int, int]]] = [
         (-count, pair) for pair, count in pair_counts.items()
     ]
@@ -473,9 +476,15 @@ def train_subword_vocabulary(
         while heap:
             negative, candidate = heapq.heappop(heap)
             current = pair_counts.get(candidate, 0)
-            if current == -negative and current >= min_frequency:
-                best = candidate
-                break
+            if current == -negative:
+                if current >= min_frequency:
+                    best = candidate
+                    break
+            elif current >= min_frequency:
+                # The entry is stale because the count moved after it was pushed. Re-arm the pair with its
+                # current count instead of discarding it: a pair whose count *fell* has no other live entry,
+                # and dropping it here would make it invisible to the rule and let a less frequent pair win.
+                heapq.heappush(heap, (-current, candidate))
         if best is None:
             break
         merged = FIRST_MERGED_ID + len(merges)

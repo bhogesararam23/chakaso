@@ -9,6 +9,8 @@ is refused rather than half-loaded.
 from __future__ import annotations
 
 import json
+from collections import Counter
+from itertools import pairwise
 from pathlib import Path
 
 import pytest
@@ -123,6 +125,84 @@ def test_a_bigger_vocabulary_compresses_the_same_text_further() -> None:
 
     assert small.token_count(_CORPUS) > large.token_count(_CORPUS)
     assert large.compression_ratio(_CORPUS) > small.compression_ratio(_CORPUS)
+
+
+def _reference_train(
+    texts: list[str], target_size: int, min_frequency: int
+) -> tuple[tuple[int, int], ...]:
+    """The documented rule, implemented the slow obvious way, to hold the indexed loop to it.
+
+    ``train_subword_vocabulary`` keeps an index from pair to shape and a lazily invalidated heap so that a
+    merge touches only the shapes the pair occurs in. That is the whole reason it can fit a 4,096-word
+    vocabulary on a corpus where nearly every piece is unique, and it is also where a subtle error hides: a
+    pair whose count *falls* has no other live heap entry, so a naive invalidation discards it and the loop
+    goes on choosing a less frequent pair than the rule names. This reference rescans every shape on every
+    merge — the behaviour the indexed loop promises and the only way to be sure it still does it.
+    """
+    counts: Counter[str] = Counter()
+    for text in texts:
+        counts.update(pre_tokenize(text))
+    shapes: dict[tuple[int, ...], int] = {
+        tuple(piece.encode("utf-8")): n for piece, n in counts.items()
+    }
+    merges: list[tuple[int, int]] = []
+    while FIRST_MERGED_ID + len(merges) < target_size:
+        pair_counts: Counter[tuple[int, int]] = Counter()
+        for shape, frequency in shapes.items():
+            for pair, occurrences in Counter(pairwise(shape)).items():
+                pair_counts[pair] += occurrences * frequency
+        eligible = [(count, pair) for pair, count in pair_counts.items() if count >= min_frequency]
+        if not eligible:
+            break
+        # Most frequent pair wins, ties broken on the smaller pair — the same stated rule, read off a full
+        # recount rather than a heap that may have lost track of it.
+        _, winner = max(eligible, key=lambda item: (item[0], -item[1][0], -item[1][1]))
+        merged = FIRST_MERGED_ID + len(merges)
+        merges.append(winner)
+        collapsed: dict[tuple[int, ...], int] = {}
+        for shape, frequency in shapes.items():
+            joined = tuple(SubwordVocabulary._apply(list(shape), winner, merged))
+            collapsed[joined] = collapsed.get(joined, 0) + frequency
+        shapes = collapsed
+    return tuple(merges)
+
+
+#: Twenty repetitions of one line: 43 distinct pieces, deep enough for pair counts to fall as merges
+#: collapse the shapes that held them, and small enough for the reference rescans to run in milliseconds.
+_DEEP_CORPUS = [
+    " ".join(
+        [
+            "the thief breathed through the threshold and the brother brought broth.",
+            "a thread of strength stretched through the threshold of the commonwealth.",
+            "the author authored an authoritative authority for the authors of history.",
+            "sound is resounded and a surrounding ground is grounded round about.",
+            "the little girl will still fill the hill with a bill and a billion bills.",
+        ]
+    )
+] * 20
+
+
+def test_the_indexed_merge_loop_still_chooses_the_most_frequent_pair() -> None:
+    """The indexed loop must equal the rule it documents, merge for merge."""
+    trained = train_subword_vocabulary(_DEEP_CORPUS, target_size=300, min_frequency=2)
+
+    assert trained.merges == _reference_train(_DEEP_CORPUS, 300, 2)
+
+
+def test_a_pair_whose_count_falls_during_a_merge_is_still_eligible() -> None:
+    """The specific failure the indexed heap has to survive.
+
+    Merging one pair rewrites the shapes that held it, and a *different* pair sharing those shapes loses
+    occurrences. If that reduced pair is no longer the most frequent it must still be found when it becomes
+    the most frequent later — a discarded heap entry is how it used to vanish.
+    """
+    merges = _reference_train(_DEEP_CORPUS, 300, 2)
+    trained = train_subword_vocabulary(_DEEP_CORPUS, target_size=300, min_frequency=2)
+
+    # A reference fit of this size does reduce counts as it goes, so the two sequences agreeing is evidence
+    # about the heap and not evidence about a corpus where nothing ever changes.
+    assert len(merges) > 20
+    assert trained.merges[: len(merges)] == merges
 
 
 def test_training_stops_early_when_the_data_runs_out() -> None:
