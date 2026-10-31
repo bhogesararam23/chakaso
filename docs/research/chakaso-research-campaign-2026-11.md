@@ -23,7 +23,7 @@ undocumented when this campaign began.
 | 3 | Architecture and implementation gap analysis | §3 below, plus the two audits |
 | 4 | Data and licensing research | [data-and-licensing-research](../internal/engineering/data-and-licensing-research-2026-11-01.md), 14 annotations in [chakaso-data-curriculum.md](chakaso-data-curriculum.md) |
 | 5 | Training and scaling research | [foundations-research](../internal/engineering/foundations-research-2026-11-01.md), 12 annotations in [chakaso-compute-and-scaling-plan.md](chakaso-compute-and-scaling-plan.md) |
-| 6 | Tokenizer and context-length assessment | L-10 to L-12, C-11, H11, H12; the tokenizer defect in §2 |
+| 6 | Tokenizer and context-length assessment | [chakaso-tokenizer-and-context-assessment.md](chakaso-tokenizer-and-context-assessment.md) — T-01…T-13, with the vocabulary and context sweeps specified as H11/H12 |
 | 7 | Capability and benchmark strategy | 10 annotations in [chakaso-capability-benchmarks.md](chakaso-capability-benchmarks.md) |
 | 8 | Hardware and compute feasibility | "Hardware and compute feasibility, measured 2026-11-01" in [chakaso-compute-and-scaling-plan.md](chakaso-compute-and-scaling-plan.md) |
 | 9 | Research annotations, with a count | **70**, indexed in §4 |
