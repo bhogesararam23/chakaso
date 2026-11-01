@@ -924,3 +924,42 @@ reported, never enforced, because the historical records are what they are.
 not chunks of a larger work needs no grouping, and grouping a corpus whose first path segment is not a work
 would invent a boundary the corpus never declared. [K-023](../agent/KNOWN_ISSUES.md) keeps the gap open until
 a measured result exists on a corpus where a work split puts dozens of works on each side.
+
+
+## 2026-11-01 — A provenance fix moved a cache key, the citations were audited against arXiv, and the seed-spread arithmetic changed the plan
+
+**Type:** observation + correction + decision ([ADR-0043](../decisions/ADR-0043-training-stages-are-separated-by-what-changes-and-entered-by-gates.md),
+[ADR-0044](../decisions/ADR-0044-a-vocabulary-a-record-cites-is-committed-beside-it.md), K-024…K-029).
+
+**Observation 1 — a fix to a report moved an identity.** The same-day campaign filed K-025 (a whole-work split
+reported `dropped_duplicates: 0` while excluding three documents). The fix made the split carry them. E2613's first
+launch, minutes later, wrote a second tokenizer file beside E2612's in the shared cache directory: it had missed the
+cache and fitted a different vocabulary (`2f747d1f…` against `2dd2f527…`). Cause: `UnitSplit.fingerprint` hashed the
+dropped-duplicate list, the tokenizer cache is keyed on that fingerprint, so reporting the duplicates changed the key.
+The launch was not caught by the record, which said "read, not re-fitted" without checking it would hit.
+
+**Interpretation.** A report becoming more complete must not change an identity; the guard that would have stopped
+this was missing, not the fix wrong in intent. *Corrections made:* the fingerprint covers the side assignment only
+(E2612's split reproduces `adf650435c3a9068` from the pinned snapshot, with its three duplicates now reported),
+`--expected-tokenizer-fingerprint` makes a vocabulary mismatch a refusal before the first step, and the E2613 record
+carries a dated deviation section written before any result existed.
+
+**Observation 2 — the documentation's citations, checked against arXiv.** All 106 distinct identifiers resolve; 47 of 47
+named first authors are right; 131 of 261 citations are corroborated by author, title or date and 122 could not be
+checked from their line. Three defects in two entries were found and corrected: the OLMo 2 report cited under Ai2's
+announcement title and a date that was the identifier's month, and Gemma 2 dated by identifier month as well. This
+audits existence and attribution, **not** whether a sentence says what the paper found.
+
+**Observation 3 — what three seeds can establish.** For a standard deviation estimated from *n* runs (approximately
+normal variation assumed), the 95 % interval is 0.52–6.29× the sample value at *n* = 3, 0.60–2.87× at 5 and
+0.69–1.83× at 10. Pythia, the one small-model family that publishes seed variants, released ten per size from 14M to
+410M. *Decision:* the decoder seed spread is preregistered as E2614 with **five** seeds, and rules that turn the
+spread into a verdict on the inherited 0.02 band.
+
+**Decisions.** ADR-0043 separates base pretraining, mid-training and post-training by the one thing each changes and
+gates entry to each on a measurement that does not exist yet. ADR-0044 commits the one vocabulary a record cites that
+no command can refit.
+
+**Limitations.** Nothing in this entry is a model result. E2613 has no valid result at the time of writing; E2614 has
+none either. The citation audit cannot see a well-formed citation of the right paper that misstates it. The seed
+arithmetic assumes normality that five points cannot test.
