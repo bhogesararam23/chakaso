@@ -540,3 +540,38 @@ def test_a_vocabulary_save_is_staged_and_does_not_replace_a_file_unasked(tmp_pat
     assert SubwordVocabulary.load(target).fingerprint == vocabulary.fingerprint
     other.save(target, allow_overwrite=True)
     assert SubwordVocabulary.load(target).fingerprint == other.fingerprint
+
+
+def test_the_committed_english_vocabulary_has_no_merge_for_four_non_latin_scripts() -> None:
+    """The multilingual note's byte-fallback finding, as an executable fact.
+
+    A vocabulary fitted on English text learns no merge that applies to Cyrillic, Arabic, Devanagari or Han, so each
+    of those scripts costs exactly one token per UTF-8 byte and still round-trips. The sentences are the note's own.
+    """
+    path = (
+        Path(__file__).resolve().parent.parent
+        / "experiments"
+        / "E2612"
+        / ("vocabulary-434debe82f949347.json")
+    )
+    vocabulary = SubwordVocabulary.load(path)
+    sentences = {
+        "Russian": "Река протекает через старый город, а вечером рынок наполняется людьми.",  # noqa: RUF001 - the script is the point
+        "Arabic": "يمر النهر عبر المدينة القديمة، وفي المساء يمتلئ السوق بالناس.",
+        "Hindi": "नदी पुराने शहर से होकर बहती है, और शाम को बाज़ार भर जाता है।",
+        "Chinese": "河水穿过老城，傍晚时市场里挤满了卖面包、水果和布料的人。",  # noqa: RUF001 - the script is the point
+    }
+
+    for language, text in sentences.items():
+        identifiers = vocabulary.encode(text)
+        assert vocabulary.decode(identifiers) == text, language
+        # Punctuation shared with English (",", ".") may merge; the script's own letters never do, so the count
+        # is at most the byte count and within a few tokens of it.
+        assert len(text.encode("utf-8")) - 6 <= len(identifiers) <= len(text.encode("utf-8")), (
+            language
+        )
+
+    english = (
+        "The river runs through the old town, and in the evening the market fills with people."
+    )
+    assert len(vocabulary.encode(english)) < len(english.encode("utf-8")) / 2

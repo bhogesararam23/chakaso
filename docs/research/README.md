@@ -20,6 +20,7 @@ specifications.
 | [`next-model-experiment.md`](next-model-experiment.md) | The measured re-inspection of machine, dependencies, compute cost and usable data behind the first model-centred experiment, and why the subword Transformer on repository text was chosen; it holds no result, but where it estimated it now shows what E2605 measured |
 | [`open-questions.md`](open-questions.md) | Questions with no committed answer |
 | [`../internal/engineering/open-model-research-pythia-2026-11-01.md`](../internal/engineering/open-model-research-pythia-2026-11-01.md) | Pythia's seed-variant suite and replayable data order read against Chakaso's missing noise floor; what three seeds can and cannot establish; two TinyLlama facts (a defect-driven retrain, MMLU at chance) |
+| [`../internal/engineering/multilingual-tokenization-2026-11-01.md`](../internal/engineering/multilingual-tokenization-2026-11-01.md) | What the committed English vocabulary does to seven other languages (byte fallback for four scripts, 1.33–5.08× English tokens), five abstracts on tokenization fairness and byte-level models, and why a vocabulary that served them would be larger than the whole current model |
 | [`../internal/engineering/citation-audit-2026-11-01.md`](../internal/engineering/citation-audit-2026-11-01.md) | Every arXiv identifier the documentation cites, checked against arXiv: all 106 resolve, 131 of 261 citations corroborated, 122 unchecked, three defects corrected |
 
 ## How entries are written
