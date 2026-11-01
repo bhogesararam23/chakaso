@@ -5,7 +5,10 @@ only licensed corpus is one register and 6.7M tokens. This script replaces hand-
 written down before any download happens and can be re-run to the same result:
 
 * **Population.** Project Gutenberg's own catalogue rows whose ``Type`` is ``Text`` and whose ``Language``
-  is ``en``. The catalogue snapshot's digest is recorded beside the selection.
+  is ``en``. The catalogue file's URL, byte count, SHA-256 and retrieval date are recorded in the selection
+  report's ``catalog`` block, because the catalogue moves and a rule re-run against a different file is not the
+  same rule (K-029). ``--verify`` replays the seeded walk over a catalogue file and says whether it reproduces
+  the recorded sequence.
 * **Register.** The Library of Congress class the catalogue assigns: ``P`` prose, ``Q`` science, ``QA``
   mathematics (counted apart from the rest of ``Q``), ``T`` technology, ``R`` medicine. A work never
   appears in two registers.
@@ -23,6 +26,7 @@ bytes nor the report is committed: the catalogue carries the url and digest of e
 
 Usage:
     python scripts/acquire_gutenberg_corpus.py --catalog pg_catalog.csv --work data/corpora/NAME
+    python scripts/acquire_gutenberg_corpus.py --catalog pg_catalog.csv --work data/corpora/NAME --verify
     python scripts/acquire_gutenberg_corpus.py --work data/corpora/NAME --catalogue configs/corpora/NAME.toml
 """
 
@@ -76,6 +80,9 @@ SELECTION_SEED = 20261030
 
 #: Required spacing between requests, in seconds, per Project Gutenberg's robot policy.
 REQUEST_SPACING_S = 2.0
+
+#: Where the catalogue this rule samples from is published. Recorded with its digest, never fetched here.
+CATALOG_URL = "https://www.gutenberg.org/cache/epub/feeds/pg_catalog.csv"
 
 USER_AGENT = "chakaso-corpus-acquisition/0.1 (offline language-model research; one request per 2s)"
 
@@ -152,6 +159,58 @@ def plan_selection(
     return planned
 
 
+def describe_catalog(
+    path: Path, *, url: str = CATALOG_URL, retrieved: str | None = None
+) -> dict[str, object]:
+    """What identifies the population a selection was drawn from: the file's digest, size and provenance.
+
+    ``retrieved`` is the operator's statement of when the file was downloaded. Without one the file's
+    modification time is used and the block says so, because a modification time is evidence about the file
+    on this disk, not about when Project Gutenberg published it.
+    """
+    payload = path.read_bytes()
+    if retrieved is None:
+        retrieved = time.strftime("%Y-%m-%d", time.gmtime(path.stat().st_mtime))
+        basis = "file-modified-time"
+    else:
+        basis = "operator-declared"
+    return {
+        "url": url,
+        "bytes": len(payload),
+        "sha256": sha256_hex(payload),
+        "retrieved": retrieved,
+        "retrieved_basis": basis,
+    }
+
+
+def verify_selection(report: dict[str, object], buckets: dict[str, list[Candidate]]) -> list[str]:
+    """Replay the seeded walk over ``buckets`` and list every way it fails to reproduce ``report``.
+
+    The recorded candidates of a register must be the leading entries of the walk the rule plans for the
+    report's own seed and quotas. A different catalogue shuffles a different population, so even one extra or
+    missing row in a register moves every position after it; agreement on hundreds of entries is therefore
+    strong evidence that the file is the one the selection was drawn from, though it is not a digest.
+    """
+    quotas = {str(name): int(value) for name, value in dict(report["quotas"]).items()}  # type: ignore[call-overload]
+    planned = plan_selection(buckets, quotas, seed=int(report["selection_seed"]))  # type: ignore[call-overload]
+    recorded: dict[str, list[int]] = {}
+    for record in report["records"]:  # type: ignore[attr-defined]
+        recorded.setdefault(str(record["register"]), []).append(int(record["ebook_number"]))
+    problems: list[str] = []
+    for register in REGISTERS:
+        walk = [candidate.number for candidate in planned[register]]
+        seen = recorded.get(register, [])
+        if walk[: len(seen)] != seen:
+            first = next(
+                (index for index, (a, b) in enumerate(zip(walk, seen, strict=False)) if a != b),
+                min(len(walk), len(seen)),
+            )
+            problems.append(
+                f"{register}: the recorded walk of {len(seen)} diverges from the catalogue's at position {first}"
+            )
+    return problems
+
+
 def _fetch(number: int, destination: Path) -> str:
     url = gutenberg_url_for(number)
     request = urllib.request.Request(url, headers={"User-Agent": USER_AGENT})
@@ -168,6 +227,7 @@ def acquire(
     work: Path,
     spacing: float,
     verbose: bool,
+    catalog: dict[str, object] | None = None,
 ) -> dict[str, object]:
     raw_dir = work / "raw"
     raw_dir.mkdir(parents=True, exist_ok=True)
@@ -263,6 +323,7 @@ def acquire(
     report = {
         "schema_version": "chakaso-corpus-selection/1",
         "selection_seed": SELECTION_SEED,
+        "catalog": catalog,
         "request_spacing_s": REQUEST_SPACING_S,
         "min_characters": MIN_CHARACTERS,
         "max_characters": MAX_CHARACTERS,
@@ -342,6 +403,19 @@ def main(argv: Sequence[str] | None = None) -> int:
         help=f"accepted works per register, one flag each; registers {REGISTERS}",
     )
     parser.add_argument("--catalogue", type=Path, help="write the pinned catalogue here and exit")
+    parser.add_argument(
+        "--verify",
+        action="store_true",
+        help="replay the recorded selection over --catalog and report whether it reproduces, then exit",
+    )
+    parser.add_argument(
+        "--catalog-url", default=CATALOG_URL, help="where --catalog was downloaded from"
+    )
+    parser.add_argument(
+        "--catalog-retrieved",
+        default=None,
+        help="the date --catalog was downloaded (YYYY-MM-DD); the file's modified time is used if absent",
+    )
     parser.add_argument("--name", default="gutenberg-multiregister-v1")
     parser.add_argument("--version", default="1.0.0")
     parser.add_argument("--retrieved", default=time.strftime("%Y-%m-%d"))
@@ -360,10 +434,33 @@ def main(argv: Sequence[str] | None = None) -> int:
 
     if args.catalog is None:
         parser.error("--catalog is required unless --catalogue is given")
-    quotas = _parse_quotas(args.quota or [f"{register}=0" for register in REGISTERS])
     buckets = load_candidates(args.catalog)
+    if args.verify:
+        report = json.loads((args.work / "selection.json").read_text(encoding="utf-8"))
+        problems = verify_selection(report, buckets)
+        recorded = report.get("catalog")
+        digest = sha256_hex(args.catalog.read_bytes())
+        if isinstance(recorded, dict) and recorded.get("sha256") != digest:
+            problems.append(
+                f"the recorded catalogue digest {recorded.get('sha256')} is not {digest}"
+            )
+        for problem in problems:
+            print(f"MISMATCH {problem}")
+        print(f"catalogue sha256 {digest}")
+        print("the selection reproduces" if not problems else "the selection does NOT reproduce")
+        return 1 if problems else 0
+    quotas = _parse_quotas(args.quota or [f"{register}=0" for register in REGISTERS])
     planned = plan_selection(buckets, quotas, seed=SELECTION_SEED)
-    report = acquire(planned, quotas, work=args.work, spacing=args.spacing, verbose=not args.quiet)
+    report = acquire(
+        planned,
+        quotas,
+        work=args.work,
+        spacing=args.spacing,
+        verbose=not args.quiet,
+        catalog=describe_catalog(
+            args.catalog, url=args.catalog_url, retrieved=args.catalog_retrieved
+        ),
+    )
     accepted = report["accepted"]
     assert isinstance(accepted, dict)
     total = sum(int(value) for value in accepted.values())

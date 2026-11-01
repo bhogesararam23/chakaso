@@ -722,7 +722,7 @@ in different directories agree on it and disagree on the file digest (a test), a
 budget, the split or the tokenizer moves it while changing a rate or a thread count does not (a second test).
 Reports already on disk carry no such line; `protocol_digest` can be computed from any of them.
 
-### K-029 — The corpus a selection rule sampled is not pinned, and the script says it is
+### K-029 — Closed for new selections: the corpus a selection rule sampled was not pinned, and the script said it was
 
 **Impact:** Medium. Every Gutenberg catalogue fit inherits it.
 
@@ -734,8 +734,20 @@ is not in the repository. So the accepted works are pinned and reproducible, whi
 population the seeded shuffle drew from is not. Measured 2026-11-01 the live catalogue is 5,597,116 bytes,
 last-modified 2026-10-25 — it moves, and a re-run of the rule is not the rule.
 
-**Not fixed.** **What would close it:** the selection report records the catalogue's URL, digest and retrieval
-date at write time, and the acquisition script's docstring is made true.
+**Fixed 2026-11-01.** The selection report now carries a `catalog` block (URL, byte count, SHA-256, retrieval date
+and whether that date was declared by the operator or inferred from the file's modified time), so the docstring is
+true of every future run, and `--verify` replays the seeded walk over a catalogue file and reports whether it
+reproduces the recorded sequence.
+
+**The existing selection, checked rather than assumed.** `selection.json` for `gutenberg-multiregister-v1` has no
+`catalog` block and cannot gain a true one. The only candidate input on this machine is
+`.scratch/data/pg_catalog.csv` (21,271,171 bytes, modified 2026-10-30 03:32, SHA-256
+`3cece81ad3a9261f1b2fbfd2db1e1819cf0c4d3bcffc02ef74ccb8865b46895c`). `--verify` against it reports *the selection
+reproduces*: in every register the recorded sequence of 237 prose, 105 science, 71 technology, 32 medicine and 90
+mathematics candidates is exactly the leading entries of the walk the rule plans for the recorded seed and quotas. A
+different catalogue shuffles a different population, so that agreement is strong evidence this file is the input —
+but it is evidence, not a digest taken at selection time, and the record says so. The live file's 5,597,116 bytes
+date from a different measurement and are not this file.
 
 ## Resolved
 

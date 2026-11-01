@@ -20,6 +20,10 @@ capability is implemented or still planned.
   training and validation loss but not `score_model_on_examples`, so a masked run would have been scored under
   attention it never trained with. The switch defaults off, leaving every committed record's protocol intact; four
   tests cover it and the experiment-level one fails against the previous code. No masked arm has been run.
+- **A corpus selection now pins the catalogue it sampled** (K-029). The acquisition script claimed to record the
+  catalogue's digest and did not. Its report now carries the file's URL, size, SHA-256 and retrieval date, and
+  `--verify` replays the seeded walk to say whether a catalogue file reproduces a recorded selection; the existing
+  Gutenberg selection reproduces against the one local candidate file, as evidence rather than as a digest.
 - **A re-run can now prove it ran under the same conditions** (K-028). The report-file digest embeds wall clock,
   throughput and thread count, so no faithful re-run could ever reproduce it. `chakaso experiment model` now also
   prints a *protocol digest* over the corpus, split, tokenizer, plan, architecture and budget, which a re-run does
