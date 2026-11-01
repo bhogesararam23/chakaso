@@ -139,3 +139,99 @@ argument this repository has for doing data work and the weakest possible argume
 - **Not a legal opinion.** Licences are reported as their sources state them. Whether a share-alike or
   packaging-only grant reaches released weights is the same two-question gap the curriculum already lists as
   unanswered, and it needs a written decision rather than an engineering ticket.
+
+## Addendum — the second phase of 2026-11-01 (10:22–22:17 IST), closed
+
+**Status:** Research. A factual close of the work done after the report above was written. It repeats no number
+that is not in a linked record. Where a count is given, it was taken from `git log` at the time of writing.
+
+### What was audited, and what was found
+
+| Component | Result |
+| --- | --- |
+| Whole-work splitter (`training/data.py`) | Reported `dropped_duplicates: 0` while excluding three documents (K-025). Fixed. The first fix then changed the split fingerprint, which keys the tokenizer cache; **E2613's first launch trained 95 minutes on a refitted vocabulary** before this was caught. The fingerprint now covers the side assignment only, and `--expected-tokenizer-fingerprint` makes a vocabulary mismatch a refusal before the first step. |
+| Held-out scorer (`nn_evaluation.py`) | Applied no document-boundary masking even for a run that trained with it (T5). Fixed behind a switch that defaults off; no masked arm has been run. |
+| Experiment commands (`cli.py`, `subword_experiment.py`) | Called every corpus "this repository's own text" and used the repository's own prompts on a foreign corpus. Both refused or renamed. |
+| Seed study (`seed_study.py`) | Protocol identity omitted most of the protocol (K-029), and the partition fields were named for something they did not count. Fixed; a study now carries a protocol digest a faithful re-run reproduces. |
+| Artifact writers | Vocabulary and checkpoint saves were not atomic and could clobber; a checkpoint write advanced the run's random stream. Fixed. |
+| Tokenizer fitting | A fit that ended short of the declared vocabulary size was accepted silently. Now a refusal. |
+| Documentation citations | All 106 distinct arXiv identifiers resolve; 47 of 47 named first authors are right; 122 of 261 citations could not be checked from their line. Three defects in two entries were corrected. This audits existence and attribution, **not** whether a sentence says what the paper found. |
+
+Remaining latent items are filed as [K-030](../../agent/KNOWN_ISSUES.md); three of its six are still open.
+
+### Research done, and where it lives
+
+- **Seed noise and what three seeds can establish** (Pythia's ten-seed suite; chi-square intervals for a standard
+  deviation): [Pythia note](open-model-research-pythia-2026-11-01.md). It changed the plan from three seeds to five.
+- **Multilingual tokenization**: the committed English vocabulary encodes Cyrillic, Arabic, Devanagari and Han as raw
+  bytes (one sentence per language, so a floor on the evidence): [note](multilingual-tokenization-2026-11-01.md).
+- **Train/test near-duplicate leakage** on E2612's split: 0.217 % of held-out 8-word windows also occur in training:
+  [audit](split-leakage-audit-2026-11-01.md).
+- **Data and licensing**: only public-domain or CC0 text carries a licence that reaches the content; a web-scale
+  corpus licenses its packaging: [review](data-and-licensing-research-2026-11-01.md).
+- **Citation audit**: [record](citation-audit-2026-11-01.md).
+- **Open-model landscape** (the earlier phase, unchanged): 0 adopt, 1 adapt, 2 test, 8 reject for frontier mechanisms
+  at 3.4M. Nothing read was below 10M parameters.
+- The synthesis is [the executive overview](../../research/executive-overview.md), which labels every row by the kind of
+  evidence behind it.
+
+### Decisions
+
+[ADR-0043](../../decisions/ADR-0043-training-stages-are-separated-by-what-changes-and-entered-by-gates.md) separates
+base pretraining, mid-training and post-training by what each changes and gates entry on measurements that do not
+exist yet (the noise-floor gate now does, for one configuration). [ADR-0044](../../decisions/ADR-0044-a-vocabulary-a-record-cites-is-committed-beside-it.md)
+commits the one vocabulary no command can refit. Hypotheses H15 and H16 (Muon) were added or advanced as hypotheses
+only; nothing was built for them.
+
+### Experiments run, with the results as recorded
+
+| Record | Result | What it does not show |
+| --- | --- | --- |
+| [E2613](../../../experiments/E2613/record.md) | A prose-only arm at half the identifiers scored held-out prose 1.80621 against the mixture's 1.83952 (−0.03331) and the full prose control's 1.80926 (−0.00305): **H8-b**, the prose cost belongs to the mixture. Every condition was proved matched before any number was read. | The arm made about twice the mixture's prose passes, so positions spent on technical text may be the cause rather than harm from it. One seed. The one-pass follow-up arm was **not run**. |
+| [E2614](../../../experiments/E2614/record.md) | Five seeds of the mixture configuration: sample standard deviation 0.00226 (prose), 0.00337 (whole pack), 0.01232 (mathematics) bits per character. The 0.02 band holds for prose (R1), is plausible but unproven for the whole pack (R2), and is replaced by 0.035 for mathematics (R3). Seed 7 reproduced E2612 arm T with a difference of exactly 0.0 on every metric. | Nothing about capability. One split, a truncated budget, the prose-only arms' spread assumed, and the spread over *which works are held out* unmeasured. |
+
+E2613's first launch is disclosed in its record as a non-comparable run and is not part of its verdict. Every decoder
+run to date is truncated at the 2,400-step ceiling, so every absolute number is a floor, and no model produces usable
+text.
+
+### Tests and CI
+
+- Full suite with `[dev,train,nn]` at the final head: **2,190 passed, 1 skipped**; `ruff check` and
+  `ruff format --check` clean. The dependency-free matrix was last run at `e406ce0` (1,738 passed, 28 skipped) and
+  not re-run after it: the later commits touch only documentation and experiment records, and the `[dev,train,nn]`
+suite and CI were re-run on them.
+- CI on `main`: all eight jobs green on `66ac9ba`, `20f6a92` and `ec8960f`. One run was red (`2b7156a`: a new
+  numpy module was outside the allowlist ADR-0030 requires; fixed in `4f3c7cd` with the amendment) and one was
+  cancelled by the workflow's concurrency rule when a later push superseded it (`26ed20f`); neither was an
+  unexplained failure.
+- No test was weakened or deleted. Several were changed because the behaviour they pinned was the defect, each with a
+  reason in its commit.
+
+### Commits
+
+**48 commits** pushed to `main` between `7704fe2` (10:22) and `ec8960f` (22:17), all authored and committed by the
+configured identity, none with a co-author trailer or a generated-by notice; this addendum is the 49th. Five more
+commits dated earlier the same day (`0814220` to `e7f54f1`) belong to the phase described above. **The brief asked for
+at least 70; that target was not met and was not padded.** The work that remained after the 46th commit was one
+experiment that needs seven hours of CPU and the documentation that follows from its result; splitting either into
+smaller commits would have manufactured them.
+
+### Limitations and blockers
+
+- The prose-only arms' seed spread, the spread over held-out splits, and any spread at a converged budget are not
+  measured.
+- No coherence or usefulness instrument exists (K-020); a better loss cannot yet be called a better model.
+- The corpus is archaic public-domain English; its age has never been measured.
+- **Blocker, not worked around:** acquiring `us-pd-press-v1` (the licence-clean modern slice) needs a download that
+  was not authorised. The selection rule and a data-review checklist are written; nothing was fetched.
+- A stale background process could not be stopped (the permission classifier declined it) and was left alone.
+
+### Next tasks, in order
+
+1. **H9, the prose-share sweep**, judged against the measured band: a whole-pack difference needs to exceed 0.0268
+   or more seeds first.
+2. **The one-pass E2613 arm** (1,200 steps) if the exposure caveat needs separating.
+3. **T7, `us-pd-press-v1` with an era partition**, once the download is authorised.
+4. K-030 items 1, 4 and 6.
+5. **Muon (H16)** only as a hypothesis test, now that its noise floor exists.
+6. A capacity step is **not** licensed by anything measured.
