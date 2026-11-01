@@ -1285,3 +1285,16 @@ def test_a_supplied_vocabulary_file_is_refused_when_it_is_not_what_the_plan_decl
     committed.write_text(json.dumps(document), encoding="utf-8")
     with pytest.raises(CorruptedCorpusArtifactError, match="checksum"):
         prepare_corpus(_plan(root, tmp_path / "w3", tokenizer_file=committed))
+
+
+def test_a_fit_that_ends_short_of_the_declared_size_is_refused_before_anything_trains(
+    tmp_path: Path,
+) -> None:
+    """The merge search stops when no pair reaches the frequency floor; a smaller model must not follow silently."""
+    root = _root(tmp_path)
+    work = tmp_path / "work-short"
+
+    with pytest.raises(CorpusError, match="fitting stopped at"):
+        prepare_corpus(_plan(root, work, vocab_size=20_000, tokenizer_min_frequency=3))
+
+    assert not list(work.glob("*-tokenizer-*.json")), "a short vocabulary must not enter the cache"

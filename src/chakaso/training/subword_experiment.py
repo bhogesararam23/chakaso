@@ -714,6 +714,17 @@ def _fit_or_reuse_vocabulary(
         target_size=plan.vocab_size,
         min_frequency=plan.tokenizer_min_frequency,
     )
+    if fitted.size != plan.vocab_size:
+        # The merge search ends early when no pair reaches the frequency floor. A model is then built at the
+        # smaller size, so the run would train a different parameter count than its plan and its record
+        # declare, and nothing downstream would say so until someone compared totals.
+        message = (
+            f"fitting stopped at {fitted.size} identifiers, short of the {plan.vocab_size} this plan declares: "
+            f"no adjacent pair occurs {plan.tokenizer_min_frequency} times in the training text after "
+            f"{len(fitted.merges)} merges. Lower vocab_size or tokenizer_min_frequency, or supply more text; "
+            "a run does not train a smaller vocabulary than it declared"
+        )
+        raise CorpusError(message)
     # Checked before the save, so a vocabulary that is not the one the protocol names never enters the cache
     # where a later run would take it for the real one.
     _require_expected_tokenizer(

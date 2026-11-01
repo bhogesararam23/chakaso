@@ -784,6 +784,10 @@ def _short_model_run_arguments(root: Path, work: Path, *extra: str) -> list[str]
         "2",
         "--seed",
         "5",
+        # The fixture corpus is a few hundred characters; the default 1,024 identifiers is more than its pairs
+        # can supply, and a run no longer trains a smaller vocabulary than it declared.
+        "--vocab-size",
+        "300",
         *extra,
     ]
 

@@ -39,6 +39,11 @@ capability is implemented or still planned.
 - **A run on a foreign corpus can no longer sample with the repository's own prompts** (K-026). E2612 described two
   Project Gutenberg models by continuing Chakaso's section titles because the default prompt set was never changed.
   Preparation now refuses that combination before anything is fitted and names `--sample-prompts held_out`.
+- **A run no longer trains a smaller vocabulary than it declared.** The byte-pair search stops early when no pair reaches
+  the frequency floor, and the model was then built at the smaller size with nothing saying so — the 2026-11-01 audit's
+  rank-3 finding, seen on 25 of 300 synthetic trials. A fresh fit that ends short is now refused before the cache is
+  written. One CLI test fixture had been silently training a 319-identifier vocabulary under a default of 1,024; it now
+  declares 300.
 - **A seed study now fits a decoder run that skips the character baseline and scores register partitions.** It could
   only aggregate E2606-shaped reports and refused E2612's. It now aggregates each declared test partition, treats a
   skipped baseline as a declared part of the protocol, and reports the interval a standard deviation from few runs
