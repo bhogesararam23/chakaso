@@ -2324,7 +2324,7 @@ def _run_model_experiment(args: argparse.Namespace) -> int:
     else:
         print(summarise(report))
     print(
-        "note: a small model trained on this repository's own text on CPU; the numbers measure the "
+        "note: a small model trained on the named corpus on CPU; the numbers measure the "
         "training path and the corpus, not language capability",
         file=sys.stderr,
     )
@@ -2427,7 +2427,7 @@ def _run_model_study(args: argparse.Namespace) -> int:
     else:
         print(study_summary(aggregate))
     print(
-        "note: a small model trained on this repository's own text on CPU; the spread measures the "
+        "note: a small model trained on the named corpus on CPU; the spread measures the "
         "training path across seeds, not language capability",
         file=sys.stderr,
     )
