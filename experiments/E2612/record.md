@@ -58,6 +58,12 @@ work lands on one side. Split seed 7, 15 % validation and 15 % test. Measured on
 **312 works train, 56 validation, 62 test, zero works on more than one side** — the two-level leak that
 produced K-023 is absent by construction.
 
+*Added 2026-11-01 (after the results; nothing above changes).* The split puts no work on two sides; it cannot see two
+works that are the same text. Measured on this exact split, the share of held-out 8-word windows that also occur
+anywhere in the 312-work training side is **0.217 %** on the test side (0.156 % at 16 words) and **0.142 %** on the
+validation side, with no held-out work above 3.0 % and none near 10 %
+([`split-leakage-audit-2026-11-01.md`](../../docs/internal/engineering/split-leakage-audit-2026-11-01.md)). Exact word
+repetition only; the effect on bits per character was not measured.
 ## Model and optimisation
 
 Held identical to E2608 arm A, the reference configuration:

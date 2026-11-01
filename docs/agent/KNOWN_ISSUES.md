@@ -603,6 +603,12 @@ records say. E2605/E2606 are unaffected in kind: their documents are whole files
 works on each side — E2612 is the first — and, after that, a re-measure of the reference configuration on
 such a corpus so the released number is not left carrying the qualifier.
 
+*Dated 2026-11-01: the second leak class was measured on E2612 and is small.* A whole-work split cannot see two works
+that are the same text. On E2612's split, 0.217 % of held-out 8-word windows (0.156 % at 16) also occur in training,
+no held-out work exceeds 3.0 %, none approaches 10 %
+([`split-leakage-audit-2026-11-01.md`](../internal/engineering/split-leakage-audit-2026-11-01.md)). The released
+`chakaso-base@0.1.0` split (chapter-level) was not part of this measurement and still carries the K-023 qualifier.
+
 ### K-024 — A measured tokenizer was not re-trainable, and the fix moved rather than removed the boundary
 
 **Impact: was Critical for the re-trainability rule; now closed for pre-E2612 records and open as a residue.**
