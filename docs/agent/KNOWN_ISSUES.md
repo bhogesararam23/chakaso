@@ -762,7 +762,7 @@ different catalogue shuffles a different population, so that agreement is strong
 but it is evidence, not a digest taken at selection time, and the record says so. The live file's 5,597,116 bytes
 date from a different measurement and are not this file.
 
-### K-030 — Six latent measurement-path observations from the 2026-11-01 audit are filed; items 1, 2 and 5 closed, 3 partly
+### K-030 — Six latent measurement-path observations from the 2026-11-01 audit are filed; items 1, 2 and 5 closed, 3 partly, 6 proposed
 
 **Impact:** Low today, each by its own account; together they are the list of places where a future change could
 move a measured number without a test noticing. They are filed so that the audit's ranked summary is not the only
@@ -804,6 +804,11 @@ as of that day.
 6. **A loaded artifact reports `min_frequency` 2, whatever it was fitted at.** The checkpoint metadata does not store
    it, and adding it would change the checksummed metadata document and with it every released artifact's
    verification, so it needs a format decision (ADR-0035), not a patch.
+   *Investigated 2026-11-01 (second session):* reproduced (fitted at 3, loads as 2; fingerprint unchanged, file checksum
+   differs) and a backward-compatible route found — verification hashes the stored metadata string verbatim and the loader
+   reads named keys, so an optional key written only when known breaks neither old artifacts nor old readers.
+   [ADR-0046](../decisions/ADR-0046-checkpoint-records-the-tokenizer-frequency-floor-as-an-optional-field.md) proposes it
+   (status Proposed); nothing is implemented and no format has changed.
 
 **What would close each:** (1) weight by scored positions or forbid ragged scoring; (2) save and restore the RNG
 state around the write; (3) record the optimiser's `defaults` in the report's budget block and decide, as a

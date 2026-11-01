@@ -12,13 +12,18 @@ capability is implemented or still planned.
 
 ## Unreleased
 
-### 2026-11-01 (second session) — held-out loss weighs by scored positions
+### 2026-11-01 (second session) — held-out loss weighs by scored positions; the checkpoint tokenizer-floor question has a proposal
 
 **Fixed**
 
 - **`evaluate_loss` weights each batch by the positions it scores, not by its width** (K-030 item 1). Padded targets were
   already skipped by the model's loss but counted in the weight. No packed corpus pads, so no committed number changes; a
   test with padded targets fails against the old weighting.
+
+**Proposed (not implemented)**
+
+- **ADR-0046** — record a checkpoint tokenizer's frequency floor as an optional field written only when known, so released
+  artifacts keep verifying and a loaded artifact stops reporting a floor of 2 it does not know (K-030 item 6).
 
 ### 2026-11-01 (evening) — a mixture can now be declared as a share, and a sweep read against the measured noise
 
