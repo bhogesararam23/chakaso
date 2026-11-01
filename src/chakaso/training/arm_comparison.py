@@ -49,10 +49,18 @@ _DECLARABLE: dict[str, tuple[str, ...]] = {
     "training_group_prefixes": ("transformer", "budget", "training_group_prefixes"),
     "max_training_tokens": ("transformer", "budget", "max_training_tokens"),
     "shuffle_training_units": ("transformer", "budget", "shuffle_training_units"),
+    "share_group_prefix": ("transformer", "budget", "share_group_prefix"),
+    "share_of_tokens": ("transformer", "budget", "share_of_tokens"),
+    "training_composition": ("corpus", "training_composition"),
     "document_masking": ("transformer", "budget", "document_masking"),
     "grad_accum_steps": ("transformer", "budget", "grad_accum_steps"),
     "training_tokens_packed": ("corpus", "training_tokens_packed"),
 }
+
+#: Declarable fields a report only carries when the run used the feature. A report written before the feature
+#: existed (E2612 to E2614) has no such key, and "absent" is a real value there: the arm was not composed by
+#: share. Every other field is required, because a missing required field is a report the comparison cannot trust.
+_OPTIONAL_DECLARABLE = frozenset({"share_group_prefix", "share_of_tokens", "training_composition"})
 
 
 def compare_arms(
@@ -85,7 +93,10 @@ def compare_arms(
 
     matched = {name: _across(arms, path, name=name) for name, path in _MATCHED.items()}
     matched["per_partition_tokens_and_characters"] = _partition_support(arms)
-    differences = {name: _across(arms, path, name=name) for name, path in _DECLARABLE.items()}
+    differences = {
+        name: _across(arms, path, name=name, optional=name in _OPTIONAL_DECLARABLE)
+        for name, path in _DECLARABLE.items()
+    }
     declared = {name: block for name, block in differences.items() if not block["equal"]}
 
     partitions = _partition_table(arms, reference)
@@ -108,10 +119,14 @@ def compare_arms(
     return result
 
 
-def _dig(report: Mapping[str, Any], path: Sequence[str], arm: str) -> Any:
+def _dig(
+    report: Mapping[str, Any], path: Sequence[str], arm: str, *, optional: bool = False
+) -> Any:
     current: Any = report
     for key in path:
         if not isinstance(current, Mapping) or key not in current:
+            if optional:
+                return None
             message = f"arm {arm!r} has no {'.'.join(path)} in its report"
             raise ArmComparisonError(message)
         current = current[key]
@@ -119,9 +134,13 @@ def _dig(report: Mapping[str, Any], path: Sequence[str], arm: str) -> Any:
 
 
 def _across(
-    arms: Mapping[str, Mapping[str, Any]], path: Sequence[str], *, name: str
+    arms: Mapping[str, Mapping[str, Any]],
+    path: Sequence[str],
+    *,
+    name: str,
+    optional: bool = False,
 ) -> dict[str, Any]:
-    values = {arm: _dig(report, path, arm) for arm, report in arms.items()}
+    values = {arm: _dig(report, path, arm, optional=optional) for arm, report in arms.items()}
     first = next(iter(values.values()))
     return {
         "values": values,

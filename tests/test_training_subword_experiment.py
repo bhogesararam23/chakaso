@@ -1335,3 +1335,163 @@ def test_the_protocol_digest_ignores_outcomes_and_the_seed_only_when_asked(tmp_p
     assert protocol_digest(other_seed, include_seed=False) == protocol_digest(
         report, include_seed=False
     )
+
+
+# ------------------------------------------------------------------ share-composed training sets (H9)
+
+
+def _share_plan(root: Path, work: Path, share: float, **overrides: object) -> ExperimentPlan:
+    overrides.setdefault("max_training_tokens", 2000)
+    return _register_plan(
+        root,
+        work,
+        shuffle_training_units=True,
+        share_group_prefix="prose-",
+        share_of_tokens=share,
+        **overrides,
+    )
+
+
+def test_a_share_declaration_is_made_whole_or_not_at_all() -> None:
+    base = {"root": Path(), "work_dir": Path() / "w"}
+    with pytest.raises(ValueError, match="together or not at all"):
+        ExperimentPlan(**base, share_group_prefix="prose-")  # type: ignore[arg-type]
+    with pytest.raises(ValueError, match="together or not at all"):
+        ExperimentPlan(**base, share_of_tokens=0.5)  # type: ignore[arg-type]
+
+
+@pytest.mark.parametrize("share", [-0.1, 1.5, True])
+def test_a_share_outside_zero_to_one_is_refused(share: object) -> None:
+    with pytest.raises(ValueError, match="share_of_tokens must be a number from 0 to 1"):
+        ExperimentPlan(
+            root=Path(),
+            work_dir=Path() / "w",
+            max_training_tokens=100,
+            shuffle_training_units=True,
+            share_group_prefix="prose-",
+            share_of_tokens=share,  # type: ignore[arg-type]
+        )
+
+
+def test_a_share_needs_a_budget_shuffled_units_and_no_prefix_filter() -> None:
+    base = {
+        "root": Path(),
+        "work_dir": Path() / "w",
+        "share_group_prefix": "prose-",
+        "share_of_tokens": 0.5,
+    }
+    with pytest.raises(ValueError, match="set max_training_tokens"):
+        ExperimentPlan(**base, shuffle_training_units=True)  # type: ignore[arg-type]
+    with pytest.raises(ValueError, match="set shuffle_training_units"):
+        ExperimentPlan(**base, max_training_tokens=100)  # type: ignore[arg-type]
+    with pytest.raises(ValueError, match="replaces training_group_prefixes"):
+        ExperimentPlan(
+            **base,  # type: ignore[arg-type]
+            max_training_tokens=100,
+            shuffle_training_units=True,
+            training_group_prefixes=("prose-",),
+        )
+
+
+def test_a_share_run_packs_the_declared_mixture_and_says_what_it_packed(tmp_path: Path) -> None:
+    root = _register_root(tmp_path)
+    prepared = prepare_corpus(_share_plan(root, tmp_path / "a", 0.5))
+
+    composition = prepared.training_composition
+    assert composition is not None
+    # The quota is met within the last document taken, and the report's count is the stream's length.
+    assert composition.identifiers == prepared.train.tokens_available
+    assert composition.matched_identifiers >= 1000
+    assert composition.other_identifiers >= 1000
+    assert composition.realised_share == pytest.approx(0.5, abs=0.15)
+
+
+def test_a_share_run_keeps_the_tokenizer_and_the_held_out_works(tmp_path: Path) -> None:
+    root = _register_root(tmp_path)
+    shared = prepare_corpus(_share_plan(root, tmp_path / "a", 0.25))
+    plain = prepare_corpus(_register_plan(root, tmp_path / "b"))
+
+    assert shared.vocabulary.fingerprint == plain.vocabulary.fingerprint
+    assert shared.split.fingerprint == plain.split.fingerprint
+    assert shared.test.tokens_available == plain.test.tokens_available
+
+
+def test_a_share_of_one_packs_what_filtering_to_that_prefix_packs(tmp_path: Path) -> None:
+    root = _register_root(tmp_path)
+    shared = prepare_corpus(_share_plan(root, tmp_path / "a", 1.0, max_training_tokens=1000))
+    filtered = prepare_corpus(
+        _register_plan(
+            root,
+            tmp_path / "b",
+            training_group_prefixes=("prose-",),
+            shuffle_training_units=True,
+            max_training_tokens=1000,
+        )
+    )
+
+    assert [example.input_ids for example in shared.train.examples] == [
+        example.input_ids for example in filtered.train.examples
+    ]
+
+
+def test_a_larger_budget_than_a_class_can_supply_is_refused(tmp_path: Path) -> None:
+    root = _register_root(tmp_path)
+
+    with pytest.raises(CorpusError, match="declared share needs"):
+        prepare_corpus(_share_plan(root, tmp_path / "a", 1.0, max_training_tokens=100_000))
+
+
+def test_a_prefix_no_work_has_is_refused_before_the_tokenizer_is_fitted(tmp_path: Path) -> None:
+    root = _register_root(tmp_path)
+    plan = _share_plan(root, tmp_path / "work", 0.5)
+
+    with pytest.raises(ValueError, match="stops before fitting a tokenizer"):
+        prepare_corpus(replace(plan, share_group_prefix="poetry-"))
+
+    assert not list((tmp_path / "work").glob("*tokenizer*"))
+
+
+def test_the_report_of_a_share_run_carries_the_declared_and_the_realised_mixture(
+    tmp_path: Path,
+) -> None:
+    plan = _share_plan(
+        _register_root(tmp_path), tmp_path / "work", 0.5, test_partitions=("prose-", "science-")
+    )
+
+    report = run_experiment(plan)
+
+    composition = report["corpus"]["training_composition"]
+    assert composition["declared_share"] == 0.5
+    assert (
+        composition["identifiers_matched"] + composition["identifiers_other"]
+        == (report["corpus"]["training_tokens_packed"])
+    )
+    assert (
+        sum(composition["identifiers_by_register"].values())
+        == (report["corpus"]["training_tokens_packed"])
+    )
+    assert set(composition["identifiers_by_register"]) <= {"prose-", "science-", "other"}
+    assert report["transformer"]["budget"]["share_of_tokens"] == 0.5
+    assert report["plan"]["share_group_prefix"] == "prose-"
+    # The works listed are the ones packed, not every work on the training side.
+    assert len(report["corpus"]["training_groups"]) == composition["works_packed"]
+
+
+def test_a_plan_without_a_share_leaves_its_report_and_protocol_digest_as_they_were(
+    tmp_path: Path,
+) -> None:
+    report = run_experiment(_register_plan(_register_root(tmp_path), tmp_path / "work"))
+
+    # Recorded protocols (E2612-E2614) are compared by digest; a key a plain run now emitted as None
+    # would move it.
+    assert "training_composition" not in report["corpus"]
+    assert "share_group_prefix" not in report["transformer"]["budget"]
+    assert "share_group_prefix" not in report["plan"]
+
+
+def test_two_shares_of_one_protocol_have_different_protocol_digests(tmp_path: Path) -> None:
+    root = _register_root(tmp_path)
+    low = run_experiment(_share_plan(root, tmp_path / "a", 0.25))
+    high = run_experiment(_share_plan(root, tmp_path / "b", 0.75))
+
+    assert protocol_digest(low) != protocol_digest(high)

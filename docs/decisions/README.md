@@ -137,3 +137,4 @@ creates.
 | [ADR-0042](ADR-0042-held-out-means-held-out-works.md) | A held-out score is held out by work, not by chunk; the whole-work split is opt-in and every report states whether it ran | Accepted |
 | [ADR-0043](ADR-0043-training-stages-are-separated-by-what-changes-and-entered-by-gates.md) | Base pretraining, mid-training and post-training are separated by what changes, and each is entered through a measured gate | Accepted |
 | [ADR-0044](ADR-0044-a-vocabulary-a-record-cites-is-committed-beside-it.md) | A vocabulary that a measured record cites and that no command can refit is committed beside the record, as an input rather than a cache | Accepted |
+| [ADR-0045](ADR-0045-training-composition-is-declared-as-a-share-of-the-token-budget.md) | A training mixture is declared as a share of the token budget, drawn as nested prefixes of seeded shuffles, and reported as realised | Accepted |

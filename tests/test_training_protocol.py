@@ -122,3 +122,18 @@ def test_every_committed_protocol_still_loads_into_a_valid_plan() -> None:
         plan = load_plan(path, root=Path(), work_dir=Path("work"))
         if plan.tokenizer_file is not None:
             assert (Path(__file__).resolve().parent.parent / plan.tokenizer_file).is_file()
+
+
+def test_a_share_declaration_loads_as_a_string_and_a_float(tmp_path: Path) -> None:
+    text = (
+        "[plan]\n"
+        "max_training_tokens = 100\n"
+        "shuffle_training_units = true\n"
+        'share_group_prefix = "prose-"\n'
+        "share_of_tokens = 1\n"
+    )
+
+    plan = _load(_write(tmp_path, text))
+
+    assert plan.share_group_prefix == "prose-"
+    assert plan.share_of_tokens == 1.0 and isinstance(plan.share_of_tokens, float)

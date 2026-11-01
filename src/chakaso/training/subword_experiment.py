@@ -58,6 +58,7 @@ from chakaso.training.manifest import (
     verify_corpus,
     write_snapshot,
 )
+from chakaso.training.mixture import ShareSelection, identifiers_by_register, select_by_share
 from chakaso.training.model import CharCausalMLP, batches_from_examples
 from chakaso.training.model_metrics import ModelMetrics, metrics_from_scores
 from chakaso.training.nn_checkpoint import (
@@ -279,6 +280,14 @@ class ExperimentPlan:
     #: the alphabet produced; with it any prefix is a sample of the whole. Off by default so a recorded
     #: protocol's stream order does not move under its record.
     shuffle_training_units: bool = False
+    #: Compose the training stream by share instead of by cap (H9). The works whose group starts with
+    #: ``share_group_prefix`` supply ``share_of_tokens`` of ``max_training_tokens`` identifiers and every other
+    #: training work supplies the rest, each drawn as a prefix of its own seeded shuffle so a larger share
+    #: contains a smaller one. Both fields are set together or not at all, and the mode needs a token budget and
+    #: shuffled units; it replaces ``training_group_prefixes``, which it would contradict. Left unset, every
+    #: recorded protocol behaves as it did and its protocol digest does not move.
+    share_group_prefix: str | None = None
+    share_of_tokens: float | None = None
     #: Group prefixes to score separately on the test side, each packed on its own. A mixture experiment
     #: needs the technical held-out loss and the prose held-out loss, not their weighted average; a single
     #: overall number would be dominated by whichever register has more held-out text.
@@ -367,6 +376,7 @@ class ExperimentPlan:
                 f"shuffle_training_units must be a boolean, got {self.shuffle_training_units!r}"
             )
             raise ValueError(message)
+        self._validate_share()
         for field_name in ("max_validation_tokens", "max_test_tokens"):
             value = getattr(self, field_name)
             if value is not None and (
@@ -452,6 +462,33 @@ class ExperimentPlan:
             )
             raise ValueError(message)
 
+    def _validate_share(self) -> None:
+        """Refuse a share declaration that is half-stated or contradicts the rest of the plan."""
+        prefix, share = self.share_group_prefix, self.share_of_tokens
+        if prefix is None and share is None:
+            return
+        if prefix is None or share is None:
+            message = "share_group_prefix and share_of_tokens are declared together or not at all"
+            raise ValueError(message)
+        if not isinstance(prefix, str) or not prefix:
+            message = f"share_group_prefix must be a non-empty string, got {prefix!r}"
+            raise ValueError(message)
+        if isinstance(share, bool) or not isinstance(share, int | float) or not 0.0 <= share <= 1.0:
+            message = f"share_of_tokens must be a number from 0 to 1, got {share!r}"
+            raise ValueError(message)
+        if self.max_training_tokens is None:
+            message = "a share is a fraction of a token budget; set max_training_tokens"
+            raise ValueError(message)
+        if not self.shuffle_training_units:
+            message = "a share takes each class from the front of its seeded shuffle; set shuffle_training_units"
+            raise ValueError(message)
+        if self.training_group_prefixes is not None:
+            message = (
+                "share_group_prefix replaces training_group_prefixes; a plan cannot filter the training "
+                "side and compose it by share at once"
+            )
+            raise ValueError(message)
+
     @property
     def effective_split_seed(self) -> int:
         """The seed the document split uses: the declared one, or the run's master seed."""
@@ -494,6 +531,9 @@ class PreparedCorpus:
     #: Recorded because a seed study pays the tokenizer's cost once rather than once per seed, and a reader
     #: of a single run's report should be able to tell which happened.
     tokenizer_reused: bool = False
+    #: What a share-composed run packed, so the report states the realised mixture and not the intended one.
+    #: ``None`` for every other plan.
+    training_composition: ShareSelection | None = None
 
     @property
     def tokens(self) -> dict[str, int]:
@@ -799,6 +839,23 @@ def _training_units(
     return tuple(shuffled)
 
 
+def _require_share_classes(units: tuple[Any, ...], prefix: str, share: float) -> None:
+    """Refuse, before the tokenizer is fitted, a share whose class has no works to draw from at all."""
+    matched = sum(1 for unit in units if unit.group.startswith(prefix))
+    if share > 0.0 and matched == 0:
+        message = (
+            f"no training document's work starts with {prefix!r}; a share of {share} of the budget "
+            "cannot be drawn from nothing, so the run stops before fitting a tokenizer"
+        )
+        raise ValueError(message)
+    if share < 1.0 and matched == len(units):
+        message = (
+            f"every training document's work starts with {prefix!r}; the remaining {1 - share:g} of the "
+            "budget has nothing to be drawn from, so the run stops before fitting a tokenizer"
+        )
+        raise ValueError(message)
+
+
 def prepare_corpus(plan: ExperimentPlan) -> PreparedCorpus:
     """Pin the corpus, split it once by document, and train both tokenizations on the training side only.
 
@@ -843,14 +900,31 @@ def prepare_corpus(plan: ExperimentPlan) -> PreparedCorpus:
         seed=plan.effective_split_seed,
         whole_works=plan.whole_work_splits,
     )
-    training_units = _training_units(
-        split.train,
-        plan.training_group_prefixes,
-        shuffle_seed=plan.effective_split_seed if plan.shuffle_training_units else None,
-    )
+    share_prefix, share = plan.share_group_prefix, plan.share_of_tokens
+    training_units: tuple[Any, ...] = ()
+    if share_prefix is None:
+        training_units = _training_units(
+            split.train,
+            plan.training_group_prefixes,
+            shuffle_seed=plan.effective_split_seed if plan.shuffle_training_units else None,
+        )
+    elif share is not None:
+        _require_share_classes(split.train, share_prefix, share)
     # The vocabulary is fitted on the whole training side whichever prefixes the run trains on: two arms of
     # a mixture comparison must share one tokenizer, or the loss difference is partly a different alphabet.
     vocabulary, tokenizer_reused = _fit_or_reuse_vocabulary(plan, work, manifest, split)
+    composition: ShareSelection | None = None
+    if share_prefix is not None and share is not None and plan.max_training_tokens is not None:
+        # Needs the vocabulary: a quota is counted in identifiers, not characters.
+        composition = select_by_share(
+            split.train,
+            vocabulary,
+            prefix=share_prefix,
+            share=share,
+            max_tokens=plan.max_training_tokens,
+            seed=plan.effective_split_seed,
+        )
+        training_units = composition.units
     char_vocabulary = CharVocabulary(tuple(unit.text for unit in split.train))
 
     # One window per character position of every side: on the repository's own 780 KB that is affordable,
@@ -882,7 +956,9 @@ def prepare_corpus(plan: ExperimentPlan) -> PreparedCorpus:
             vocabulary,
             context_length=plan.context_length,
             track_documents=plan.document_masking,
-            max_tokens=plan.max_training_tokens,
+            # A share-composed selection already holds its quotas to within a document; a cap applied to the
+            # interleaved order would drop the last documents and move the share it just established.
+            max_tokens=None if composition is not None else plan.max_training_tokens,
         ),
         validation=pack_units(
             validation_units,
@@ -903,6 +979,7 @@ def prepare_corpus(plan: ExperimentPlan) -> PreparedCorpus:
         corpus_origin=origin,
         snapshot=snapshot,
         tokenizer_reused=tokenizer_reused,
+        training_composition=composition,
     )
 
 
@@ -1326,7 +1403,9 @@ def run_experiment(plan: ExperimentPlan, *, verbose: bool = False) -> dict[str, 
             "training_group_prefixes": (
                 None if plan.training_group_prefixes is None else list(plan.training_group_prefixes)
             ),
-            "training_groups": sorted({unit.group for unit in prepared.split.train if unit.group})
+            "training_groups": sorted(prepared.training_composition.identifiers_by_group)
+            if prepared.training_composition is not None
+            else sorted({unit.group for unit in prepared.split.train if unit.group})
             if plan.training_group_prefixes is None
             else sorted(
                 {
@@ -1343,6 +1422,7 @@ def run_experiment(plan: ExperimentPlan, *, verbose: bool = False) -> dict[str, 
             "shuffle_training_units": plan.shuffle_training_units,
             "training_documents_packed": prepared.train.document_count,
             "training_tokens_packed": prepared.train.tokens_available,
+            **_composition_block(plan, prepared),
             "groups_per_side": groups_per_side(prepared.split),
             "works_on_multiple_sides": works_on_multiple_sides(prepared.split),
             "documents_per_side": {
@@ -1416,6 +1496,15 @@ def run_experiment(plan: ExperimentPlan, *, verbose: bool = False) -> dict[str, 
                 ),
                 "max_training_tokens": plan.max_training_tokens,
                 "shuffle_training_units": plan.shuffle_training_units,
+                # Present only for a share-composed run, so a recorded protocol's digest does not move.
+                **(
+                    {}
+                    if plan.share_group_prefix is None
+                    else {
+                        "share_group_prefix": plan.share_group_prefix,
+                        "share_of_tokens": plan.share_of_tokens,
+                    }
+                ),
                 "effective_batch_size": outcome.config.effective_batch_size,
                 "positions_per_second": round(outcome.positions_per_second, 1),
                 "records": len(outcome.records),
@@ -1453,6 +1542,31 @@ def run_experiment(plan: ExperimentPlan, *, verbose: bool = False) -> dict[str, 
             for key, value in asdict(plan).items()
             if isinstance(value, int | float | str | Path)
         },
+    }
+
+
+def _composition_block(plan: ExperimentPlan, prepared: PreparedCorpus) -> dict[str, Any]:
+    """The mixture a share-composed run packed, as counted; empty for every other plan."""
+    composition = prepared.training_composition
+    if composition is None:
+        return {}
+    registers = (
+        plan.test_partitions
+        if plan.test_partitions is not None
+        else (() if plan.share_group_prefix is None else (plan.share_group_prefix,))
+    )
+    return {
+        "training_composition": {
+            "share_group_prefix": plan.share_group_prefix,
+            "declared_share": plan.share_of_tokens,
+            "realised_share": round(composition.realised_share, 6),
+            "identifiers_matched": composition.matched_identifiers,
+            "identifiers_other": composition.other_identifiers,
+            "identifiers_by_register": identifiers_by_register(
+                composition.identifiers_by_group, registers
+            ),
+            "works_packed": len(composition.identifiers_by_group),
+        }
     }
 
 

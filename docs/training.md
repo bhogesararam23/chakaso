@@ -188,6 +188,17 @@ answer grounded in evidence. The Gutenberg corpora are 19th-century prose, a cla
 essay in English, chosen because they are somebody else's text and legally re-usable, not because they are
 training data for an assistant.
 
+## Composing the training mixture
+
+**Status: Implemented** ([ADR-0045](decisions/ADR-0045-training-composition-is-declared-as-a-share-of-the-token-budget.md)).
+Until E2615 a mixture was whatever a group-prefix filter and a token cap produced: every register in its natural
+proportion (prose came to 51.03 % of E2612's 20M identifiers) or one register alone. A plan can now declare
+`share_group_prefix` and `share_of_tokens` together: works under the prefix supply that fraction of
+`max_training_tokens` identifiers and every other training work supplies the rest. Each class is a prefix of its own
+seeded shuffle, so a larger share contains a smaller one and the arms of a sweep are nested; a share of 0 or 1 is
+exactly the filtered run. The report states the realised composition (`corpus.training_composition`), and a quota the
+pool cannot supply is refused rather than relabelled.
+
 ## Reproducing a recorded run
 
 The corpus a result was measured on is not the corpus that happens to be on disk. Once a repository edits

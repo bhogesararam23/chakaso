@@ -206,3 +206,23 @@ def test_the_script_rebuilds_the_comparison_from_report_files_and_signals_a_mism
     assert _script().main([*arguments, "--reference=P"]) == 2
     assert "CONDITIONS NOT MATCHED" in capsys.readouterr().err
     assert _script().main(["--arm=bad", "--reference=P"]) == 1
+
+
+def test_arms_that_differ_only_in_share_list_the_share_as_the_declared_difference() -> None:
+    arms = {
+        "low": _report(prose=1.90, science=1.95),
+        "high": _report(prose=1.82, science=2.05),
+    }
+    for name, share in (("low", 0.25), ("high", 0.75)):
+        budget = arms[name]["transformer"]["budget"]
+        budget["share_of_tokens"] = share
+        budget["share_group_prefix"] = "prose-"
+
+    result = compare_arms(arms, reference="low")
+
+    assert result["all_conditions_matched"] is True
+    assert result["declared_differences"]["share_of_tokens"]["values"] == {
+        "low": 0.25,
+        "high": 0.75,
+    }
+    assert "share_group_prefix" not in result["declared_differences"]

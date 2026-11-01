@@ -12,6 +12,14 @@ capability is implemented or still planned.
 
 ## Unreleased
 
+### 2026-11-01 (evening) — a mixture can now be declared as a share, and a sweep read against the measured noise
+
+**Added**
+
+- **Share-composed training sets** (ADR-0045, **Implemented**, not yet used in a measured run). A plan declares the share of
+  the identifier budget one register supplies; the report states the realised composition; a quota the pool cannot
+  supply is refused. The endpoints equal the filter-based runs E2612 made, and a recorded protocol's digest does not move.
+
 ### 2026-11-01 — a measured result was not re-trainable, and the data lever turned out to cost prose
 
 **Measured**
