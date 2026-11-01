@@ -344,6 +344,7 @@ NUMPY_IMPORT_MODULES = frozenset(
         "src/chakaso/training/evaluation.py",
         "src/chakaso/training/loop.py",
         "src/chakaso/training/subword_experiment.py",
+        "src/chakaso/training/overlap.py",
         "src/chakaso/models/trainedchar.py",
     }
 )

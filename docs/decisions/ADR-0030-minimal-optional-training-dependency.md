@@ -183,6 +183,13 @@ extra, with the model's gradients derived by hand and verified by finite-differe
   still needs no numpy. This is the same shape of enforcement
   [ADR-0034](ADR-0034-optional-pytorch-model-extra.md) chose for `torch`, whose rule 2 claimed the two were
   enforced alike when only one was.
+- **Amended 2026-11-01:** a ninth module, `training/overlap.py`, is admitted. It measures near-duplicate overlap
+  between a split's sides by sorting and intersecting tens of millions of 64-bit hashes; in pure Python that is
+  a set of ~18M integers (over a gigabyte on this host), in numpy a 140 MB array. It sits in the `[train]` tier,
+  nothing above the training package imports it, and the staleness test keeps the permission honest. It was added
+  to the code before this line was added to the allowlist, and the remote CI caught it on the next push; the
+  lesson is that a new module under `training/` is checked by `tests/test_repository_hygiene.py`, which must be run
+  with the rest of the suite and not only with the new module's own tests.
 
 ## Memory and performance risks
 
