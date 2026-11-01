@@ -330,6 +330,7 @@ def test_a_run_names_its_artifacts_after_its_experiment_and_its_corpus(tmp_path:
         _root(tmp_path),
         tmp_path / "work",
         experiment_id="E2699",
+        sample_prompts="held_out",
         corpus=CorpusSpec(
             name="harbour-text",
             version="1.0.0",
@@ -423,7 +424,9 @@ def test_a_snapshot_of_another_corpus_is_recorded_under_its_own_name(tmp_path: P
     write_snapshot(foreign, snapshot)
     work = tmp_path / "work"
 
-    prepared = prepare_corpus(_plan(root, work, corpus_snapshot=snapshot))
+    prepared = prepare_corpus(
+        _plan(root, work, corpus_snapshot=snapshot, sample_prompts="held_out")
+    )
 
     assert prepared.manifest.name == "harbour-text"
     written = sorted(path.name for path in work.iterdir())
@@ -785,6 +788,7 @@ def _grouped_plan(root: Path, work: Path, **overrides: object) -> ExperimentPlan
         extensions=(".md",),
         exact_paths=(),
     )
+    overrides.setdefault("sample_prompts", "held_out")
     return _plan(root, work, corpus=corpus, character_baseline=False, **overrides)
 
 
@@ -850,6 +854,7 @@ def _register_plan(root: Path, work: Path, **overrides: object) -> ExperimentPla
         extensions=(".md",),
         exact_paths=(),
     )
+    overrides.setdefault("sample_prompts", "held_out")
     return _plan(
         root,
         work,
@@ -960,6 +965,7 @@ def test_a_capped_corpus_is_sampled_not_sliced_when_shuffled(tmp_path: Path) -> 
         "character_baseline": False,
         "whole_work_splits": True,
         "max_training_tokens": 120,
+        "sample_prompts": "held_out",
     }
     ordered = prepare_corpus(_plan(root, tmp_path / "a", **base))
     shuffled = prepare_corpus(_plan(root, tmp_path / "b", shuffle_training_units=True, **base))
@@ -1120,3 +1126,31 @@ def test_a_masked_run_scores_its_held_out_sides_under_the_same_mask(
 
     assert masked_calls and all(masked_calls), "every held-out scoring call must apply the mask"
     assert seen and not any(seen)
+
+
+def test_a_foreign_corpus_cannot_be_sampled_with_the_repositorys_own_prompts(
+    tmp_path: Path,
+) -> None:
+    """K-026: the wrong-probe condition must fail at preparation, before any training is spent."""
+    from chakaso.training.manifest import build_manifest, write_snapshot
+
+    root = _root(tmp_path)
+    foreign = build_manifest(
+        root,
+        name="harbour-text",
+        version="1.0.0",
+        licence="Apache-2.0",
+        source="built by tests",
+        include=("docs/", "*.md"),
+        extensions=(".md",),
+        exact_paths=("LICENSE", "AGENTS.md"),
+    )
+    snapshot = tmp_path / "harbour-snapshot.json"
+    write_snapshot(foreign, snapshot)
+    work = tmp_path / "work-foreign"
+
+    with pytest.raises(CorpusError, match="--sample-prompts held_out"):
+        prepare_corpus(_plan(root, work, corpus_snapshot=snapshot))
+
+    assert not list(work.glob("*-tokenizer-*.json")), "nothing was fitted before the refusal"
+    prepare_corpus(_plan(root, work, corpus_snapshot=snapshot, sample_prompts="held_out"))

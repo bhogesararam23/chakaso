@@ -20,6 +20,9 @@ capability is implemented or still planned.
   training and validation loss but not `score_model_on_examples`, so a masked run would have been scored under
   attention it never trained with. The switch defaults off, leaving every committed record's protocol intact; four
   tests cover it and the experiment-level one fails against the previous code. No masked arm has been run.
+- **A run on a foreign corpus can no longer sample with the repository's own prompts** (K-026). E2612 described two
+  Project Gutenberg models by continuing Chakaso's section titles because the default prompt set was never changed.
+  Preparation now refuses that combination before anything is fitted and names `--sample-prompts held_out`.
 - **A whole-work split now reports the duplicates it excluded** (K-025). The field was always empty on that path.
 
 - **The byte-pair merge loop no longer silently mis-selects merges** (`cfdcd1a`). The indexed heap added in

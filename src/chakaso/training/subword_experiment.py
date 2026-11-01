@@ -754,6 +754,17 @@ def prepare_corpus(plan: ExperimentPlan) -> PreparedCorpus:
             "rather than training on a different one"
         )
         raise CorpusError(message)
+    if plan.sample_prompts == "repository" and manifest.name != CORPUS_NAME:
+        # Refused here, not at generation time: the generation block runs after the last training step, so a
+        # late refusal would have spent the whole run first. A prompt quoting this repository's own section
+        # titles, put to a model trained on a different corpus, measures memorization of text the model never
+        # saw (K-026) — and E2612's qualitative block was exactly that, by omission of a flag.
+        message = (
+            f"this run trains on corpus {manifest.name!r} but samples with the repository's own prompts, "
+            f"which are drawn from {CORPUS_NAME!r}; pass --sample-prompts held_out so the generation "
+            "block continues text from this corpus's own test side"
+        )
+        raise CorpusError(message)
 
     split = split_text_units(
         manifest.text_units(),

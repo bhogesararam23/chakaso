@@ -660,7 +660,7 @@ can state its deduplication from its own report — which is the class of thing
 
 **Fixed 2026-11-01.** `_split_whole_works` now receives the duplicates the shared screening dropped and carries them into its `UnitSplit`, so both split paths report the count. `test_a_whole_work_split_reports_the_duplicates_it_excluded` fails against the previous code (the field was empty) and passes now. The two E2612 reports still print 0, because they were written before the fix; a report is not edited after the fact, and the three excluded documents are named in the paragraph above.
 
-### K-026 — Generation probes quote the repository's own headings at models trained on foreign text
+### K-026 — Closed for new runs: generation probes quoted the repository's own headings at models trained on foreign text
 
 **Impact:** Medium. It invalidates the qualitative block of every external-corpus run so far, without touching a
 single loss number.
@@ -678,9 +678,12 @@ default silently became the wrong thing.
 between arms are reported as a defect, not as a finding about those models' text. Nothing about H1 or H2 depends
 on it.
 
-**Not fixed.** The default is still `repository`. **What would close it:** a run whose corpus is not
-`chakaso-repo-text-v1` either passes `--sample-prompts held_out` or is refused, so the wrong-probe condition
-cannot arise by omission; then E2612's generation block re-measured as a new record.
+**Fixed 2026-11-01 for new runs.** `prepare_corpus` now refuses a plan whose corpus is not
+`chakaso-repo-text-v1` and whose `sample_prompts` is still the default `repository`, naming the flag to pass. The
+refusal is at preparation, before a tokenizer is fitted, because the generation block runs after the last
+training step and a late refusal would have spent the run first. The default itself is unchanged, so every
+repository-corpus protocol is untouched. **Not closed:** E2612's generation block is still the wrong probe; it is
+re-measured only by a new record, and E2613 is the first run to use `held_out` on this corpus.
 
 ### K-027 — A partition's `characters` is its population, not the scored denominator
 
