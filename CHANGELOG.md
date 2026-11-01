@@ -14,6 +14,14 @@ capability is implemented or still planned.
 
 ### 2026-11-01 — a measured result was not re-trainable, and the data lever turned out to cost prose
 
+**Measured**
+
+- **E2613: the prose cost of E2612's mixture belongs to the mixture** (outcome H8-b). A prose-only arm at 10M identifiers,
+  with every condition proved matched by the new arm-comparison tool, scored held-out prose 1.80621 against the
+  mixture's 1.83952 (−0.03331, outside the 0.02 band) and the 20M prose control's 1.80926 (−0.00305, inside it). Caveats the
+  record states: the arm made about twice the mixture's prose passes, one seed, band unmeasured (E2614). The record also
+  discloses its first launch, which refitted a vocabulary after a provenance fix moved a cache key.
+
 **Fixed**
 
 - **The held-out scorer now applies document-boundary masking when the run trained with it.** Masking reached the

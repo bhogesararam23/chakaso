@@ -327,9 +327,9 @@ technical text and cost **+0.03026** on held-out prose, a trade-off at one seed 
 plan, none of them a capability result. (1) The same day's audit found the byte-pair merge loop had been
 mis-selecting merges, which made E2612's vocabulary unreproducible from code; that vocabulary is now committed as an
 input ([ADR-0044](decisions/ADR-0044-a-vocabulary-a-record-cites-is-committed-beside-it.md)). (2) The prose cost has a
-declared confound — the control saw about twice the prose — and [E2613](../experiments/E2613/record.md) is
-preregistered to separate dose from mixture; its first launch deviated and is disclosed in the record, and no result
-exists. (3) Phase 2 is now [E2614](../experiments/E2614/record.md): five seeds, not E2609's three-to-five loosely, chosen
+declared confound — the control saw about twice the prose — and [E2613](../experiments/E2613/record.md) tested it:
+its first launch deviated and is disclosed, and the valid arm found the prose cost belongs to the mixture (prose 1.80621
+against the mixture's 1.83952, one seed), with the two-pass caveat the record states; the prose-share sweep (H9) is next. (3) Phase 2 is now [E2614](../experiments/E2614/record.md): five seeds, not E2609's three-to-five loosely, chosen
 because three seeds leave a standard deviation known only to within 0.52×–6.29×, with rules that decide whether the
 0.02 band survives. It is preregistered and has no result. Phases 5 and 6 and any post-training wait on gates that
 [ADR-0043](decisions/ADR-0043-training-stages-are-separated-by-what-changes-and-entered-by-gates.md) now states and

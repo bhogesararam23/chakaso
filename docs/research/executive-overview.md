@@ -4,8 +4,7 @@
 evidence stands behind it**, because the repository's rule is that a hunch must not acquire a measurement's authority.
 The detail, the caveats and the numbers live in the documents linked from each row; this page deliberately repeats
 none of them beyond a headline.
-**As of:** 2026-11-01. E2613 (a valid arm) and E2614 are running or preregistered and have no result; nothing here
-depends on them.
+**As of:** 2026-11-01. E2613 has a result (row 5); E2614 is preregistered and has none.
 
 ## What Chakaso is, in three sentences
 
@@ -34,7 +33,7 @@ earning that evidence in order, not a claim that it has been earned.
 | 2 | At matched capacity and context (~1M parameters) the decoder family beats the transformer by 0.0966 bits per character; about 44 % of E2608's gap survives the match | Experimental, one seed, **band unmeasured** | [E2611](../../experiments/E2611/record.md) |
 | 3 | The repetition in the released checkpoint's text is greedy decoding of a human-diverse distribution, not a pipeline defect, and no decoding setting writes coherent text | Measured here | [E2610](../../experiments/E2610/record.md) |
 | 4 | Training on five registers instead of prose lowers held-out technical loss by 0.27584 and raises prose loss by 0.03026 — a trade-off at one seed per arm | Experimental | [E2612](../../experiments/E2612/record.md) |
-| 5 | The prose cost is prose *dose*, not the presence of technical text | **Hypothesis (H8)**; E2613 preregistered, no valid result | [hypotheses](hypotheses.md), [E2613](../../experiments/E2613/record.md) |
+| 5 | E2612's prose cost belongs to the mixture, not to seeing less prose: a prose-only arm at half the identifiers scored prose 1.80621 against the mixture's 1.83952 (outside the band) and the full prose control's 1.80926 (inside it). Caveat: that arm made about twice the mixture's prose passes, so the cost may be positions spent on technical text, not harm from it | Experimental, one seed, band unmeasured (H8 falsified as worded) | [hypotheses](hypotheses.md), [E2613](../../experiments/E2613/record.md) |
 | 6 | Frontier mechanisms (GQA, MLA, MoE, sliding-window attention, multi-token prediction, FP8, logit soft-capping) have no supporting evidence at 3.4M and several published sources place their benefit at 70B or above: **0 adopt, 1 adapt, 2 test, 8 reject** | Published evidence + Decision | [landscape](open-model-landscape.md), [campaign](chakaso-research-campaign-2026-11.md) |
 | 7 | Small models are trained on far more tokens than Chinchilla's ~20 per parameter (TinyLlama 1.1B on 3T; SmolLM2 1.7B on ~11T); Chakaso trains at ~5.8 tokens per parameter on 19.66M tokens | Published + Measured here | [landscape](open-model-landscape.md), [compute plan](chakaso-compute-and-scaling-plan.md) |
 | 8 | A web-scale corpus licenses its *packaging*, not its text; the only upgrade whose licence reaches the content is public-domain or CC0 text | Published (licences read at source) + Decision | [data review](../internal/engineering/data-and-licensing-research-2026-11-01.md) |
