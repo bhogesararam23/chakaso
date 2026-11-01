@@ -20,6 +20,11 @@ capability is implemented or still planned.
   training and validation loss but not `score_model_on_examples`, so a masked run would have been scored under
   attention it never trained with. The switch defaults off, leaving every committed record's protocol intact; four
   tests cover it and the experiment-level one fails against the previous code. No masked arm has been run.
+- **The documentation's arXiv citations are now audited against arXiv** (`scripts/audit_citations.py`, record in
+  `docs/internal/engineering/citation-audit-2026-11-01.md`). All 106 identifiers resolve and all 47 named first authors
+  are right; 131 of 261 citations are corroborated by author, title or date and 122 could not be checked from their
+  line. Three defects were found and corrected in the OLMo 2 and Gemma 2 entries: a blog title cited under a paper's
+  identifier, and two dates that were the identifier's month rather than the first version's.
 - **A partition block no longer calls its population `characters`** (K-027). Reports now write
   `population_characters` and `documents_packed`, so an aggregate cannot be weighted by the wrong denominator by
   reading the nearest field. Reports already on disk keep the old names.

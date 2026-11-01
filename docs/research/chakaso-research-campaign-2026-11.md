@@ -31,7 +31,10 @@ undocumented when this campaign began.
 | 11 | Reconciled state, task ledger and issues | [CURRENT_STATE](../agent/CURRENT_STATE.md), [ACTIVE_TASK](../agent/ACTIVE_TASK.md), [KNOWN_ISSUES](../agent/KNOWN_ISSUES.md) (K-024 to K-029 added) |
 | 12 | Final campaign report | [research-campaign-report-2026-11-01](../internal/engineering/research-campaign-report-2026-11-01.md) |
 
-**The trust layer is [the verification ledger](../internal/engineering/research-verification-ledger-2026-11-01.md).**
+**The trust layer is [the verification ledger](../internal/engineering/research-verification-ledger-2026-11-01.md)**,
+extended on the same day by [the citation audit](../internal/engineering/citation-audit-2026-11-01.md), which
+checked all 106 arXiv identifiers the documentation cites against arXiv itself and corrected three defects in two
+entries.
 33 claims were independently re-checked there — how each was checked, what came back, and which first readings
 were wrong. Read it before relying on any finding in this index.
 

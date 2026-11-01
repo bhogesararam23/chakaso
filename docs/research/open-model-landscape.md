@@ -281,7 +281,7 @@ revisions.
 3. Qwen Team. *Qwen2.5 Technical Report.* arXiv:2412.15115, 19 Dec 2024 (v2 Jan 2025).
    <https://arxiv.org/abs/2412.15115>
 4. Qwen Team. *Qwen3 Technical Report.* arXiv:2505.09388, 14 May 2025. <https://arxiv.org/abs/2505.09388>
-5. OLMo Team. *OLMo 2: The Best Fully Open Language Model to Date.* arXiv:2501.00656, Jan 2025.
+5. OLMo Team. *2 OLMo 2 Furious* (arXiv's title for the OLMo 2 technical report; Ai2's announcement is headed "OLMo 2: The Best Fully Open Language Model to Date"). arXiv:2501.00656, first version 31 Dec 2024 (identifier month Jan 2025).
    <https://arxiv.org/abs/2501.00656>
 6. OLMo Team. *Olmo 3.* arXiv:2512.13961, Dec 2025. <https://arxiv.org/abs/2512.13961>; announcement
    <https://allenai.org/blog/olmo3>, 20 Nov 2025.
@@ -350,7 +350,7 @@ revisions.
 38. Jiang, A. Q. et al. *Mistral 7B.* arXiv:2310.06825, Oct 2023. <https://arxiv.org/abs/2310.06825>
 39. Jiang, A. Q. et al. *Mixtral of Experts.* arXiv:2401.04088, Jan 2024. <https://arxiv.org/abs/2401.04088>
 40. Gemma Team, Google DeepMind. *Gemma 2: Improving Open Language Models at a Practical Size.*
-    arXiv:2408.00118, Aug 2024. <https://arxiv.org/abs/2408.00118>
+    arXiv:2408.00118, first version 31 Jul 2024 (identifier month Aug 2024). <https://arxiv.org/abs/2408.00118>
 41. Abdin, M. et al. *Phi-3 Technical Report: A Highly Capable Language Model Locally on Your Phone.*
     arXiv:2404.14219, Apr 2024. <https://arxiv.org/abs/2404.14219>
 42. Abdin, M. et al. *Phi-4 Technical Report.* arXiv:2412.08905, Dec 2024.
