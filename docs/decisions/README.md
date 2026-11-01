@@ -135,3 +135,4 @@ creates.
 | [ADR-0040](ADR-0040-document-boundary-attention-masking.md) | Document-boundary attention masking is an opt-in training option, off by default until a controlled experiment measures it | Accepted |
 | [ADR-0041](ADR-0041-next-training-target-general-base-with-technical-mixture.md) | The next training target is a general base with a technical mixture, and the next unit is an equal-token data experiment, not an architecture change | Accepted |
 | [ADR-0042](ADR-0042-held-out-means-held-out-works.md) | A held-out score is held out by work, not by chunk; the whole-work split is opt-in and every report states whether it ran | Accepted |
+| [ADR-0043](ADR-0043-training-stages-are-separated-by-what-changes-and-entered-by-gates.md) | Base pretraining, mid-training and post-training are separated by what changes, and each is entered through a measured gate | Accepted |
