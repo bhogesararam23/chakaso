@@ -127,12 +127,17 @@ class Paper:
 _FAILING = frozenset({"unresolved", "author-mismatch", "title-mismatch"})
 
 
+def is_audit_record(name: str) -> bool:
+    """The audit's own output lists every identifier it checked, so scanning it would audit the audit."""
+    return Path(name).name.startswith("citation-audit")
+
+
 def tracked_markdown(root: Path = REPOSITORY) -> list[Path]:
     """Markdown files under version control, so a local scratch note is never audited as the project's."""
     listed = subprocess.run(
         ["git", "ls-files", "*.md"], cwd=root, capture_output=True, text=True, check=True
     ).stdout.splitlines()
-    return [root / name for name in listed if name]
+    return [root / name for name in listed if name and not is_audit_record(name)]
 
 
 def extract_citations(text: str, path: str) -> list[Citation]:

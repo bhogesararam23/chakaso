@@ -132,3 +132,8 @@ def test_a_stated_date_corroborates_a_bare_identifier_and_a_different_one_asks_f
 def test_only_a_failed_check_fails_the_audit(audit: ModuleType) -> None:
     assert {"unresolved", "author-mismatch", "title-mismatch"} == set(audit._FAILING)
     assert "date-differs" not in audit._FAILING
+
+
+def test_the_audits_own_record_is_not_audited(audit: ModuleType) -> None:
+    assert audit.is_audit_record("docs/internal/engineering/citation-audit-2026-11-01.md")
+    assert not audit.is_audit_record("docs/research/open-model-landscape.md")
