@@ -185,7 +185,7 @@ its 20M cap covers ~80 % of the prose pool but ~42 % of the mixture pool, so the
 prose of the treatment — the measurement now shows the pool is 50.51 % prose by characters, and the prose
 partition differs by 0.03026, only 1.5× the band. *Falsified by:* a third arm (P½) landing materially better on
 prose than the mixture arm at equal prose exposure. *Cost:* one 90-minute run, no new machinery.
-*Status 2026-11-01:* **falsified as worded** by [E2613](../../experiments/E2613/record.md) (outcome H8-b): the prose-only arm at ~10M identifiers scored prose 1.80621, 0.03331 below the mixture arm's 1.83952, and 0.00305 below the 20M prose arm's 1.80926. The arm made about twice the mixture's prose passes, so the finding is that a step budget partly spent on technical text costs prose, not that technical text harms prose; a one-pass arm would separate the two and is not run. One seed.
+*Status 2026-11-01:* **falsified as worded** by [E2613](../../experiments/E2613/record.md) (outcome H8-b): the prose-only arm at ~10M identifiers scored prose 1.80621, 0.03331 below the mixture arm's 1.83952, and 0.00305 below the 20M prose arm's 1.80926. The arm made about twice the mixture's prose passes, so the finding is that a step budget partly spent on technical text costs prose, not that technical text harms prose; a one-pass arm would separate the two: preregistered as [E2616](../../experiments/E2616/record.md), not yet run. One seed.
 
 **H9 — The mixture has an interior optimum in prose share.** *Statement:* held-out bits per character over a
 mixed register corpus is minimised at some prose share strictly between 0 % and 100 %, and that share is

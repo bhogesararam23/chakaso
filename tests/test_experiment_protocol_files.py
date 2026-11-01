@@ -21,3 +21,28 @@ def test_the_share_sweep_protocols_differ_from_e2614_and_each_other_only_in_the_
         assert plan.pop("share_group_prefix") == "prose-", name
         # The sweep is a sweep only if nothing else moved: not the budget, the vocabulary, the split or the model.
         assert plan == reference["plan"], name
+
+
+def test_the_one_pass_control_differs_from_e2614_in_exactly_the_declared_fields() -> None:
+    directory = Path(__file__).resolve().parent.parent / "configs" / "experiments"
+    reference = tomllib.loads((directory / "E2614-decoder-seed-spread.toml").read_text("utf-8"))[
+        "plan"
+    ]
+    arm = tomllib.loads((directory / "E2616-one-pass-prose.toml").read_text("utf-8"))["plan"]
+
+    changed = {key for key in {*reference, *arm} if reference.get(key) != arm.get(key)}
+
+    assert changed == {
+        "max_steps",
+        "warmup_steps",
+        "eval_every",
+        "training_group_prefixes",
+        "max_training_tokens",
+    }
+    assert arm["max_steps"] * 2 == reference["max_steps"]
+    assert arm["warmup_steps"] * 2 == reference["warmup_steps"]
+    assert arm["eval_every"] * 2 == reference["eval_every"]
+    assert arm["training_group_prefixes"] == ["prose-"]
+    # One pass: the steps read no more positions than the capped pack holds.
+    positions = arm["max_steps"] * arm["batch_size"] * arm["context_length"]
+    assert positions <= arm["max_training_tokens"]
