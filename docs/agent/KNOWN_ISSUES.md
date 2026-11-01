@@ -756,6 +756,37 @@ different catalogue shuffles a different population, so that agreement is strong
 but it is evidence, not a digest taken at selection time, and the record says so. The live file's 5,597,116 bytes
 date from a different measurement and are not this file.
 
+### K-030 — Six latent measurement-path observations from the 2026-11-01 audit are filed, none fixed
+
+**Impact:** Low today, each by its own account; together they are the list of places where a future change could
+move a measured number without a test noticing. They are filed so that the audit's ranked summary is not the only
+place they exist. Locations are by symbol because line numbers move; the audit
+([`model-path-audit-2026-11-01.md`](../internal/engineering/model-path-audit-2026-11-01.md) §6) has the line numbers
+as of that day.
+
+1. **`evaluate_loss` weights each block by its width while the loss skips padding.** The audit demonstrated +0.61 %
+   on synthetic padding. Latent: no run packs ragged blocks into one scored batch.
+2. **A checkpoint write consumes the global RNG** (`save_artifact`). Safe at `dropout = 0`, which every committed
+   record uses; with dropout it would make `checkpoint_every` a numerical setting.
+3. **Weight decay is applied to every parameter, norm scales included, and AdamW's betas and epsilon are the library
+   defaults, declared nowhere and recorded in no report** (`torch.optim.AdamW(parameters, lr=…, weight_decay=…)`).
+   The records are internally consistent; they are not reproducible by anyone who changes the library's defaults,
+   and a published comparison with another recipe cannot say which of these differed.
+4. **No thread or determinism pinning.** Reproduction is by tolerance (0.0005 bits per character), which E2614's
+   seed-7 repeat of E2612 arm T will measure for the first time on this machine.
+5. **`seed_study._PROTOCOL_FIELDS` omits the schedule, `decay_to`, accumulation, masking, work-split and cap fields.**
+   Two runs that differed only in those would still be aggregated as one study. The protocol file
+   (`--protocol`) now makes the plan one declared artifact, which narrows this without removing it.
+6. **A loaded artifact reports `min_frequency` 2, whatever it was fitted at.** The checkpoint metadata does not store
+   it, and adding it would change the checksummed metadata document and with it every released artifact's
+   verification, so it needs a format decision (ADR-0035), not a patch.
+
+**What would close each:** (1) weight by scored positions or forbid ragged scoring; (2) save and restore the RNG
+state around the write; (3) record the optimiser's `defaults` in the report's budget block and decide, as a
+preregistered arm, whether norms should be excluded from decay; (4) pin threads in the run and say so in the report,
+or state the tolerance as the contract; (5) derive the protocol identity from the plan instead of a hand-kept list;
+(6) a checkpoint-format revision.
+
 ## Resolved
 
 ### Retired — no package, no tests and no CI existed
