@@ -2,8 +2,11 @@
 
 **Status:** preregistered — committed before any seed ran. No result exists; the Results section is added only
 after the reports are on disk.
-**Type:** Research experiment, **preregistered**. Supersedes the "E2609" slot of the earlier ledgers, which was
-never run (ACTIVE_TASK T4).
+**Type:** Research experiment, **preregistered**. It takes the place of **E2609**, which E2608 declared (arm A across
+five seeds on its 919-document corpus) and nobody ran. *Why a different configuration, stated before any run:* arm A's
+corpus is split by chapter, so a spread there would be a spread of within-work numbers (K-023, ADR-0042); E2614 runs
+at E2612 arm T's configuration, which is the one every comparison still to come (H8–H13) is measured at. The E2608
+reference checkpoint therefore still has no seed spread of its own.
 **Protocol file:** [`configs/experiments/E2614-decoder-seed-spread.toml`](../../configs/experiments/E2614-decoder-seed-spread.toml),
 read by `chakaso experiment study --protocol`. This record and that file are the same declaration; the file is
 what runs.
