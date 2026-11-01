@@ -1,7 +1,8 @@
 # E2613 — exposure control: does the mixture cost prose, or does prose dose?
 
-**Status:** preregistered — the declarations below were committed before the arm ran. No result exists yet; the
-Results section is added only after the report is on disk.
+**Status:** preregistered — the declarations below were committed before any arm ran. No result exists yet; the
+Results section is added only after the report is on disk. **The first launch deviated from this record and does not
+count as the arm it names; see "Deviation 1".** The valid arm is run after the deviation's cause is fixed.
 **Type:** Research experiment, **preregistered**
 **Unit:** T3 of [ACTIVE_TASK](../../docs/agent/ACTIVE_TASK.md); tests hypothesis
 [H8](../../docs/research/hypotheses.md).
@@ -95,6 +96,32 @@ X − P):
 No band, metric, budget or flag is changed after a result is read. A re-run with a different budget is a new
 record.
 
+## Deviation 1 — the first launch refitted the vocabulary (disclosed 2026-11-01, before any result was read)
+
+The arm was first launched at `536649f` (2026-11-01 10:27) into `data/experiments/E2613/half-prose`. Within four
+minutes a second file, with vocabulary checksum `2f747d1fbf52b229…`, appeared beside E2612's
+(`2dd2f5273e1fada3…`) in the shared tokenizer directory: the run had **missed E2612's cache and fitted a different
+vocabulary**, so it does not hold the tokenizer fixed and is not the arm this record preregisters.
+
+*Cause (mine).* The tokenizer cache is keyed on the split fingerprint, and that fingerprint hashed the list of
+excluded duplicates. `7704fe2` fixed K-025 by making the whole-work split report its three duplicates, which moved
+E2612's split fingerprint and with it the cache key. Nothing in the preregistration or the launch checked that the
+cache would hit; the record said "read, not re-fitted" without verifying it before starting. The fingerprint now
+covers the side assignment only (`b9d7b1a`), and the E2612 split reproduces its recorded `adf650435c3a9068` from the
+pinned snapshot.
+
+*Consequence.* The first launch's report, when it completes, is **run R1: arm H under a refitted vocabulary**. It
+differs from the preregistered arm in the tokenizer, so it is not compared against E2612's arms for H8 and no
+outcome letter is assigned from it. It is reported in the Results section as an additional, differently-conditioned
+observation, with the vocabulary checksums beside it. It cannot be stopped from this session (the attempt to end the
+process was refused), so it runs to completion.
+
+*Correction.* The valid arm is launched after `b9d7b1a` into a new directory, `half-prose-e2612-vocab`, and must report
+`reused_from_cache: true` with tokenizer fingerprint `434debe82f949347` and split fingerprint `adf650435c3a9068` before
+its numbers are read; if it does not, it is also a deviation. **No band, outcome, decision rule or flag other than the
+work directory changes**, and none is chosen with any result of R1 in view: R1 has no result on disk when this section
+is committed.
+
 ## Generation block
 
 Run with `--sample-prompts held_out`, which takes test-side document openings, not the repository's own
@@ -115,7 +142,7 @@ held-out loss; they are reported, not interpreted as quality.
 ## Reproduction
 
 ```bash
-chakaso experiment model --work-dir data/experiments/E2613/half-prose --experiment E2613-H \
+chakaso experiment model --work-dir data/experiments/E2613/half-prose-e2612-vocab --experiment E2613-H \
   --corpus-snapshot data/corpora/gutenberg-multiregister-v1/gutenberg-multiregister-v1-snapshot.json \
   --expected-corpus-fingerprint 312571f9fa8351a8 \
   --model-family decoder --vocab-size 4096 --context-length 256 --d-model 256 --num-layers 4 \
@@ -128,5 +155,5 @@ chakaso experiment model --work-dir data/experiments/E2613/half-prose --experime
   --test-partition prose- --test-partition science- --test-partition technology- \
   --test-partition medicine- --test-partition mathematics- \
   --sample-prompts held_out \
-  --no-character-baseline --write-report data/experiments/E2613/half-prose/report.json
+  --no-character-baseline --write-report data/experiments/E2613/half-prose-e2612-vocab/report.json
 ```
