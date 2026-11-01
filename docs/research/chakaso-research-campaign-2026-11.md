@@ -19,7 +19,7 @@ undocumented when this campaign began.
 | # | Deliverable | Document |
 | --- | --- | --- |
 | 1 | Codebase and experiment audit | [model-path-audit](../internal/engineering/model-path-audit-2026-11-01.md), [measurement-harness-audit](../internal/engineering/measurement-harness-audit-2026-11-01.md) |
-| 2 | Comparative open-model research | [frontier families](../internal/engineering/open-model-research-llama-mistral-deepseek-2026-11-01.md), [small-model families](../internal/engineering/open-model-research-qwen-olmo-gemma-phi-smollm-2026-11-01.md), and 18 annotations in [open-model-landscape.md](open-model-landscape.md) |
+| 2 | Comparative open-model research | [frontier families](../internal/engineering/open-model-research-llama-mistral-deepseek-2026-11-01.md), [small-model families](../internal/engineering/open-model-research-qwen-olmo-gemma-phi-smollm-2026-11-01.md), [Pythia and two TinyLlama facts](../internal/engineering/open-model-research-pythia-2026-11-01.md), and 18 annotations in [open-model-landscape.md](open-model-landscape.md) |
 | 3 | Architecture and implementation gap analysis | §3 below, plus the two audits |
 | 4 | Data and licensing research | [data-and-licensing-research](../internal/engineering/data-and-licensing-research-2026-11-01.md), 14 annotations in [chakaso-data-curriculum.md](chakaso-data-curriculum.md) |
 | 5 | Training and scaling research | [foundations-research](../internal/engineering/foundations-research-2026-11-01.md), 12 annotations in [chakaso-compute-and-scaling-plan.md](chakaso-compute-and-scaling-plan.md) |
