@@ -687,6 +687,15 @@ def _build_parsers() -> tuple[argparse.ArgumentParser, argparse.ArgumentParser]:
         help="the pre-declared seeds, comma-separated, e.g. 7,11,13,17,19",
     )
     experiment_study.add_argument(
+        "--protocol",
+        type=Path,
+        default=None,
+        help=(
+            "a TOML protocol file whose [plan] table declares the run (architecture, data selection, "
+            "budget, tokenizer); without it the library defaults apply"
+        ),
+    )
+    experiment_study.add_argument(
         "--split-seed",
         type=int,
         required=True,
@@ -2331,6 +2340,7 @@ def _run_model_study(args: argparse.Namespace) -> int:
     """
     try:
         from chakaso.training.errors import StudyProtocolError, TrainingError
+        from chakaso.training.protocol import load_plan
         from chakaso.training.seed_study import (
             SeedStudy,
             build_study_report,
@@ -2352,23 +2362,41 @@ def _run_model_study(args: argparse.Namespace) -> int:
         reference = None
         if args.reference is not None:
             reference = json.loads(args.reference.read_text(encoding="utf-8"))
-        base = ExperimentPlan(root=args.root, work_dir=args.work_dir)
-        max_steps = args.max_steps if args.max_steps is not None else base.max_steps
-        plan = ExperimentPlan(
-            root=args.root,
-            work_dir=args.work_dir,
-            max_steps=max_steps,
-            eval_every=args.eval_every if args.eval_every is not None else base.eval_every,
-            warmup_steps=(
-                args.warmup_steps
-                if args.warmup_steps is not None
-                else min(base.warmup_steps, max_steps)
-            ),
-            split_seed=args.split_seed,
-            expected_corpus_fingerprint=args.expected_corpus_fingerprint,
-            corpus_snapshot=args.corpus_snapshot,
-            overwrite_artifacts=args.overwrite,
-        )
+        if args.protocol is not None:
+            # Only what names where and which corpus comes from the command line; every number that is
+            # measured comes from the file the record cites. A value given in both places must agree.
+            plan = load_plan(
+                args.protocol,
+                root=args.root,
+                work_dir=args.work_dir,
+                fixed={
+                    "split_seed": args.split_seed,
+                    "expected_corpus_fingerprint": args.expected_corpus_fingerprint,
+                    "corpus_snapshot": args.corpus_snapshot,
+                    "max_steps": args.max_steps,
+                    "eval_every": args.eval_every,
+                    "warmup_steps": args.warmup_steps,
+                },
+            )
+            plan = replace(plan, overwrite_artifacts=args.overwrite)
+        else:
+            base = ExperimentPlan(root=args.root, work_dir=args.work_dir)
+            max_steps = args.max_steps if args.max_steps is not None else base.max_steps
+            plan = ExperimentPlan(
+                root=args.root,
+                work_dir=args.work_dir,
+                max_steps=max_steps,
+                eval_every=args.eval_every if args.eval_every is not None else base.eval_every,
+                warmup_steps=(
+                    args.warmup_steps
+                    if args.warmup_steps is not None
+                    else min(base.warmup_steps, max_steps)
+                ),
+                split_seed=args.split_seed,
+                expected_corpus_fingerprint=args.expected_corpus_fingerprint,
+                corpus_snapshot=args.corpus_snapshot,
+                overwrite_artifacts=args.overwrite,
+            )
         study = SeedStudy(experiment=args.experiment, plan=plan, seeds=seeds)
         if args.collect_only:
             aggregate = build_study_report(

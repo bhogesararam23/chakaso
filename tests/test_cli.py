@@ -887,6 +887,49 @@ def test_experiment_model_refuses_a_corpus_it_was_not_given(
     __import__("importlib").util.find_spec("torch") is None,
     reason="the seed study lives behind [train] and [nn]",
 )
+def test_experiment_study_reads_its_plan_from_a_protocol_file_and_refuses_a_bad_one(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    protocol = tmp_path / "protocol.toml"
+    arguments = [
+        "experiment",
+        "study",
+        "--work-dir",
+        str(tmp_path / "study"),
+        "--experiment",
+        "E2699",
+        "--seeds",
+        "7,11",
+        "--split-seed",
+        "7",
+        "--expected-corpus-fingerprint",
+        "0" * 16,
+        "--protocol",
+        str(protocol),
+        "--collect-only",
+    ]
+
+    protocol.write_text("[plan]\nmodel_family = 'decoder'\nlearning_rat = 0.1\n", encoding="utf-8")
+    assert main(arguments) == 1
+    assert "not experiment plan fields" in capsys.readouterr().err
+
+    protocol.write_text("[plan]\nmodel_family = 'decoder'\nsplit_seed = 11\n", encoding="utf-8")
+    assert main(arguments) == 1
+    assert "declares each quantity once" in capsys.readouterr().err
+
+    protocol.write_text(
+        "[plan]\nmodel_family = 'decoder'\nd_model = 16\nnum_heads = 2\nfeedforward_dim = 32\n",
+        encoding="utf-8",
+    )
+    assert main(arguments) == 0
+    assert "E2699: 0/2 seeds" in capsys.readouterr().out
+    assert not (tmp_path / "study" / "E2699").exists(), "collecting trains nothing"
+
+
+@pytest.mark.skipif(
+    __import__("importlib").util.find_spec("torch") is None,
+    reason="the seed study lives behind [train] and [nn]",
+)
 def test_experiment_study_collects_without_running_anything(
     tmp_path: Path, capsys: pytest.CaptureFixture[str]
 ) -> None:

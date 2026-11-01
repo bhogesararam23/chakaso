@@ -39,6 +39,9 @@ capability is implemented or still planned.
 - **A run on a foreign corpus can no longer sample with the repository's own prompts** (K-026). E2612 described two
   Project Gutenberg models by continuing Chakaso's section titles because the default prompt set was never changed.
   Preparation now refuses that combination before anything is fitted and names `--sample-prompts held_out`.
+- **A study can read its plan from a committed TOML protocol** (`experiment study --protocol`). The plan a record
+  preregisters is now one file the run reads, not a command line transcribed beside it; the loader refuses unknown
+  fields, wrong types, and a quantity declared twice with two values.
 - **E2612's vocabulary is now in the repository** ([ADR-0044](docs/decisions/ADR-0044-a-vocabulary-a-record-cites-is-committed-beside-it.md)).
   It was fitted by the defective merge loop, so no command can refit it; it lived only in a git-ignored cache. The 38 KB
   file is committed beside its record, pinned by a test to its fingerprint, and a run uses it with `--tokenizer-file`.

@@ -241,6 +241,11 @@ Three rules make those commands mean something, and the code enforces them rathe
 
 - **A run that names a corpus trains on that corpus.** `--expected-corpus-fingerprint` is checked before any
   step is taken; a snapshot of a different corpus is a refusal, not a substitution.
+- **A study can read its plan from a committed file.** `chakaso experiment study --protocol FILE.toml` takes the
+  architecture, data selection, budget and tokenizer from a `[plan]` table (`chakaso.training.protocol`), so a record
+  cites one artifact instead of forty flags. Unknown fields, wrong types and a value declared in the file and on the
+  command line with two values are refusals; `root`, `work_dir`, `corpus` and the overwrite permission cannot be set
+  in the file.
 - **A run that names a vocabulary trains with that vocabulary.** `--expected-tokenizer-fingerprint` is checked on a
   cached vocabulary and on a freshly fitted one, before the fitted one is cached and before the first step. A
   comparison that holds the tokenizer fixed should pass it: a cache miss otherwise fits a different vocabulary
