@@ -39,6 +39,10 @@ capability is implemented or still planned.
 - **A run on a foreign corpus can no longer sample with the repository's own prompts** (K-026). E2612 described two
   Project Gutenberg models by continuing Chakaso's section titles because the default prompt set was never changed.
   Preparation now refuses that combination before anything is fitted and names `--sample-prompts held_out`.
+- **Near-duplicate leakage between a split's sides can now be measured** (`chakaso.training.overlap`,
+  `scripts/measure_split_overlap.py`). A whole-work split cannot see two works that are the same text. Measured on E2612's
+  split: 0.217 % of held-out 8-word windows also occur in training (0.156 % at 16 words), no held-out work above 3 %, none
+  near 10 % — small, not zero. Record: `docs/internal/engineering/split-leakage-audit-2026-11-01.md`.
 - **An arm comparison can now be rebuilt from the reports, with its matching proved first** (`chakaso.training.arm_comparison`,
   `scripts/compare_arms.py`). E2612's committed `results.json` came from a script whose code was never committed; the module
   lists every condition that must be equal across arms and whether it is, lists the declared differences, then tabulates
