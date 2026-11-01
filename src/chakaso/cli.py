@@ -569,6 +569,15 @@ def _build_parsers() -> tuple[argparse.ArgumentParser, argparse.ArgumentParser]:
         help="share fitted tokenizers across runs from this directory (a study points its seeds here)",
     )
     experiment_model.add_argument(
+        "--tokenizer-file",
+        type=Path,
+        default=None,
+        help=(
+            "train with this vocabulary file (checksum-verified) instead of fitting or caching one; use "
+            "it for a record whose vocabulary current fitting code cannot reproduce"
+        ),
+    )
+    experiment_model.add_argument(
         "--sample-prompts",
         choices=("repository", "held_out"),
         default=None,
@@ -2241,6 +2250,7 @@ def _run_model_experiment(args: argparse.Namespace) -> int:
         "max_test_tokens",
         "tokenizer_sample_characters",
         "tokenizer_cache_dir",
+        "tokenizer_file",
         "resume_from",
         "sample_prompts",
         "expected_tokenizer_fingerprint",

@@ -302,6 +302,12 @@ class ExperimentPlan:
     #: every seed at one directory, because the vocabulary depends on the corpus and the split and the
     #: study fixes both, so retraining it per seed would be paying the same cost for the same answer.
     tokenizer_cache_dir: Path | None = None
+    #: A vocabulary file to train with instead of fitting or caching one. It is loaded through
+    #: :meth:`SubwordVocabulary.load`, which re-checks its own checksum and merge-table invariants, and it
+    #: must match ``vocab_size``, ``tokenizer_min_frequency`` and ``expected_tokenizer_fingerprint`` like a
+    #: cached one. This is how a record whose vocabulary current fitting code can no longer reproduce
+    #: (K-024) stays re-trainable: the file is committed beside the record, and the cache is not load-bearing.
+    tokenizer_file: Path | None = None
     #: A resume point written by an earlier pass of *this* run. Verified against the plan's corpus,
     #: architecture, tokenizer and configuration before a single step is taken.
     resume_from: Path | None = None
@@ -680,6 +686,13 @@ def _fit_or_reuse_vocabulary(
     Raises:
         CorpusError: the cached file exists but is not the vocabulary its name claims.
     """
+    if plan.tokenizer_file is not None:
+        supplied = SubwordVocabulary.load(plan.tokenizer_file)
+        _check_vocabulary_matches_plan(plan, supplied, str(plan.tokenizer_file))
+        _require_expected_tokenizer(
+            plan, supplied, source=f"the supplied file {str(plan.tokenizer_file)!r}"
+        )
+        return supplied, True
     identity = _tokenizer_identity(
         manifest,
         split,
@@ -693,18 +706,7 @@ def _fit_or_reuse_vocabulary(
         # SubwordVocabulary.load re-checks the file's own checksum and merge-table invariants, so a cached
         # tokenizer that was edited or truncated is refused here rather than trusted because of its name.
         stored = SubwordVocabulary.load(path)
-        if stored.size != plan.vocab_size:
-            message = (
-                f"cached tokenizer {str(path)!r} holds {stored.size} identifiers, not the "
-                f"{plan.vocab_size} this plan declares"
-            )
-            raise CorpusError(message)
-        if stored.min_frequency != plan.tokenizer_min_frequency:
-            message = (
-                f"cached tokenizer {str(path)!r} was fitted at min_frequency "
-                f"{stored.min_frequency}, this plan declares {plan.tokenizer_min_frequency}"
-            )
-            raise CorpusError(message)
+        _check_vocabulary_matches_plan(plan, stored, str(path))
         _require_expected_tokenizer(plan, stored, source=f"the cached file {str(path)!r}")
         return stored, True
     fitted = train_subword_vocabulary(
@@ -719,6 +721,24 @@ def _fit_or_reuse_vocabulary(
     )
     fitted.save(path)
     return fitted, False
+
+
+def _check_vocabulary_matches_plan(
+    plan: ExperimentPlan, vocabulary: SubwordVocabulary, where: str
+) -> None:
+    """Refuse a stored vocabulary whose size or frequency floor is not the one the plan declares."""
+    if vocabulary.size != plan.vocab_size:
+        message = (
+            f"tokenizer {where!r} holds {vocabulary.size} identifiers, not the "
+            f"{plan.vocab_size} this plan declares"
+        )
+        raise CorpusError(message)
+    if vocabulary.min_frequency != plan.tokenizer_min_frequency:
+        message = (
+            f"tokenizer {where!r} was fitted at min_frequency {vocabulary.min_frequency}, "
+            f"this plan declares {plan.tokenizer_min_frequency}"
+        )
+        raise CorpusError(message)
 
 
 def _require_expected_tokenizer(
@@ -1340,6 +1360,7 @@ def run_experiment(plan: ExperimentPlan, *, verbose: bool = False) -> dict[str, 
             if plan.tokenizer_sample_characters is not None
             else sum(len(unit.text) for unit in prepared.split.train),
             "reused_from_cache": prepared.tokenizer_reused,
+            "supplied_file": plan.tokenizer_file is not None,
             "tokens_per_side": prepared.tokens,
             "test_characters_decoded": len(prepared.vocabulary.decode(targets)),
             "characters_per_token_test": round(
@@ -1451,7 +1472,14 @@ def write_report(
 #: Plan fields that name where a run lives or what it was allowed to overwrite. They change with the machine
 #: and the working directory, not with what was measured.
 _MACHINE_LOCAL_PLAN_FIELDS = frozenset(
-    {"root", "work_dir", "corpus_snapshot", "tokenizer_cache_dir", "overwrite_artifacts"}
+    {
+        "root",
+        "work_dir",
+        "corpus_snapshot",
+        "tokenizer_cache_dir",
+        "tokenizer_file",
+        "overwrite_artifacts",
+    }
 )
 #: Budget fields that are observed conditions of one execution on one machine.
 _OBSERVED_BUDGET_FIELDS = frozenset({"positions_per_second", "wall_clock_s"})
@@ -1486,7 +1514,7 @@ def protocol_digest(report: dict[str, Any]) -> str:
         "tokenizer": {
             name: value
             for name, value in report["tokenizer"].items()
-            if name != "reused_from_cache"
+            if name not in {"reused_from_cache", "supplied_file"}
         },
         "architecture": transformer["architecture"],
         "parameter_count": transformer["parameter_count"],

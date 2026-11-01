@@ -1235,3 +1235,53 @@ def test_a_declared_tokenizer_fingerprint_is_satisfied_by_the_vocabulary_it_name
 def test_a_malformed_expected_tokenizer_fingerprint_is_refused_on_the_plan(tmp_path: Path) -> None:
     with pytest.raises(ValueError, match="expected_tokenizer_fingerprint"):
         _plan(_root(tmp_path), tmp_path / "work", expected_tokenizer_fingerprint="abc")
+
+
+def test_a_supplied_vocabulary_file_is_used_verified_and_reported(tmp_path: Path) -> None:
+    """K-024: a record whose vocabulary current fitting code cannot reproduce must stay re-trainable from a file."""
+    root = _root(tmp_path)
+    fitted = prepare_corpus(_plan(root, tmp_path / "work-fit"))
+    committed = tmp_path / "vocabulary.json"
+    fitted.vocabulary.save(committed)
+
+    supplied = prepare_corpus(
+        _plan(
+            root,
+            tmp_path / "work-file",
+            tokenizer_file=committed,
+            expected_tokenizer_fingerprint=fitted.vocabulary.fingerprint,
+        )
+    )
+
+    assert supplied.vocabulary.fingerprint == fitted.vocabulary.fingerprint
+    assert supplied.tokenizer_reused is True
+    assert not list((tmp_path / "work-file").glob("*-tokenizer-*.json")), (
+        "nothing was fitted or cached"
+    )
+
+
+def test_a_supplied_vocabulary_file_is_refused_when_it_is_not_what_the_plan_declares(
+    tmp_path: Path,
+) -> None:
+    root = _root(tmp_path)
+    committed = tmp_path / "vocabulary.json"
+    prepare_corpus(_plan(root, tmp_path / "work-fit")).vocabulary.save(committed)
+
+    with pytest.raises(CorpusError, match="requires tokenizer"):
+        prepare_corpus(
+            _plan(
+                root,
+                tmp_path / "w1",
+                tokenizer_file=committed,
+                expected_tokenizer_fingerprint="0123456789abcdef",
+            )
+        )
+    with pytest.raises(CorpusError, match="was fitted at min_frequency"):
+        prepare_corpus(
+            _plan(root, tmp_path / "w2", tokenizer_file=committed, tokenizer_min_frequency=5)
+        )
+    document = json.loads(committed.read_text(encoding="utf-8"))
+    document["merges"] = document["merges"][:2]
+    committed.write_text(json.dumps(document), encoding="utf-8")
+    with pytest.raises(CorruptedCorpusArtifactError, match="checksum"):
+        prepare_corpus(_plan(root, tmp_path / "w3", tokenizer_file=committed))
