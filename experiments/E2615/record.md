@@ -219,3 +219,42 @@ python scripts/analyse_share_sweep.py \
   --noise-study data/experiments/E2614/study.json --natural-mixture-study data/experiments/E2614/study.json \
   --out experiments/E2615/results.json
 ```
+
+## Execution notes (added 2026-11-01, second session, before any arm had finished)
+
+Nothing above is changed: not the grid, the objective, the margins, the rules, the predictions or the protocol files. These
+notes record how the preregistered arms are being run, and what differs from the conditions the reference runs had. They are
+dated and committed while the first arm is still training.
+
+**What happened to the previous session's launch.** The previous session reported that this experiment had been started in
+the background. This session found none of it: the container it ran in was gone, `data/` did not exist, no process was
+running, and no arm report, checkpoint or log survives. No result from that launch exists anywhere, and none is used. Every
+arm below is therefore a fresh run from the committed protocol files.
+
+**Machine and library, different from the reference runs.** E2612 and E2614 were run on a 14-thread host with torch
+2.13.0+cpu (the records state it). This session's host has 4 CPU cores and torch 2.15.0+cpu (numpy 2.4.6, Python 3.13.18).
+Thread count and kernel selection are not pinned (K-030 item 4), so a bitwise match with the reference runs is **not
+expected and not promised**. All four new arms share this one machine and library, so differences *between them* are not
+confounded by it. The s100 endpoint and the noise margins come from the other machine, which is a stated caveat on every
+comparison that involves them, not a measured one: no arm run here is a same-protocol repeat of an earlier arm, so this
+sweep does not measure the cross-machine effect.
+
+**The s100 endpoint is E2612's arm P as committed.** The raw E2612 arm reports did not survive, but
+`experiments/E2612/results.json` carries arm P's per-arm report block (budget, corpus identity, test partitions, curve),
+with the report file's SHA-256. The endpoint is read from there. The matched-conditions proof (`compare_arms`) can therefore
+be applied only to the fields that block holds; whatever it cannot check is reported as unchecked, not as matched.
+
+**The corpus bytes differ in one source; the corpus identity does not.** The corpus was re-acquired from the 430 pinned
+URLs at Project Gutenberg's declared pacing. 429 files match their pinned SHA-256. `science-pg3489` ("Fabre, Poet of
+Science") does not: upstream's `Last-Modified` for it is 2026-11-01 09:00 UTC, after the 2026-10-30 retrieval. The original
+bytes could not be recovered (the Internet Archive is unreachable from this host). The drift guard was not weakened: the
+committed catalogue is untouched. A scratch catalogue carrying the new digest was used to build the snapshot, and the result
+was accepted only because it reproduces the pinned identity exactly: **fingerprint `312571f9fa8351a8`, 9,388 documents,
+149,000,499 characters**, the values the data card records. The one thing that differs is the snapshot's own checksum
+(`3a446f54bdac7a6c…` here, `236c8d5a8e4eb6f2…` in the tracked data card), because it covers the raw digest. Reports from this
+sweep will carry the new snapshot checksum.
+
+**Ordering and handling.** Arms run sequentially in the order s25, s00, s50, s75, then E2616 ([record](../E2616/record.md)).
+The source tree is not edited while an arm runs. Per-arm results are committed as small summaries; checkpoints and reports
+stay in `data/`, which is git-ignored, and whether `data/` survives the end of the session is not known (it survived one
+worker restart, which killed every process).
