@@ -552,8 +552,14 @@ def compare_with_reference(
         identity[name] = {"recorded": expected, "reproduced": actual, "match": expected == actual}
 
     metrics: dict[str, Any] = {}
+    no_character_model = _character_baseline_skipped(report) or _character_baseline_skipped(
+        reference
+    )
     for name, path in DEFAULT_METRICS.items():
         if path[-1] in {"best_step", "wall_clock_s"}:
+            continue
+        if no_character_model and path[0] == "character_baseline":
+            # Neither report can be compared on a model one of them never trained.
             continue
         expected = _dig(reference, path)
         actual = _dig(report, path)

@@ -110,3 +110,15 @@ def test_a_value_the_command_line_supplies_alone_is_applied_and_an_absent_one_is
 def test_the_plans_own_validation_still_runs_on_a_protocol(tmp_path: Path) -> None:
     with pytest.raises(ValueError, match="expected_tokenizer_fingerprint"):
         _load(_write(tmp_path, '[plan]\nexpected_tokenizer_fingerprint = "abc"\n'))
+
+
+def test_every_committed_protocol_still_loads_into_a_valid_plan() -> None:
+    """A renamed plan field would otherwise break a preregistered protocol only at launch time."""
+    directory = Path(__file__).resolve().parent.parent / "configs" / "experiments"
+    committed = sorted(directory.glob("*.toml"))
+
+    assert committed, "the protocol this test exists for is committed"
+    for path in committed:
+        plan = load_plan(path, root=Path("."), work_dir=Path("work"))
+        if plan.tokenizer_file is not None:
+            assert (Path(__file__).resolve().parent.parent / plan.tokenizer_file).is_file()

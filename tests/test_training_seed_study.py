@@ -655,3 +655,17 @@ def test_the_chi_square_quantiles_match_the_published_table(
     assert chi_square_quantile(0.975, degrees) == pytest.approx(upper, abs=2e-4)
     with pytest.raises(ValueError, match="probability"):
         chi_square_quantile(1.0, degrees)
+
+
+def test_a_reproduction_of_a_run_without_a_character_baseline_compares_what_both_measured() -> None:
+    recorded = _decoder_report(7, prose=1.80, science=2.0)
+    rerun = _decoder_report(7, prose=1.80, science=2.0)
+
+    result = compare_with_reference(rerun, recorded)
+
+    assert result["verdict"] == "reproduced"
+    assert not any(name.startswith("character_") for name in result["metrics"])
+
+    drifted = _decoder_report(7, prose=1.80, science=2.0)
+    drifted["transformer"]["test"]["bits_per_character"] += 0.01
+    assert compare_with_reference(drifted, recorded)["verdict"] == "deviated"

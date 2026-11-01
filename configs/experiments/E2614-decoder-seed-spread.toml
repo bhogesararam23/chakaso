@@ -1,0 +1,46 @@
+# E2614 protocol — the 3,413,760-parameter rotary decoder at E2612 arm T's configuration, one plan for every seed.
+#
+# Read by `chakaso experiment study --protocol`. Declared before any run (experiments/E2614/record.md); the
+# command line may name only where the run lives and which corpus snapshot it reads, and any quantity given in
+# both places must agree. Nothing here is a tuning result: every value is E2612 arm T's.
+
+[plan]
+model_family = "decoder"
+
+# Architecture and optimisation (E2608 arm A, the reference configuration).
+vocab_size = 4096
+context_length = 256
+d_model = 256
+num_layers = 4
+num_heads = 8
+feedforward_dim = 640
+batch_size = 32
+grad_accum_steps = 1
+learning_rate = 0.0006
+weight_decay = 0.01
+warmup_steps = 200
+schedule = "cosine"
+decay_to = 0.1
+max_steps = 2400
+eval_every = 400
+patience = 99
+
+# Data: the pinned multi-register corpus, held out by whole work, all five registers in training.
+split_seed = 7
+expected_corpus_fingerprint = "312571f9fa8351a8"
+whole_work_splits = true
+shuffle_training_units = true
+max_training_tokens = 20000000
+max_validation_tokens = 250000
+max_test_tokens = 250000
+test_partitions = ["prose-", "science-", "technology-", "medicine-", "mathematics-"]
+character_baseline = false
+
+# Tokenizer: the vocabulary E2612 trained with, as a committed input (ADR-0044), checked by fingerprint.
+tokenizer_min_frequency = 3
+tokenizer_sample_characters = 12000000
+tokenizer_file = "experiments/E2612/vocabulary-434debe82f949347.json"
+expected_tokenizer_fingerprint = "434debe82f949347"
+
+# Generation: continuations of held-out openings, never the repository's own headings (K-026).
+sample_prompts = "held_out"
