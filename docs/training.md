@@ -197,7 +197,10 @@ proportion (prose came to 51.03 % of E2612's 20M identifiers) or one register al
 `max_training_tokens` identifiers and every other training work supplies the rest. Each class is a prefix of its own
 seeded shuffle, so a larger share contains a smaller one and the arms of a sweep are nested; a share of 0 or 1 is
 exactly the filtered run. The report states the realised composition (`corpus.training_composition`), and a quota the
-pool cannot supply is refused rather than relabelled.
+pool cannot supply is refused rather than relabelled. `scripts/measure_training_pool.py` counts what each register
+offers in the budget's unit before a sweep is declared, and `scripts/analyse_share_sweep.py` reads the finished arms
+against the seed noise E2614 measured. A single run's report is one seed: a sweep is evidence about a mixture only
+to the extent its differences exceed that noise.
 
 ## Reproducing a recorded run
 

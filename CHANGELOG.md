@@ -19,6 +19,9 @@ capability is implemented or still planned.
 - **Share-composed training sets** (ADR-0045, **Implemented**, not yet used in a measured run). A plan declares the share of
   the identifier budget one register supplies; the report states the realised composition; a quota the pool cannot
   supply is refused. The endpoints equal the filter-based runs E2612 made, and a recorded protocol's digest does not move.
+- **A sweep reader** that classifies a mixture sweep as an interior optimum, a boundary optimum or unresolved against
+  the seed noise E2614 measured, with the equal-weight register mean as the primary objective, and a pool-inventory
+  tool that counts what each register can supply in the budget's own unit.
 
 ### 2026-11-01 — a measured result was not re-trainable, and the data lever turned out to cost prose
 
