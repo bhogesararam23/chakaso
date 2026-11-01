@@ -30,7 +30,7 @@ no source read in the campaign supports a capacity result at 3.4M that data weig
 | T6 | Fix `dropped_duplicates` under whole-work splits | — | the field carries the count on both split paths; test fails pre-fix | done | [K-025](KNOWN_ISSUES.md) |
 | T7 | Acquire `us-pd-press-v1` with an era partition | T3, T4 | pinned snapshot, data card, licence quoted in both halves, per-object digests, selection rule written before download | open | [data review](../internal/engineering/data-and-licensing-research-2026-11-01.md), B-09 |
 | T8 | Prose-share reweighting sweep (H9) | T3 | one shared vocabulary; 25/50/75/100 % arms; declared primary comparison | open | decision matrix rank 3 |
-| T9 | Decide where a cited tokenizer lives | T1 | a written answer to K-024(c) | open | [artifact-policy](../internal/engineering/artifact-policy.md), K-017 |
+| T9 | Decide where a cited tokenizer lives | T1 | a written answer to K-024(c) | done | [ADR-0044](../decisions/ADR-0044-a-vocabulary-a-record-cites-is-committed-beside-it.md), [artifact-policy](../internal/engineering/artifact-policy.md), K-024 |
 
 **Open questions the campaign could not close** are in
 [`open-questions.md`](../research/open-questions.md) (eight, dated 2026-11-01) and the falsifiable ones in

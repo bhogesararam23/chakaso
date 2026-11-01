@@ -10,7 +10,10 @@ Small, human-readable, reproducible-by-recreation artifacts:
 - decision records and research notes,
 - experiment *records* (the description of a run), which are small text,
 - evaluation dataset definitions and metadata, once they exist, on the condition
-  that they are small enough and licensed for redistribution.
+  that they are small enough and licensed for redistribution,
+- a **vocabulary that a measured record cites and that no committed code can refit**, beside that record, as an input
+  rather than a cache ([ADR-0044](../../decisions/ADR-0044-a-vocabulary-a-record-cites-is-committed-beside-it.md);
+  today only `experiments/E2612/vocabulary-434debe82f949347.json`, 38 KB).
 
 ## Never committed
 

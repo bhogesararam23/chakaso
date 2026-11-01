@@ -499,3 +499,24 @@ def test_a_symbol_heavy_input_round_trips_without_inventing_tokens() -> None:
     assert vocabulary.decode(identifiers) == text
     assert all(item < vocabulary.size for item in identifiers)
     assert all(item != DOCUMENT_END for item in identifiers)
+
+
+def test_the_vocabulary_a_record_cites_is_committed_and_is_the_one_it_names() -> None:
+    """E2612 trained on a vocabulary current fitting code cannot reproduce (K-024), so the file is an input.
+
+    A tokenizer that a measured record depends on and that no command can refit is part of the record, not a
+    cache. This pins the committed bytes to the fingerprint, size, frequency floor and merge count the record
+    reports, so a corrupted or substituted file fails here instead of in the middle of a training run.
+    """
+    path = (
+        Path(__file__).resolve().parent.parent
+        / "experiments"
+        / "E2612"
+        / ("vocabulary-434debe82f949347.json")
+    )
+
+    vocabulary = SubwordVocabulary.load(path)
+
+    assert vocabulary.fingerprint == "434debe82f949347"
+    assert (vocabulary.size, vocabulary.min_frequency) == (4096, 3)
+    assert len(vocabulary.merges) == 3839

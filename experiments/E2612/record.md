@@ -211,6 +211,17 @@ chakaso experiment model --work-dir data/experiments/E2612/prose --experiment E2
 # and no --training-group-prefix.
 ```
 
+**Tokenizer provenance, added 2026-11-01 (after the results; no number above changes).** The vocabulary
+`434debe82f949347` was fitted by the byte-pair merge loop as it stood in `6f3274f`..`0a42cc9`, which had the defect
+recorded as K-024: it chose less frequent pairs than its documented rule. Current code fitting the same sample
+yields `3abe4df4b123d4c5`, so **`--vocab-size 4096` followed by a fresh fit no longer reproduces this record**. The
+vocabulary the arms actually used is committed as [`vocabulary-434debe82f949347.json`](vocabulary-434debe82f949347.json)
+(file SHA-256 `d1061205f91289cc00cb873dbaff5f338dc97effe66b32b7bcfb48469ce2aed3`, identical to the cache file listed
+under Artifacts) under [ADR-0044](../../docs/decisions/ADR-0044-a-vocabulary-a-record-cites-is-committed-beside-it.md).
+A reproduction passes `--tokenizer-file experiments/E2612/vocabulary-434debe82f949347.json
+--expected-tokenizer-fingerprint 434debe82f949347` in place of `--tokenizer-cache-dir`. The comparison between the
+two arms was never affected: both scored the one shared vocabulary.
+
 ## Results
 
 **Both arms ran, on 2026-10-30, to the declared 2,400-step ceiling.** This section was added after both

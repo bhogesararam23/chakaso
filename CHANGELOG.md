@@ -39,6 +39,9 @@ capability is implemented or still planned.
 - **A run on a foreign corpus can no longer sample with the repository's own prompts** (K-026). E2612 described two
   Project Gutenberg models by continuing Chakaso's section titles because the default prompt set was never changed.
   Preparation now refuses that combination before anything is fitted and names `--sample-prompts held_out`.
+- **E2612's vocabulary is now in the repository** ([ADR-0044](docs/decisions/ADR-0044-a-vocabulary-a-record-cites-is-committed-beside-it.md)).
+  It was fitted by the defective merge loop, so no command can refit it; it lived only in a git-ignored cache. The 38 KB
+  file is committed beside its record, pinned by a test to its fingerprint, and a run uses it with `--tokenizer-file`.
 - **A run can now require a specific tokenizer** (`--expected-tokenizer-fingerprint`). E2613's first launch missed the
   tokenizer cache, fitted a different vocabulary and trained on it before anyone looked. With the flag, a cached or
   freshly fitted vocabulary that differs stops the run before the first step and is never written to the cache.

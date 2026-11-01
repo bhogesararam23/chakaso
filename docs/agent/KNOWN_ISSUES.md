@@ -639,8 +639,11 @@ scored against the one shared vocabulary, so H1 and H2 stand — but a re-run is
 record. (c) Tokenizer caches are load-bearing for reproducibility and are excluded from the repository by
 [`../internal/engineering/artifact-policy.md`](../internal/engineering/artifact-policy.md).
 
-**What would close it:** a decision on where a vocabulary that a measured record cites may live, and a dated
-statement in each affected record of which code fitted its tokenizer.
+**Decision made 2026-11-01** ([ADR-0044](../decisions/ADR-0044-a-vocabulary-a-record-cites-is-committed-beside-it.md)):
+E2612's vocabulary is committed as `experiments/E2612/vocabulary-434debe82f949347.json` (byte-identical to the cache
+file its record cites) and runs load it with `--tokenizer-file`. **What remains:** a dated statement in each affected
+record of which code fitted its tokenizer — E2612's is added below its Reproduction block; E2608's and E2611's
+vocabulary refits exactly from current code and needs no file.
 
 ### K-025 — Closed: whole-work runs reported `dropped_duplicates: 0` while excluding documents
 
