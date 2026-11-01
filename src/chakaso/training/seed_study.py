@@ -24,6 +24,7 @@ Requires the same optional extras as :mod:`chakaso.training.subword_experiment`.
 from __future__ import annotations
 
 import json
+import math
 import statistics
 import time
 from collections.abc import Mapping, Sequence
@@ -44,8 +45,10 @@ __all__ = [
     "aggregate_metric",
     "aggregate_study",
     "build_study_report",
+    "chi_square_quantile",
     "collect_run_reports",
     "compare_with_reference",
+    "metrics_for_plan",
     "protocol_identity",
     "run_seed_study",
     "study_summary",
@@ -187,7 +190,7 @@ class SeedStudy:
             "weight_decay": plan.weight_decay,
             "warmup_steps": plan.warmup_steps,
             "gradient_clip_norm": plan.gradient_clip_norm,
-            "character_steps": plan.character_steps,
+            "character_steps": plan.character_steps if plan.character_baseline else None,
             "model_seed": seed,
         }
 
@@ -241,9 +244,23 @@ class RunOutcome:
         }
 
 
+def _character_baseline_skipped(report: Mapping[str, Any]) -> bool:
+    """Whether the run declared the character baseline off, so its fields are absent by design."""
+    block = report.get("character_baseline")
+    return isinstance(block, Mapping) and bool(block.get("skipped"))
+
+
 def protocol_identity(report: Mapping[str, Any]) -> dict[str, Any]:
-    """The fields that define the protocol a run measured under, pulled out of its report."""
-    return {name: _dig(report, path) for name, path in _PROTOCOL_FIELDS.items()}
+    """The fields that define the protocol a run measured under, pulled out of its report.
+
+    A character-baseline field of a run that skipped the baseline is ``None`` rather than a refusal: its
+    absence is a declared part of that protocol, and every sibling run must agree on it like any other field.
+    """
+    skipped = _character_baseline_skipped(report)
+    return {
+        name: None if skipped and path[0] == "character_baseline" else _dig(report, path)
+        for name, path in _PROTOCOL_FIELDS.items()
+    }
 
 
 def _require_same_protocol(
@@ -400,15 +417,78 @@ def aggregate_metric(values: Sequence[float]) -> dict[str, Any]:
             "max": values[0],
             "range": 0.0,
         }
+    stdev = statistics.stdev(values)
     return {
         "runs": count,
         "mean": round(statistics.fmean(values), 6),
-        "sample_stdev": round(statistics.stdev(values), 6),
+        "sample_stdev": round(stdev, 6),
+        # The interval a standard deviation from this few runs deserves, assuming the seed-to-seed variation
+        # is approximately normal. Three runs leave sigma known only to within 0.52x to 6.29x, which is why
+        # the stdev is never reported without it.
+        "stdev_95_interval": [
+            round(stdev * math.sqrt((count - 1) / chi_square_quantile(0.975, count - 1)), 6),
+            round(stdev * math.sqrt((count - 1) / chi_square_quantile(0.025, count - 1)), 6),
+        ],
         "median": round(statistics.median(values), 6),
         "min": min(values),
         "max": max(values),
         "range": round(max(values) - min(values), 6),
     }
+
+
+def chi_square_quantile(probability: float, degrees: int) -> float:
+    """The ``probability`` quantile of a chi-square distribution with ``degrees`` degrees of freedom.
+
+    Computed by bisection on the regularised lower incomplete gamma function, so that the study needs no
+    statistics dependency. Accurate to well beyond the four digits any use here needs.
+    """
+    if not 0.0 < probability < 1.0 or degrees < 1:
+        message = f"need 0 < probability < 1 and degrees >= 1, got {probability!r}, {degrees!r}"
+        raise ValueError(message)
+    shape = degrees / 2.0
+
+    def cdf(x: float) -> float:
+        # P(shape, x/2) by its series, convergent for the small shapes and moderate x this is used at.
+        half = x / 2.0
+        if half <= 0.0:
+            return 0.0
+        term = total = 1.0 / shape
+        for index in range(1, 1000):
+            term *= half / (shape + index)
+            total += term
+            if term < total * 1e-15:
+                break
+        return total * math.exp(-half + shape * math.log(half) - math.lgamma(shape))
+
+    low, high = 0.0, max(10.0, 10.0 * degrees)
+    for _ in range(200):
+        middle = (low + high) / 2.0
+        if cdf(middle) < probability:
+            low = middle
+        else:
+            high = middle
+    return (low + high) / 2.0
+
+
+def metrics_for_plan(plan: ExperimentPlan) -> dict[str, tuple[str, ...]]:
+    """The metrics a study of ``plan`` aggregates: the defaults, shaped to what the plan actually measured.
+
+    A plan that skips the character baseline has no character fields to aggregate, and a plan that declares
+    test partitions gets one bits-per-character metric per partition, named after its prefix, so a spread is
+    reported for the quantity a hypothesis is stated about and not only for the whole pack.
+    """
+    metrics = dict(DEFAULT_METRICS)
+    if not plan.character_baseline:
+        metrics = {name: path for name, path in metrics.items() if path[0] != "character_baseline"}
+    for prefix in plan.test_partitions or ():
+        metrics[f"partition_{prefix}_bits_per_character"] = (
+            "transformer",
+            "test_partitions",
+            prefix,
+            "metrics",
+            "bits_per_character",
+        )
+    return metrics
 
 
 def aggregate_study(
@@ -505,7 +585,7 @@ def build_study_report(
     work_dir: Path,
     seeds: Sequence[int],
     outcomes: Sequence[RunOutcome] | None = None,
-    metrics: Mapping[str, tuple[str, ...]] = DEFAULT_METRICS,
+    metrics: Mapping[str, tuple[str, ...]] | None = None,
     reference: Mapping[str, Any] | None = None,
     reference_seed: int | None = None,
     study: SeedStudy | None = None,
@@ -527,6 +607,8 @@ def build_study_report(
         StudyProtocolError: a run on disk speaks a different protocol than its siblings, or than the declared
             study, or a reference is declared for a seed that has no report.
     """
+    if metrics is None:
+        metrics = metrics_for_plan(study.plan) if study is not None else DEFAULT_METRICS
     reports, missing = collect_run_reports(experiment=experiment, work_dir=work_dir, seeds=seeds)
     if study is not None:
         for seed, report in reports.items():
@@ -594,16 +676,15 @@ def study_summary(report: Mapping[str, Any]) -> str:
     if transformer["runs"] == 0:
         line = f"{head}, nothing measured yet"
     else:
-        character = report["aggregate"]["character_bits_per_character"]
+        character = report["aggregate"].get("character_bits_per_character")
         spread = (
             f"{transformer['sample_stdev']:.4f}"
             if transformer["sample_stdev"] is not None
             else "single run"
         )
-        line = (
-            f"{head}, transformer {transformer['mean']:.4f} bits/char (sample stdev {spread}), "
-            f"character {character['mean']:.4f}"
-        )
+        line = f"{head}, transformer {transformer['mean']:.4f} bits/char (sample stdev {spread})"
+        if character is not None:
+            line += f", character {character['mean']:.4f}"
     if report["missing_seeds"]:
         line += f", missing {report['missing_seeds']}"
     if report["failed_seeds"]:

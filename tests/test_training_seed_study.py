@@ -545,3 +545,113 @@ def test_a_seed_that_raises_is_recorded_as_failed_and_the_others_still_count(
     assert report["aggregate"]["transformer_bits_per_character"]["sample_stdev"] is None
     assert "torch refused" in report["runs"][1]["error"]
     assert "failed [11]" in study_summary(report)
+
+
+# ------------------------------------------------------------------ a decoder study without a character baseline
+
+
+def _decoder_report(seed: int, *, prose: float, science: float) -> dict[str, Any]:
+    """A report shaped like an E2612-style run: baseline skipped, two declared test partitions."""
+    report = _run_report(seed, bits=(prose + science) / 2)
+    report["character_baseline"] = {"skipped": True, "reason": "declared off"}
+    report["transformer"]["test_partitions"] = {
+        "prose-": {"metrics": {"bits_per_character": prose}},
+        "science-": {"metrics": {"bits_per_character": science}},
+    }
+    return report
+
+
+def test_a_skipped_character_baseline_is_a_declared_part_of_the_protocol_not_a_refusal() -> None:
+    identity = protocol_identity(_decoder_report(7, prose=1.8, science=2.0))
+
+    assert identity["character_steps"] is None
+    assert identity["tokenizer_fingerprint"] == "t" * 16
+
+
+def test_the_metrics_follow_the_plan_it_measured(tmp_path: Path) -> None:
+    from chakaso.training.seed_study import metrics_for_plan
+
+    plain = metrics_for_plan(_plan(_root(tmp_path), tmp_path / "work"))
+    decoder = metrics_for_plan(
+        _plan(
+            _root(tmp_path),
+            tmp_path / "work",
+            character_baseline=False,
+            test_partitions=("prose-", "science-"),
+        )
+    )
+
+    assert "character_bits_per_character" in plain
+    assert not any(name.startswith("partition_") for name in plain)
+    assert "character_bits_per_character" not in decoder
+    assert decoder["partition_prose-_bits_per_character"] == (
+        "transformer",
+        "test_partitions",
+        "prose-",
+        "metrics",
+        "bits_per_character",
+    )
+
+
+def test_a_decoder_study_aggregates_each_partition_and_summarises_without_a_character_model(
+    tmp_path: Path,
+) -> None:
+    from chakaso.training.seed_study import metrics_for_plan
+
+    plan = _plan(
+        _root(tmp_path),
+        tmp_path / "work",
+        character_baseline=False,
+        test_partitions=("prose-", "science-"),
+    )
+    metrics = metrics_for_plan(plan)
+    reports = {
+        seed: _decoder_report(seed, prose=1.80 + step * 0.01, science=2.0 + step * 0.02)
+        for step, seed in enumerate((7, 11, 13, 17, 19))
+    }
+
+    aggregate = aggregate_study(reports, metrics=metrics)
+
+    assert aggregate["partition_prose-_bits_per_character"]["mean"] == pytest.approx(1.82)
+    assert aggregate["partition_science-_bits_per_character"]["sample_stdev"] == pytest.approx(
+        math.sqrt(0.0010), abs=1e-6
+    )
+    line = study_summary(
+        {
+            "study": "E2699",
+            "declared_seeds": [7, 11, 13, 17, 19],
+            "missing_seeds": [],
+            "failed_seeds": [],
+            "aggregate": {
+                "transformer_bits_per_character": aggregate["transformer_bits_per_character"]
+            },
+        }
+    )
+    assert "character" not in line and "sample stdev" in line
+
+
+def test_a_stdev_from_few_runs_comes_with_the_interval_that_few_runs_deserve() -> None:
+    three = aggregate_metric([1.00, 1.01, 1.03])
+    five = aggregate_metric([1.00, 1.01, 1.03, 1.02, 0.99])
+
+    for summary, low, high in ((three, 0.521, 6.285), (five, 0.599, 2.874)):
+        stdev = summary["sample_stdev"]
+        assert summary["stdev_95_interval"] == pytest.approx(
+            [stdev * low, stdev * high], rel=2e-3
+        ), "the multipliers are the standard chi-square values for n-1 degrees of freedom"
+    assert "stdev_95_interval" not in aggregate_metric([2.0])
+
+
+@pytest.mark.parametrize(
+    ("degrees", "lower", "upper"),
+    [(2, 0.0506, 7.3778), (4, 0.4844, 11.1433), (6, 1.2373, 14.4494), (9, 2.7004, 19.0228)],
+)
+def test_the_chi_square_quantiles_match_the_published_table(
+    degrees: int, lower: float, upper: float
+) -> None:
+    from chakaso.training.seed_study import chi_square_quantile
+
+    assert chi_square_quantile(0.025, degrees) == pytest.approx(lower, abs=2e-4)
+    assert chi_square_quantile(0.975, degrees) == pytest.approx(upper, abs=2e-4)
+    with pytest.raises(ValueError, match="probability"):
+        chi_square_quantile(1.0, degrees)

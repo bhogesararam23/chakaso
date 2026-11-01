@@ -39,6 +39,11 @@ capability is implemented or still planned.
 - **A run on a foreign corpus can no longer sample with the repository's own prompts** (K-026). E2612 described two
   Project Gutenberg models by continuing Chakaso's section titles because the default prompt set was never changed.
   Preparation now refuses that combination before anything is fitted and names `--sample-prompts held_out`.
+- **A seed study now fits a decoder run that skips the character baseline and scores register partitions.** It could
+  only aggregate E2606-shaped reports and refused E2612's. It now aggregates each declared test partition, treats a
+  skipped baseline as a declared part of the protocol, and reports the interval a standard deviation from few runs
+  deserves (0.52×–6.29× at three runs, 0.60×–2.87× at five; normality assumed and stated), checked against the
+  published chi-square table.
 - **A study can read its plan from a committed TOML protocol** (`experiment study --protocol`). The plan a record
   preregisters is now one file the run reads, not a command line transcribed beside it; the loader refuses unknown
   fields, wrong types, and a quantity declared twice with two values.
