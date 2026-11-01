@@ -239,3 +239,22 @@ campaign proved the sharp half of this — refitting E2608's train side under th
 `434debe82f949347`, fitted by the defective loop, can no longer be re-fit at all. *Falsified by:* a clean re-run
 from a fresh clone that reproduces the recorded fingerprints. *This one is testable in an hour and decides whether
 tokenizer caches belong in the repository.*
+*Status 2026-11-01:* the decision half is made. E2608's vocabulary refits exactly from current code; E2612's cannot,
+so it is committed as an input ([ADR-0044](../decisions/ADR-0044-a-vocabulary-a-record-cites-is-committed-beside-it.md))
+and a run loads it with `--tokenizer-file`. The clean-clone re-run itself has **not** been done, so the hypothesis is
+neither confirmed nor falsified.
+
+**H16 — Orthogonalised updates on the hidden 2-D weights beat AdamW at matched steps, beyond seed noise, at 3.4M
+parameters.** *Statement:* training the E2612-T configuration with the Muon update on its hidden-layer matrices (AdamW
+for the embedding table, norms and scalars) lowers held-out bits per character by more than the seed noise E2614
+measures. *Why it is live, and why it is only a hypothesis:* Moonlight reports "~2× computational efficiency compared to
+AdamW with compute optimal training" ([Liu et al., arXiv:2502.16982](https://arxiv.org/abs/2502.16982), first version
+2025-02-24, a 3B/16B-parameter MoE on 5.7T tokens), and Keller Jordan's write-up of the optimiser
+([2024-12-08](https://kellerjordan.github.io/posts/muon/)) reports a 1.35× speed-record improvement on a NanoGPT
+FineWeb task and runs to 774M and 1.5B parameters, with the embedding, output head and scalar/vector parameters left to
+AdamW. *Nothing read tests it below 774M parameters or at a 20M-token budget.* At Chakaso's shape the embedding table
+is 1,048,576 of 3,413,760 parameters (30.7 %), so Muon would govern only the remaining ~69 %. *Falsified by:* an arm whose
+whole-pack bits per character is within 2.77·s of the AdamW arm's, where s is E2614's sample deviation. *Why it is not
+being built:* the noise floor does not exist yet (E2614), a new optimiser is an interface change that needs a decision
+record, and the repository's rule is to implement only what its evidence justifies; the sources read are two orders of
+magnitude above this scale. *Cost if pursued:* ~40 lines of PyTorch plus one ~90-minute arm.
