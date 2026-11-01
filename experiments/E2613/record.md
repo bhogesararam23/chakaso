@@ -122,6 +122,41 @@ its numbers are read; if it does not, it is also a deviation. **No band, outcome
 work directory changes**, and none is chosen with any result of R1 in view: R1 has no result on disk when this section
 is committed.
 
+## Results — run R1, the first launch (not the preregistered arm)
+
+Disclosed here **before the valid arm has finished**, so that nothing in the preregistered rules above can be said to
+have been chosen with R1 in view: none of them was changed after R1 completed, and R1 is not assigned an outcome
+letter. R1 finished on 2026-11-01 (12:10) into `data/experiments/E2613/half-prose`; its report file digest is
+`face74161f8636c33caf9501d11774b7aea6ae0d17d47dd2424fa4569c36b861` (a file hash, with the properties K-028 records).
+
+What it was: arm H's data and budget, trained under a **refitted** vocabulary. Measured conditions:
+
+| Condition | R1 | The preregistered arm requires |
+| --- | --- | --- |
+| Vocabulary fingerprint | `face1a050155274f` (refitted) | `434debe82f949347` |
+| Split fingerprint | `59d54432fc87b0c1` (includes the 3 reported duplicates) | `adf650435c3a9068` |
+| Parameters / steps / completion | 3,413,760 / 2,400 / `budget_ceiling` | the same |
+| Training identifiers packed (declared tolerance 9.5M–10.5M) | **10,007,299** — within | ~10M |
+| Training documents packed | 1,383 | — |
+| Wall clock / peak RSS | 5,732 s / 2,829 MB (machine shared with other work throughout) | observed, not a condition |
+
+Bits per character on the held-out partitions, with E2612's two arms beside them **for orientation only** — they were
+scored under a different vocabulary, so the differences are *not* a comparison:
+
+| Partition | E2612 P (prose, 20M) | E2612 T (mixture, 20M) | R1 (prose, 10M, refitted vocabulary) |
+| --- | ---: | ---: | ---: |
+| prose | 1.80926 | 1.83952 | 1.81115 |
+| science | 2.05867 | 1.94862 | 2.06098 |
+| technology | 2.18647 | 1.90273 | 2.18680 |
+| medicine | 1.99522 | 1.83814 | 1.99578 |
+| mathematics | 3.04361 | 2.57777 | 3.11763 |
+| whole test pack | 2.16369 | 2.05545 | 2.17231 |
+
+*What this can and cannot say.* R1's technical partitions sit where a prose-only model's would, which is a sanity check
+that it trained on prose alone. Its prose partition is near E2612's P and not near T. That is suggestive and nothing
+more: a different vocabulary is a different model input, the one-seed noise floor is still unmeasured (E2614), and the
+preregistered question is about the E2612 vocabulary. **R1 does not decide H8 either way.**
+
 ## Generation block
 
 Run with `--sample-prompts held_out`, which takes test-side document openings, not the repository's own
