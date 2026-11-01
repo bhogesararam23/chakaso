@@ -39,6 +39,9 @@ capability is implemented or still planned.
 - **A run on a foreign corpus can no longer sample with the repository's own prompts** (K-026). E2612 described two
   Project Gutenberg models by continuing Chakaso's section titles because the default prompt set was never changed.
   Preparation now refuses that combination before anything is fitted and names `--sample-prompts held_out`.
+- **A run can now require a specific tokenizer** (`--expected-tokenizer-fingerprint`). E2613's first launch missed the
+  tokenizer cache, fitted a different vocabulary and trained on it before anyone looked. With the flag, a cached or
+  freshly fitted vocabulary that differs stops the run before the first step and is never written to the cache.
 - **A whole-work split now reports the duplicates it excluded** (K-025). The field was always empty on that path.
   The first version of this change also moved the split fingerprint, which keys the tokenizer cache, so a run
   launched on it refitted a vocabulary it should have reused; the fingerprint now covers the side assignment only, and

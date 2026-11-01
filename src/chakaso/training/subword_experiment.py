@@ -235,6 +235,11 @@ class ExperimentPlan:
     #: The corpus fingerprint this run is required to use. Declared by a reproduction or a seed study, so
     #: that loading *a* snapshot is never the same as loading *the* snapshot.
     expected_corpus_fingerprint: str | None = None
+    #: The vocabulary fingerprint this run is required to train with. A comparison that holds the tokenizer
+    #: fixed names it here, so a cache miss that silently fits a *different* vocabulary — which is how
+    #: E2613's first launch went wrong — stops the run before the first training step instead of after the
+    #: last. The check applies to a cached vocabulary and to a freshly fitted one alike.
+    expected_tokenizer_fingerprint: str | None = None
     #: An experiment run rewrites its own artifact only when told to. Re-running into a directory that
     #: already holds a measured run's artifact is how a result gets silently replaced by a different one,
     #: so ADR-0035's overwrite guard applies here too.
@@ -428,6 +433,15 @@ class ExperimentPlan:
             message = (
                 "expected_corpus_fingerprint must be the 16 hexadecimal characters a manifest fingerprint "
                 f"has, got {self.expected_corpus_fingerprint!r}"
+            )
+            raise ValueError(message)
+        if (
+            self.expected_tokenizer_fingerprint is not None
+            and len(self.expected_tokenizer_fingerprint) != 16
+        ):
+            message = (
+                "expected_tokenizer_fingerprint must be the 16 hexadecimal characters a vocabulary "
+                f"fingerprint has, got {self.expected_tokenizer_fingerprint!r}"
             )
             raise ValueError(message)
 
@@ -691,14 +705,37 @@ def _fit_or_reuse_vocabulary(
                 f"{stored.min_frequency}, this plan declares {plan.tokenizer_min_frequency}"
             )
             raise CorpusError(message)
+        _require_expected_tokenizer(plan, stored, source=f"the cached file {str(path)!r}")
         return stored, True
     fitted = train_subword_vocabulary(
         _tokenizer_sample(plan, split),
         target_size=plan.vocab_size,
         min_frequency=plan.tokenizer_min_frequency,
     )
+    # Checked before the save, so a vocabulary that is not the one the protocol names never enters the cache
+    # where a later run would take it for the real one.
+    _require_expected_tokenizer(
+        plan, fitted, source="a vocabulary fitted because no cached file matched this split"
+    )
     fitted.save(path)
     return fitted, False
+
+
+def _require_expected_tokenizer(
+    plan: ExperimentPlan, vocabulary: SubwordVocabulary, *, source: str
+) -> None:
+    """Refuse a vocabulary other than the one the plan declares it must train with.
+
+    Raises:
+        CorpusError: the plan declares ``expected_tokenizer_fingerprint`` and ``vocabulary`` differs.
+    """
+    expected = plan.expected_tokenizer_fingerprint
+    if expected is not None and vocabulary.fingerprint != expected:
+        message = (
+            f"this run requires tokenizer {expected!r} and got {vocabulary.fingerprint!r} from {source}; "
+            "the protocol holds the vocabulary fixed, so the run stops here rather than training on another"
+        )
+        raise CorpusError(message)
 
 
 def _training_units(

@@ -1197,3 +1197,41 @@ def test_the_protocol_digest_moves_when_a_condition_does_not_when_a_rate_does(
         changed = copy.deepcopy(report)
         mutate(changed)
         assert protocol_digest(changed) != baseline
+
+
+def test_a_declared_tokenizer_fingerprint_stops_a_run_that_fits_a_different_vocabulary(
+    tmp_path: Path,
+) -> None:
+    """E2613's first launch missed the cache, fitted another vocabulary and trained on it for an hour."""
+    root = _root(tmp_path)
+    work = tmp_path / "work-expected"
+
+    with pytest.raises(CorpusError, match="requires tokenizer 'feedfacefeedface'"):
+        prepare_corpus(_plan(root, work, expected_tokenizer_fingerprint="feedfacefeedface"))
+
+    assert not list(work.glob("*-tokenizer-*.json")), (
+        "a refused vocabulary must not enter the cache"
+    )
+
+
+def test_a_declared_tokenizer_fingerprint_is_satisfied_by_the_vocabulary_it_names(
+    tmp_path: Path,
+) -> None:
+    root = _root(tmp_path)
+    fitted = prepare_corpus(_plan(root, tmp_path / "work-a"))
+    named = fitted.vocabulary.fingerprint
+
+    fresh = prepare_corpus(_plan(root, tmp_path / "work-b", expected_tokenizer_fingerprint=named))
+    cached = prepare_corpus(_plan(root, tmp_path / "work-b", expected_tokenizer_fingerprint=named))
+
+    assert fresh.vocabulary.fingerprint == cached.vocabulary.fingerprint == named
+    assert fresh.tokenizer_reused is False and cached.tokenizer_reused is True
+    with pytest.raises(CorpusError, match="the cached file"):
+        prepare_corpus(
+            _plan(root, tmp_path / "work-b", expected_tokenizer_fingerprint="0123456789abcdef")
+        )
+
+
+def test_a_malformed_expected_tokenizer_fingerprint_is_refused_on_the_plan(tmp_path: Path) -> None:
+    with pytest.raises(ValueError, match="expected_tokenizer_fingerprint"):
+        _plan(_root(tmp_path), tmp_path / "work", expected_tokenizer_fingerprint="abc")

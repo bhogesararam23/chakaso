@@ -241,6 +241,10 @@ Three rules make those commands mean something, and the code enforces them rathe
 
 - **A run that names a corpus trains on that corpus.** `--expected-corpus-fingerprint` is checked before any
   step is taken; a snapshot of a different corpus is a refusal, not a substitution.
+- **A run that names a vocabulary trains with that vocabulary.** `--expected-tokenizer-fingerprint` is checked on a
+  cached vocabulary and on a freshly fitted one, before the fitted one is cached and before the first step. A
+  comparison that holds the tokenizer fixed should pass it: a cache miss otherwise fits a different vocabulary
+  without any message, which is how E2613's first launch trained for an hour on the wrong one.
 - **A recorded artifact is not overwritten by accident.** Manifests, snapshots, checkpoints and reports all
   refuse to replace an existing file unless `--overwrite` says so, and writes are staged so a run that dies
   mid-write leaves no half artifact to be mistaken for a result.

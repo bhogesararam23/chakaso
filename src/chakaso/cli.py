@@ -509,6 +509,14 @@ def _build_parsers() -> tuple[argparse.ArgumentParser, argparse.ArgumentParser]:
         help="refuse to run unless the corpus resolves to this 16-character manifest fingerprint",
     )
     experiment_model.add_argument(
+        "--expected-tokenizer-fingerprint",
+        default=None,
+        help=(
+            "refuse to run unless the vocabulary has this 16-character fingerprint, whether it was cached "
+            "or fitted for this run"
+        ),
+    )
+    experiment_model.add_argument(
         "--overwrite",
         action="store_true",
         help="replace artifacts already in the work directory (the default is to refuse)",
@@ -2235,6 +2243,7 @@ def _run_model_experiment(args: argparse.Namespace) -> int:
         "tokenizer_cache_dir",
         "resume_from",
         "sample_prompts",
+        "expected_tokenizer_fingerprint",
     )
     # Each flag keeps the plan field's own name, so an unset flag stays unset rather than becoming an
     # explicit default the operator did not ask for.
