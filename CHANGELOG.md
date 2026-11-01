@@ -39,6 +39,9 @@ capability is implemented or still planned.
 - **A run on a foreign corpus can no longer sample with the repository's own prompts** (K-026). E2612 described two
   Project Gutenberg models by continuing Chakaso's section titles because the default prompt set was never changed.
   Preparation now refuses that combination before anything is fitted and names `--sample-prompts held_out`.
+- **A run report now states the optimiser recipe it trained with** (K-030): AdamW, its betas and epsilon, and that
+  decoupled weight decay reaches every parameter including norm scales. Built from one shared function so the claim cannot
+  drift from the loop; earlier reports lack it.
 - **The two JSON artifact layers now follow the atomicity rule.** A saved vocabulary or character checkpoint was written
   in place and replaced any existing file; the tokenizer cache names a vocabulary file by its identity, so an interrupted
   write left a half-file under exactly the name a later run trusts. Both now stage and swap, and refuse to replace a

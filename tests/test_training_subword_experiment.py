@@ -1298,3 +1298,13 @@ def test_a_fit_that_ends_short_of_the_declared_size_is_refused_before_anything_t
         prepare_corpus(_plan(root, work, vocab_size=20_000, tokenizer_min_frequency=3))
 
     assert not list(work.glob("*-tokenizer-*.json")), "a short vocabulary must not enter the cache"
+
+
+def test_a_report_states_the_optimizer_recipe_it_trained_with(tmp_path: Path) -> None:
+    report = run_experiment(_plan(_root(tmp_path), tmp_path / "work-optimizer"))
+
+    recipe = report["transformer"]["budget"]["optimizer"]
+    assert recipe["name"] == "AdamW"
+    assert recipe["betas"] == [0.9, 0.999] and recipe["eps"] == 1e-8
+    assert recipe["weight_decay"] == report["transformer"]["budget"]["weight_decay"]
+    assert "norm scales included" in recipe["decay_applied_to"]

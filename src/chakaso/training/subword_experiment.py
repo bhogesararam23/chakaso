@@ -70,6 +70,7 @@ from chakaso.training.nn_checkpoint import (
 from chakaso.training.nn_evaluation import score_model_on_examples
 from chakaso.training.nn_training import (
     TransformerTrainingConfig,
+    optimizer_settings,
     train_transformer,
     verify_resume_compatibility,
 )
@@ -1394,6 +1395,7 @@ def run_experiment(plan: ExperimentPlan, *, verbose: bool = False) -> dict[str, 
                 "min_delta": plan.min_delta,
                 "learning_rate": plan.learning_rate,
                 "weight_decay": plan.weight_decay,
+                "optimizer": optimizer_settings(outcome.config),
                 "warmup_steps": plan.warmup_steps,
                 "gradient_clip_norm": plan.gradient_clip_norm,
                 "seed": plan.seed,

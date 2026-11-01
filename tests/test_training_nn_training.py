@@ -531,3 +531,38 @@ def test_a_document_split_feeds_the_loop_without_leakage() -> None:
 def test_training_errors_share_the_package_base_type() -> None:
     with pytest.raises(TrainingError):
         plan_batch(0, 0, batch_size=2, seed=1)
+
+
+def test_the_report_can_state_the_optimizer_recipe_the_loop_actually_builds() -> None:
+    """K-030: betas, epsilon and where decay applies were facts of the recipe that no report recorded."""
+    from chakaso.training.nn_training import build_optimizer, optimizer_settings
+
+    config = TransformerTrainingConfig(
+        batch_size=2,
+        max_steps=4,
+        learning_rate=3e-3,
+        weight_decay=0.05,
+        warmup_steps=1,
+        gradient_clip_norm=1.0,
+        seed=1,
+        eval_every=2,
+        patience=2,
+        min_delta=0.0,
+        architecture=TransformerConfig(
+            vocab_size=20,
+            context_length=4,
+            d_model=8,
+            num_layers=1,
+            num_heads=2,
+            feedforward_dim=16,
+        ),
+    )
+    settings = optimizer_settings(config)
+    built = build_optimizer([torch.nn.Parameter(torch.zeros(2))], config)
+
+    assert settings["name"] == "AdamW" == type(built).__name__
+    assert settings["betas"] == list(built.defaults["betas"])
+    assert settings["eps"] == built.defaults["eps"]
+    assert settings["weight_decay"] == 0.05 == built.defaults["weight_decay"]
+    assert built.param_groups[0]["lr"] == 3e-3
+    assert "norm scales included" in settings["decay_applied_to"]

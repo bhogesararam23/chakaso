@@ -58,8 +58,10 @@ __all__ = [
     "TrainingScheduleError",
     "TransformerTrainingConfig",
     "build_model",
+    "build_optimizer",
     "choose_validation_best",
     "evaluate_loss",
+    "optimizer_settings",
     "plan_batch",
     "resume_state_from",
     "train_transformer",
@@ -349,6 +351,37 @@ def choose_validation_best(
     return best_step, best_loss, False
 
 
+def build_optimizer(
+    parameters: Sequence[torch.nn.Parameter], config: TransformerTrainingConfig
+) -> torch.optim.Optimizer:
+    """The optimiser a run trains with, built in one place so the report can describe exactly this one.
+
+    Decoupled weight decay applies to **every** parameter passed in, norm scales included; betas and epsilon
+    are the library's defaults. Both are facts of the recipe (K-030), recorded by :func:`optimizer_settings`.
+    """
+    return torch.optim.AdamW(
+        list(parameters), lr=config.learning_rate, weight_decay=config.weight_decay
+    )
+
+
+def optimizer_settings(config: TransformerTrainingConfig) -> dict[str, Any]:
+    """The optimiser's full recipe as a report can state it, read off the object the loop would build.
+
+    Built from a one-element probe rather than copied from documentation, so a library upgrade that changed a
+    default changes this record rather than leaving a stale claim behind.
+    """
+    probe = build_optimizer([torch.nn.Parameter(torch.zeros(1))], config)
+    defaults = probe.defaults
+    return {
+        "name": type(probe).__name__,
+        "betas": list(defaults["betas"]),
+        "eps": defaults["eps"],
+        "weight_decay": defaults["weight_decay"],
+        "amsgrad": defaults["amsgrad"],
+        "decay_applied_to": "every parameter, norm scales included",
+    }
+
+
 def _segment_tensor(examples: Sequence[PackedExample]) -> torch.Tensor:
     """Stack every example's document identifiers, refusing a masked run over untracked examples.
 
@@ -582,9 +615,7 @@ def train_transformer(
         model.load_state_dict(dict(resume_state), strict=True)
 
     parameters = list(model.parameters())
-    optimizer = torch.optim.AdamW(
-        parameters, lr=config.learning_rate, weight_decay=config.weight_decay
-    )
+    optimizer = build_optimizer(parameters, config)
     if resume_optimizer is not None:
         optimizer.load_state_dict(dict(resume_optimizer))
 

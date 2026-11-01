@@ -772,6 +772,11 @@ as of that day.
    defaults, declared nowhere and recorded in no report** (`torch.optim.AdamW(parameters, lr=…, weight_decay=…)`).
    The records are internally consistent; they are not reproducible by anyone who changes the library's defaults,
    and a published comparison with another recipe cannot say which of these differed.
+   *Partly closed 2026-11-01:* new reports carry `transformer.budget.optimizer` (name, betas, epsilon, decay, and
+   that decay reaches every parameter), read off the object the loop builds through one shared `build_optimizer`, so
+   the claim cannot drift from the code. Reports written before this date lack it and the values they ran under are
+   the library defaults of the pinned `torch 2.13.0+cpu`. Whether norms *should* be excluded from decay remains an
+   unrun arm.
 4. **No thread or determinism pinning.** Reproduction is by tolerance (0.0005 bits per character), which E2614's
    seed-7 repeat of E2612 arm T will measure for the first time on this machine.
 5. **`seed_study._PROTOCOL_FIELDS` omits the schedule, `decay_to`, accumulation, masking, work-split and cap fields.**
