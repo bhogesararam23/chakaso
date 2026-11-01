@@ -231,7 +231,11 @@ def save_artifact(artifact: ModelArtifact, path: Path, *, allow_overwrite: bool 
             which is checked before anything is written so a bad artifact never reaches disk.
         CheckpointError: the path already exists and ``allow_overwrite`` was not given.
     """
-    artifact.to_model()
+    # Rebuilding the model initialises its parameters from the global generator. A checkpoint written in the
+    # middle of a run must not advance the stream the run is still drawing from (K-030): harmless at dropout
+    # zero, and otherwise it would make `checkpoint_every` a numerical setting.
+    with torch.random.fork_rng(devices=[]):
+        artifact.to_model()
     target = Path(path)
     if target.exists() and not allow_overwrite:
         message = (

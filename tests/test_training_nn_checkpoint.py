@@ -490,3 +490,24 @@ def test_an_artifact_file_name_names_its_family() -> None:
     assert checkpoint_filename("E2608", "decoder") == "E2608-decoder.pt"
     with pytest.raises(IncompatibleCheckpointError, match="no artifact family"):
         checkpoint_filename("E2608", "mamba")
+
+
+def test_writing_a_checkpoint_does_not_advance_the_random_stream_the_run_is_drawing_from(
+    tmp_path: Path,
+) -> None:
+    """K-030: validating an artifact builds a model, and building one draws from the global generator."""
+    import torch
+
+    artifact = _artifact()
+    torch.manual_seed(1234)
+    before = torch.get_rng_state()
+
+    save_artifact(artifact, tmp_path / "a.pt")
+
+    assert torch.equal(torch.get_rng_state(), before)
+    # The generator really would have moved: the stream a run keeps drawing from is the same one.
+    torch.manual_seed(1234)
+    expected = torch.rand(3)
+    torch.manual_seed(1234)
+    save_artifact(artifact, tmp_path / "b.pt")
+    assert torch.equal(torch.rand(3), expected)

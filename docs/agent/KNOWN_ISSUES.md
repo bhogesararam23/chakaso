@@ -768,6 +768,9 @@ as of that day.
    on synthetic padding. Latent: no run packs ragged blocks into one scored batch.
 2. **A checkpoint write consumes the global RNG** (`save_artifact`). Safe at `dropout = 0`, which every committed
    record uses; with dropout it would make `checkpoint_every` a numerical setting.
+   *Closed 2026-11-01:* `save_artifact` validates the artifact inside `torch.random.fork_rng`, so the model it builds to
+   check the artifact no longer advances the stream the run draws from. A test fails against the old code. No committed
+   record changes: all ran at `dropout = 0`.
 3. **Weight decay is applied to every parameter, norm scales included, and AdamW's betas and epsilon are the library
    defaults, declared nowhere and recorded in no report** (`torch.optim.AdamW(parameters, lr=…, weight_decay=…)`).
    The records are internally consistent; they are not reproducible by anyone who changes the library's defaults,
