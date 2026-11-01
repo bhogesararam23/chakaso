@@ -92,7 +92,7 @@ untrue.
 did not find one: baselines are fitted on training targets only, the tokenizer sample is drawn from the training
 side only, snapshots re-hash every document body, artifacts are written atomically and refuse to clobber, and
 E2612's arms are equal on ten fields checked individually. **The next unit** was E2613's exposure control (now measured); the next after it was E2614's seed spread (now measured), not a
-capacity step; the 0.02 materiality band now has a measured noise floor for the E2612-T configuration, and the next unit is the data lever, H9, judged against it.
+capacity step; the 0.02 materiality band now has a measured noise floor for the E2612-T configuration, and the next unit is the data lever, H9, judged against it. H9 is preregistered as [E2615](../../experiments/E2615/record.md) (a 0/25/50/75/100 % prose-share sweep; four arms to run, E2612-P reused as the endpoint; share-composed training sets are implemented, ADR-0045) and has no result.
 
 ---
 

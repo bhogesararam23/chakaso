@@ -329,7 +329,7 @@ mis-selecting merges, which made E2612's vocabulary unreproducible from code; th
 input ([ADR-0044](decisions/ADR-0044-a-vocabulary-a-record-cites-is-committed-beside-it.md)). (2) The prose cost has a
 declared confound — the control saw about twice the prose — and [E2613](../experiments/E2613/record.md) tested it:
 its first launch deviated and is disclosed, and the valid arm found the prose cost belongs to the mixture (prose 1.80621
-against the mixture's 1.83952, one seed), with the two-pass caveat the record states; the prose-share sweep (H9) is next. (3) Phase 2 is now [E2614](../experiments/E2614/record.md): five seeds, not E2609's three-to-five loosely, chosen
+against the mixture's 1.83952, one seed), with the two-pass caveat the record states; the prose-share sweep (H9) is preregistered as [E2615](../experiments/E2615/record.md) and has no result. (3) Phase 2 is now [E2614](../experiments/E2614/record.md): five seeds, not E2609's three-to-five loosely, chosen
 because three seeds leave a standard deviation known only to within 0.52×–6.29×, with rules that decide whether the
 0.02 band survives. It is measured: seed standard deviation 0.00226 on prose (the band holds), 0.00337 on the whole pack (plausible, unproven) and 0.01232 on mathematics (the band is replaced by 0.035). Phases 5 and 6 and any post-training wait on gates that
 [ADR-0043](decisions/ADR-0043-training-stages-are-separated-by-what-changes-and-entered-by-gates.md) now states and

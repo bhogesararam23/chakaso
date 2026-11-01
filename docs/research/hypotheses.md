@@ -191,7 +191,7 @@ prose than the mixture arm at equal prose exposure. *Cost:* one 90-minute run, n
 mixed register corpus is minimised at some prose share strictly between 0 % and 100 %, and that share is
 measurable with a handful of points. *Why:* E2612 moved composition once, at one point (≈42 % of the pool
 reachable), and got −0.27584 technical against +0.03026 prose. The trade-off exists; its shape does not.
-*Falsified by:* a monotone sweep whose optimum sits at a declared boundary. *Cheap because:* Shukor et al.
+*Falsified by:* a monotone sweep whose optimum sits at a declared boundary. *Status 2026-11-01:* **restated and preregistered** as [E2615](../../experiments/E2615/record.md): "minimised" needs a weighting, and the repository's whole test pack weights the registers by an accident of one seeded sample (prose 41.9 %, science 45.3 %, technology 5.8 %, mathematics 7.0 %, medicine 0 %), so the primary objective is the equal-weight mean of the five register partitions, judged against the seed noise E2614 measured; the grid is 0/25/50/75/100 % with E2612-P as the 100 % endpoint; no arm has run. *Cheap because:* Shukor et al.
 (arXiv:2507.09404) report that only 10–20 runs are needed to fit mixture scaling laws — a claim about *their*
 scale that this project should test rather than assume.
 
