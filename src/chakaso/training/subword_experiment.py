@@ -1068,8 +1068,11 @@ def _test_partition_metrics(
         targets = [token for example in batch.examples for token in example.targets]
         produced[prefix] = {
             "works": len({unit.group for unit in units}),
-            "documents": batch.document_count,
-            "characters": sum(len(unit.text) for unit in units),
+            # Named for what they count. ``population_characters`` is every character of the held-out works
+            # in this partition; ``metrics.characters_scored`` is what the sampled pack was scored over, and
+            # an aggregate weighted by the wrong one moves by 4.5x the materiality band (K-027).
+            "documents_packed": batch.document_count,
+            "population_characters": sum(len(unit.text) for unit in units),
             "tokens_scored": len(targets),
             "metrics": metrics.as_dict(),
             "uniform_nats": round(uniform_value, 6),

@@ -1009,7 +1009,9 @@ def test_the_report_scores_declared_test_partitions_separately(tmp_path: Path) -
         block = partitions[prefix]
         assert block["tokens_scored"] > 0
         assert block["metrics"]["bits_per_character"] > 0
-        assert block["characters"] > 0
+        assert block["population_characters"] >= block["metrics"]["characters_scored"] > 0
+        assert block["documents_packed"] > 0
+        assert "characters" not in block, "the ambiguous field name is gone"
     assert partitions["absent-"]["works"] == 0
     assert "reason" in partitions["absent-"]
 

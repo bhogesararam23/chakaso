@@ -685,7 +685,7 @@ training step and a late refusal would have spent the run first. The default its
 repository-corpus protocol is untouched. **Not closed:** E2612's generation block is still the wrong probe; it is
 re-measured only by a new record, and E2613 is the first run to use `held_out` on this corpus.
 
-### K-027 — A partition's `characters` is its population, not the scored denominator
+### K-027 — Closed for new reports: a partition's `characters` was its population, not the scored denominator
 
 **Impact:** Medium — it is how an aggregate can be mis-weighted by 4.5× the materiality band.
 
@@ -696,9 +696,13 @@ aggregate difference is −0.27584 by scored characters (the preregistered choic
 −0.18650 by the population field: a spread of 0.089 bits per character, and any of the three clears the 0.02
 band, so the **verdict survives the choice while the headline effect size does not**.
 
-**Not fixed.** The field names do not say which is which at the point of use. **What would close it:** the
-report renames the population fields or nests them, and a record that declares an aggregate names the weighting
-field, as E2612 now does in its sensitivity table.
+**Fixed 2026-11-01 by renaming, with one correction to the account above.** Reading the code rather than the
+report: the top-level `documents` was never the population — it is `batch.document_count`, the documents *packed*
+into the scored sample (prose 34) — while `characters` was the population (every character of the held-out works in
+the partition). New reports write `population_characters` and `documents_packed`, and a test asserts the
+ambiguous `characters` key is gone. Reports written before this date, including both E2612 arms and E2613, keep the
+old names; a reader of those must treat `characters` as the population and `metrics.characters_scored` as the
+scored denominator, and a record that declares an aggregate names the weighting field, as E2612 does.
 
 ### K-028 — Closed: cited report digests embed timings, so they were not reproducible across machines
 
