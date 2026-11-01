@@ -1,8 +1,8 @@
 # E2613 — exposure control: does the mixture cost prose, or does prose dose?
 
-**Status:** preregistered — the declarations below were committed before any arm ran. No result exists yet; the
-Results section is added only after the report is on disk. **The first launch deviated from this record and does not
-count as the arm it names; see "Deviation 1".** The valid arm is run after the deviation's cause is fixed.
+**Status:** completed 2026-11-01 — preregistered in `536649f`; the first launch deviated (see "Deviation 1") and is
+reported as run R1 only; the valid arm ran after the cause was fixed. **Outcome: H8-b** — the prose cost belongs to the
+mixture, with the two-pass confound this record declared still standing. One seed.
 **Type:** Research experiment, **preregistered**
 **Unit:** T3 of [ACTIVE_TASK](../../docs/agent/ACTIVE_TASK.md); tests hypothesis
 [H8](../../docs/research/hypotheses.md).
@@ -156,6 +156,80 @@ scored under a different vocabulary, so the differences are *not* a comparison:
 that it trained on prose alone. Its prose partition is near E2612's P and not near T. That is suggestive and nothing
 more: a different vocabulary is a different model input, the one-seed noise floor is still unmeasured (E2614), and the
 preregistered question is about the E2612 vocabulary. **R1 does not decide H8 either way.**
+
+## Results — the preregistered arm
+
+**Outcome: H8-b — the cost is the mixture, not the dose.** Arm H ran to the declared 2,400-step ceiling on
+2026-11-01 (12:10–13:15, 3,853 s of training on a shared host) into `data/experiments/E2613/half-prose-e2612-vocab`.
+This section was written after the report existed; the declarations above are unchanged. Machine-readable aggregate:
+[`results.json`](results.json), rebuilt by `scripts/compare_arms.py` from the three reports on disk.
+
+### Matched conditions were verified before any number was read
+
+`compare_arms` reports **all conditions matched** across P, T and H: corpus `312571f9fa8351a8`, split
+`adf650435c3a9068` (the fingerprint the fix of `b9d7b1a` restored), vocabulary `434debe82f949347` — `reused_from_cache:
+true`, so no vocabulary was fitted — 3,413,760 parameters, seed 7, 2,400 steps, cosine, effective batch 32, learning
+rate 6e-4, and identical scored tokens and characters on every partition. The only differences are the declared ones:
+
+| Field | P | T | H |
+| --- | --- | --- | --- |
+| `training_group_prefixes` | prose | none | prose |
+| `max_training_tokens` | 20,000,000 | 20,000,000 | 10,000,000 |
+| training identifiers packed | 20,000,402 | 20,000,103 | **10,001,764** (inside the declared 9.5M–10.5M) |
+
+### Held-out bits per character (lower is better)
+
+| Partition | P (prose, 20M) | T (mixture, 20M) | **H (prose, 10M)** | H − T | H − P |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| **prose** | 1.80926 | 1.83952 | **1.80621** | **−0.03331** | −0.00305 |
+| science | 2.05867 | 1.94862 | 2.05934 | +0.11071 | +0.00067 |
+| technology | 2.18647 | 1.90273 | 2.18996 | +0.28723 | +0.00349 |
+| medicine | 1.99522 | 1.83814 | 2.00057 | +0.16243 | +0.00535 |
+| mathematics | 3.04361 | 2.57777 | 3.10860 | +0.53083 | +0.06499 |
+| whole test pack | 2.16369 | 2.05545 | 2.16822 | +0.11277 | +0.00453 |
+
+Technical aggregate, weighted by scored characters (K-027): P 2.39222, T 2.11638, **H 2.41341**.
+
+### Verdict against the declared bands
+
+X = 1.80621. **X − T = −0.03331**, which is at least 0.02 below T, so the outcome is **H8-b**: at equal unique prose, an
+arm with no technical text scored the prose partition materially better than the mixture arm, and H8 as worded in
+`hypotheses.md` is **falsified**. X − P = −0.00305 is inside the band: halving the unique prose (20M → 10M) cost the
+prose-only arm nothing measurable. H's technical partitions sit with P's, as a prose-only arm's should (a sanity check
+on the arm, not a finding).
+
+By the decision rule declared before the run: **rule 2.** The mixture itself costs prose at this scale; the prose-share
+sweep (H9) is the next data unit, and E2612's decision rule 2 stands as written.
+
+### What this does and does not establish
+
+* **The declared confound did not go away, and it matters here.** H made about two passes over its ~10M unique prose
+  identifiers; T made one pass over each of its two ~10M halves. So H saw roughly twice as many prose *positions* as T.
+  H ≈ P despite having half of P's *unique* prose says repetition cost nothing at this budget, which points at prose
+  positions seen, not unique prose, as what the prose partition tracks. The result is therefore best read as: **a fixed
+  step budget spent partly on technical text costs prose, and the cost is about what spending those positions on prose
+  would have bought** — not as a finding that technical text actively harms prose representations. The 1,200-step arm
+  (one pass, half the compute) that would separate pass count from composition was declared as a follow-up "if this
+  result makes the question live"; it now does, and it is **not run**.
+* **One seed, and the band is unmeasured.** −0.03331 is 1.67 × the inherited 0.02 band; E2614 will say whether 0.02 is
+  above noise (rule R3 there would retire it and re-read this verdict against the replacement). Until then this verdict
+  is a single-draw result against a convention.
+* The technical-aggregate difference between H and P (+0.02120) sits just outside the band in the other direction, with
+  mathematics (+0.06499) carrying it; H's mathematics partition is the one place the halved data shows. It is reported,
+  not interpreted.
+* Generation (`held_out` prompts): 5 samples, 0 looping, 0 periodic, 1 refused; mean bigram repetition 0.5874. These are
+  repetition statistics, not quality (K-020, E2612).
+
+### Artifacts
+
+| Artifact | SHA-256 of the file |
+| --- | --- |
+| Report `data/experiments/E2613/half-prose-e2612-vocab/report.json` | `051c943f5f30b2dccb0d75515adb5ae786c59e4b4b6a5a6637be974986ad4070` |
+| Checkpoint `E2613-H-decoder.pt` | `c4152994878320932f6636cb034ace250f24101a28724f30a824932ca1dadf7d` |
+| Aggregate, committed [`results.json`](results.json) | rebuilt from the three reports; its H protocol digest is `e18748b9c0b9557b14102f851232fb9442ddb4187c93f82c02fdd7f1646b1305` |
+
+As K-028 records, the report-file digest embeds timings and will not reproduce; the protocol digest is the part a re-run
+can reproduce exactly. Run R1 (above) is not part of this verdict.
 
 ## Generation block
 

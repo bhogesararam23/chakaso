@@ -1,0 +1,780 @@
+{
+  "comparison_reference_P": {
+    "aggregates": {
+      "technical": {
+        "difference_from_reference": {
+          "H": 0.021195,
+          "T": -0.275835
+        },
+        "partitions": [
+          "science-",
+          "technology-",
+          "medicine-",
+          "mathematics-"
+        ],
+        "values": {
+          "H": 2.41341,
+          "P": 2.392215,
+          "T": 2.11638
+        },
+        "weighting": "metrics.characters_scored"
+      }
+    },
+    "all_conditions_matched": true,
+    "arms": [
+      "H",
+      "P",
+      "T"
+    ],
+    "declared_differences": {
+      "max_training_tokens": {
+        "equal": false,
+        "field": "max_training_tokens",
+        "values": {
+          "H": 10000000,
+          "P": 20000000,
+          "T": 20000000
+        }
+      },
+      "training_group_prefixes": {
+        "equal": false,
+        "field": "training_group_prefixes",
+        "values": {
+          "H": [
+            "prose-"
+          ],
+          "P": [
+            "prose-"
+          ],
+          "T": null
+        }
+      },
+      "training_tokens_packed": {
+        "equal": false,
+        "field": "training_tokens_packed",
+        "values": {
+          "H": 10001764,
+          "P": 20000402,
+          "T": 20000103
+        }
+      }
+    },
+    "matched_conditions": {
+      "architecture": {
+        "equal": true,
+        "field": "architecture",
+        "values": {
+          "H": {
+            "context_length": 256,
+            "d_model": 256,
+            "dropout": 0.0,
+            "feedforward_dim": 640,
+            "initialization_std": 0.02,
+            "num_heads": 8,
+            "num_layers": 4,
+            "rope_theta": 10000.0,
+            "tie_embeddings": true,
+            "vocab_size": 4096
+          },
+          "P": {
+            "context_length": 256,
+            "d_model": 256,
+            "dropout": 0.0,
+            "feedforward_dim": 640,
+            "initialization_std": 0.02,
+            "num_heads": 8,
+            "num_layers": 4,
+            "rope_theta": 10000.0,
+            "tie_embeddings": true,
+            "vocab_size": 4096
+          },
+          "T": {
+            "context_length": 256,
+            "d_model": 256,
+            "dropout": 0.0,
+            "feedforward_dim": 640,
+            "initialization_std": 0.02,
+            "num_heads": 8,
+            "num_layers": 4,
+            "rope_theta": 10000.0,
+            "tie_embeddings": true,
+            "vocab_size": 4096
+          }
+        }
+      },
+      "corpus_fingerprint": {
+        "equal": true,
+        "field": "corpus_fingerprint",
+        "values": {
+          "H": "312571f9fa8351a8",
+          "P": "312571f9fa8351a8",
+          "T": "312571f9fa8351a8"
+        }
+      },
+      "effective_batch_size": {
+        "equal": true,
+        "field": "effective_batch_size",
+        "values": {
+          "H": 32,
+          "P": 32,
+          "T": 32
+        }
+      },
+      "learning_rate": {
+        "equal": true,
+        "field": "learning_rate",
+        "values": {
+          "H": 0.0006,
+          "P": 0.0006,
+          "T": 0.0006
+        }
+      },
+      "max_steps": {
+        "equal": true,
+        "field": "max_steps",
+        "values": {
+          "H": 2400,
+          "P": 2400,
+          "T": 2400
+        }
+      },
+      "parameter_count": {
+        "equal": true,
+        "field": "parameter_count",
+        "values": {
+          "H": 3413760,
+          "P": 3413760,
+          "T": 3413760
+        }
+      },
+      "per_partition_tokens_and_characters": {
+        "equal": true,
+        "field": "per_partition_tokens_and_characters",
+        "values": {
+          "mathematics-": {
+            "H": [
+              250624,
+              510290
+            ],
+            "P": [
+              250624,
+              510290
+            ],
+            "T": [
+              250624,
+              510290
+            ]
+          },
+          "medicine-": {
+            "H": [
+              46592,
+              101008
+            ],
+            "P": [
+              46592,
+              101008
+            ],
+            "T": [
+              46592,
+              101008
+            ]
+          },
+          "prose-": {
+            "H": [
+              252672,
+              539534
+            ],
+            "P": [
+              252672,
+              539534
+            ],
+            "T": [
+              252672,
+              539534
+            ]
+          },
+          "science-": {
+            "H": [
+              251392,
+              538564
+            ],
+            "P": [
+              251392,
+              538564
+            ],
+            "T": [
+              251392,
+              538564
+            ]
+          },
+          "technology-": {
+            "H": [
+              253184,
+              547586
+            ],
+            "P": [
+              253184,
+              547586
+            ],
+            "T": [
+              253184,
+              547586
+            ]
+          }
+        }
+      },
+      "schedule": {
+        "equal": true,
+        "field": "schedule",
+        "values": {
+          "H": "cosine",
+          "P": "cosine",
+          "T": "cosine"
+        }
+      },
+      "seed": {
+        "equal": true,
+        "field": "seed",
+        "values": {
+          "H": 7,
+          "P": 7,
+          "T": 7
+        }
+      },
+      "split_fingerprint": {
+        "equal": true,
+        "field": "split_fingerprint",
+        "values": {
+          "H": "adf650435c3a9068",
+          "P": "adf650435c3a9068",
+          "T": "adf650435c3a9068"
+        }
+      },
+      "split_seed": {
+        "equal": true,
+        "field": "split_seed",
+        "values": {
+          "H": 7,
+          "P": 7,
+          "T": 7
+        }
+      },
+      "test_characters_scored": {
+        "equal": true,
+        "field": "test_characters_scored",
+        "values": {
+          "H": 535282,
+          "P": 535282,
+          "T": 535282
+        }
+      },
+      "test_positions_scored": {
+        "equal": true,
+        "field": "test_positions_scored",
+        "values": {
+          "H": 254976,
+          "P": 254976,
+          "T": 254976
+        }
+      },
+      "tokenizer_fingerprint": {
+        "equal": true,
+        "field": "tokenizer_fingerprint",
+        "values": {
+          "H": "434debe82f949347",
+          "P": "434debe82f949347",
+          "T": "434debe82f949347"
+        }
+      },
+      "tokenizer_size": {
+        "equal": true,
+        "field": "tokenizer_size",
+        "values": {
+          "H": 4096,
+          "P": 4096,
+          "T": 4096
+        }
+      }
+    },
+    "partitions": {
+      "mathematics-": {
+        "difference_from_reference": {
+          "H": 0.064992,
+          "T": -0.465842
+        },
+        "scored_by": [
+          "H",
+          "P",
+          "T"
+        ],
+        "values": {
+          "H": 3.108603056448339,
+          "P": 3.0436111151099587,
+          "T": 2.5777694767868824
+        }
+      },
+      "medicine-": {
+        "difference_from_reference": {
+          "H": 0.005347,
+          "T": -0.157082
+        },
+        "scored_by": [
+          "H",
+          "P",
+          "T"
+        ],
+        "values": {
+          "H": 2.000570962204979,
+          "P": 1.9952236891950486,
+          "T": 1.8381413720270459
+        }
+      },
+      "prose-": {
+        "difference_from_reference": {
+          "H": -0.003048,
+          "T": 0.030259
+        },
+        "scored_by": [
+          "H",
+          "P",
+          "T"
+        ],
+        "values": {
+          "H": 1.8062122107732608,
+          "P": 1.8092606546944157,
+          "T": 1.839519816481525
+        }
+      },
+      "science-": {
+        "difference_from_reference": {
+          "H": 0.000673,
+          "T": -0.110041
+        },
+        "scored_by": [
+          "H",
+          "P",
+          "T"
+        ],
+        "values": {
+          "H": 2.0593385016976935,
+          "P": 2.058665231518157,
+          "T": 1.9486239051907785
+        }
+      },
+      "technology-": {
+        "difference_from_reference": {
+          "H": 0.003488,
+          "T": -0.283738
+        },
+        "scored_by": [
+          "H",
+          "P",
+          "T"
+        ],
+        "values": {
+          "H": 2.1899578008913756,
+          "P": 2.1864699212313927,
+          "T": 1.9027317680869595
+        }
+      }
+    },
+    "reference": "P",
+    "whole_pack_bits_per_character": {
+      "difference_from_reference": {
+        "H": 0.004525,
+        "T": -0.108246
+      },
+      "values": {
+        "H": 2.1682177974655765,
+        "P": 2.163693122795988,
+        "T": 2.05544739454246
+      }
+    }
+  },
+  "comparison_reference_T": {
+    "all_conditions_matched": true,
+    "arms": [
+      "H",
+      "P",
+      "T"
+    ],
+    "declared_differences": {
+      "max_training_tokens": {
+        "equal": false,
+        "field": "max_training_tokens",
+        "values": {
+          "H": 10000000,
+          "P": 20000000,
+          "T": 20000000
+        }
+      },
+      "training_group_prefixes": {
+        "equal": false,
+        "field": "training_group_prefixes",
+        "values": {
+          "H": [
+            "prose-"
+          ],
+          "P": [
+            "prose-"
+          ],
+          "T": null
+        }
+      },
+      "training_tokens_packed": {
+        "equal": false,
+        "field": "training_tokens_packed",
+        "values": {
+          "H": 10001764,
+          "P": 20000402,
+          "T": 20000103
+        }
+      }
+    },
+    "matched_conditions": {
+      "architecture": {
+        "equal": true,
+        "field": "architecture",
+        "values": {
+          "H": {
+            "context_length": 256,
+            "d_model": 256,
+            "dropout": 0.0,
+            "feedforward_dim": 640,
+            "initialization_std": 0.02,
+            "num_heads": 8,
+            "num_layers": 4,
+            "rope_theta": 10000.0,
+            "tie_embeddings": true,
+            "vocab_size": 4096
+          },
+          "P": {
+            "context_length": 256,
+            "d_model": 256,
+            "dropout": 0.0,
+            "feedforward_dim": 640,
+            "initialization_std": 0.02,
+            "num_heads": 8,
+            "num_layers": 4,
+            "rope_theta": 10000.0,
+            "tie_embeddings": true,
+            "vocab_size": 4096
+          },
+          "T": {
+            "context_length": 256,
+            "d_model": 256,
+            "dropout": 0.0,
+            "feedforward_dim": 640,
+            "initialization_std": 0.02,
+            "num_heads": 8,
+            "num_layers": 4,
+            "rope_theta": 10000.0,
+            "tie_embeddings": true,
+            "vocab_size": 4096
+          }
+        }
+      },
+      "corpus_fingerprint": {
+        "equal": true,
+        "field": "corpus_fingerprint",
+        "values": {
+          "H": "312571f9fa8351a8",
+          "P": "312571f9fa8351a8",
+          "T": "312571f9fa8351a8"
+        }
+      },
+      "effective_batch_size": {
+        "equal": true,
+        "field": "effective_batch_size",
+        "values": {
+          "H": 32,
+          "P": 32,
+          "T": 32
+        }
+      },
+      "learning_rate": {
+        "equal": true,
+        "field": "learning_rate",
+        "values": {
+          "H": 0.0006,
+          "P": 0.0006,
+          "T": 0.0006
+        }
+      },
+      "max_steps": {
+        "equal": true,
+        "field": "max_steps",
+        "values": {
+          "H": 2400,
+          "P": 2400,
+          "T": 2400
+        }
+      },
+      "parameter_count": {
+        "equal": true,
+        "field": "parameter_count",
+        "values": {
+          "H": 3413760,
+          "P": 3413760,
+          "T": 3413760
+        }
+      },
+      "per_partition_tokens_and_characters": {
+        "equal": true,
+        "field": "per_partition_tokens_and_characters",
+        "values": {
+          "mathematics-": {
+            "H": [
+              250624,
+              510290
+            ],
+            "P": [
+              250624,
+              510290
+            ],
+            "T": [
+              250624,
+              510290
+            ]
+          },
+          "medicine-": {
+            "H": [
+              46592,
+              101008
+            ],
+            "P": [
+              46592,
+              101008
+            ],
+            "T": [
+              46592,
+              101008
+            ]
+          },
+          "prose-": {
+            "H": [
+              252672,
+              539534
+            ],
+            "P": [
+              252672,
+              539534
+            ],
+            "T": [
+              252672,
+              539534
+            ]
+          },
+          "science-": {
+            "H": [
+              251392,
+              538564
+            ],
+            "P": [
+              251392,
+              538564
+            ],
+            "T": [
+              251392,
+              538564
+            ]
+          },
+          "technology-": {
+            "H": [
+              253184,
+              547586
+            ],
+            "P": [
+              253184,
+              547586
+            ],
+            "T": [
+              253184,
+              547586
+            ]
+          }
+        }
+      },
+      "schedule": {
+        "equal": true,
+        "field": "schedule",
+        "values": {
+          "H": "cosine",
+          "P": "cosine",
+          "T": "cosine"
+        }
+      },
+      "seed": {
+        "equal": true,
+        "field": "seed",
+        "values": {
+          "H": 7,
+          "P": 7,
+          "T": 7
+        }
+      },
+      "split_fingerprint": {
+        "equal": true,
+        "field": "split_fingerprint",
+        "values": {
+          "H": "adf650435c3a9068",
+          "P": "adf650435c3a9068",
+          "T": "adf650435c3a9068"
+        }
+      },
+      "split_seed": {
+        "equal": true,
+        "field": "split_seed",
+        "values": {
+          "H": 7,
+          "P": 7,
+          "T": 7
+        }
+      },
+      "test_characters_scored": {
+        "equal": true,
+        "field": "test_characters_scored",
+        "values": {
+          "H": 535282,
+          "P": 535282,
+          "T": 535282
+        }
+      },
+      "test_positions_scored": {
+        "equal": true,
+        "field": "test_positions_scored",
+        "values": {
+          "H": 254976,
+          "P": 254976,
+          "T": 254976
+        }
+      },
+      "tokenizer_fingerprint": {
+        "equal": true,
+        "field": "tokenizer_fingerprint",
+        "values": {
+          "H": "434debe82f949347",
+          "P": "434debe82f949347",
+          "T": "434debe82f949347"
+        }
+      },
+      "tokenizer_size": {
+        "equal": true,
+        "field": "tokenizer_size",
+        "values": {
+          "H": 4096,
+          "P": 4096,
+          "T": 4096
+        }
+      }
+    },
+    "partitions": {
+      "mathematics-": {
+        "difference_from_reference": {
+          "H": 0.530834,
+          "P": 0.465842
+        },
+        "scored_by": [
+          "H",
+          "P",
+          "T"
+        ],
+        "values": {
+          "H": 3.108603056448339,
+          "P": 3.0436111151099587,
+          "T": 2.5777694767868824
+        }
+      },
+      "medicine-": {
+        "difference_from_reference": {
+          "H": 0.16243,
+          "P": 0.157082
+        },
+        "scored_by": [
+          "H",
+          "P",
+          "T"
+        ],
+        "values": {
+          "H": 2.000570962204979,
+          "P": 1.9952236891950486,
+          "T": 1.8381413720270459
+        }
+      },
+      "prose-": {
+        "difference_from_reference": {
+          "H": -0.033308,
+          "P": -0.030259
+        },
+        "scored_by": [
+          "H",
+          "P",
+          "T"
+        ],
+        "values": {
+          "H": 1.8062122107732608,
+          "P": 1.8092606546944157,
+          "T": 1.839519816481525
+        }
+      },
+      "science-": {
+        "difference_from_reference": {
+          "H": 0.110715,
+          "P": 0.110041
+        },
+        "scored_by": [
+          "H",
+          "P",
+          "T"
+        ],
+        "values": {
+          "H": 2.0593385016976935,
+          "P": 2.058665231518157,
+          "T": 1.9486239051907785
+        }
+      },
+      "technology-": {
+        "difference_from_reference": {
+          "H": 0.287226,
+          "P": 0.283738
+        },
+        "scored_by": [
+          "H",
+          "P",
+          "T"
+        ],
+        "values": {
+          "H": 2.1899578008913756,
+          "P": 2.1864699212313927,
+          "T": 1.9027317680869595
+        }
+      }
+    },
+    "reference": "T",
+    "whole_pack_bits_per_character": {
+      "difference_from_reference": {
+        "H": 0.11277,
+        "P": 0.108246
+      },
+      "values": {
+        "H": 2.1682177974655765,
+        "P": 2.163693122795988,
+        "T": 2.05544739454246
+      }
+    }
+  },
+  "experiment": "E2613",
+  "outcome": "H8-b",
+  "outcome_text": "X <= T - 0.02: at equal unique prose, an arm without technical text scored the prose partition materially better than the mixture arm; H8 as worded is falsified. X - P is inside the band.",
+  "prose_partition_bits_per_character": {
+    "H_E2613": 1.8062122107732608,
+    "H_minus_P": -0.003048,
+    "H_minus_T": -0.033308,
+    "P_E2612": 1.8092606546944157,
+    "T_E2612": 1.839519816481525
+  },
+  "protocol_digest_H": "e18748b9c0b9557b14102f851232fb9442ddb4187c93f82c02fdd7f1646b1305",
+  "source_reports": {
+    "H": "051c943f5f30b2dccb0d75515adb5ae786c59e4b4b6a5a6637be974986ad4070"
+  }
+}
