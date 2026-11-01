@@ -120,13 +120,21 @@ class UnitSplit:
 
     @property
     def fingerprint(self) -> str:
-        """A short digest of the exact side assignment, so a re-run can prove it split the same way."""
+        """A short digest of the exact side assignment, so a re-run can prove it split the same way.
+
+        It covers the three sides and **not** ``dropped_duplicates``. A dropped duplicate is a function of
+        the input set (the first occurrence of a body is kept), so it adds nothing a re-run could disagree
+        about, and including it made the fingerprint depend on whether a split path *reported* its
+        duplicates: when the whole-work path started reporting them (K-025) every whole-work fingerprint
+        that had a duplicate moved, which invalidated the tokenizer cache keyed on it and with it E2612's
+        re-trainability. An identity must not change because a report became more complete.
+        """
         payload = join_parts(
             "chakaso-unit-split/1",
             *(
                 join_parts(side, *identifiers)
                 for side, identifiers in sorted(self.identifiers.items())
-                if identifiers
+                if identifiers and side != "dropped_duplicates"
             ),
         )
         return sha256_hex(payload)[:16]

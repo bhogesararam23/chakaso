@@ -40,6 +40,9 @@ capability is implemented or still planned.
   Project Gutenberg models by continuing Chakaso's section titles because the default prompt set was never changed.
   Preparation now refuses that combination before anything is fitted and names `--sample-prompts held_out`.
 - **A whole-work split now reports the duplicates it excluded** (K-025). The field was always empty on that path.
+  The first version of this change also moved the split fingerprint, which keys the tokenizer cache, so a run
+  launched on it refitted a vocabulary it should have reused; the fingerprint now covers the side assignment only, and
+  E2612's split reproduces its recorded `adf650435c3a9068`.
 
 - **The byte-pair merge loop no longer silently mis-selects merges** (`cfdcd1a`). The indexed heap added in
   `6f3274f` for speed discarded a pair whose count fell when an earlier merge rewrote the shapes holding it, so

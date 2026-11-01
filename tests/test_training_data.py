@@ -444,3 +444,29 @@ def test_a_whole_work_split_reports_the_duplicates_it_excluded() -> None:
     assigned = {unit.identifier for unit in split.train + split.validation + split.test}
     assert "pg03/part-0099.md" not in assigned
     assert len(assigned) == len(units)
+
+
+def test_reporting_a_duplicate_does_not_move_the_split_fingerprint() -> None:
+    """An identity must not change because a report became more complete.
+
+    K-025 made the whole-work path report the duplicates it excludes. The fingerprint once hashed that list,
+    so the fix moved the fingerprint of every whole-work split with a duplicate, which moved the tokenizer
+    cache keyed on it and silently turned a cache hit into a refit.
+    """
+    works = _works(8, 2)
+    twin = TextUnit(identifier="pg03/part-0099.md", text=works[6].text, group="pg03")
+
+    for whole_works in (True, False):
+        without = split_text_units(works, seed=5, whole_works=whole_works)
+        with_twin = split_text_units((*works, twin), seed=5, whole_works=whole_works)
+        assert with_twin.dropped_duplicates and not without.dropped_duplicates
+        assert with_twin.fingerprint == without.fingerprint
+
+
+def test_the_fingerprint_still_moves_when_a_unit_changes_side() -> None:
+    works = _works(8, 2)
+
+    assert (
+        split_text_units(works, seed=5, whole_works=True).fingerprint
+        != split_text_units(works, seed=6, whole_works=True).fingerprint
+    )
