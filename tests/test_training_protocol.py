@@ -119,6 +119,6 @@ def test_every_committed_protocol_still_loads_into_a_valid_plan() -> None:
 
     assert committed, "the protocol this test exists for is committed"
     for path in committed:
-        plan = load_plan(path, root=Path("."), work_dir=Path("work"))
+        plan = load_plan(path, root=Path(), work_dir=Path("work"))
         if plan.tokenizer_file is not None:
             assert (Path(__file__).resolve().parent.parent / plan.tokenizer_file).is_file()
