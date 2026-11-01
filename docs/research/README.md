@@ -5,6 +5,7 @@ specifications.
 
 | Document | Contents |
 | --- | --- |
+| [`executive-overview.md`](executive-overview.md) | One page: fourteen conclusions, each labelled published, measured here, experimental, computed, hypothesis or decision, and where the evidence is thin |
 | [`research-log.md`](research-log.md) | Dated entries: observations, decisions, and eventually experiments and results |
 | [`open-model-landscape.md`](open-model-landscape.md) | A sourced comparison of DeepSeek, Qwen, OLMo, SmolLM and TinyLlama, the scaling and data literature, and what transfers to a CPU-scale model |
 | [`chakaso-research-campaign-2026-11.md`](chakaso-research-campaign-2026-11.md) | The 2026-11-01 campaign's index: what was audited and reviewed, the 70 numbered annotations and where they live, the gap analysis, the ranked decision matrix (expected benefit, evidence, cost, hardware, risk, required experiment) and the phased roadmap with measurable milestones |
