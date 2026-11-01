@@ -209,6 +209,8 @@ in this repository is an absence of evidence about a threshold that has not been
 *What would answer it:* three seeds of the E2612-T configuration, ~4.5 hours, reporting the standard deviation of
 test bits per character.
 
+**Answered for one configuration, 2026-11-01 ([E2614](../../experiments/E2614/record.md)).** Five seeds (three would have left σ known only to within 0.52×–6.29×): s = 0.00226 on prose, 0.00337 on the whole pack, 0.01232 on mathematics. The band holds for prose, is plausible but unproven for the whole pack, and is replaced by 0.035 for mathematics. Still open: the spread of the prose-only arms, the spread over which works are held out (the partitions have 1 to 35 works), and the spread at a converged budget.
+
 **Does the mixture damage prose, or did arm T simply read less prose?**
 Declared as a confound before E2612 ran, then measured: the training pool is 50.51 % prose by characters
 (52,513,592 of 103,964,830 over 6,515 documents), so at a shared 20,000,000-identifier cap the mixture arm saw

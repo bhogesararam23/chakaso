@@ -217,6 +217,7 @@ sweep (H9) is the next data unit, and E2612's decision rule 2 stands as written.
 * The technical-aggregate difference between H and P (+0.02120) sits just outside the band in the other direction, with
   mathematics (+0.06499) carrying it; H's mathematics partition is the one place the halved data shows. It is reported,
   not interpreted.
+* **Annotation after [E2614](../E2614/record.md) (same day; the numbers above are unedited).** The band was measured on the mixture configuration: prose s = 0.00226, so H8-b's −0.03331 is 1.86× the upper end of the one-seed band (2.77·s<sub>hi</sub> = 0.01795) and stands; −0.00305 is 0.17× of it and stands. The prose-only arms' own spread is not measured. **The remark above that mathematics (+0.06499) carries the H-against-P gap is withdrawn:** mathematics s = 0.01232 gives a one-seed band of 0.0341 (0.0981 at the upper end), so +0.06499 cannot be told from noise.
 * Generation (`held_out` prompts): 5 samples, 0 looping, 0 periodic, 1 refused; mean bigram repetition 0.5874. These are
   repetition statistics, not quality (K-020, E2612).
 

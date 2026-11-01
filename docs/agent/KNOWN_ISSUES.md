@@ -787,7 +787,7 @@ as of that day.
    the library defaults of the pinned `torch 2.13.0+cpu`. Whether norms *should* be excluded from decay remains an
    unrun arm.
 4. **No thread or determinism pinning.** Reproduction is by tolerance (0.0005 bits per character), which E2614's
-   seed-7 repeat of E2612 arm T will measure for the first time on this machine.
+   seed-7 repeat of E2612 arm T measured on this machine: the difference was exactly 0.0 on every metric, so the protocol was deterministic here. Thread count (14 in the reports) and kernel selection are still not pinned, so that says nothing about another machine.
 5. **`seed_study._PROTOCOL_FIELDS` omits the schedule, `decay_to`, accumulation, masking, work-split and cap fields.**
    Two runs that differed only in those would still be aggregated as one study.
    *Closed 2026-11-01:* the study's protocol identity now also carries `protocol_digest(report, include_seed=False)`,

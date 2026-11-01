@@ -963,3 +963,26 @@ no command can refit.
 **Limitations.** Nothing in this entry is a model result. E2613 has no valid result at the time of writing; E2614 has
 none either. The citation audit cannot see a well-formed citation of the right paper that misstates it. The seed
 arithmetic assumes normality that five points cannot test.
+
+
+## 2026-11-01 — The decoder's seed spread was measured: the 0.02 band holds for prose and not for mathematics
+
+**Type:** observation + decision rule applied ([E2614](../../experiments/E2614/record.md), preregistered before any seed ran).
+
+**Observation.** Five seeds (7, 11, 13, 17, 19) of the 3,413,760-parameter decoder at E2612 arm T's configuration, one
+split and one vocabulary, initialisation and data order moving together. Sample standard deviation of held-out bits per
+character: whole pack 0.00337, prose 0.00226, mathematics 0.01232 (science 0.00337, technology 0.00105, medicine 0.00374).
+Every run stopped at the 2,400-step ceiling. Seed 7 repeated E2612 arm T with a difference of exactly 0.0 on every metric.
+
+**Interpretation, by the rules declared in advance.** A one-seed difference has a 95 % band of 2.77·s. Prose: 0.00625
+central and 0.01795 at the interval's upper end, so 0.02 holds (R1). Whole pack: 0.00934 and 0.02683, plausible not proven
+(R2). Mathematics: 0.03413 and 0.09808, so 0.02 is inside the noise and is replaced by 0.035 (R3). Re-read against these,
+E2612's prose cost (+0.03026) and technical gains and E2613's H8-b (−0.03331) stand; E2613's remark that mathematics
+carries a gap is withdrawn.
+
+**Decision.** The replacement band applies to mathematics only, as R3 declares. A data arm judged on the whole pack
+needs a one-seed difference above 0.0268 or more seeds first.
+
+**Limitations.** The spread is for the mixture configuration at one split and a truncated budget; the prose-only arms'
+spread is assumed to resemble it. Five points cannot test normality. The spread over which works are held out, which
+is probably larger, is not measured. Nothing here is a statement about capability.

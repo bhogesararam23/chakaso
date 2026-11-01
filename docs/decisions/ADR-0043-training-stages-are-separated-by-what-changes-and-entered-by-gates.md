@@ -55,7 +55,7 @@ Two consequences are normative:
 ### 2. Each stage is entered through a gate, and the gate is a measurement that exists before the stage's data does
 
 * **B → M.** A base checkpoint whose held-out loss has a *measured noise floor* (a seed spread at the reference
-  configuration; ACTIVE_TASK T4), so that a mid-training difference can be told from seed noise, and whose
+  configuration; ACTIVE_TASK T4; *measured for the E2612-T configuration by E2614 on 2026-11-01, and not for the released `chakaso-base@0.1.0` checkpoint, whose corpus and split differ*), so that a mid-training difference can be told from seed noise, and whose
   held-out partitions are whole works that no stage will train on (ADR-0042). Mid-training data is chosen on a
   hypothesis the base's measurements pose — a register it is weak on, a length it cannot use — not because mid-training
   is a stage other projects have.

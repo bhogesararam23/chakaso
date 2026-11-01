@@ -83,7 +83,7 @@ chain is recorded here. Each row was run on this machine on 2026-11-01, not quot
 | # | Question | Why it is not settled |
 | --- | --- | --- |
 | O-01 | Whether E2612's H2 failure is exposure or mixture | the arms differ in prose tokens by ~2× as well as in registers; no arm exists that sees ~10 M prose identifiers and nothing else. Only a third arm answers it |
-| O-02 | Whether the 0.02-bit materiality band is the right band at all | it is inherited from E2611's declared threshold, not calibrated against a seed spread. E2612's H2 misses by 1.5× a band nobody has measured the noise for |
+| O-02 | Whether the 0.02-bit materiality band is the right band at all | it is inherited from E2611's declared threshold, not calibrated against a seed spread. E2612's H2 misses by 1.5× a band nobody has measured the noise for. *Closed for one configuration the same day by E2614: the band holds for prose, is replaced by 0.035 for mathematics.* |
 | O-03 | Whether any of this transfers off archaic English | no partition in any run so far is modern. E2612's own limits say so, and V-22 says the cheapest modern candidate is not obviously the right register either |
 | O-04 | The model-path audit's findings | recorded in [model-path-audit-2026-11-01.md](model-path-audit-2026-11-01.md); each is pending its own re-check before it enters a decision |
 

@@ -100,6 +100,8 @@ calibrated against a seed spread — E2609 was never run, so the decoder has no 
 And no partition in any run so far is modern English, which means the archaic-transfer disclaimer every record
 carries has never once been measured.
 
+*Update, later the same day:* the band's noise floor was then measured ([E2614](../../../experiments/E2614/record.md), five seeds): s = 0.00226 on prose, 0.00337 on the whole pack, 0.01232 on mathematics. The band holds for prose and is replaced by 0.035 for mathematics. The modern-English gap above is unchanged.
+
 ## What should happen next
 
 In order, with the reasoning already argued in

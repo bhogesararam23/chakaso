@@ -255,7 +255,7 @@ AdamW with compute optimal training" ([Liu et al., arXiv:2502.16982](https://arx
 FineWeb task and runs to 774M and 1.5B parameters, with the embedding, output head and scalar/vector parameters left to
 AdamW. *Nothing read tests it below 774M parameters or at a 20M-token budget.* At Chakaso's shape the embedding table
 is 1,048,576 of 3,413,760 parameters (30.7 %), so Muon would govern only the remaining ~69 %. *Falsified by:* an arm whose
-whole-pack bits per character is within 2.77·s of the AdamW arm's, where s is E2614's sample deviation. *Why it is not
-being built:* the noise floor does not exist yet (E2614), a new optimiser is an interface change that needs a decision
+whole-pack bits per character is within 2.77·s of the AdamW arm's, where s is E2614's sample deviation (whole pack 0.00337, so 2.77·s = 0.0093, and 0.0268 at the interval's upper end). *Why it is not
+being built:* the noise floor now exists (E2614) and that reason is gone; the others stand: a new optimiser is an interface change that needs a decision
 record, and the repository's rule is to implement only what its evidence justifies; the sources read are two orders of
 magnitude above this scale. *Cost if pursued:* ~40 lines of PyTorch plus one ~90-minute arm.

@@ -16,10 +16,11 @@ capability is implemented or still planned.
 
 **Measured**
 
+- **E2614: the seed spread of the decoder.** Five seeds of E2612 arm T's configuration give a sample standard deviation of 0.00226 bits per character on held-out prose, 0.00337 on the whole pack and 0.01232 on mathematics. By the rules the record declared before any seed ran, the inherited 0.02 band is justified for prose, plausible but unproven for the whole pack, and replaced by 0.035 for mathematics. Seed 7 reproduced E2612 arm T with a difference of exactly 0.0 on every metric. The earlier prose and technical verdicts stand; E2613's remark that mathematics explains the H-against-P gap is withdrawn. One split, a truncated budget, and the spread of the prose-only arms is assumed, not measured.
 - **E2613: the prose cost of E2612's mixture belongs to the mixture** (outcome H8-b). A prose-only arm at 10M identifiers,
   with every condition proved matched by the new arm-comparison tool, scored held-out prose 1.80621 against the
   mixture's 1.83952 (−0.03331, outside the 0.02 band) and the 20M prose control's 1.80926 (−0.00305, inside it). Caveats the
-  record states: the arm made about twice the mixture's prose passes, one seed, band unmeasured (E2614). The record also
+  record states: the arm made about twice the mixture's prose passes, one seed (E2614 later measured the band: it holds for prose). The record also
   discloses its first launch, which refitted a vocabulary after a provenance fix moved a cache key.
 
 **Fixed**
