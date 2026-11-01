@@ -20,6 +20,10 @@ capability is implemented or still planned.
   training and validation loss but not `score_model_on_examples`, so a masked run would have been scored under
   attention it never trained with. The switch defaults off, leaving every committed record's protocol intact; four
   tests cover it and the experiment-level one fails against the previous code. No masked arm has been run.
+- **A re-run can now prove it ran under the same conditions** (K-028). The report-file digest embeds wall clock,
+  throughput and thread count, so no faithful re-run could ever reproduce it. `chakaso experiment model` now also
+  prints a *protocol digest* over the corpus, split, tokenizer, plan, architecture and budget, which a re-run does
+  reproduce; metrics are still compared by tolerance, because a hash over floating-point results fails on another CPU.
 - **A run on a foreign corpus can no longer sample with the repository's own prompts** (K-026). E2612 described two
   Project Gutenberg models by continuing Chakaso's section titles because the default prompt set was never changed.
   Preparation now refuses that combination before anything is fitted and names `--sample-prompts held_out`.

@@ -87,6 +87,7 @@ __all__ = [
     "ExperimentPlan",
     "PreparedCorpus",
     "prepare_corpus",
+    "protocol_digest",
     "run_experiment",
     "summarise",
     "write_report",
@@ -1405,6 +1406,57 @@ def write_report(
     payload = json.dumps(report, indent=2, sort_keys=True, default=str)
     write_text_atomically(payload, target)
     return sha256_hex(payload)
+
+
+#: Plan fields that name where a run lives or what it was allowed to overwrite. They change with the machine
+#: and the working directory, not with what was measured.
+_MACHINE_LOCAL_PLAN_FIELDS = frozenset(
+    {"root", "work_dir", "corpus_snapshot", "tokenizer_cache_dir", "overwrite_artifacts"}
+)
+#: Budget fields that are observed conditions of one execution on one machine.
+_OBSERVED_BUDGET_FIELDS = frozenset({"positions_per_second", "wall_clock_s"})
+
+
+def protocol_digest(report: dict[str, Any]) -> str:
+    """A digest of the conditions a report's numbers were measured under, and of none of the numbers.
+
+    ``write_report`` returns the SHA-256 of the file, and the file embeds wall-clock time, throughput,
+    memory and thread count, so a faithful re-run reproduces every metric and cannot reproduce that digest
+    (K-028). Hashing the metrics instead would fail for a different reason: floating-point results on a
+    different CPU, BLAS or thread count agree to the digits that matter and not to the last bit, so a hash
+    over them would call a good reproduction a failure.
+
+    This digest is the part a re-run *can* reproduce exactly: the corpus and split fingerprints, the plan
+    with its machine-local paths removed, the tokenizer's identity and per-side token counts, the
+    architecture and parameter count, and the budget with its observed rates removed. Two reports with equal
+    protocol digests were measured under the same conditions, so their metrics are comparable and any
+    difference between them is a result, not a protocol change. The metrics themselves are compared by
+    tolerance, never by hash.
+    """
+    transformer = report["transformer"]
+    protocol = {
+        "experiment": report["experiment"],
+        "model_family": report["model_family"],
+        "corpus": report["corpus"],
+        "plan": {
+            name: value
+            for name, value in report["plan"].items()
+            if name not in _MACHINE_LOCAL_PLAN_FIELDS
+        },
+        "tokenizer": {
+            name: value
+            for name, value in report["tokenizer"].items()
+            if name != "reused_from_cache"
+        },
+        "architecture": transformer["architecture"],
+        "parameter_count": transformer["parameter_count"],
+        "budget": {
+            name: value
+            for name, value in transformer["budget"].items()
+            if name not in _OBSERVED_BUDGET_FIELDS
+        },
+    }
+    return sha256_hex(json.dumps(protocol, sort_keys=True, default=str, ensure_ascii=True))
 
 
 def summarise(report: dict[str, Any]) -> str:

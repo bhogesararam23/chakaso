@@ -38,6 +38,7 @@ from chakaso.training.subword_experiment import (
     CorpusSpec,
     ExperimentPlan,
     prepare_corpus,
+    protocol_digest,
     run_experiment,
     summarise,
     write_report,
@@ -1154,3 +1155,43 @@ def test_a_foreign_corpus_cannot_be_sampled_with_the_repositorys_own_prompts(
 
     assert not list(work.glob("*-tokenizer-*.json")), "nothing was fitted before the refusal"
     prepare_corpus(_plan(root, work, corpus_snapshot=snapshot, sample_prompts="held_out"))
+
+
+def test_a_faithful_rerun_reproduces_the_protocol_digest_though_not_the_file_digest(
+    tmp_path: Path,
+) -> None:
+    """K-028: the file digest embeds timings, so it identifies a run; the protocol digest identifies its conditions."""
+    root = _root(tmp_path)
+    first = run_experiment(_plan(root, tmp_path / "work-a"))
+    second = run_experiment(_plan(root, tmp_path / "work-b"))
+
+    assert protocol_digest(first) == protocol_digest(second)
+    assert write_report(first, tmp_path / "a.json") != write_report(second, tmp_path / "b.json")
+
+
+def test_the_protocol_digest_moves_when_a_condition_does_not_when_a_rate_does(
+    tmp_path: Path,
+) -> None:
+    import copy
+
+    report = run_experiment(_plan(_root(tmp_path), tmp_path / "work"))
+    baseline = protocol_digest(report)
+
+    slower = copy.deepcopy(report)
+    slower["transformer"]["budget"]["wall_clock_s"] += 100.0
+    slower["transformer"]["budget"]["positions_per_second"] /= 2
+    slower["environment"]["torch_threads"] = "1"
+    slower["tokenizer"]["reused_from_cache"] = not report["tokenizer"]["reused_from_cache"]
+    assert protocol_digest(slower) == baseline
+
+    for mutate in (
+        lambda r: r["plan"].update(seed=r["plan"]["seed"] + 1),
+        lambda r: r["transformer"]["budget"].update(
+            max_steps=r["transformer"]["budget"]["max_steps"] + 1
+        ),
+        lambda r: r["corpus"].update(split_fingerprint="0" * 16),
+        lambda r: r["tokenizer"].update(fingerprint="0" * 16),
+    ):
+        changed = copy.deepcopy(report)
+        mutate(changed)
+        assert protocol_digest(changed) != baseline

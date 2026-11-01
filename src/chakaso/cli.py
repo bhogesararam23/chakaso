@@ -2187,7 +2187,12 @@ def _run_model_experiment(args: argparse.Namespace) -> int:
     """
     try:
         from chakaso.training.errors import TrainingError
-        from chakaso.training.subword_experiment import ExperimentPlan, run_experiment, summarise
+        from chakaso.training.subword_experiment import (
+            ExperimentPlan,
+            protocol_digest,
+            run_experiment,
+            summarise,
+        )
         from chakaso.training.subword_experiment import write_report as write_model_report
     except ImportError as exc:  # pragma: no cover - depends on the environment lacking the extras
         print(
@@ -2285,6 +2290,7 @@ def _run_model_experiment(args: argparse.Namespace) -> int:
             print(f"{PROGRAM}: {exc}", file=sys.stderr)
             return 1
         print(f"report digest {digest}", file=sys.stderr)
+        print(f"protocol digest {protocol_digest(report)}", file=sys.stderr)
     if args.json:
         print(json.dumps(report, sort_keys=True, indent=2, ensure_ascii=False, default=str))
     else:

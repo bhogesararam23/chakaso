@@ -807,6 +807,7 @@ def test_experiment_model_runs_the_pipeline_through_the_library_api(
     assert "not language capability" in out.err
     assert report_path.is_file()
     assert "report digest" in out.err
+    assert "protocol digest" in out.err
     # A measured run leaves its input behind, or the next checkout cannot rerun it.
     assert (work / "chakaso-repo-text-v1-snapshot.json").is_file()
 

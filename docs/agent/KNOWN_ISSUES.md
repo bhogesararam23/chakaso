@@ -700,7 +700,7 @@ band, so the **verdict survives the choice while the headline effect size does n
 report renames the population fields or nests them, and a record that declares an aggregate names the weighting
 field, as E2612 now does in its sensitivity table.
 
-### K-028 — Cited report digests embed timings, so they are not reproducible across machines
+### K-028 — Closed: cited report digests embed timings, so they were not reproducible across machines
 
 **Impact:** Medium for the reproduction contract, none for the measurements.
 
@@ -710,9 +710,17 @@ shared CPU machine. Confirmed 2026-11-01: the "report digest" in E2612's run log
 (`3764ba3f…`, `295fbc7a…`). A faithful re-run therefore reproduces every metric and cannot reproduce the digest,
 which contradicts the promise that regenerating a report lets the hashes be compared.
 
-**Not fixed.** **What would close it:** either a content digest over the metric-bearing fields alone, printed
-beside the file hash, or documentation that says plainly that reproduction here means the numbers agree and the
-digests are identifiers, not checks.
+**Fixed 2026-11-01, by the second route and a stricter one.** A hash over the metric-bearing fields would fail for
+a different reason: floating-point results on another CPU, BLAS or thread count agree to the digits that matter
+and not to the last bit (the repository's own two-run test compares bits per character with `abs=1e-3`, not
+equality), so it would call a good reproduction a failure. `protocol_digest(report)` hashes what *can* be
+reproduced exactly instead — the corpus and split fingerprints, the plan without its machine-local paths, the
+tokenizer's identity and per-side token counts, the architecture and parameter count, and the budget without its
+observed rates — and `chakaso experiment model` now prints it beside the file digest. Equal protocol digests mean
+two reports were measured under the same conditions; their metrics are then compared by tolerance. Two real runs
+in different directories agree on it and disagree on the file digest (a test), and changing a seed, a step
+budget, the split or the tokenizer moves it while changing a rate or a thread count does not (a second test).
+Reports already on disk carry no such line; `protocol_digest` can be computed from any of them.
 
 ### K-029 — The corpus a selection rule sampled is not pinned, and the script says it is
 
