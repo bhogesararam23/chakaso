@@ -39,6 +39,11 @@ capability is implemented or still planned.
 - **A run on a foreign corpus can no longer sample with the repository's own prompts** (K-026). E2612 described two
   Project Gutenberg models by continuing Chakaso's section titles because the default prompt set was never changed.
   Preparation now refuses that combination before anything is fitted and names `--sample-prompts held_out`.
+- **An arm comparison can now be rebuilt from the reports, with its matching proved first** (`chakaso.training.arm_comparison`,
+  `scripts/compare_arms.py`). E2612's committed `results.json` came from a script whose code was never committed; the module
+  lists every condition that must be equal across arms and whether it is, lists the declared differences, then tabulates
+  partitions against a reference arm and weights any aggregate by *scored* characters (K-027). Run on E2612's two real
+  reports it reproduces that record's technical aggregate exactly (2.392215, 2.11638, −0.275835).
 - **Writing a checkpoint no longer advances the random stream a run is drawing from** (K-030). Validating the artifact
   built a model, which draws from the global generator; harmless at dropout zero, which every committed record used, but it
   would have made `checkpoint_every` a numerical setting for any run with dropout.

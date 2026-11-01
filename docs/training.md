@@ -241,6 +241,10 @@ Three rules make those commands mean something, and the code enforces them rathe
 
 - **A run that names a corpus trains on that corpus.** `--expected-corpus-fingerprint` is checked before any
   step is taken; a snapshot of a different corpus is a refusal, not a substitution.
+- **An arm comparison proves its arms were matched before it reports a difference.** `scripts/compare_arms.py` (library:
+  `chakaso.training.arm_comparison`) reads report files, checks the corpus, split, tokenizer, architecture, seed, budget
+  and per-partition scored support are equal, lists the declared differences, and weights aggregates by scored characters.
+  A comparison whose conditions are not matched exits non-zero.
 - **A study can read its plan from a committed file.** `chakaso experiment study --protocol FILE.toml` takes the
   architecture, data selection, budget and tokenizer from a `[plan]` table (`chakaso.training.protocol`), so a record
   cites one artifact instead of forty flags. Unknown fields, wrong types and a value declared in the file and on the
