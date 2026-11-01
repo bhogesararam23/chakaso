@@ -137,3 +137,24 @@ def test_only_a_failed_check_fails_the_audit(audit: ModuleType) -> None:
 def test_the_audits_own_record_is_not_audited(audit: ModuleType) -> None:
     assert audit.is_audit_record("docs/internal/engineering/citation-audit-2026-11-01.md")
     assert not audit.is_audit_record("docs/research/open-model-landscape.md")
+
+
+def test_a_cache_missing_an_identifier_asks_arxiv_for_only_that_one(
+    audit: ModuleType, tmp_path: Path
+) -> None:
+    cache = tmp_path / "cache.json"
+    asked: list[list[str]] = []
+
+    def fetcher(identifiers: list[str]) -> dict[str, object]:
+        asked.append(list(identifiers))
+        return {key: value for key, value in audit.parse_feed(_FEED).items() if key in identifiers}
+
+    first = audit.load_papers(["2507.09404"], cache, fetcher=fetcher)
+    second = audit.load_papers(["2507.09404", "2306.11644"], cache, fetcher=fetcher)
+    third = audit.load_papers(["2507.09404", "2306.11644"], cache, fetcher=fetcher)
+
+    assert asked == [["2507.09404"], ["2306.11644"]], "the third call was served from the cache"
+    assert set(first) == {"2507.09404"}
+    assert set(second) == set(third) == {"2507.09404", "2306.11644"}
+    assert audit.load_papers(["2507.09404"], cache, refresh=True, fetcher=fetcher)
+    assert asked[-1] == ["2507.09404"], "refresh discards the cache"

@@ -26,7 +26,7 @@ import time
 import urllib.parse
 import urllib.request
 import xml.etree.ElementTree as ET
-from collections.abc import Iterable, Sequence
+from collections.abc import Callable, Iterable, Sequence
 from dataclasses import asdict, dataclass
 from pathlib import Path
 
@@ -330,6 +330,40 @@ def _markdown(rows: list[tuple[Citation, str, str]], papers: dict[str, Paper]) -
     return "\n".join(lines) + "\n"
 
 
+def load_papers(
+    identifiers: Sequence[str],
+    cache: Path,
+    *,
+    refresh: bool = False,
+    fetcher: Callable[[Sequence[str]], dict[str, Paper]] | None = None,
+) -> dict[str, Paper]:
+    """Metadata for ``identifiers``, asking arXiv only for what the cache does not already hold.
+
+    A cache that lacks an identifier is stale, not evidence that the identifier does not exist: treating it
+    as ``unresolved`` would fail the audit the first time a document cited a new paper. ``refresh`` discards
+    the cache. Identifiers arXiv still does not answer for are left out, and the verdict says so.
+    """
+    fetch_papers = fetcher or fetch
+    papers: dict[str, Paper] = {}
+    if cache.is_file() and not refresh:
+        raw = json.loads(cache.read_text(encoding="utf-8"))
+        papers = {
+            key: Paper(**{**value, "authors": tuple(value["authors"])})
+            for key, value in raw.items()
+        }
+    missing = [identifier for identifier in identifiers if identifier not in papers]
+    if missing:
+        papers.update(fetch_papers(missing))
+        cache.parent.mkdir(parents=True, exist_ok=True)
+        cache.write_text(
+            json.dumps(
+                {key: asdict(paper) for key, paper in papers.items()}, indent=1, ensure_ascii=False
+            ),
+            encoding="utf-8",
+        )
+    return papers
+
+
 def main(argv: Sequence[str] | None = None) -> int:
     parser = argparse.ArgumentParser(
         description=__doc__, formatter_class=argparse.RawTextHelpFormatter
@@ -351,21 +385,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         citations.extend(extract_citations(path.read_text(encoding="utf-8"), relative))
     identifiers = sorted({citation.identifier for citation in citations})
 
-    if args.refresh or not args.cache.is_file():
-        papers = fetch(identifiers)
-        args.cache.parent.mkdir(parents=True, exist_ok=True)
-        args.cache.write_text(
-            json.dumps(
-                {key: asdict(paper) for key, paper in papers.items()}, indent=1, ensure_ascii=False
-            ),
-            encoding="utf-8",
-        )
-    else:
-        raw = json.loads(args.cache.read_text(encoding="utf-8"))
-        papers = {
-            key: Paper(**{**value, "authors": tuple(value["authors"])})
-            for key, value in raw.items()
-        }
+    papers = load_papers(identifiers, args.cache, refresh=args.refresh)
 
     rows = audit(citations, papers)
     for citation, verdict, note in rows:
