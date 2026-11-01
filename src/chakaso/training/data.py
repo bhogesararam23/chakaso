@@ -217,6 +217,7 @@ def split_text_units(
     if whole_works:
         return _split_whole_works(
             usable,
+            dropped,
             validation_fraction=validation_fraction,
             test_fraction=test_fraction,
             seed=seed,
@@ -273,6 +274,7 @@ def works_on_multiple_sides(split: UnitSplit) -> int:
 
 def _split_whole_works(
     units: Sequence[TextUnit],
+    dropped: Sequence[TextUnit],
     *,
     validation_fraction: float,
     test_fraction: float,
@@ -336,6 +338,7 @@ def _split_whole_works(
         train=tuple(sides["train"]),
         validation=tuple(sides["validation"]),
         test=tuple(sides["test"]),
+        dropped_duplicates=tuple(dropped),
     )
 
 

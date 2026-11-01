@@ -642,7 +642,7 @@ record. (c) Tokenizer caches are load-bearing for reproducibility and are exclud
 **What would close it:** a decision on where a vocabulary that a measured record cites may live, and a dated
 statement in each affected record of which code fitted its tokenizer.
 
-### K-025 — Whole-work runs report `dropped_duplicates: 0` while excluding documents
+### K-025 — Closed: whole-work runs reported `dropped_duplicates: 0` while excluding documents
 
 **Impact:** Low for measurement; **High for provenance**, because the artifact misdescribes itself.
 
@@ -658,8 +658,7 @@ on the same side, so no leakage was removed and no number here is wrong. The def
 can state its deduplication from its own report — which is the class of thing
 [ADR-0036](../decisions/ADR-0036-corpus-snapshot-recovery-from-history.md) exists to make unnecessary.
 
-**Not fixed.** One line of threading plus a test. **What would close it:** the field carries the count on both
-split paths, and a test asserts it for `whole_works=True`.
+**Fixed 2026-11-01.** `_split_whole_works` now receives the duplicates the shared screening dropped and carries them into its `UnitSplit`, so both split paths report the count. `test_a_whole_work_split_reports_the_duplicates_it_excluded` fails against the previous code (the field was empty) and passes now. The two E2612 reports still print 0, because they were written before the fix; a report is not edited after the fact, and the three excluded documents are named in the paragraph above.
 
 ### K-026 — Generation probes quote the repository's own headings at models trained on foreign text
 

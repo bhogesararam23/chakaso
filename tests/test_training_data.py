@@ -432,3 +432,15 @@ def test_the_split_reports_its_own_work_leakage_count() -> None:
     assert set(groups_per_side(by_work)) == {"train", "validation", "test"}
     sides = groups_per_side(by_work)
     assert not set(sides["train"]) & set(sides["test"])
+
+
+def test_a_whole_work_split_reports_the_duplicates_it_excluded() -> None:
+    units = _works(8, 2)
+    twin = TextUnit(identifier="pg03/part-0099.md", text=units[6].text, group="pg03")
+
+    split = split_text_units((*units, twin), seed=5, whole_works=True)
+
+    assert [unit.identifier for unit in split.dropped_duplicates] == ["pg03/part-0099.md"]
+    assigned = {unit.identifier for unit in split.train + split.validation + split.test}
+    assert "pg03/part-0099.md" not in assigned
+    assert len(assigned) == len(units)
