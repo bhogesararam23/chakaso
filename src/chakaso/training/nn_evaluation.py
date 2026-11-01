@@ -20,6 +20,7 @@ import torch
 from chakaso.training.errors import TrainingError, TrainingScheduleError
 from chakaso.training.model_metrics import ModelMetrics, metrics_from_scores
 from chakaso.training.nn_checkpoint import ModelArtifact, TrainedModel
+from chakaso.training.nn_training import _segment_tensor
 from chakaso.training.packing import PackedExample
 from chakaso.training.subword import SubwordVocabulary
 
@@ -31,6 +32,7 @@ def score_model_on_examples(
     examples: Sequence[PackedExample],
     *,
     batch_size: int = 32,
+    document_masking: bool = False,
 ) -> tuple[list[float], list[int], list[int]]:
     """Return per-position cross-entropies, target identifiers and predicted identifiers.
 
@@ -43,8 +45,15 @@ def score_model_on_examples(
     unequal width are scored one at a time, since a batch has to be rectangular, and a test asserts that
     both paths return the same numbers for the same model.
 
+    ``document_masking`` must match how the model was trained: a model trained with attention confined to a
+    document and scored with full causal attention is evaluated under a condition it never saw, and the
+    held-out number would silently measure that mismatch rather than the model. The loop's own validation
+    loss already honours the setting (:func:`chakaso.training.nn_training.evaluate_loss`); this is the same
+    switch for the held-out scorer.
+
     Raises:
-        TrainingScheduleError: there are no examples to score, or ``batch_size`` is not a positive integer.
+        TrainingScheduleError: there are no examples to score, ``batch_size`` is not a positive integer, or
+            ``document_masking`` is set and an example carries no segment identifiers.
     """
     if not examples:
         message = "cannot score zero examples"
@@ -69,7 +78,10 @@ def score_model_on_examples(
             for group in rows:
                 inputs = torch.tensor([list(row.input_ids) for row in group], dtype=torch.int64)
                 wanted = torch.tensor([list(row.targets) for row in group], dtype=torch.int64)
-                logits, _ = model(inputs)
+                if document_masking:
+                    logits, _ = model(inputs, segment_ids=_segment_tensor(group))
+                else:
+                    logits, _ = model(inputs)
                 log_probabilities = torch.log_softmax(logits, dim=-1)
                 selected = log_probabilities.gather(-1, wanted.unsqueeze(-1)).squeeze(-1)
                 best = logits.argmax(dim=-1)
@@ -86,6 +98,7 @@ def evaluate_model(
     vocabulary: SubwordVocabulary,
     *,
     batch_size: int = 32,
+    document_masking: bool = False,
 ) -> ModelMetrics:
     """Score ``model`` on ``examples`` using the shared metric arithmetic.
 
@@ -103,7 +116,9 @@ def evaluate_model(
             "scored position"
         )
         raise TrainingError(message)
-    nats, targets, predictions = score_model_on_examples(model, examples, batch_size=batch_size)
+    nats, targets, predictions = score_model_on_examples(
+        model, examples, batch_size=batch_size, document_masking=document_masking
+    )
     return metrics_from_scores(nats, targets, predictions, vocabulary)
 
 

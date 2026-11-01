@@ -1003,7 +1003,7 @@ def score_transformer(
 ) -> ModelMetrics:
     """Score a trained model on one packed side of the split, through the shared arithmetic."""
     nats, targets, predictions = score_model_on_examples(
-        model, batch.examples, batch_size=plan.batch_size
+        model, batch.examples, batch_size=plan.batch_size, document_masking=plan.document_masking
     )
     return _metrics(nats, targets, predictions, vocabulary)
 

@@ -223,8 +223,8 @@ concatenates documents inside a 256-position window, so attention currently cros
 *Falsified by:* a masked arm indistinguishable from its unmasked control — a plausible outcome given that
 E2612's documents are ~4 KB chapter slices and a 256-token window rarely spans a boundary. *Note:* the audit
 found masking applied in training and validation loss but **not** in the held-out scorer
-(`nn_evaluation.py:72` against `nn_training.py:688-694`), so this hypothesis cannot be tested honestly until that
-asymmetry is fixed.
+(`nn_evaluation.py:72` against `nn_training.py:688-694`). That asymmetry is fixed (2026-11-01, ADR-0040
+amendment, ACTIVE_TASK T5), so the hypothesis is testable; it has still not been run.
 
 **H14 — Technical gains concentrate where control loss is largest.** *Statement:* across register partitions, the
 improvement from adding a register is monotonically related to that partition's control bits per character. *Why:*

@@ -16,6 +16,12 @@ capability is implemented or still planned.
 
 **Fixed**
 
+- **The held-out scorer now applies document-boundary masking when the run trained with it.** Masking reached the
+  training and validation loss but not `score_model_on_examples`, so a masked run would have been scored under
+  attention it never trained with. The switch defaults off, leaving every committed record's protocol intact; four
+  tests cover it and the experiment-level one fails against the previous code. No masked arm has been run.
+- **A whole-work split now reports the duplicates it excluded** (K-025). The field was always empty on that path.
+
 - **The byte-pair merge loop no longer silently mis-selects merges** (`cfdcd1a`). The indexed heap added in
   `6f3274f` for speed discarded a pair whose count fell when an earlier merge rewrote the shapes holding it, so
   that pair left the candidate set and the loop chose a less frequent pair than the rule in its own docstring.

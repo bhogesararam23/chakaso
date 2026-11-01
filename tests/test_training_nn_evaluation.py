@@ -237,3 +237,56 @@ def test_an_unusable_batch_size_is_refused() -> None:
         score_model_on_examples(model, examples, batch_size=0)
     with pytest.raises(TrainingScheduleError, match="zero examples"):
         score_model_on_examples(model, [], batch_size=8)
+
+
+def _masked_decoder_fixture() -> tuple:
+    from chakaso.training.decoder import ChakasoDecoder, DecoderConfig
+
+    torch.manual_seed(2)
+    config = DecoderConfig(
+        vocab_size=_VOCABULARY.size,
+        context_length=6,
+        d_model=8,
+        num_layers=2,
+        num_heads=2,
+        feedforward_dim=16,
+    )
+    model = ChakasoDecoder(config)
+    model.eval()
+    units = (
+        TextUnit(identifier="a", text="the quick red fox ran over the dry sand"),
+        TextUnit(identifier="b", text="the quiet owl slept and the fox ran over the sand"),
+    )
+    examples = pack_units(units, _VOCABULARY, context_length=6, track_documents=True).examples
+    return model, examples
+
+
+def test_the_scorer_applies_document_masking_when_asked_to_and_not_otherwise() -> None:
+    model, examples = _masked_decoder_fixture()
+    assert any(len(set(row.segment_ids or ())) > 1 for row in examples), (
+        "the fixture must contain a block that spans a document boundary, or masking changes nothing"
+    )
+
+    plain, _, _ = score_model_on_examples(model, examples)
+    masked, _, _ = score_model_on_examples(model, examples, document_masking=True)
+
+    assert plain != masked
+    assert len(plain) == len(masked)
+
+
+def test_the_masked_scorer_agrees_with_the_loop_evaluation_that_trained_under_the_mask() -> None:
+    model, examples = _masked_decoder_fixture()
+
+    nats, _, _ = score_model_on_examples(model, examples, document_masking=True)
+    loop_loss, positions = evaluate_loss(model, examples, batch_size=4, document_masking=True)
+
+    assert positions == len(nats)
+    assert sum(nats) / len(nats) == pytest.approx(loop_loss, abs=1e-6)
+
+
+def test_masked_scoring_refuses_examples_that_carry_no_document_boundary() -> None:
+    model, _ = _masked_decoder_fixture()
+    untracked = _examples("the quick red fox ran over the dry sand")
+
+    with pytest.raises(TrainingScheduleError, match="segment identifiers"):
+        score_model_on_examples(model, untracked, document_masking=True)

@@ -1079,3 +1079,44 @@ def test_partitions_respect_the_test_cap(tmp_path: Path) -> None:
         # Whole units overshoot the cap by at most one document; what must never happen is a partition
         # scored on the whole side, which for this fixture is several thousand tokens.
         assert block["tokens_scored"] < 1_000
+
+
+def test_a_masked_run_scores_its_held_out_sides_under_the_same_mask(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from chakaso.training import subword_experiment
+
+    seen: list[bool] = []
+    real = subword_experiment.score_model_on_examples
+
+    def spy(*args: object, **kwargs: object) -> object:
+        seen.append(bool(kwargs.get("document_masking")))
+        return real(*args, **kwargs)  # type: ignore[arg-type]
+
+    monkeypatch.setattr(subword_experiment, "score_model_on_examples", spy)
+    root = _root(tmp_path)
+
+    run_experiment(
+        _plan(
+            root,
+            tmp_path / "work-masked",
+            model_family="decoder",
+            character_baseline=False,
+            vocab_size=268,
+            document_masking=True,
+        )
+    )
+    masked_calls = list(seen)
+    seen.clear()
+    run_experiment(
+        _plan(
+            root,
+            tmp_path / "work-plain",
+            model_family="decoder",
+            character_baseline=False,
+            vocab_size=268,
+        )
+    )
+
+    assert masked_calls and all(masked_calls), "every held-out scoring call must apply the mask"
+    assert seen and not any(seen)

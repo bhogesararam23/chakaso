@@ -95,6 +95,17 @@ default for every future run?
    property harder to isolate. The decoder is the release path; the transformer can follow with its own
    tests.
 
+## Amendment 2026-11-01 â€” the held-out scorer applies the mask too
+
+The 2026-11-01 audit found that `document_masking` reached the training loss and the loop's validation loss but
+not `score_model_on_examples`, the scorer that produces every reported held-out number. A masked run would
+have trained under one attention rule and been scored under another. `score_model_on_examples`,
+`evaluate_model` and `evaluate_artifact` now take `document_masking` (default `False`, so every earlier record's
+protocol is unchanged), and `score_transformer` passes the plan's setting. Three tests pin it: masked and
+unmasked scoring differ on a block spanning a boundary, the masked scorer equals the loop's masked validation
+loss, and masked scoring of untracked examples is refused; a fourth, at the experiment level, fails against the
+previous `score_transformer`. Nothing was *measured* by this change: H13 is now testable, not tested.
+
 ## Conditions to revisit
 
 1. The planned masked/unmasked experiment finds a material held-out difference in either direction.

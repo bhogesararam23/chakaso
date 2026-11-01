@@ -108,8 +108,9 @@ the window gets longer.
 **T-12 — Blocker, independent of the prior.** The model-path audit found document masking applied in
 training and validation loss but **not** in the held-out scorer
 (`src/chakaso/training/nn_evaluation.py:72` against `nn_training.py:688-694`), so a masked run's two numbers use
-different attention semantics. **H13 cannot be tested honestly until that asymmetry is fixed** — recorded in
-[ACTIVE_TASK](../agent/ACTIVE_TASK.md) as T5.
+different attention semantics. **H13 could not be tested honestly while that asymmetry stood.** It was fixed on 2026-11-01 (ACTIVE_TASK T5,
+[ADR-0040](../decisions/ADR-0040-document-boundary-attention-masking.md) amendment): H13 is now testable and
+still unrun.
 
 **T-13 — Observation.** RoPE `theta = 10,000` at context 256 is well inside the regime the original formulation
 targets. The long-context base-frequency scaling the frontier reports discuss (10,000 → 500,000 and beyond in
