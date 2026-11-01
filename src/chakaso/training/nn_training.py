@@ -41,7 +41,7 @@ from typing import Any
 
 import torch
 
-from chakaso.training.decoder import ChakasoDecoder, DecoderConfig
+from chakaso.training.decoder import IGNORE_INDEX, ChakasoDecoder, DecoderConfig
 from chakaso.training.errors import TrainingError, TrainingScheduleError
 from chakaso.training.nn_checkpoint import ModelArtifact, describe_environment, save_artifact
 from chakaso.training.packing import PackedExample
@@ -409,13 +409,16 @@ def evaluate_loss(
     batch_size: int,
     document_masking: bool = False,
 ) -> tuple[float, int]:
-    """Mean next-token cross-entropy over *every* position of ``examples``, and the position count.
+    """Mean next-token cross-entropy over every *scored* position of ``examples``, and that position count.
 
-    Batch means are recombined by position count rather than averaged, so a final short batch cannot tilt
-    the number: what is reported is loss per predicted token, exactly.
+    Batch means are recombined by the number of positions each batch actually scored rather than averaged, so a
+    final short batch cannot tilt the number: what is reported is loss per predicted token, exactly. A target
+    equal to :data:`~chakaso.training.decoder.IGNORE_INDEX` is padding; the model's loss skips it, so the weight
+    must skip it too (K-030 item 1). Packed corpora never contain padding, so for every committed record the
+    count is the batch's full width and no recorded number changes.
 
     Raises:
-        TrainingScheduleError: there are no examples to score.
+        TrainingScheduleError: there are no examples to score, or none of them carries a scored target.
     """
     if not examples:
         message = "cannot evaluate held-out loss over zero examples"
@@ -428,14 +431,19 @@ def evaluate_loss(
             chunk = examples[start : start + batch_size]
             inputs = torch.tensor([list(example.input_ids) for example in chunk], dtype=torch.int64)
             targets = torch.tensor([list(example.targets) for example in chunk], dtype=torch.int64)
+            count = int((targets != IGNORE_INDEX).sum())
+            if count == 0:
+                continue
             if document_masking:
                 _, loss = model(inputs, targets, segment_ids=_segment_tensor(chunk))
             else:
                 _, loss = model(inputs, targets)
             assert loss is not None
-            count = int(inputs.numel())
             total_nats += float(loss.detach()) * count
             positions += count
+    if positions == 0:
+        message = "cannot evaluate held-out loss: no example carries a scored target"
+        raise TrainingScheduleError(message)
     return total_nats / positions, positions
 
 

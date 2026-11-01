@@ -762,7 +762,7 @@ different catalogue shuffles a different population, so that agreement is strong
 but it is evidence, not a digest taken at selection time, and the record says so. The live file's 5,597,116 bytes
 date from a different measurement and are not this file.
 
-### K-030 — Six latent measurement-path observations from the 2026-11-01 audit are filed, none fixed
+### K-030 — Six latent measurement-path observations from the 2026-11-01 audit are filed; items 1, 2 and 5 closed, 3 partly
 
 **Impact:** Low today, each by its own account; together they are the list of places where a future change could
 move a measured number without a test noticing. They are filed so that the audit's ranked summary is not the only
@@ -772,6 +772,12 @@ as of that day.
 
 1. **`evaluate_loss` weights each block by its width while the loss skips padding.** The audit demonstrated +0.61 %
    on synthetic padding. Latent: no run packs ragged blocks into one scored batch.
+   *Closed 2026-11-01 (second session):* `evaluate_loss` recombines batch means by the number of **scored** targets
+   (`target != IGNORE_INDEX`), skips a batch with none, and refuses a set with none. A test with padded targets fails
+   against the old weighting (24 positions counted where 15 are scored) and passes now. The packer never pads, so every
+   committed record counted full width and no recorded number moves. A fix reported by the previous session as sitting on a
+   `k030-measurement-path` branch was **not found** on the remote, in git history or in the checkout, and was re-implemented
+   from the audit's description rather than recovered.
 2. **A checkpoint write consumes the global RNG** (`save_artifact`). Safe at `dropout = 0`, which every committed
    record uses; with dropout it would make `checkpoint_every` a numerical setting.
    *Closed 2026-11-01:* `save_artifact` validates the artifact inside `torch.random.fork_rng`, so the model it builds to

@@ -12,6 +12,14 @@ capability is implemented or still planned.
 
 ## Unreleased
 
+### 2026-11-01 (second session) — held-out loss weighs by scored positions
+
+**Fixed**
+
+- **`evaluate_loss` weights each batch by the positions it scores, not by its width** (K-030 item 1). Padded targets were
+  already skipped by the model's loss but counted in the weight. No packed corpus pads, so no committed number changes; a
+  test with padded targets fails against the old weighting.
+
 ### 2026-11-01 (evening) — a mixture can now be declared as a share, and a sweep read against the measured noise
 
 **Added**

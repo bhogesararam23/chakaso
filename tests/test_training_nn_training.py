@@ -273,6 +273,55 @@ def test_evaluation_matches_a_manual_mean_over_every_position() -> None:
     assert positions == len(examples) * 8
 
 
+def _with_padding(example: object, scored: int) -> object:
+    """The same example with every target after the first ``scored`` replaced by the ignore marker."""
+    from chakaso.training.decoder import IGNORE_INDEX
+    from chakaso.training.packing import PackedExample
+
+    targets = tuple(
+        value if index < scored else IGNORE_INDEX
+        for index, value in enumerate(example.targets)  # type: ignore[attr-defined]
+    )
+    return PackedExample(input_ids=example.input_ids, targets=targets)  # type: ignore[attr-defined]
+
+
+def test_evaluation_counts_only_scored_positions_when_targets_are_padded() -> None:
+    """K-030 item 1: a padded block must weigh by what it scores, not by its width.
+
+    The model's loss already skips ignored targets, so each batch mean is over its scored positions. Recombining
+    batch means by ``inputs.numel()`` instead of by scored positions overweights a mostly-padded block.
+    """
+    base = _examples("the quick red fox ran over the dry sand and the quiet owl slept")[:3]
+    examples = [_with_padding(base[0], 8), _with_padding(base[1], 2), _with_padding(base[2], 5)]
+    model = _fresh_model()
+    inputs = torch.tensor([list(e.input_ids) for e in examples], dtype=torch.int64)
+    targets = [list(e.targets) for e in examples]
+    with torch.no_grad():
+        logits, _ = model(inputs)
+    losses = [
+        -torch.log_softmax(logits[b, p].float(), dim=-1)[targets[b][p]]
+        for b in range(3)
+        for p in range(8)
+        if targets[b][p] != -100
+    ]
+    manual = float(torch.stack(losses).mean())
+
+    one_at_a_time, count_one = evaluate_loss(model, examples, batch_size=1)
+    all_together, count_all = evaluate_loss(model, examples, batch_size=3)
+
+    assert count_one == count_all == 8 + 2 + 5
+    assert one_at_a_time == pytest.approx(manual, abs=1e-5)
+    assert all_together == pytest.approx(manual, abs=1e-5)
+
+
+def test_evaluation_refuses_examples_with_nothing_to_score() -> None:
+    base = _examples("the quick red fox ran over the dry sand")[:2]
+    examples = [_with_padding(example, 0) for example in base]
+
+    with pytest.raises(TrainingScheduleError, match="no example carries a scored target"):
+        evaluate_loss(_fresh_model(), examples, batch_size=2)
+
+
 def test_evaluation_refuses_an_empty_held_out_set() -> None:
     with pytest.raises(TrainingScheduleError, match="zero examples"):
         evaluate_loss(_fresh_model(), [], batch_size=4)
