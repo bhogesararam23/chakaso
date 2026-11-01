@@ -43,6 +43,10 @@ capability is implemented or still planned.
   `scripts/measure_split_overlap.py`). A whole-work split cannot see two works that are the same text. Measured on E2612's
   split: 0.217 % of held-out 8-word windows also occur in training (0.156 % at 16 words), no held-out work above 3 %, none
   near 10 % — small, not zero. Record: `docs/internal/engineering/split-leakage-audit-2026-11-01.md`.
+- **A seed study now refuses runs that differ in anything but their seed** (K-030 item 5). Its protocol identity was a
+  hand-kept list of fields that omitted the schedule, accumulation, masking, work-split and cap settings; it now also
+  carries a digest over the whole plan, architecture, tokenizer, corpus selection and budget with only the seed removed.
+  The digest itself was corrected to leave out outcomes (best step, early stop, completion) and how a corpus was found.
 - **An arm comparison can now be rebuilt from the reports, with its matching proved first** (`chakaso.training.arm_comparison`,
   `scripts/compare_arms.py`). E2612's committed `results.json` came from a script whose code was never committed; the module
   lists every condition that must be equal across arms and whether it is, lists the declared differences, then tabulates

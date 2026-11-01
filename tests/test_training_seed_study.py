@@ -187,6 +187,10 @@ def _run_report(seed: int, *, bits: float = 2.0, corpus: str | None = None) -> d
             "uniform": {"bits_per_character": 4.0},
         },
         "environment": {"device": "cpu"},
+        # The keys a real report carries and the whole-protocol digest reads: the plan with the seed that varies
+        # between runs, and the family. A fake without them would test an aggregator no real report can feed.
+        "model_family": "transformer",
+        "plan": {"seed": seed, "max_steps": 12, "work_dir": f"runs/seed-{seed}"},
     }
 
 
@@ -225,7 +229,26 @@ def test_agreement_reports_the_shared_protocol_and_a_seed_that_broke_it() -> Non
         {7: _run_report(7), 13: _run_report(13, corpus="b" * 16)}
     )
 
-    assert with_moved_corpus["disagreements"] == {"corpus_fingerprint": [13]}
+    # The named field is reported, and so is the whole-protocol digest that covers it: the digest is the net that
+    # catches a difference nobody listed (K-030 item 5), so a listed difference must trip it too.
+    assert with_moved_corpus["disagreements"] == {
+        "corpus_fingerprint": [13],
+        "protocol_digest": [13],
+    }
+
+
+def test_a_difference_nobody_listed_still_breaks_the_study_protocol() -> None:
+    """K-030 item 5: the hand-kept field list names what someone thought of; the digest covers the rest."""
+    unlisted = _run_report(13)
+    unlisted["plan"]["max_steps"] = (
+        99  # not in _PROTOCOL_FIELDS, so only the whole-protocol digest sees it
+    )
+
+    broken = protocol_agreement({7: _run_report(7), 13: unlisted})
+
+    assert broken["disagreements"] == {"protocol_digest": [13]}
+    # ...while the seed itself, which every run of a study differs in, is not a disagreement.
+    assert protocol_agreement({7: _run_report(7), 11: _run_report(11)})["disagreements"] == {}
 
 
 def test_a_missing_metric_path_is_refused_rather_than_averaged_as_zero() -> None:

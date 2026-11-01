@@ -1308,3 +1308,30 @@ def test_a_report_states_the_optimizer_recipe_it_trained_with(tmp_path: Path) ->
     assert recipe["betas"] == [0.9, 0.999] and recipe["eps"] == 1e-8
     assert recipe["weight_decay"] == report["transformer"]["budget"]["weight_decay"]
     assert "norm scales included" in recipe["decay_applied_to"]
+
+
+def test_the_protocol_digest_ignores_outcomes_and_the_seed_only_when_asked(tmp_path: Path) -> None:
+    import copy
+
+    report = run_experiment(_plan(_root(tmp_path), tmp_path / "work-outcomes"))
+    baseline = protocol_digest(report)
+
+    other_outcome = copy.deepcopy(report)
+    budget = other_outcome["transformer"]["budget"]
+    budget["best_step"] += 4
+    budget["stopped_early"] = not budget["stopped_early"]
+    budget["completion"] = "converged"
+    budget["records"] += 1
+    other_outcome["corpus"]["prepared_from"] = "snapshot from this work dir"
+    assert protocol_digest(other_outcome) == baseline, (
+        "outcomes and how the corpus was found are not conditions"
+    )
+
+    other_seed = copy.deepcopy(report)
+    other_seed["plan"]["seed"] += 1
+    other_seed["transformer"]["budget"]["seed"] += 1
+    other_seed["corpus"]["model_seed"] += 1
+    assert protocol_digest(other_seed) != baseline
+    assert protocol_digest(other_seed, include_seed=False) == protocol_digest(
+        report, include_seed=False
+    )

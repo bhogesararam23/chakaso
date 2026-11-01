@@ -789,8 +789,12 @@ as of that day.
 4. **No thread or determinism pinning.** Reproduction is by tolerance (0.0005 bits per character), which E2614's
    seed-7 repeat of E2612 arm T will measure for the first time on this machine.
 5. **`seed_study._PROTOCOL_FIELDS` omits the schedule, `decay_to`, accumulation, masking, work-split and cap fields.**
-   Two runs that differed only in those would still be aggregated as one study. The protocol file
-   (`--protocol`) now makes the plan one declared artifact, which narrows this without removing it.
+   Two runs that differed only in those would still be aggregated as one study.
+   *Closed 2026-11-01:* the study's protocol identity now also carries `protocol_digest(report, include_seed=False)`,
+   a digest over the whole plan, architecture, tokenizer, corpus selection and budget with only the seed removed, so a
+   difference nobody listed breaks the study. The digest was also corrected the same day to exclude outcomes (best
+   step, early stop, completion, record count) and how the corpus was found, which are not conditions. A test changes a
+   field outside the list and sees the study refuse.
 6. **A loaded artifact reports `min_frequency` 2, whatever it was fitted at.** The checkpoint metadata does not store
    it, and adding it would change the checksummed metadata document and with it every released artifact's
    verification, so it needs a format decision (ADR-0035), not a patch.

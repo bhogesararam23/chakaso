@@ -35,7 +35,12 @@ from typing import Any
 from chakaso.core.atomic import write_text_atomically
 from chakaso.core.hashing import sha256_hex
 from chakaso.training.errors import StudyProtocolError
-from chakaso.training.subword_experiment import ExperimentPlan, run_experiment, write_report
+from chakaso.training.subword_experiment import (
+    ExperimentPlan,
+    protocol_digest,
+    run_experiment,
+    write_report,
+)
 
 __all__ = [
     "DEFAULT_METRICS",
@@ -257,10 +262,15 @@ def protocol_identity(report: Mapping[str, Any]) -> dict[str, Any]:
     absence is a declared part of that protocol, and every sibling run must agree on it like any other field.
     """
     skipped = _character_baseline_skipped(report)
-    return {
+    identity = {
         name: None if skipped and path[0] == "character_baseline" else _dig(report, path)
         for name, path in _PROTOCOL_FIELDS.items()
     }
+    # The hand-kept list above names the fields someone thought of; this digest covers the whole plan,
+    # architecture, tokenizer, corpus selection and budget, with only the seed removed, so two runs that differ in
+    # anything but their seed cannot be aggregated as one study (K-030 item 5).
+    identity["protocol_digest"] = protocol_digest(dict(report), include_seed=False)
+    return identity
 
 
 def _require_same_protocol(

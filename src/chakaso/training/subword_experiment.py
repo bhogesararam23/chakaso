@@ -1494,11 +1494,24 @@ _MACHINE_LOCAL_PLAN_FIELDS = frozenset(
         "overwrite_artifacts",
     }
 )
-#: Budget fields that are observed conditions of one execution on one machine.
-_OBSERVED_BUDGET_FIELDS = frozenset({"positions_per_second", "wall_clock_s"})
+#: Budget fields that are results or observed conditions of one execution, not conditions it was run under: the
+#: rates and wall clock vary with the machine, and where the best validation step fell, whether the run stopped
+#: early, how it completed and how many evaluations it recorded are *outcomes* that can differ between two faithful
+#: runs of one protocol. Leaving them in would make a re-run that picked another best step look like another protocol.
+_OBSERVED_BUDGET_FIELDS = frozenset(
+    {
+        "positions_per_second",
+        "wall_clock_s",
+        "best_step",
+        "stopped_early",
+        "completion",
+        "records",
+        "resumed_from_step",
+    }
+)
 
 
-def protocol_digest(report: dict[str, Any]) -> str:
+def protocol_digest(report: dict[str, Any], *, include_seed: bool = True) -> str:
     """A digest of the conditions a report's numbers were measured under, and of none of the numbers.
 
     ``write_report`` returns the SHA-256 of the file, and the file embeds wall-clock time, throughput,
@@ -1513,16 +1526,26 @@ def protocol_digest(report: dict[str, Any]) -> str:
     protocol digests were measured under the same conditions, so their metrics are comparable and any
     difference between them is a result, not a protocol change. The metrics themselves are compared by
     tolerance, never by hash.
+
+    ``include_seed=False`` removes the training seed (the plan's and the budget's, and the corpus block's
+    ``model_seed``): a seed study compares the digests of runs that differ in exactly that and must find them equal.
     """
     transformer = report["transformer"]
+    seed_keys = frozenset() if include_seed else frozenset({"seed", "model_seed"})
     protocol = {
         "experiment": report["experiment"],
         "model_family": report["model_family"],
-        "corpus": report["corpus"],
+        # How the corpus was found ("declared snapshot", "working tree", "snapshot from this work dir") is
+        # provenance of the lookup, not a condition: the fingerprints beside it say which corpus it was.
+        "corpus": {
+            name: value
+            for name, value in report["corpus"].items()
+            if name not in seed_keys and name != "prepared_from"
+        },
         "plan": {
             name: value
             for name, value in report["plan"].items()
-            if name not in _MACHINE_LOCAL_PLAN_FIELDS
+            if name not in _MACHINE_LOCAL_PLAN_FIELDS and name not in seed_keys
         },
         "tokenizer": {
             name: value
@@ -1534,7 +1557,7 @@ def protocol_digest(report: dict[str, Any]) -> str:
         "budget": {
             name: value
             for name, value in transformer["budget"].items()
-            if name not in _OBSERVED_BUDGET_FIELDS
+            if name not in _OBSERVED_BUDGET_FIELDS and name not in seed_keys
         },
     }
     return sha256_hex(json.dumps(protocol, sort_keys=True, default=str, ensure_ascii=True))
