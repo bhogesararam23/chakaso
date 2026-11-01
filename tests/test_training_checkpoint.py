@@ -177,3 +177,16 @@ def test_a_missing_array_is_incompatible() -> None:
     del document["arrays"]["output_weight"]
     with pytest.raises(IncompatibleCheckpointError, match="missing the"):
         Checkpoint.from_document(_restamp(document))
+
+
+def test_a_checkpoint_save_is_staged_and_does_not_replace_a_file_unasked(tmp_path: Path) -> None:
+    from chakaso.training.errors import CheckpointError
+
+    path = tmp_path / checkpoint_filename("E2601")
+    _checkpoint().save(path)
+
+    assert [entry.name for entry in tmp_path.iterdir()] == [path.name], "no staged residue"
+    with pytest.raises(CheckpointError, match="already holds a checkpoint"):
+        _checkpoint().save(path)
+    _checkpoint().save(path, allow_overwrite=True)
+    assert Checkpoint.load(path).vocab_fingerprint == _checkpoint().vocab_fingerprint

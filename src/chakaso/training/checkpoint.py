@@ -23,8 +23,13 @@ from typing import Any
 import numpy as np
 from numpy import typing as npt
 
+from chakaso.core.atomic import write_text_atomically
 from chakaso.training.config import TrainingConfig
-from chakaso.training.errors import CorruptedCheckpointError, IncompatibleCheckpointError
+from chakaso.training.errors import (
+    CheckpointError,
+    CorruptedCheckpointError,
+    IncompatibleCheckpointError,
+)
 from chakaso.training.model import Params
 from chakaso.training.tokenizer import CharVocabulary
 
@@ -179,10 +184,21 @@ class Checkpoint:
             vocab_chars=vocab_chars,
         )
 
-    def save(self, path: Path) -> None:
-        """Write the checkpoint document to ``path`` as UTF-8 JSON."""
+    def save(self, path: Path, *, allow_overwrite: bool = False) -> None:
+        """Write the checkpoint document to ``path`` as UTF-8 JSON, in one swap, refusing to replace a file.
+
+        Raises:
+            CheckpointError: a file already occupies ``path`` and ``allow_overwrite`` was not passed.
+        """
+        target = Path(path)
+        if target.exists() and not allow_overwrite:
+            message = (
+                f"{str(target)!r} already holds a checkpoint; pass allow_overwrite=True to replace it, "
+                "or choose a distinct path so the earlier one stays recoverable"
+            )
+            raise CheckpointError(message)
         text = json.dumps(self.to_document(), sort_keys=True, separators=(",", ":"))
-        Path(path).write_text(text, encoding="utf-8")
+        write_text_atomically(text, target)
 
     @classmethod
     def load(cls, path: Path) -> Checkpoint:

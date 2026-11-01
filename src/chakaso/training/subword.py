@@ -44,6 +44,7 @@ from itertools import pairwise
 from pathlib import Path
 from typing import Any
 
+from chakaso.core.atomic import write_text_atomically
 from chakaso.core.hashing import join_parts, sha256_hex
 from chakaso.training.errors import (
     CorpusError,
@@ -385,12 +386,26 @@ class SubwordVocabulary:
             raise CorpusError(message)
         return vocabulary
 
-    def save(self, path: Path) -> None:
-        """Write the vocabulary as deterministic UTF-8 JSON."""
+    def save(self, path: Path, *, allow_overwrite: bool = False) -> None:
+        """Write the vocabulary as deterministic UTF-8 JSON, in one swap, refusing to replace a file.
+
+        The tokenizer cache names a file by its identity, so a half-written file would carry exactly the name
+        a later run looks up and then fail to parse instead of being re-fitted; a staged write leaves either
+        the whole file or none. A vocabulary that a record cites is not something a later run replaces
+        silently either (ADR-0035's rule), hence the refusal.
+
+        Raises:
+            CorpusError: a file already occupies ``path`` and ``allow_overwrite`` was not passed.
+        """
         target = Path(path)
-        target.parent.mkdir(parents=True, exist_ok=True)
-        target.write_text(
-            json.dumps(self.to_document(), sort_keys=True, separators=(",", ":")), encoding="utf-8"
+        if target.exists() and not allow_overwrite:
+            message = (
+                f"{str(target)!r} already holds a vocabulary; pass allow_overwrite=True to replace it, "
+                "or choose a distinct path so the earlier one stays recoverable"
+            )
+            raise CorpusError(message)
+        write_text_atomically(
+            json.dumps(self.to_document(), sort_keys=True, separators=(",", ":")), target
         )
 
     @classmethod

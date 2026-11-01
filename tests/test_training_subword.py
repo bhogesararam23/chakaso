@@ -520,3 +520,23 @@ def test_the_vocabulary_a_record_cites_is_committed_and_is_the_one_it_names() ->
     assert vocabulary.fingerprint == "434debe82f949347"
     assert (vocabulary.size, vocabulary.min_frequency) == (4096, 3)
     assert len(vocabulary.merges) == 3839
+
+
+def test_a_vocabulary_save_is_staged_and_does_not_replace_a_file_unasked(tmp_path: Path) -> None:
+    """The cache names a file by identity, so a replaced or half-written file would carry the name a run trusts."""
+    vocabulary = train_subword_vocabulary(
+        ["the quick red fox"] * 4, target_size=270, min_frequency=2
+    )
+    other = train_subword_vocabulary(["a slow brown dog"] * 4, target_size=270, min_frequency=2)
+    target = tmp_path / "nested" / "vocabulary.json"
+
+    vocabulary.save(target)
+
+    assert [path.name for path in target.parent.iterdir()] == ["vocabulary.json"], (
+        "no staged residue"
+    )
+    with pytest.raises(CorpusError, match="already holds a vocabulary"):
+        other.save(target)
+    assert SubwordVocabulary.load(target).fingerprint == vocabulary.fingerprint
+    other.save(target, allow_overwrite=True)
+    assert SubwordVocabulary.load(target).fingerprint == other.fingerprint
