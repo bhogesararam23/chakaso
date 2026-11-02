@@ -1,6 +1,6 @@
 # E2623 — a held-out continuation probe: do the trained decoders use the passage they are given, and does an untrained decoder?
 
-**Status:** preregistered, not yet run. Committed before any checkpoint is scored; the Results section is added after.
+**Status:** measured — **C-a: the probe is valid at this scale (trained decoders use their passage; untrained ones do not), and it is near ceiling, so it cannot rank the trained arms.** Preregistered and committed (`568b482`) before any checkpoint was scored; the Results section was added after.
 **Type:** Measurement of **existing** checkpoints with a **new instrument**. Nothing is trained. It addresses the benchmark specification's coherence item
 ([`chakaso-capability-benchmarks.md`](../../docs/research/chakaso-capability-benchmarks.md) §2) with a likelihood-based reading that needs no generation, no judge and no authored text.
 
@@ -75,3 +75,49 @@ python scripts/evaluate_continuations.py \
   --checkpoint E2615-s00=… --checkpoint E2615-s25=… --checkpoint E2615-s50=… --checkpoint E2615-s75=… --checkpoint E2616=… \
   --control --control-seeds 11,13,17,19,23,29 --out experiments/E2623/results.json
 ```
+
+## Results (added 2026-11-02)
+
+[`results.json`](results.json), from the command in *Reproduction*. Item set: 215 items, digest `9557a327…cfacdcd` as declared. Scoring took 7 min 12 s for thirteen models on a host busy with a training run. Checkpoint checksums are those of E2621.
+
+| Model | PMI accuracy, easy distractor [95 % Wilson] | PMI, hard distractor | raw conditional (easy) | prefix-blind (easy) |
+| --- | ---: | ---: | ---: | ---: |
+| E2617 | 0.986 [0.960, 0.995] | 0.953 [0.917, 0.975] | 0.795 | 0.498 |
+| E2615-s00 | 0.972 [0.940, 0.987] | 0.949 [0.911, 0.971] | 0.795 | 0.479 |
+| E2615-s25 | 0.958 [0.922, 0.978] | 0.921 [0.877, 0.950] | 0.795 | 0.507 |
+| E2615-s50 | 0.977 [0.947, 0.990] | 0.953 [0.917, 0.975] | 0.786 | 0.479 |
+| E2615-s75 | 0.977 [0.947, 0.990] | 0.916 [0.872, 0.946] | 0.795 | 0.507 |
+| E2616 | 0.972 [0.940, 0.987] | 0.926 [0.883, 0.954] | 0.702 | 0.484 |
+| untrained, mean of 7 (range) | 0.484 (0.451–0.516) | 0.469 (0.423–0.498) | 0.469 | 0.484 (0.428–0.540) |
+
+By register, PMI easy / hard (items in brackets; the first four columns are trained models, the last the mean of seven untrained):
+
+| Register | E2617 | E2615-s00 | E2615-s75 | E2616 | untrained mean |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| prose (100) | 1.00 / 0.96 | 0.98 / 0.97 | 0.99 / 0.94 | 0.99 / 0.96 | 0.47 / 0.46 |
+| science (55) | 0.96 / 0.95 | 0.98 / 0.96 | 0.96 / 0.93 | 0.96 / 0.95 | 0.48 / 0.49 |
+| technology (40) | 0.97 / 0.97 | 0.95 / 0.95 | 0.97 / 0.90 | 0.97 / 0.90 | 0.50 / 0.47 |
+| mathematics (20) | 1.00 / 0.90 | 0.95 / 0.80 | 0.95 / 0.80 | 0.90 / 0.75 | 0.51 / 0.45 |
+
+No pair was a tie for any model.
+
+### The preregistered reading
+
+* **Outcome: C-a.** E2617's interval [0.960, 0.995] excludes 0.5; the mean of the seven untrained models' PMI-easy accuracies is **0.484**, inside [0.45, 0.55]; the highest untrained model (0.516) lies far below E2617's lower bound (0.960). The pointwise-mutual-information construction did what it was built for:
+  untrained models sit at chance whatever their per-candidate biases are.
+* **P1 held** (0.986 ≥ 0.75). **P2 held**: every trained model scores lower on the same-document distractor than on the other-work one (E2617 0.953 against 0.986; E2615-s75 0.916 against 0.977). **P3 did not hold as worded**: the untrained models' prefix-blind accuracy ranges 0.428–0.540, not "far from 0.5" — a random
+  initialisation's own preferences between these particular spans are small, though the raw-conditional reading is still not usable for ranking (see next). **P4 did not hold on PMI** (E2616 0.972 is not below every 2,400-update arm; E2615-s25 is lower, 0.958); it holds on the *raw-conditional* column (0.702 against 0.786–0.795).
+
+### What the three readings show
+
+* **Why PMI.** For the trained models the raw-conditional accuracy (0.70–0.80) is far below their PMI accuracy (0.96–0.99): a quarter of the time the true continuation is *less likely in absolute terms* than a distractor that is simply more predictable text, and the passage is what puts the
+  true one ahead. A plain likelihood comparison would have understated context use by 0.2 and mixed it with the candidates' own predictability.
+* **The probe is near ceiling.** Six trained models lie between 0.958 and 0.986 on the easy distractor (all intervals overlap) and 0.916–0.953 on the hard one. **It cannot order the trained arms**; the differences between 0.972 and 0.986 on 215 items are well inside the interval. The one place with headroom is
+  mathematics, hard distractor: E2617 0.90 against 0.80 for E2615-s00, E2615-s75 and 0.75 for E2616 — on 20 items, intervals of about ±0.15, not a finding.
+* **What it does show.** Trained decoders at this scale use a 64-identifier passage to prefer the true next 24 identifiers over a same-register span from another work (0.96–0.99) and over a same-document span far away (0.92–0.95); untrained ones do not (0.45–0.52). That is a statement about **use of context**, which held-out bits per character
+  cannot make by itself, and it is the first non-loss capability measurement here that passes its own floor test at the headline level.
+
+### Limits that stand, and the next version
+
+Items within a work are not independent and the intervals are narrower than a work-clustered interval would be. The task is short-range and a topic or style cue suffices for the easy distractor. A harder version — distractors from the *same passage region* (the preceding or following span, or the true span with its words
+permuted within the window) so topic and style are held fixed — is the way to make the probe rank models; it is a different construction and a new record, and is not started here. Nothing here is knowledge, reasoning, instruction following or usefulness (K-001).
