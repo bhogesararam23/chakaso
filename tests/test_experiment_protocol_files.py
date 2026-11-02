@@ -46,3 +46,38 @@ def test_the_one_pass_control_differs_from_e2614_in_exactly_the_declared_fields(
     # One pass: the steps read no more positions than the capped pack holds.
     positions = arm["max_steps"] * arm["batch_size"] * arm["context_length"]
     assert positions <= arm["max_training_tokens"]
+
+
+def test_the_passes_arms_differ_from_e2614_only_in_the_prose_filter_and_the_cap() -> None:
+    directory = Path(__file__).resolve().parent.parent / "configs" / "experiments"
+    reference = tomllib.loads((directory / "E2614-decoder-seed-spread.toml").read_text("utf-8"))[
+        "plan"
+    ]
+    arms = {
+        path.stem: tomllib.loads(path.read_text("utf-8"))["plan"]
+        for path in sorted(directory.glob("E2619-prose-*.toml"))
+    }
+
+    assert sorted(arms) == ["E2619-prose-10m", "E2619-prose-20m", "E2619-prose-5m"]
+    caps = {name: plan["max_training_tokens"] for name, plan in arms.items()}
+    assert caps == {
+        "E2619-prose-5m": 5_000_000,
+        "E2619-prose-10m": 10_000_000,
+        "E2619-prose-20m": 20_000_000,
+    }
+    for name, plan in arms.items():
+        changed = {key for key in {*reference, *plan} if reference.get(key) != plan.get(key)}
+        # The 20M arm's cap equals E2614's, so it differs from E2614 only in the prose filter.
+        expected = {"training_group_prefixes"} | (
+            {"max_training_tokens"} if plan["max_training_tokens"] != 20_000_000 else set()
+        )
+        assert changed == expected, name
+        assert plan["training_group_prefixes"] == ["prose-"], name
+        # The schedule is the point of the experiment: every arm makes the same 2,400 updates.
+        assert plan["max_steps"] == reference["max_steps"] == 2400, name
+        assert plan["warmup_steps"] == reference["warmup_steps"], name
+    # Fewer distinct identifiers under the same updates means more passes: 5M is read about four times.
+    positions = 2400 * reference["batch_size"] * reference["context_length"]
+    assert round(positions / caps["E2619-prose-5m"]) == 4
+    assert round(positions / caps["E2619-prose-10m"]) == 2
+    assert round(positions / caps["E2619-prose-20m"]) == 1
