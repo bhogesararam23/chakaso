@@ -15,6 +15,7 @@ from pathlib import Path
 
 import pytest
 
+from chakaso.core.hashing import sha256_hex
 from chakaso.training.errors import CorpusError, CorruptedCorpusArtifactError
 from chakaso.training.subword import (
     BYTE_BASE,
@@ -575,3 +576,118 @@ def test_the_committed_english_vocabulary_has_no_merge_for_four_non_latin_script
         "The river runs through the old town, and in the evening the market fills with people."
     )
     assert len(vocabulary.encode(english)) < len(english.encode("utf-8")) / 2
+
+
+# ------------------------------------------------ a named alternative pre-tokenizer (ADR-0048, H17)
+
+_SPACE_PREFIXED = "space-prefixed-word|space-prefixed-symbol|whitespace-run"
+_SAMPLES = [
+    "the quick red fox",
+    "a  b",  # two spaces: one stays a piece, the other prefixes the word
+    "end.\n\nNext paragraph, with (parens) and a-hyphen.",
+    "tabs\tand\r\nlines  \n  indented",
+    "trailing space ",
+    " leading space",
+    "   ",
+    "",
+    "naïve café — 日本語 and Ελληνικά, 12,345.67 snake_case",
+]
+
+
+@pytest.mark.parametrize("text", _SAMPLES)
+def test_the_space_prefixed_pieces_always_rejoin_to_the_input(text: str) -> None:
+    assert "".join(pre_tokenize(text, _SPACE_PREFIXED)) == text
+
+
+def test_a_word_carries_exactly_one_preceding_space() -> None:
+    assert pre_tokenize("the quick red fox", _SPACE_PREFIXED) == ("the", " quick", " red", " fox")
+    assert pre_tokenize("a  b", _SPACE_PREFIXED) == ("a", " ", " b")
+
+
+def test_punctuation_takes_a_preceding_space_and_a_paragraph_break_stays_one_piece() -> None:
+    assert pre_tokenize("end. (x)\n\nNext", _SPACE_PREFIXED) == (
+        "end",
+        ".",
+        " (",
+        "x",
+        ")",
+        "\n\n",
+        "Next",
+    )
+
+
+def test_the_default_pre_tokenizer_is_unchanged_and_still_the_default() -> None:
+    assert pre_tokenize("the quick  red") == ("the", " ", "quick", "  ", "red")
+    assert SubwordVocabulary(merges=()).pre_tokenizer == "word-run|whitespace-run|single-symbol"
+
+
+def test_an_unknown_pre_tokenizer_is_refused() -> None:
+    with pytest.raises(ValueError, match="pre-tokenizer"):
+        pre_tokenize("x", "made-up")
+    with pytest.raises(ValueError, match="pre-tokenizer"):
+        SubwordVocabulary(merges=(), pre_tokenizer="made-up")
+
+
+def _fit(pre_tokenizer: str | None):  # type: ignore[no-untyped-def]
+    text = "the cat sat on the mat and the dog sat on the log. " * 12
+    kwargs = {} if pre_tokenizer is None else {"pre_tokenizer": pre_tokenizer}
+    return text, train_subword_vocabulary([text], target_size=300, min_frequency=2, **kwargs)
+
+
+def test_a_space_prefixed_vocabulary_round_trips_and_is_total() -> None:
+    _, vocabulary = _fit(_SPACE_PREFIXED)
+
+    for text in _SAMPLES:
+        assert vocabulary.decode(vocabulary.encode(text)) == text
+
+
+def test_folding_the_space_into_the_word_spends_fewer_identifiers_on_the_same_text() -> None:
+    text, default = _fit(None)
+    _, prefixed = _fit(_SPACE_PREFIXED)
+
+    assert prefixed.token_count(text) < default.token_count(text)
+    assert prefixed.compression_ratio(text) > default.compression_ratio(text)
+
+
+def test_the_same_merge_table_under_another_pre_tokenizer_is_a_different_tokenizer() -> None:
+    _, default = _fit(None)
+    renamed = SubwordVocabulary(
+        merges=default.merges, min_frequency=default.min_frequency, pre_tokenizer=_SPACE_PREFIXED
+    )
+
+    assert renamed.fingerprint != default.fingerprint
+    assert renamed.checksum() != default.checksum()
+
+
+def test_a_default_vocabulary_keeps_the_fingerprint_it_had_before_the_option_existed() -> None:
+    path = (
+        Path(__file__).resolve().parent.parent
+        / "experiments"
+        / "E2612"
+        / "vocabulary-434debe82f949347.json"
+    )
+
+    assert SubwordVocabulary.load(path).fingerprint == "434debe82f949347"
+
+
+def test_the_pre_tokenizer_survives_a_save_and_load(tmp_path: Path) -> None:
+    _, vocabulary = _fit(_SPACE_PREFIXED)
+    target = tmp_path / "v.json"
+    vocabulary.save(target)
+
+    loaded = SubwordVocabulary.load(target)
+
+    assert loaded.pre_tokenizer == _SPACE_PREFIXED
+    assert loaded.fingerprint == vocabulary.fingerprint
+    assert loaded.encode("the cat sat") == vocabulary.encode("the cat sat")
+
+
+def test_a_record_naming_a_pre_tokenizer_this_code_does_not_implement_is_refused() -> None:
+    _, vocabulary = _fit(_SPACE_PREFIXED)
+    document = vocabulary.to_document()
+    document["pre_tokenizer"] = "made-up"
+    content = {key: value for key, value in document.items() if key != "checksum"}
+    document["checksum"] = sha256_hex(SubwordVocabulary._canonical(content))
+
+    with pytest.raises(CorpusError, match="pre_tokenizer"):
+        SubwordVocabulary.from_document(document)

@@ -13,8 +13,8 @@ Choices, and why:
 * **Byte-level base.** The 256 UTF-8 byte values are the atomic symbols, so encoding is *total*: no
   character is ever unknown, and the lossy ``UNK`` behaviour of the character vocabulary disappears.
   Decoding is exact except where a caller deliberately truncates a byte sequence mid-codepoint.
-* **A named pre-tokenizer.** Text is cut into runs of word characters (letters, digits, underscore), runs
-  of whitespace, and single other symbols; merges are only ever learned and applied *within* a piece. That
+* **A named pre-tokenizer.** By default, text is cut into runs of word characters (letters, digits, underscore), runs
+  of whitespace, and single other symbols (ADR-0048 adds a second, space-prefixed rule that a vocabulary names); merges are only ever learned and applied *within* a piece. That
   keeps word boundaries visible in the vocabulary instead of letting a merge glue an arbitrary suffix of
   one word to a prefix of the next, and it makes segmentation reviewable by a person.
 * **Reserved control identifier.** :data:`RESERVED_DOCUMENT_END_ID` is allocated before any merge, so
@@ -53,9 +53,11 @@ from chakaso.training.errors import (
 
 __all__ = [
     "BYTE_BASE",
+    "DEFAULT_PRE_TOKENIZER",
     "DOCUMENT_END",
     "FIRST_MERGED_ID",
     "RESERVED_DOCUMENT_END_ID",
+    "SPACE_PREFIXED_PRE_TOKENIZER",
     "IncrementalDecoder",
     "SubwordVocabulary",
     "pre_tokenize",
@@ -81,10 +83,34 @@ _BASE = "utf-8-bytes"
 # symbol. A test asserts the join of the pieces equals the input, which is what proves nothing is dropped.
 PIECE_PATTERN = re.compile(r"\w+|\s+|[^\w\s]", re.UNICODE)
 
+#: The pre-tokenizer every vocabulary written before the option existed uses, and the default.
+DEFAULT_PRE_TOKENIZER = _PRE_TOKENIZER
 
-def pre_tokenize(text: str) -> tuple[str, ...]:
+#: A word or a single other symbol carries one preceding U+0020, as in GPT-2's byte-level BPE, so a word gap is no
+#: longer an identifier of its own (ADR-0048, H17). Whitespace that ends in a newline, tab or other non-space
+#: character stays one piece, so a paragraph break is still a single merge target; a run of spaces gives its last
+#: space to the next word and keeps the rest. Every character falls in exactly one alternative, so the pieces
+#: always rejoin to the input.
+SPACE_PREFIXED_PRE_TOKENIZER = "space-prefixed-word|space-prefixed-symbol|whitespace-run"
+_SPACE_PREFIXED_PATTERN = re.compile(r"[ ]?\w+|[ ]?[^\w\s]|\s*[^\S ]|\s+(?!\S)|\s+", re.UNICODE)
+
+_PRE_TOKENIZERS: dict[str, re.Pattern[str]] = {
+    DEFAULT_PRE_TOKENIZER: PIECE_PATTERN,
+    SPACE_PREFIXED_PRE_TOKENIZER: _SPACE_PREFIXED_PATTERN,
+}
+
+
+def _pattern_for(name: str) -> re.Pattern[str]:
+    try:
+        return _PRE_TOKENIZERS[name]
+    except KeyError:
+        message = f"no pre-tokenizer named {name!r}; known: {sorted(_PRE_TOKENIZERS)}"
+        raise ValueError(message) from None
+
+
+def pre_tokenize(text: str, pre_tokenizer: str = DEFAULT_PRE_TOKENIZER) -> tuple[str, ...]:
     """Split ``text`` into pieces that may be merged internally, never across a boundary."""
-    return tuple(PIECE_PATTERN.findall(text))
+    return tuple(_pattern_for(pre_tokenizer).findall(text))
 
 
 class IncrementalDecoder:
@@ -122,8 +148,12 @@ class SubwordVocabulary:
 
     merges: tuple[tuple[int, int], ...]
     min_frequency: int = 2
+    #: Which named rule cuts text into pieces before merges apply. Part of the tokenizer's identity when it is
+    #: not the default: the same merge table under another rule encodes the same text differently.
+    pre_tokenizer: str = DEFAULT_PRE_TOKENIZER
 
     def __post_init__(self) -> None:
+        _pattern_for(self.pre_tokenizer)
         if isinstance(self.min_frequency, bool) or not isinstance(self.min_frequency, int):
             message = f"min_frequency must be an integer, got {self.min_frequency!r}"
             raise ValueError(message)
@@ -169,7 +199,7 @@ class SubwordVocabulary:
         payload = join_parts(
             _SCHEMA_VERSION,
             _BASE,
-            _PRE_TOKENIZER,
+            self.pre_tokenizer,
             str(self.size),
             join_parts(*(join_parts(str(left), str(right)) for left, right in self.merges)),
         )
@@ -231,7 +261,7 @@ class SubwordVocabulary:
     def _encode_all(self, text: str) -> tuple[int, ...]:
         ranks = self._ranks()
         produced: list[int] = []
-        for piece in pre_tokenize(text):
+        for piece in pre_tokenize(text, self.pre_tokenizer):
             produced.extend(self._encode_piece(piece, ranks))
         return tuple(produced)
 
@@ -314,7 +344,7 @@ class SubwordVocabulary:
         return {
             "schema_version": _SCHEMA_VERSION,
             "base": _BASE,
-            "pre_tokenizer": _PRE_TOKENIZER,
+            "pre_tokenizer": self.pre_tokenizer,
             "reserved": {"document_end": RESERVED_DOCUMENT_END_ID},
             "vocab_size": self.size,
             "min_frequency": self.min_frequency,
@@ -351,17 +381,20 @@ class SubwordVocabulary:
                 "subword vocabulary checksum does not match its content — the file was altered"
             )
             raise CorruptedCorpusArtifactError(message)
-        for field_name, expected in (
-            ("schema_version", _SCHEMA_VERSION),
-            ("base", _BASE),
-            ("pre_tokenizer", _PRE_TOKENIZER),
-        ):
+        for field_name, expected in (("schema_version", _SCHEMA_VERSION), ("base", _BASE)):
             if content.get(field_name) != expected:
                 message = (
                     f"subword vocabulary declares {field_name}={content.get(field_name)!r}, "
                     f"this code implements {expected!r}"
                 )
                 raise CorpusError(message)
+        declared_rule = content.get("pre_tokenizer")
+        if declared_rule not in _PRE_TOKENIZERS:
+            message = (
+                f"subword vocabulary declares pre_tokenizer={declared_rule!r}, this code implements "
+                f"{sorted(_PRE_TOKENIZERS)}"
+            )
+            raise CorpusError(message)
         reserved = content.get("reserved")
         if (
             not isinstance(reserved, dict)
@@ -377,7 +410,9 @@ class SubwordVocabulary:
         except (KeyError, TypeError, ValueError) as exc:
             message = f"subword vocabulary is missing or mis-typed a required field: {exc}"
             raise CorpusError(message) from exc
-        vocabulary = cls(merges=merges, min_frequency=min_frequency)
+        vocabulary = cls(
+            merges=merges, min_frequency=min_frequency, pre_tokenizer=str(declared_rule)
+        )
         if declared_size != vocabulary.size:
             message = (
                 f"vocabulary declares vocab_size {declared_size} but its {len(merges)} merge(s) "
@@ -429,6 +464,7 @@ def train_subword_vocabulary(
     *,
     target_size: int,
     min_frequency: int = 2,
+    pre_tokenizer: str = DEFAULT_PRE_TOKENIZER,
 ) -> SubwordVocabulary:
     """Learn byte-pair merges from ``texts`` until the vocabulary reaches ``target_size``.
 
@@ -454,7 +490,7 @@ def train_subword_vocabulary(
 
     counts: Counter[str] = Counter()
     for text in texts:
-        counts.update(pre_tokenize(text))
+        counts.update(pre_tokenize(text, pre_tokenizer))
     if not counts:
         message = (
             "a subword vocabulary needs at least one pre-tokenized piece; the texts produced none"
@@ -522,7 +558,9 @@ def train_subword_vocabulary(
                 pair_to_shapes.setdefault(new_pair, set()).add(new_shape)
                 heapq.heappush(heap, (-pair_counts[new_pair], new_pair))
 
-    return SubwordVocabulary(merges=tuple(merges), min_frequency=min_frequency)
+    return SubwordVocabulary(
+        merges=tuple(merges), min_frequency=min_frequency, pre_tokenizer=pre_tokenizer
+    )
 
 
 def _pair_multiset(shape: Sequence[int]) -> Counter[tuple[int, int]]:
