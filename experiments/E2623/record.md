@@ -121,3 +121,15 @@ No pair was a tie for any model.
 
 Items within a work are not independent and the intervals are narrower than a work-clustered interval would be. The task is short-range and a topic or style cue suffices for the easy distractor. A harder version — distractors from the *same passage region* (the preceding or following span, or the true span with its words
 permuted within the window) so topic and style are held fixed — is the way to make the probe rank models; it is a different construction and a new record, and is not started here. Nothing here is knowledge, reasoning, instruction following or usefulness (K-001).
+
+## Addendum (2026-11-02, after E2618): the probe's own seed spread
+
+[`results-seeds.json`](results-seeds.json) scores E2618's fifteen checkpoints (seeds 7, 11, 13, 17, 19 on the 0, 25 and 50 % arms) on the same 215 items; seed 7 reproduces the table above exactly (PMI-easy 0.972, 0.958, 0.977). Nothing earlier is changed.
+
+| Arm (5 seeds) | PMI easy: mean / sd [range] | PMI hard: mean / sd [range] |
+| --- | ---: | ---: |
+| 0 % prose | 0.973 / 0.009 [0.963–0.986] | 0.939 / 0.010 [0.930–0.949] |
+| 25 % prose | 0.972 / 0.014 [0.958–0.995] | 0.933 / 0.012 [0.921–0.944] |
+| 50 % prose | 0.969 / 0.005 [0.963–0.977] | 0.941 / 0.011 [0.926–0.953] |
+
+The three arms' means differ by at most 0.004 on the easy distractor and 0.008 on the hard one, inside one seed's spread (sd 0.005–0.014): **the probe does not distinguish these mixtures**, which confirms the ceiling finding with replication. Its seed-to-seed spread is small (about 1 point), so it is a stable detector of context use; it simply has no headroom to rank.

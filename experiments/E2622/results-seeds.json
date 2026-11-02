@@ -1,0 +1,1428 @@
+{
+  "contamination": {
+    "corpus_documents_screened": 9388,
+    "flagged_ids": [
+      "determiner_noun_agreement-2c585b9e"
+    ],
+    "fraction_flagged": 0.00125,
+    "ngram_words": 5,
+    "pairs_flagged": 1
+  },
+  "models": {
+    "E2615-s00-seed11": {
+      "checkpoint_checksum": "5a536ed064fee4b729230c4b283b23de7d1aacf85cab7cdee687904be0359659",
+      "environment": {
+        "device": "cpu",
+        "numpy": "2.4.6",
+        "platform": "Linux-6.18.44-fc-v185-x86_64-with-glibc2.39",
+        "python": "3.13.18",
+        "torch": "2.15.0+cpu",
+        "torch_threads": "4"
+      },
+      "result": {
+        "accuracy": 0.80875,
+        "by_phenomenon": {
+          "auxiliary_agreement": {
+            "accuracy": 0.94,
+            "interval_95": [
+              0.8752318448839114,
+              0.9722138761993719
+            ],
+            "pairs": 100
+          },
+          "determiner_adjective_order": {
+            "accuracy": 0.91,
+            "interval_95": [
+              0.8377378707781101,
+              0.9519274602313131
+            ],
+            "pairs": 100
+          },
+          "determiner_noun_agreement": {
+            "accuracy": 0.98,
+            "interval_95": [
+              0.9299882086824253,
+              0.9944980324993383
+            ],
+            "pairs": 100
+          },
+          "modal_takes_base_form": {
+            "accuracy": 1.0,
+            "interval_95": [
+              0.9630065012310038,
+              1.0
+            ],
+            "pairs": 100
+          },
+          "past_participle_form": {
+            "accuracy": 0.97,
+            "interval_95": [
+              0.9154806351014251,
+              0.9897454760557185
+            ],
+            "pairs": 100
+          },
+          "reflexive_pronoun_agreement": {
+            "accuracy": 0.67,
+            "interval_95": [
+              0.5730534371634074,
+              0.754368773255134
+            ],
+            "pairs": 100
+          },
+          "subject_verb_agreement": {
+            "accuracy": 0.46,
+            "interval_95": [
+              0.3656080823843,
+              0.5573513975172198
+            ],
+            "pairs": 100
+          },
+          "subject_verb_agreement_with_attractor": {
+            "accuracy": 0.54,
+            "interval_95": [
+              0.4426486024827802,
+              0.6343919176157
+            ],
+            "pairs": 100
+          }
+        },
+        "chance_inside_interval": false,
+        "good_fewer_tokens": 0,
+        "good_longer": 327,
+        "good_more_tokens": 0,
+        "good_shorter": 331,
+        "interval_95": [
+          0.7800469209301559,
+          0.8345021229665079
+        ],
+        "length_only_accuracy": 0.5025,
+        "pairs": 800,
+        "ties": 0,
+        "token_count_only_accuracy": 0.5
+      },
+      "tokenizer_fingerprint": "434debe82f949347"
+    },
+    "E2615-s00-seed13": {
+      "checkpoint_checksum": "87998197392d713153281da2c6b6341cae8a10ed46758c6b556a496a6730e796",
+      "environment": {
+        "device": "cpu",
+        "numpy": "2.4.6",
+        "platform": "Linux-6.18.44-fc-v185-x86_64-with-glibc2.39",
+        "python": "3.13.18",
+        "torch": "2.15.0+cpu",
+        "torch_threads": "4"
+      },
+      "result": {
+        "accuracy": 0.8425,
+        "by_phenomenon": {
+          "auxiliary_agreement": {
+            "accuracy": 0.97,
+            "interval_95": [
+              0.9154806351014251,
+              0.9897454760557185
+            ],
+            "pairs": 100
+          },
+          "determiner_adjective_order": {
+            "accuracy": 0.95,
+            "interval_95": [
+              0.8882495301258955,
+              0.9784563209820079
+            ],
+            "pairs": 100
+          },
+          "determiner_noun_agreement": {
+            "accuracy": 0.98,
+            "interval_95": [
+              0.9299882086824253,
+              0.9944980324993383
+            ],
+            "pairs": 100
+          },
+          "modal_takes_base_form": {
+            "accuracy": 1.0,
+            "interval_95": [
+              0.9630065012310038,
+              1.0
+            ],
+            "pairs": 100
+          },
+          "past_participle_form": {
+            "accuracy": 0.96,
+            "interval_95": [
+              0.9016292850152788,
+              0.9843366961172447
+            ],
+            "pairs": 100
+          },
+          "reflexive_pronoun_agreement": {
+            "accuracy": 0.69,
+            "interval_95": [
+              0.5937394420163071,
+              0.7722030284514743
+            ],
+            "pairs": 100
+          },
+          "subject_verb_agreement": {
+            "accuracy": 0.68,
+            "interval_95": [
+              0.583373813107172,
+              0.7633085273359894
+            ],
+            "pairs": 100
+          },
+          "subject_verb_agreement_with_attractor": {
+            "accuracy": 0.51,
+            "interval_95": [
+              0.41348011860427875,
+              0.6057800114203413
+            ],
+            "pairs": 100
+          }
+        },
+        "chance_inside_interval": false,
+        "good_fewer_tokens": 0,
+        "good_longer": 327,
+        "good_more_tokens": 0,
+        "good_shorter": 331,
+        "interval_95": [
+          0.8156282192298944,
+          0.866098250517822
+        ],
+        "length_only_accuracy": 0.5025,
+        "pairs": 800,
+        "ties": 0,
+        "token_count_only_accuracy": 0.5
+      },
+      "tokenizer_fingerprint": "434debe82f949347"
+    },
+    "E2615-s00-seed17": {
+      "checkpoint_checksum": "b9eee6e5a2c188a71acb475246dcb7ea40d2cfd0e81640eba8822c611efe8c60",
+      "environment": {
+        "device": "cpu",
+        "numpy": "2.4.6",
+        "platform": "Linux-6.18.44-fc-v185-x86_64-with-glibc2.39",
+        "python": "3.13.18",
+        "torch": "2.15.0+cpu",
+        "torch_threads": "4"
+      },
+      "result": {
+        "accuracy": 0.8,
+        "by_phenomenon": {
+          "auxiliary_agreement": {
+            "accuracy": 0.88,
+            "interval_95": [
+              0.8018790050092598,
+              0.9300059359263032
+            ],
+            "pairs": 100
+          },
+          "determiner_adjective_order": {
+            "accuracy": 0.93,
+            "interval_95": [
+              0.8625048519384759,
+              0.9656807391201874
+            ],
+            "pairs": 100
+          },
+          "determiner_noun_agreement": {
+            "accuracy": 0.92,
+            "interval_95": [
+              0.8500189223072278,
+              0.9589065387268155
+            ],
+            "pairs": 100
+          },
+          "modal_takes_base_form": {
+            "accuracy": 1.0,
+            "interval_95": [
+              0.9630065012310038,
+              1.0
+            ],
+            "pairs": 100
+          },
+          "past_participle_form": {
+            "accuracy": 0.97,
+            "interval_95": [
+              0.9154806351014251,
+              0.9897454760557185
+            ],
+            "pairs": 100
+          },
+          "reflexive_pronoun_agreement": {
+            "accuracy": 0.74,
+            "interval_95": [
+              0.6462901047218015,
+              0.8159530158690804
+            ],
+            "pairs": 100
+          },
+          "subject_verb_agreement": {
+            "accuracy": 0.49,
+            "interval_95": [
+              0.3942199885796587,
+              0.5865198813957212
+            ],
+            "pairs": 100
+          },
+          "subject_verb_agreement_with_attractor": {
+            "accuracy": 0.47,
+            "interval_95": [
+              0.37510817888094034,
+              0.5671114310451995
+            ],
+            "pairs": 100
+          }
+        },
+        "chance_inside_interval": false,
+        "good_fewer_tokens": 0,
+        "good_longer": 327,
+        "good_more_tokens": 0,
+        "good_shorter": 331,
+        "interval_95": [
+          0.7708774296946106,
+          0.8262552445369657
+        ],
+        "length_only_accuracy": 0.5025,
+        "pairs": 800,
+        "ties": 0,
+        "token_count_only_accuracy": 0.5
+      },
+      "tokenizer_fingerprint": "434debe82f949347"
+    },
+    "E2615-s00-seed19": {
+      "checkpoint_checksum": "23bd08f5e331733ef3944cba068cb9c2a308944671e572eb03f8a66e94ed5d7a",
+      "environment": {
+        "device": "cpu",
+        "numpy": "2.4.6",
+        "platform": "Linux-6.18.44-fc-v185-x86_64-with-glibc2.39",
+        "python": "3.13.18",
+        "torch": "2.15.0+cpu",
+        "torch_threads": "4"
+      },
+      "result": {
+        "accuracy": 0.78875,
+        "by_phenomenon": {
+          "auxiliary_agreement": {
+            "accuracy": 0.87,
+            "interval_95": [
+              0.7901964848675458,
+              0.922428326043397
+            ],
+            "pairs": 100
+          },
+          "determiner_adjective_order": {
+            "accuracy": 0.75,
+            "interval_95": [
+              0.6569553637346054,
+              0.8245478868808965
+            ],
+            "pairs": 100
+          },
+          "determiner_noun_agreement": {
+            "accuracy": 0.88,
+            "interval_95": [
+              0.8018790050092598,
+              0.9300059359263032
+            ],
+            "pairs": 100
+          },
+          "modal_takes_base_form": {
+            "accuracy": 1.0,
+            "interval_95": [
+              0.9630065012310038,
+              1.0
+            ],
+            "pairs": 100
+          },
+          "past_participle_form": {
+            "accuracy": 0.98,
+            "interval_95": [
+              0.9299882086824253,
+              0.9944980324993383
+            ],
+            "pairs": 100
+          },
+          "reflexive_pronoun_agreement": {
+            "accuracy": 0.78,
+            "interval_95": [
+              0.6892964640723263,
+              0.8499871766170359
+            ],
+            "pairs": 100
+          },
+          "subject_verb_agreement": {
+            "accuracy": 0.6,
+            "interval_95": [
+              0.5020025860174634,
+              0.6905987142287374
+            ],
+            "pairs": 100
+          },
+          "subject_verb_agreement_with_attractor": {
+            "accuracy": 0.45,
+            "interval_95": [
+              0.3561453790959721,
+              0.5475539707809276
+            ],
+            "pairs": 100
+          }
+        },
+        "chance_inside_interval": false,
+        "good_fewer_tokens": 0,
+        "good_longer": 327,
+        "good_more_tokens": 0,
+        "good_shorter": 331,
+        "interval_95": [
+          0.759118074436079,
+          0.8156221245118132
+        ],
+        "length_only_accuracy": 0.5025,
+        "pairs": 800,
+        "ties": 0,
+        "token_count_only_accuracy": 0.5
+      },
+      "tokenizer_fingerprint": "434debe82f949347"
+    },
+    "E2615-s00-seed7": {
+      "checkpoint_checksum": "11ce39d8c7db923bc9eb0f72ab180e579d2c224600336dbcf8bd4914fddb5012",
+      "environment": {
+        "device": "cpu",
+        "numpy": "2.4.6",
+        "platform": "Linux-6.18.44-fc-v185-x86_64-with-glibc2.39",
+        "python": "3.13.18",
+        "torch": "2.15.0+cpu",
+        "torch_threads": "4"
+      },
+      "result": {
+        "accuracy": 0.80625,
+        "by_phenomenon": {
+          "auxiliary_agreement": {
+            "accuracy": 0.92,
+            "interval_95": [
+              0.8500189223072278,
+              0.9589065387268155
+            ],
+            "pairs": 100
+          },
+          "determiner_adjective_order": {
+            "accuracy": 0.93,
+            "interval_95": [
+              0.8625048519384759,
+              0.9656807391201874
+            ],
+            "pairs": 100
+          },
+          "determiner_noun_agreement": {
+            "accuracy": 0.93,
+            "interval_95": [
+              0.8625048519384759,
+              0.9656807391201874
+            ],
+            "pairs": 100
+          },
+          "modal_takes_base_form": {
+            "accuracy": 1.0,
+            "interval_95": [
+              0.9630065012310038,
+              1.0
+            ],
+            "pairs": 100
+          },
+          "past_participle_form": {
+            "accuracy": 0.94,
+            "interval_95": [
+              0.8752318448839114,
+              0.9722138761993719
+            ],
+            "pairs": 100
+          },
+          "reflexive_pronoun_agreement": {
+            "accuracy": 0.73,
+            "interval_95": [
+              0.6356788315330401,
+              0.8073041590332216
+            ],
+            "pairs": 100
+          },
+          "subject_verb_agreement": {
+            "accuracy": 0.46,
+            "interval_95": [
+              0.3656080823843,
+              0.5573513975172198
+            ],
+            "pairs": 100
+          },
+          "subject_verb_agreement_with_attractor": {
+            "accuracy": 0.54,
+            "interval_95": [
+              0.4426486024827802,
+              0.6343919176157
+            ],
+            "pairs": 100
+          }
+        },
+        "chance_inside_interval": false,
+        "good_fewer_tokens": 0,
+        "good_longer": 327,
+        "good_more_tokens": 0,
+        "good_shorter": 331,
+        "interval_95": [
+          0.7774249146037627,
+          0.8321480236743047
+        ],
+        "length_only_accuracy": 0.5025,
+        "pairs": 800,
+        "ties": 0,
+        "token_count_only_accuracy": 0.5
+      },
+      "tokenizer_fingerprint": "434debe82f949347"
+    },
+    "E2615-s25-seed11": {
+      "checkpoint_checksum": "a28ed196afa192f623f9bed688bdd95d6c112a89da7f38ff6b68bb4d25520a8f",
+      "environment": {
+        "device": "cpu",
+        "numpy": "2.4.6",
+        "platform": "Linux-6.18.44-fc-v185-x86_64-with-glibc2.39",
+        "python": "3.13.18",
+        "torch": "2.15.0+cpu",
+        "torch_threads": "4"
+      },
+      "result": {
+        "accuracy": 0.825,
+        "by_phenomenon": {
+          "auxiliary_agreement": {
+            "accuracy": 0.95,
+            "interval_95": [
+              0.8882495301258955,
+              0.9784563209820079
+            ],
+            "pairs": 100
+          },
+          "determiner_adjective_order": {
+            "accuracy": 0.93,
+            "interval_95": [
+              0.8625048519384759,
+              0.9656807391201874
+            ],
+            "pairs": 100
+          },
+          "determiner_noun_agreement": {
+            "accuracy": 0.99,
+            "interval_95": [
+              0.9455138032509935,
+              0.9982325679553905
+            ],
+            "pairs": 100
+          },
+          "modal_takes_base_form": {
+            "accuracy": 1.0,
+            "interval_95": [
+              0.9630065012310038,
+              1.0
+            ],
+            "pairs": 100
+          },
+          "past_participle_form": {
+            "accuracy": 0.93,
+            "interval_95": [
+              0.8625048519384759,
+              0.9656807391201874
+            ],
+            "pairs": 100
+          },
+          "reflexive_pronoun_agreement": {
+            "accuracy": 0.8,
+            "interval_95": [
+              0.7111708336357507,
+              0.8666330671028517
+            ],
+            "pairs": 100
+          },
+          "subject_verb_agreement": {
+            "accuracy": 0.46,
+            "interval_95": [
+              0.3656080823843,
+              0.5573513975172198
+            ],
+            "pairs": 100
+          },
+          "subject_verb_agreement_with_attractor": {
+            "accuracy": 0.54,
+            "interval_95": [
+              0.4426486024827802,
+              0.6343919176157
+            ],
+            "pairs": 100
+          }
+        },
+        "chance_inside_interval": false,
+        "good_fewer_tokens": 0,
+        "good_longer": 327,
+        "good_more_tokens": 0,
+        "good_shorter": 331,
+        "interval_95": [
+          0.7971340833203674,
+          0.8497596470971734
+        ],
+        "length_only_accuracy": 0.5025,
+        "pairs": 800,
+        "ties": 0,
+        "token_count_only_accuracy": 0.5
+      },
+      "tokenizer_fingerprint": "434debe82f949347"
+    },
+    "E2615-s25-seed13": {
+      "checkpoint_checksum": "5d1d7987b6a6acd1653d2de2ca9a980f0279678908e2780d5b5d93e33a4bb660",
+      "environment": {
+        "device": "cpu",
+        "numpy": "2.4.6",
+        "platform": "Linux-6.18.44-fc-v185-x86_64-with-glibc2.39",
+        "python": "3.13.18",
+        "torch": "2.15.0+cpu",
+        "torch_threads": "4"
+      },
+      "result": {
+        "accuracy": 0.80125,
+        "by_phenomenon": {
+          "auxiliary_agreement": {
+            "accuracy": 0.88,
+            "interval_95": [
+              0.8018790050092598,
+              0.9300059359263032
+            ],
+            "pairs": 100
+          },
+          "determiner_adjective_order": {
+            "accuracy": 0.83,
+            "interval_95": [
+              0.7445199515664943,
+              0.8910643392459682
+            ],
+            "pairs": 100
+          },
+          "determiner_noun_agreement": {
+            "accuracy": 1.0,
+            "interval_95": [
+              0.9630065012310038,
+              1.0
+            ],
+            "pairs": 100
+          },
+          "modal_takes_base_form": {
+            "accuracy": 1.0,
+            "interval_95": [
+              0.9630065012310038,
+              1.0
+            ],
+            "pairs": 100
+          },
+          "past_participle_form": {
+            "accuracy": 1.0,
+            "interval_95": [
+              0.9630065012310038,
+              1.0
+            ],
+            "pairs": 100
+          },
+          "reflexive_pronoun_agreement": {
+            "accuracy": 0.7,
+            "interval_95": [
+              0.6041514528775586,
+              0.7810511476148428
+            ],
+            "pairs": 100
+          },
+          "subject_verb_agreement": {
+            "accuracy": 0.46,
+            "interval_95": [
+              0.3656080823843,
+              0.5573513975172198
+            ],
+            "pairs": 100
+          },
+          "subject_verb_agreement_with_attractor": {
+            "accuracy": 0.54,
+            "interval_95": [
+              0.4426486024827802,
+              0.6343919176157
+            ],
+            "pairs": 100
+          }
+        },
+        "chance_inside_interval": false,
+        "good_fewer_tokens": 0,
+        "good_longer": 327,
+        "good_more_tokens": 0,
+        "good_shorter": 331,
+        "interval_95": [
+          0.7721860783006974,
+          0.8274346487401772
+        ],
+        "length_only_accuracy": 0.5025,
+        "pairs": 800,
+        "ties": 0,
+        "token_count_only_accuracy": 0.5
+      },
+      "tokenizer_fingerprint": "434debe82f949347"
+    },
+    "E2615-s25-seed17": {
+      "checkpoint_checksum": "c7e67d733d28e6a7b08738d7c255a102e9018a54a825b0d385c28aed6d9646ad",
+      "environment": {
+        "device": "cpu",
+        "numpy": "2.4.6",
+        "platform": "Linux-6.18.44-fc-v185-x86_64-with-glibc2.39",
+        "python": "3.13.18",
+        "torch": "2.15.0+cpu",
+        "torch_threads": "4"
+      },
+      "result": {
+        "accuracy": 0.83125,
+        "by_phenomenon": {
+          "auxiliary_agreement": {
+            "accuracy": 0.91,
+            "interval_95": [
+              0.8377378707781101,
+              0.9519274602313131
+            ],
+            "pairs": 100
+          },
+          "determiner_adjective_order": {
+            "accuracy": 0.99,
+            "interval_95": [
+              0.9455138032509935,
+              0.9982325679553905
+            ],
+            "pairs": 100
+          },
+          "determiner_noun_agreement": {
+            "accuracy": 0.96,
+            "interval_95": [
+              0.9016292850152788,
+              0.9843366961172447
+            ],
+            "pairs": 100
+          },
+          "modal_takes_base_form": {
+            "accuracy": 1.0,
+            "interval_95": [
+              0.9630065012310038,
+              1.0
+            ],
+            "pairs": 100
+          },
+          "past_participle_form": {
+            "accuracy": 1.0,
+            "interval_95": [
+              0.9630065012310038,
+              1.0
+            ],
+            "pairs": 100
+          },
+          "reflexive_pronoun_agreement": {
+            "accuracy": 0.77,
+            "interval_95": [
+              0.6784561689907251,
+              0.841567341674017
+            ],
+            "pairs": 100
+          },
+          "subject_verb_agreement": {
+            "accuracy": 0.51,
+            "interval_95": [
+              0.41348011860427875,
+              0.6057800114203413
+            ],
+            "pairs": 100
+          },
+          "subject_verb_agreement_with_attractor": {
+            "accuracy": 0.51,
+            "interval_95": [
+              0.41348011860427875,
+              0.6057800114203413
+            ],
+            "pairs": 100
+          }
+        },
+        "chance_inside_interval": false,
+        "good_fewer_tokens": 0,
+        "good_longer": 327,
+        "good_more_tokens": 0,
+        "good_shorter": 331,
+        "interval_95": [
+          0.8037275427071943,
+          0.8556064517568379
+        ],
+        "length_only_accuracy": 0.5025,
+        "pairs": 800,
+        "ties": 0,
+        "token_count_only_accuracy": 0.5
+      },
+      "tokenizer_fingerprint": "434debe82f949347"
+    },
+    "E2615-s25-seed19": {
+      "checkpoint_checksum": "b2388b6be32aafadade82761d54a42b0aed19d8a863f6f84864e71a145d595fc",
+      "environment": {
+        "device": "cpu",
+        "numpy": "2.4.6",
+        "platform": "Linux-6.18.44-fc-v185-x86_64-with-glibc2.39",
+        "python": "3.13.18",
+        "torch": "2.15.0+cpu",
+        "torch_threads": "4"
+      },
+      "result": {
+        "accuracy": 0.83625,
+        "by_phenomenon": {
+          "auxiliary_agreement": {
+            "accuracy": 0.97,
+            "interval_95": [
+              0.9154806351014251,
+              0.9897454760557185
+            ],
+            "pairs": 100
+          },
+          "determiner_adjective_order": {
+            "accuracy": 0.79,
+            "interval_95": [
+              0.7002003108844285,
+              0.8583434598295537
+            ],
+            "pairs": 100
+          },
+          "determiner_noun_agreement": {
+            "accuracy": 0.95,
+            "interval_95": [
+              0.8882495301258955,
+              0.9784563209820079
+            ],
+            "pairs": 100
+          },
+          "modal_takes_base_form": {
+            "accuracy": 1.0,
+            "interval_95": [
+              0.9630065012310038,
+              1.0
+            ],
+            "pairs": 100
+          },
+          "past_participle_form": {
+            "accuracy": 0.99,
+            "interval_95": [
+              0.9455138032509935,
+              0.9982325679553905
+            ],
+            "pairs": 100
+          },
+          "reflexive_pronoun_agreement": {
+            "accuracy": 0.85,
+            "interval_95": [
+              0.7671644033458782,
+              0.9069401475158245
+            ],
+            "pairs": 100
+          },
+          "subject_verb_agreement": {
+            "accuracy": 0.7,
+            "interval_95": [
+              0.6041514528775586,
+              0.7810511476148428
+            ],
+            "pairs": 100
+          },
+          "subject_verb_agreement_with_attractor": {
+            "accuracy": 0.44,
+            "interval_95": [
+              0.3467202656095169,
+              0.5377189542427627
+            ],
+            "pairs": 100
+          }
+        },
+        "chance_inside_interval": false,
+        "good_fewer_tokens": 0,
+        "good_longer": 327,
+        "good_more_tokens": 0,
+        "good_shorter": 331,
+        "interval_95": [
+          0.8090114423085465,
+          0.8602747633926787
+        ],
+        "length_only_accuracy": 0.5025,
+        "pairs": 800,
+        "ties": 0,
+        "token_count_only_accuracy": 0.5
+      },
+      "tokenizer_fingerprint": "434debe82f949347"
+    },
+    "E2615-s25-seed7": {
+      "checkpoint_checksum": "7935dd2be2548ba52f8ec36e79a1b46abb14c43fd9f6ccdbcc81accf4ee68821",
+      "environment": {
+        "device": "cpu",
+        "numpy": "2.4.6",
+        "platform": "Linux-6.18.44-fc-v185-x86_64-with-glibc2.39",
+        "python": "3.13.18",
+        "torch": "2.15.0+cpu",
+        "torch_threads": "4"
+      },
+      "result": {
+        "accuracy": 0.80625,
+        "by_phenomenon": {
+          "auxiliary_agreement": {
+            "accuracy": 0.98,
+            "interval_95": [
+              0.9299882086824253,
+              0.9944980324993383
+            ],
+            "pairs": 100
+          },
+          "determiner_adjective_order": {
+            "accuracy": 0.97,
+            "interval_95": [
+              0.9154806351014251,
+              0.9897454760557185
+            ],
+            "pairs": 100
+          },
+          "determiner_noun_agreement": {
+            "accuracy": 0.97,
+            "interval_95": [
+              0.9154806351014251,
+              0.9897454760557185
+            ],
+            "pairs": 100
+          },
+          "modal_takes_base_form": {
+            "accuracy": 1.0,
+            "interval_95": [
+              0.9630065012310038,
+              1.0
+            ],
+            "pairs": 100
+          },
+          "past_participle_form": {
+            "accuracy": 0.86,
+            "interval_95": [
+              0.7786281171512964,
+              0.9147365637350263
+            ],
+            "pairs": 100
+          },
+          "reflexive_pronoun_agreement": {
+            "accuracy": 0.67,
+            "interval_95": [
+              0.5730534371634074,
+              0.754368773255134
+            ],
+            "pairs": 100
+          },
+          "subject_verb_agreement": {
+            "accuracy": 0.46,
+            "interval_95": [
+              0.3656080823843,
+              0.5573513975172198
+            ],
+            "pairs": 100
+          },
+          "subject_verb_agreement_with_attractor": {
+            "accuracy": 0.54,
+            "interval_95": [
+              0.4426486024827802,
+              0.6343919176157
+            ],
+            "pairs": 100
+          }
+        },
+        "chance_inside_interval": false,
+        "good_fewer_tokens": 0,
+        "good_longer": 327,
+        "good_more_tokens": 0,
+        "good_shorter": 331,
+        "interval_95": [
+          0.7774249146037627,
+          0.8321480236743047
+        ],
+        "length_only_accuracy": 0.5025,
+        "pairs": 800,
+        "ties": 0,
+        "token_count_only_accuracy": 0.5
+      },
+      "tokenizer_fingerprint": "434debe82f949347"
+    },
+    "E2615-s50-seed11": {
+      "checkpoint_checksum": "8130f0b35128e6a1520e63eec290d18889d346c85d17da3b3f1f4520509c5e8b",
+      "environment": {
+        "device": "cpu",
+        "numpy": "2.4.6",
+        "platform": "Linux-6.18.44-fc-v185-x86_64-with-glibc2.39",
+        "python": "3.13.18",
+        "torch": "2.15.0+cpu",
+        "torch_threads": "4"
+      },
+      "result": {
+        "accuracy": 0.86125,
+        "by_phenomenon": {
+          "auxiliary_agreement": {
+            "accuracy": 0.88,
+            "interval_95": [
+              0.8018790050092598,
+              0.9300059359263032
+            ],
+            "pairs": 100
+          },
+          "determiner_adjective_order": {
+            "accuracy": 0.99,
+            "interval_95": [
+              0.9455138032509935,
+              0.9982325679553905
+            ],
+            "pairs": 100
+          },
+          "determiner_noun_agreement": {
+            "accuracy": 0.92,
+            "interval_95": [
+              0.8500189223072278,
+              0.9589065387268155
+            ],
+            "pairs": 100
+          },
+          "modal_takes_base_form": {
+            "accuracy": 1.0,
+            "interval_95": [
+              0.9630065012310038,
+              1.0
+            ],
+            "pairs": 100
+          },
+          "past_participle_form": {
+            "accuracy": 0.97,
+            "interval_95": [
+              0.9154806351014251,
+              0.9897454760557185
+            ],
+            "pairs": 100
+          },
+          "reflexive_pronoun_agreement": {
+            "accuracy": 0.86,
+            "interval_95": [
+              0.7786281171512964,
+              0.9147365637350263
+            ],
+            "pairs": 100
+          },
+          "subject_verb_agreement": {
+            "accuracy": 0.77,
+            "interval_95": [
+              0.6784561689907251,
+              0.841567341674017
+            ],
+            "pairs": 100
+          },
+          "subject_verb_agreement_with_attractor": {
+            "accuracy": 0.5,
+            "interval_95": [
+              0.40383152963549296,
+              0.596168470364507
+            ],
+            "pairs": 100
+          }
+        },
+        "chance_inside_interval": false,
+        "good_fewer_tokens": 0,
+        "good_longer": 327,
+        "good_more_tokens": 0,
+        "good_shorter": 331,
+        "interval_95": [
+          0.8355643196290119,
+          0.8834829422581778
+        ],
+        "length_only_accuracy": 0.5025,
+        "pairs": 800,
+        "ties": 0,
+        "token_count_only_accuracy": 0.5
+      },
+      "tokenizer_fingerprint": "434debe82f949347"
+    },
+    "E2615-s50-seed13": {
+      "checkpoint_checksum": "c8bedc0fddec1463762ce8b3710244317d558c38d08888653914c90ac062084a",
+      "environment": {
+        "device": "cpu",
+        "numpy": "2.4.6",
+        "platform": "Linux-6.18.44-fc-v185-x86_64-with-glibc2.39",
+        "python": "3.13.18",
+        "torch": "2.15.0+cpu",
+        "torch_threads": "4"
+      },
+      "result": {
+        "accuracy": 0.84125,
+        "by_phenomenon": {
+          "auxiliary_agreement": {
+            "accuracy": 0.94,
+            "interval_95": [
+              0.8752318448839114,
+              0.9722138761993719
+            ],
+            "pairs": 100
+          },
+          "determiner_adjective_order": {
+            "accuracy": 1.0,
+            "interval_95": [
+              0.9630065012310038,
+              1.0
+            ],
+            "pairs": 100
+          },
+          "determiner_noun_agreement": {
+            "accuracy": 0.98,
+            "interval_95": [
+              0.9299882086824253,
+              0.9944980324993383
+            ],
+            "pairs": 100
+          },
+          "modal_takes_base_form": {
+            "accuracy": 1.0,
+            "interval_95": [
+              0.9630065012310038,
+              1.0
+            ],
+            "pairs": 100
+          },
+          "past_participle_form": {
+            "accuracy": 0.96,
+            "interval_95": [
+              0.9016292850152788,
+              0.9843366961172447
+            ],
+            "pairs": 100
+          },
+          "reflexive_pronoun_agreement": {
+            "accuracy": 0.85,
+            "interval_95": [
+              0.7671644033458782,
+              0.9069401475158245
+            ],
+            "pairs": 100
+          },
+          "subject_verb_agreement": {
+            "accuracy": 0.46,
+            "interval_95": [
+              0.3656080823843,
+              0.5573513975172198
+            ],
+            "pairs": 100
+          },
+          "subject_verb_agreement_with_attractor": {
+            "accuracy": 0.54,
+            "interval_95": [
+              0.4426486024827802,
+              0.6343919176157
+            ],
+            "pairs": 100
+          }
+        },
+        "chance_inside_interval": false,
+        "good_fewer_tokens": 0,
+        "good_longer": 327,
+        "good_more_tokens": 0,
+        "good_shorter": 331,
+        "interval_95": [
+          0.8143037795510374,
+          0.8649346373873809
+        ],
+        "length_only_accuracy": 0.5025,
+        "pairs": 800,
+        "ties": 0,
+        "token_count_only_accuracy": 0.5
+      },
+      "tokenizer_fingerprint": "434debe82f949347"
+    },
+    "E2615-s50-seed17": {
+      "checkpoint_checksum": "ebde65fa9971ee173e0fb22d8d544512c5c58b439a9c1c99000261317c3a9370",
+      "environment": {
+        "device": "cpu",
+        "numpy": "2.4.6",
+        "platform": "Linux-6.18.44-fc-v185-x86_64-with-glibc2.39",
+        "python": "3.13.18",
+        "torch": "2.15.0+cpu",
+        "torch_threads": "4"
+      },
+      "result": {
+        "accuracy": 0.80125,
+        "by_phenomenon": {
+          "auxiliary_agreement": {
+            "accuracy": 0.76,
+            "interval_95": [
+              0.667676635719002,
+              0.8330867449211199
+            ],
+            "pairs": 100
+          },
+          "determiner_adjective_order": {
+            "accuracy": 1.0,
+            "interval_95": [
+              0.9630065012310038,
+              1.0
+            ],
+            "pairs": 100
+          },
+          "determiner_noun_agreement": {
+            "accuracy": 0.89,
+            "interval_95": [
+              0.8136870342543766,
+              0.9374580367058064
+            ],
+            "pairs": 100
+          },
+          "modal_takes_base_form": {
+            "accuracy": 1.0,
+            "interval_95": [
+              0.9630065012310038,
+              1.0
+            ],
+            "pairs": 100
+          },
+          "past_participle_form": {
+            "accuracy": 1.0,
+            "interval_95": [
+              0.9630065012310038,
+              1.0
+            ],
+            "pairs": 100
+          },
+          "reflexive_pronoun_agreement": {
+            "accuracy": 0.76,
+            "interval_95": [
+              0.667676635719002,
+              0.8330867449211199
+            ],
+            "pairs": 100
+          },
+          "subject_verb_agreement": {
+            "accuracy": 0.46,
+            "interval_95": [
+              0.3656080823843,
+              0.5573513975172198
+            ],
+            "pairs": 100
+          },
+          "subject_verb_agreement_with_attractor": {
+            "accuracy": 0.54,
+            "interval_95": [
+              0.4426486024827802,
+              0.6343919176157
+            ],
+            "pairs": 100
+          }
+        },
+        "chance_inside_interval": false,
+        "good_fewer_tokens": 0,
+        "good_longer": 327,
+        "good_more_tokens": 0,
+        "good_shorter": 331,
+        "interval_95": [
+          0.7721860783006974,
+          0.8274346487401772
+        ],
+        "length_only_accuracy": 0.5025,
+        "pairs": 800,
+        "ties": 0,
+        "token_count_only_accuracy": 0.5
+      },
+      "tokenizer_fingerprint": "434debe82f949347"
+    },
+    "E2615-s50-seed19": {
+      "checkpoint_checksum": "0021a8a8116a945dc333421943f09efe57c0aae73767dced9f4d68734f943252",
+      "environment": {
+        "device": "cpu",
+        "numpy": "2.4.6",
+        "platform": "Linux-6.18.44-fc-v185-x86_64-with-glibc2.39",
+        "python": "3.13.18",
+        "torch": "2.15.0+cpu",
+        "torch_threads": "4"
+      },
+      "result": {
+        "accuracy": 0.8425,
+        "by_phenomenon": {
+          "auxiliary_agreement": {
+            "accuracy": 0.99,
+            "interval_95": [
+              0.9455138032509935,
+              0.9982325679553905
+            ],
+            "pairs": 100
+          },
+          "determiner_adjective_order": {
+            "accuracy": 1.0,
+            "interval_95": [
+              0.9630065012310038,
+              1.0
+            ],
+            "pairs": 100
+          },
+          "determiner_noun_agreement": {
+            "accuracy": 0.96,
+            "interval_95": [
+              0.9016292850152788,
+              0.9843366961172447
+            ],
+            "pairs": 100
+          },
+          "modal_takes_base_form": {
+            "accuracy": 1.0,
+            "interval_95": [
+              0.9630065012310038,
+              1.0
+            ],
+            "pairs": 100
+          },
+          "past_participle_form": {
+            "accuracy": 1.0,
+            "interval_95": [
+              0.9630065012310038,
+              1.0
+            ],
+            "pairs": 100
+          },
+          "reflexive_pronoun_agreement": {
+            "accuracy": 0.78,
+            "interval_95": [
+              0.6892964640723263,
+              0.8499871766170359
+            ],
+            "pairs": 100
+          },
+          "subject_verb_agreement": {
+            "accuracy": 0.49,
+            "interval_95": [
+              0.3942199885796587,
+              0.5865198813957212
+            ],
+            "pairs": 100
+          },
+          "subject_verb_agreement_with_attractor": {
+            "accuracy": 0.52,
+            "interval_95": [
+              0.42316577691101653,
+              0.6153544831382237
+            ],
+            "pairs": 100
+          }
+        },
+        "chance_inside_interval": false,
+        "good_fewer_tokens": 0,
+        "good_longer": 327,
+        "good_more_tokens": 0,
+        "good_shorter": 331,
+        "interval_95": [
+          0.8156282192298944,
+          0.866098250517822
+        ],
+        "length_only_accuracy": 0.5025,
+        "pairs": 800,
+        "ties": 0,
+        "token_count_only_accuracy": 0.5
+      },
+      "tokenizer_fingerprint": "434debe82f949347"
+    },
+    "E2615-s50-seed7": {
+      "checkpoint_checksum": "32fe43ea8660c0d879a2672a71fa8e722fee04860561f762658f6ed0e8b8239b",
+      "environment": {
+        "device": "cpu",
+        "numpy": "2.4.6",
+        "platform": "Linux-6.18.44-fc-v185-x86_64-with-glibc2.39",
+        "python": "3.13.18",
+        "torch": "2.15.0+cpu",
+        "torch_threads": "4"
+      },
+      "result": {
+        "accuracy": 0.84125,
+        "by_phenomenon": {
+          "auxiliary_agreement": {
+            "accuracy": 0.94,
+            "interval_95": [
+              0.8752318448839114,
+              0.9722138761993719
+            ],
+            "pairs": 100
+          },
+          "determiner_adjective_order": {
+            "accuracy": 1.0,
+            "interval_95": [
+              0.9630065012310038,
+              1.0
+            ],
+            "pairs": 100
+          },
+          "determiner_noun_agreement": {
+            "accuracy": 0.98,
+            "interval_95": [
+              0.9299882086824253,
+              0.9944980324993383
+            ],
+            "pairs": 100
+          },
+          "modal_takes_base_form": {
+            "accuracy": 1.0,
+            "interval_95": [
+              0.9630065012310038,
+              1.0
+            ],
+            "pairs": 100
+          },
+          "past_participle_form": {
+            "accuracy": 1.0,
+            "interval_95": [
+              0.9630065012310038,
+              1.0
+            ],
+            "pairs": 100
+          },
+          "reflexive_pronoun_agreement": {
+            "accuracy": 0.81,
+            "interval_95": [
+              0.7222115454423077,
+              0.8748524853209148
+            ],
+            "pairs": 100
+          },
+          "subject_verb_agreement": {
+            "accuracy": 0.46,
+            "interval_95": [
+              0.3656080823843,
+              0.5573513975172198
+            ],
+            "pairs": 100
+          },
+          "subject_verb_agreement_with_attractor": {
+            "accuracy": 0.54,
+            "interval_95": [
+              0.4426486024827802,
+              0.6343919176157
+            ],
+            "pairs": 100
+          }
+        },
+        "chance_inside_interval": false,
+        "good_fewer_tokens": 0,
+        "good_longer": 327,
+        "good_more_tokens": 0,
+        "good_shorter": 331,
+        "interval_95": [
+          0.8143037795510374,
+          0.8649346373873809
+        ],
+        "length_only_accuracy": 0.5025,
+        "pairs": 800,
+        "ties": 0,
+        "token_count_only_accuracy": 0.5
+      },
+      "tokenizer_fingerprint": "434debe82f949347"
+    }
+  },
+  "pair_set": {
+    "digest": "2487a4ab4424ce2feb2e7b570a0a99ab099e2a40f8f16f9486686c2d99f07208",
+    "name": "chakaso-grammatical-minimal-pairs",
+    "version": "2.0.0"
+  }
+}

@@ -108,3 +108,20 @@ Token-count-only reading: exactly 0.5 for every model, as constructed. Length-on
 
 Version 2 is usable for **three phenomena**, with a seven-initialisation untrained floor. The two phenomena where the trained model is itself at chance (subject–verb agreement) are the most informative negative result of the probe: the decoder does not prefer the
 agreeing verb in simple intransitive sentences, in a register full of them. The next steps are in the E2618 seeds (the probe's spread) and a version 3 that draws the lexicon's distinct word forms more widely, if the probe is to be extended; neither is started here.
+
+## Addendum (2026-11-02, after E2618): the probe's own seed spread
+
+The record allowed later checkpoints to be added. [`results-seeds.json`](results-seeds.json) scores the fifteen checkpoints of [E2618](../E2618/record.md)'s three arms (0, 25, 50 % prose; seeds 7, 11, 13, 17, 19) on version 2, with no new control. The seed-7 columns reproduce the table above
+to the last digit (0.8063, 0.8063, 0.8413 overall), so the batched scorer is deterministic. Nothing in the declaration or the earlier results is changed.
+
+| Arm (5 seeds) | usable phenomena: mean / sd [range] | all 800: mean / sd [range] |
+| --- | ---: | ---: |
+| 0 % prose | 0.859 / 0.015 [0.843–0.880] | 0.809 / 0.020 [0.789–0.843] |
+| 25 % prose | 0.890 / 0.027 [0.860–0.923] | 0.820 / 0.016 [0.801–0.836] |
+| 50 % prose | 0.887 / 0.048 [0.803–0.923] | 0.838 / 0.022 [0.801–0.861] |
+
+* **The probe's seed standard deviation is 0.015–0.048 on the three usable phenomena, and the worst single seed is 0.803** (50 % arm, seed 17) against 0.887–0.923 for its other four. That is 3 to 20 times the spread of held-out bits per character in relative terms (O1's sd is 0.002–0.006 on a value of 2.02), and it is larger than most of the differences between arms.
+* **The single-seed reading in the table above is therefore withdrawn as an ordering.** It said the usable-phenomena accuracy rose with prose share (0.860, 0.873, 0.910, 0.950); across five seeds the 25 % and 50 % arms are indistinguishable (0.890 and 0.887) and the 0 % arm's mean is 0.031 lower, a difference about 2.2 standard errors wide
+  that is not decision-grade for a probe whose floor and spread were this recently found. The 75 % arm has one seed and cannot be put beside these. What survives: all fifteen trained checkpoints are far above the untrained floor (0.47–0.51); the probe is a valid detector and a noisy ranker.
+* **Per phenomenon**, auxiliary and determiner–noun agreement are near ceiling for most seeds (0.88–1.00) with sd 0.02–0.09; reflexive-pronoun agreement is the most variable and the lowest (0.67–0.86), and its 0 → 25 → 50 % means (0.722, 0.758, 0.812) are the one monotone pattern, with seed sd 0.043–0.073.
+* This is the first seed spread of any capability measure in the repository. It is small-sample (five seeds, one document selection, one split) and says nothing about spread over pair sets.
