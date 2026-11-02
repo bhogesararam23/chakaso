@@ -1,6 +1,6 @@
 # E2621 — a grammatical minimal-pair probe: can the instrument tell a trained decoder from an untrained one, and what does the trained one prefer?
 
-**Status:** preregistered, not yet run. Committed before any checkpoint is scored; the Results section is added after.
+**Status:** measured — **I-c: the untrained floor is not at chance, so the headline is not read.** Preregistered and committed (`476a512`) before any checkpoint was scored; the Results section was added after.
 **Type:** Measurement of **existing** checkpoints with a **new instrument**. Nothing is trained. It is the first of the capability instruments the project's own
 benchmark specification ([`chakaso-capability-benchmarks.md`](../../docs/research/chakaso-capability-benchmarks.md)) lists as planned that can be run at this scale, and it is
 chosen because its chance level is exactly one half and it needs no generation, prompt format or judge.
@@ -81,3 +81,56 @@ python scripts/evaluate_minimal_pairs.py --pairs configs/probes/grammatical-mini
   --snapshot data/corpora/gutenberg-multiregister-v1/gutenberg-multiregister-v1-snapshot.json \
   --out experiments/E2621/results.json
 ```
+
+## Results (added 2026-11-02, after the eight scorings)
+
+Produced by `scripts/evaluate_minimal_pairs.py` as in *Reproduction*; [`results.json`](results.json). Pair-set digest as declared. Contamination screen: **0 of 800** pairs share a 5-word n-gram with any
+of the corpus's 9,388 documents. Checkpoint checksums (first 12 hex): E2617 `bd0faafe6069`, E2615-s00 `11ce39d8c7db`, -s25 `7935dd2be254`, -s50 `32fe43ea8660`, -s75 `e4bc23d97a62`, E2616 `433385d0582d`.
+Scoring took 35 minutes for the eight, on a host busy with a training run.
+
+| Phenomenon | E2617 | E2615-s00 | -s25 | -s50 | -s75 | E2616 | untrained control |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| auxiliary agreement | 0.93 | 0.92 | 0.98 | 0.94 | 0.99 | 0.49 | 0.49 |
+| determiner–adjective order | 0.99 | 0.88 | 0.98 | 0.99 | 0.99 | 1.00 | 0.91 |
+| determiner–noun agreement | 0.94 | 0.92 | 0.97 | 0.95 | 0.90 | 0.84 | 0.54 |
+| modal takes base form | 1.00 | 1.00 | 1.00 | 1.00 | 1.00 | 1.00 | 0.95 |
+| past-participle form | 0.93 | 0.92 | 0.84 | 0.95 | 0.92 | 0.78 | 0.40 |
+| reflexive-pronoun agreement | 0.85 | 0.73 | 0.67 | 0.81 | 0.91 | 0.69 | 0.52 |
+| subject–verb agreement | 0.52 | 0.52 | 0.59 | 0.49 | 0.51 | 0.50 | 0.54 |
+| subject–verb agreement, attractor | 0.38 | 0.36 | 0.34 | 0.46 | 0.39 | 0.51 | 0.50 |
+| **all 800** | **0.8175** | 0.7812 | 0.7963 | 0.8237 | 0.8263 | 0.7262 | **0.6062** |
+| 95 % interval | [0.789, 0.843] | [0.751, 0.809] | [0.767, 0.823] | [0.796, 0.849] | [0.798, 0.851] | [0.694, 0.756] | [0.572, 0.640] |
+
+The length-only reading (characters) is 0.509 for every column; no pair was a tie for any model.
+
+### The preregistered reading
+
+* **Outcome: I-c.** The untrained control scored **0.6062** with interval [0.572, 0.640], which **excludes 0.5**: the pair set contains a bias that a randomly initialised decoder exploits. I-a is therefore not met (its second
+  condition fails), and the rule is that the headline is not read. **The all-800 column is not a measure of learned grammar and is not interpreted, for any model, in this record.** That includes P1 and P3, which were
+  headline statements; the table reports them as numbers only.
+* **Which phenomena carry the bias.** The control scores 0.95 on *modal takes base form* and 0.91 on *determiner–adjective order*, and 0.40 on *past-participle form* (interval [0.309, 0.498], excluding 0.5 from below). These three
+  are **unusable** under the rule, as is *subject–verb agreement*, where the control includes 0.5 but **E2617's interval [0.423, 0.615] does too**: the trained decoder is at chance on the plainest agreement construction.
+* **Usable by the preregistered rule** (control includes 0.5, E2617 excludes it): auxiliary agreement (E2617 0.93, control 0.49), determiner–noun agreement (0.94 against 0.54), reflexive-pronoun agreement (0.85 against 0.52) and
+  agreement across an attractor — where E2617 scores **0.38** [0.291, 0.478], *below* chance: it prefers the verb that agrees with the nearer, wrong noun (P2, that this would be the hardest phenomenon, holds; that it would be merely
+  hard was not predicted to mean systematically wrong).
+
+### An exploratory diagnosis, labelled as such
+
+Written after the results and not part of the declaration. The length-only reading was in **characters**, which cannot see a *token-count* effect: an untrained model's summed log-probability falls with every identifier it must
+produce, so it prefers whichever sentence has fewer. Counting identifiers under the committed vocabulary (`scripts/` one-off, not committed), "prefer the sentence with fewer identifiers" scores **0.97 on modal takes base form**
+(94 of 100 good sentences are shorter; none longer), **0.76 on determiner–adjective order**, 0.465 on past-participle form, and about 0.50–0.55 on the rest, 0.595 overall — close to the control's 0.606. So the floor's departure from chance
+is, on this evidence, a **token-count bias in how the bad variant of three constructions tokenizes** (an inflected form such as `speaks` splitting into two identifiers while `speak` is one), which a character-length control missed.
+That is a defect of the pair set's design, found by the preregistered floor, and the reason the floor was in the record.
+
+### What this does and does not say
+
+* **The instrument as built (v1) is not valid for a headline number.** Its four usable phenomena are readable one by one with their intervals; the other four are not.
+* **It did, however, see something the repository's other instruments did not.** E2616 (1,200 updates) scores **0.49 on auxiliary agreement** while every 2,400-update arm scores 0.92–0.99, and 0.69 on reflexive agreement against
+  0.67–0.91; these are one-seed descriptions on usable phenomena, not a finding.
+* **The trained decoder is at or below chance on subject–verb agreement** in 19th-century-prose frames, while it is near ceiling on auxiliary and determiner agreement. One seed per model, templated sentences, one register: this is
+  a statement about this checkpoint on these 200 sentences, and no mechanism is claimed.
+* **Nothing here says anything about generation, knowledge, reasoning or usefulness.** K-001 stands.
+
+### Consequence
+
+A v2 pair set that balances identifier counts is built and re-measured under a new record (E2622); v1 and these numbers stay as they are. The pair set's script is not edited to hide the finding.
