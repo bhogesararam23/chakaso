@@ -986,3 +986,24 @@ needs a one-seed difference above 0.0268 or more seeds first.
 **Limitations.** The spread is for the mixture configuration at one split and a truncated budget; the prose-only arms'
 spread is assumed to resemble it. Five points cannot test normality. The spread over which works are held out, which
 is probably larger, is not measured. Nothing here is a statement about capability.
+
+
+## 2026-11-02 — The prose-share sweep is unresolved, and the one-pass control cannot separate passes from updates
+
+**Type:** observation + decision rules applied ([E2615](../../experiments/E2615/record.md) and [E2616](../../experiments/E2616/record.md), both preregistered before any arm ran).
+
+**Observation.** The previous session's launch of E2615 left nothing: this session started on a fresh container with no `data/`,
+no process and no report. The four arms (prose share 0, 0.25, 0.5, 0.75) were run here, to the 2,400-step ceiling each, on a
+4-core host with torch 2.15.0+cpu; the 100 % point is E2612 arm P's committed numbers. Equal-weight mean of the five register
+partitions (bits per character): 2.01892, 2.00981, 2.02162, 2.05300, 2.21865. Prose: 1.98002, 1.87869, 1.84121, 1.81981, 1.80926.
+Every technical register is worse at 0.75 than at 0.25. E2616, prose only read once for 1,200 updates, scored prose 1.93944.
+
+**Interpretation, by the rules declared in advance.** E2615: the lowest arm (0.25) is within the 0.02 margin of 0 and 0.5, so the
+outcome is H9-c, unresolved; no share is named. E2616: the outcome is R-a, and because the arm is 0.0999 worse than the
+mixture's prose it also evidences that 1,200 updates are too few, so it does not separate passes from updates.
+
+**Limitations.** One seed per arm. The margins are E2614's, measured at the natural mixture on the other machine; whether they
+apply at 0 % prose is assumed. The 100 % endpoint comes from that machine and from a block that does not record two budget
+fields. Nothing in this entry measures the cross-machine effect directly; the nearest bound (the nested 50 % arm tying the
+natural mixture's five-seed mean) is the sum of that effect and the document-selection effect. The corpus raw bytes differ
+from the pin in one source whose ingested text is identical (K-031). Nothing here is a statement about capability.

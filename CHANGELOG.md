@@ -12,6 +12,25 @@ capability is implemented or still planned.
 
 ## Unreleased
 
+### 2026-11-02 — the prose-share sweep and the one-pass control were run, and both are inconclusive about composition
+
+**Measured**
+
+- **E2615: the prose-share sweep (H9) is unresolved.** Four arms at 0, 25, 50 and 75 % prose plus E2612's 100 % arm. The equal-weight
+  mean of the five register partitions is lowest at 25 % (2.00981), but 0 % and 50 % are within the 0.02 margin of it, so no share
+  is named. Prose improves and every technical register worsens with prose share; no arm dominates another. One seed per arm.
+- **E2616: the one-pass control cannot separate passes from updates.** Reading E2613's prose once over 1,200 updates scored prose
+  1.93944 against the mixture's 1.83952: the halved schedule explains the whole gap.
+- **Both ran on a different machine** (4 cores, torch 2.15.0) from E2612–E2614 (14 threads, torch 2.13.0); the cross-machine effect
+  is unmeasured (K-030 item 4). A source of the corpus (`science-pg3489`) changed upstream after the pin; the corpus fingerprint is
+  unchanged (K-031).
+
+**Added**
+
+- `scripts/analyse_share_sweep.py` reads a sweep endpoint from a record's committed summary, borrowing nothing without checking and
+  naming what it borrowed; `scripts/read_one_pass_control.py` applies E2616's declared rules.
+- Compact, committed extracts of every new arm's report, so the results reproduce from committed files.
+
 ### 2026-11-01 (second session) — held-out loss weighs by scored positions; the checkpoint tokenizer-floor question has a proposal
 
 **Fixed**

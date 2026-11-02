@@ -193,7 +193,7 @@ docs/agent/         this directory's context: current state, conventions, active
 docs/internal/      engineering notes that are not for external readers
 ```
 
-Experiment records live at `experiments/<experiment-id>/record.md`; thirteen measured records are committed (E2601–E2608 and E2610–E2614) and are the project's only measured results.
+Experiment records live at `experiments/<experiment-id>/record.md`; fifteen measured records are committed (E2601–E2608 and E2610–E2616) and are the project's only measured results.
 The format is defined in
 [`docs/internal/experiments/README.md`](docs/internal/experiments/README.md), which requires the record to
 be written **before** the run. Generated artifacts — corpora, checkpoints, logs — belong in `data/` and are
