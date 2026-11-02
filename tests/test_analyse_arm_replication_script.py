@@ -11,6 +11,11 @@ from typing import Any
 
 import pytest
 
+# The script imports chakaso.training.seed_study, which needs the optional model-path extras (like the sibling
+# analyse_share_sweep tests); the dependency-free tiers skip it.
+pytest.importorskip("numpy")
+pytest.importorskip("torch")
+
 _SCRIPT = Path(__file__).resolve().parent.parent / "scripts" / "analyse_arm_replication.py"
 _PARTITIONS = ("prose-", "science-", "technology-", "medicine-", "mathematics-")
 _SEEDS = (7, 11, 13, 17, 19)
