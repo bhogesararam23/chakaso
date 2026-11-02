@@ -1,0 +1,82 @@
+{
+  "arms": {
+    "10m": {
+      "completion": "budget_ceiling",
+      "equal_weight_mean": 2.237528803894196,
+      "packed_identifiers": 10001764,
+      "partitions": {
+        "mathematics-": 3.1351422164500633,
+        "medicine-": 1.998789163825238,
+        "prose-": 1.8057041021795563,
+        "science-": 2.0590700856286173,
+        "technology-": 2.1889384513875045
+      },
+      "passes": 1.9657332446556428
+    },
+    "20m": {
+      "completion": "budget_ceiling",
+      "equal_weight_mean": 2.2195271458675068,
+      "packed_identifiers": 20000402,
+      "partitions": {
+        "mathematics-": 3.0471605788518668,
+        "medicine-": 1.9950736718295725,
+        "prose-": 1.8092842122009931,
+        "science-": 2.0588761718364004,
+        "technology-": 2.1872410946187006
+      },
+      "passes": 0.98302024129315
+    },
+    "5m": {
+      "completion": "budget_ceiling",
+      "equal_weight_mean": 2.26037940393718,
+      "packed_identifiers": 5005218,
+      "partitions": {
+        "mathematics-": 3.1828623508810714,
+        "medicine-": 2.013226466619482,
+        "prose-": 1.8205492431625367,
+        "science-": 2.077475400166967,
+        "technology-": 2.207783558855842
+      },
+      "passes": 3.928060675878653
+    }
+  },
+  "differences": {
+    "10m_minus_20m": {
+      "difference": -0.0035801100214367665,
+      "grade": "tie"
+    },
+    "5m_minus_10m": {
+      "difference": 0.014845140982980398,
+      "grade": "indeterminate"
+    },
+    "5m_minus_20m": {
+      "difference": 0.011265030961543632,
+      "grade": "indeterminate"
+    }
+  },
+  "earlier_host": {
+    "10m": {
+      "arm": "H",
+      "reference": 1.8062122107732608,
+      "this_host_minus_reference": -0.0005081085937044261
+    },
+    "20m": {
+      "arm": "P",
+      "reference": 1.8092606546944157,
+      "this_host_minus_reference": 2.3557506577454035e-05
+    }
+  },
+  "outcome": "Q-a",
+  "predictions": {
+    "prose_non_decreasing_as_the_pool_shrinks": false,
+    "ten_and_twenty_million_tie": true
+  },
+  "prose_bits_per_character": {
+    "10m": 1.8057041021795563,
+    "20m": 1.8092842122009931,
+    "5m": 1.8205492431625367
+  },
+  "range": 0.014845140982980398,
+  "separable_margin": 0.02,
+  "tie_margin": 0.00625
+}

@@ -1,6 +1,6 @@
 # E2619 — passes versus updates at fixed updates: does reading the same prose more times cost held-out prose?
 
-**Status:** preregistered, not yet run. Committed before any arm starts; the Results section is added after the reports are on disk.
+**Status:** measured — **Q-a: the smallest pool (about four passes) is worst on held-out prose by 0.011–0.015 bits per character; one and two passes tie.** Preregistered and committed (`91bb931`) before any arm ran; the Results section was added after the three reports were on disk.
 **Type:** Research experiment, **preregistered**. It is task T13 of the active ledger, the follow-up [E2616](../E2616/record.md) named when its
 one-pass arm could not separate passes from updates.
 **Protocol files:** [`E2619-prose-5m.toml`](../../configs/experiments/E2619-prose-5m.toml),
@@ -82,3 +82,39 @@ python scripts/read_passes_at_fixed_updates.py --arm 5m=data/experiments/E2619-p
   --arm 10m=data/experiments/E2619-prose-10m/seed-7/report.json --arm 20m=data/experiments/E2619-prose-20m/seed-7/report.json \
   --out experiments/E2619/results.json
 ```
+
+## Results (added 2026-11-02)
+
+Produced by `scripts/read_passes_at_fixed_updates.py` from files that are committed: the three compact extracts in [`reports/`](reports/), E2613's `results.json` as the reference, and [`results.json`](results.json). All three arms: this host (4 threads, torch 2.15.0+cpu), seed 7, 2,400 updates × 8,192 positions = 19,660,800,
+`budget_ceiling`, none early-stopped, none diverged, none re-run. Wall clock 65–70 minutes each on a host also running other work (not a result).
+
+| Pool | Passes (positions ÷ packed identifiers) | **Prose** bits per character | science | technology | medicine | mathematics | equal-weight mean |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| 5m (5,005,218 identifiers) | 3.928 | **1.82055** | 2.0775 | 2.2078 | 2.0132 | 3.1829 | 2.2604 |
+| 10m (10,001,764 identifiers) | 1.966 | **1.80570** | 2.0591 | 2.1889 | 1.9988 | 3.1351 | 2.2375 |
+| 20m (20,000,402 identifiers) | 0.983 | **1.80928** | 2.0589 | 2.1872 | 1.9951 | 3.0472 | 2.2195 |
+
+### The preregistered reading
+
+* **Outcome: Q-a.** The range of the three prose values is 0.01485, over the 0.00625 tie margin; the 5M arm is the largest (1.82055) and is worse than the 20M arm by **0.01127** (over the tie margin, under the 0.02 separable margin: graded *indeterminate*).
+  Reading the same prose about four times, at equal updates, scores worse than reading it once.
+* **The curve is not a line.** 10M against 20M: −0.00358 (the 10M arm is numerically *better*), a tie. 5M against 10M: +0.01485, indeterminate. So **one and two passes are indistinguishable and four passes cost about 0.011–0.015 bits per character on prose** — the placing the declaration reserved for the 10M arm.
+* **Predictions.** (i) Prose is non-decreasing as the pool shrinks: **did not hold as worded** (10M is below 20M, by an amount that is a tie). (ii) E2613-H and E2612-P tie, hence the 10M and 20M arms here tie: **held** (−0.00358).
+* **The technical registers worsen as the pool shrinks** (the equal-weight mean of a prose-only arm is 2.2195, 2.2375, 2.2604 for 20M, 10M, 5M), as expected of arms that never saw those registers; it is reported, not decision-bearing.
+
+### The cross-host check this record promised
+
+The 10M and 20M arms are E2613-H and E2612-P re-run here. This host scores **1.80570** against H's 1.80621 (**−0.00051**) and **1.80928** against P's 1.80926 (**+0.00002**): prose-only runs agree across the two machines to within 0.0005, consistent with E2617's prose difference of −0.00033 for the natural mixture.
+Two more configurations with a machine effect on prose below the 0.0005 reporting tolerance.
+
+### What it changes
+
+* **E2616 is read again.** Its one-pass 1,200-update arm scored 1.93944 against 1.8057 for two passes of the same 10M at 2,400 updates: the 0.134 gap is **updates**, since passes between one and two cost nothing measurable here. E2616's R-a ("a halved schedule explains the whole gap") stands, and "passes and updates are not separated" is now answered in one direction:
+  at this scale a halved schedule costs an order of magnitude more than a doubled pass count (to four) does.
+* **H10 gets a first measured point.** Four passes over 5M identifiers cost 0.011–0.015 bits per character of prose relative to one; one to two passes cost nothing measurable. A single seed, a single corpus, a prose-only arm.
+* No mixture, default or budget is changed by this record.
+
+### Limits that stand
+
+One seed per arm (the margin is E2614's natural-mixture spread, assumed for a prose-only arm; E2618's pooled spread of 0.004 on O1 suggests it is not smaller, so the 0.011 indeterminate gap is about 1.5–2 pair-standard-errors wide at best). The pool is nested and drawn by one seeded shuffle: a different shuffle could change the 5M pack's
+content. Prose only. Truncated budget, archaic English, a held-out prose partition of 35 works. Epochs, updates and tokens are three quantities here; this design varies the pool at fixed positions and updates and cannot separate a pool-size effect from a repetition effect inside an arm. Nothing here is capability (K-001).
