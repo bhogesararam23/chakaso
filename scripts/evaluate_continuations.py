@@ -89,8 +89,12 @@ def main(argv: Sequence[str] | None = None) -> int:
     parser.add_argument("--split-seed", type=int, default=7)
     parser.add_argument("--expected-split-fingerprint")
     parser.add_argument(
-        "--registers", default=",".join(REGISTERS), help="comma-separated work-group prefixes"
+        "--registers",
+        default=",".join(REGISTERS),
+        help="comma-separated work-group prefixes, each optionally PREFIX:COUNT to override --per-register "
+        "(a register with few held-out works cannot supply as many independent passages)",
     )
+    parser.add_argument("--max-per-work", type=int, default=2)
     parser.add_argument("--per-register", type=int, default=100)
     parser.add_argument("--prefix-length", type=int, default=64)
     parser.add_argument("--continuation-length", type=int, default=24)
@@ -107,15 +111,22 @@ def main(argv: Sequence[str] | None = None) -> int:
             split_seed=args.split_seed,
             expected_fingerprint=args.expected_split_fingerprint,
         )
-        items = build_items(
-            units,
-            vocabulary,
-            prefix_length=args.prefix_length,
-            continuation_length=args.continuation_length,
-            hard_gap=args.hard_gap,
-            per_register=args.per_register,
-            registers=tuple(item for item in args.registers.split(",") if item),
-        )
+        items = []
+        for entry in (item for item in args.registers.split(",") if item):
+            register, _, count = entry.partition(":")
+            items.extend(
+                build_items(
+                    units,
+                    vocabulary,
+                    prefix_length=args.prefix_length,
+                    continuation_length=args.continuation_length,
+                    hard_gap=args.hard_gap,
+                    per_register=int(count) if count else args.per_register,
+                    registers=(register,),
+                    max_per_work=args.max_per_work,
+                )
+            )
+        items = tuple(items)
         result: dict[str, Any] = {
             "items": {
                 "count": len(items),
@@ -124,7 +135,12 @@ def main(argv: Sequence[str] | None = None) -> int:
                 "prefix_length": args.prefix_length,
                 "continuation_length": args.continuation_length,
                 "hard_gap": args.hard_gap,
-                "per_register": args.per_register,
+                "per_register": {
+                    entry.partition(":")[0]: int(entry.partition(":")[2] or args.per_register)
+                    for entry in args.registers.split(",")
+                    if entry
+                },
+                "max_per_work": args.max_per_work,
                 "split_fingerprint": args.expected_split_fingerprint,
                 "test_documents": len(units),
             },

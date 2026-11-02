@@ -217,3 +217,28 @@ def test_a_checkpoint_with_another_tokenizer_than_the_items_is_refused(
     other.save(other_file)
 
     assert _run(snapshot, other_file, checkpoint, tmp_path / "out.json") == 1
+
+
+def test_a_register_can_ask_for_its_own_number_of_items(
+    tmp_path: Path, snapshot: Path, vocabulary_file: Path, checkpoint: Path
+) -> None:
+    out = tmp_path / "out.json"
+    status = _script().main(  # type: ignore[attr-defined]
+        [
+            f"--snapshot={snapshot}",
+            f"--vocabulary={vocabulary_file}",
+            f"--checkpoint=model={checkpoint}",
+            "--registers=prose:4,science:2",
+            "--prefix-length=12",
+            "--continuation-length=5",
+            "--hard-gap=20",
+            "--max-per-work=3",
+            f"--out={out}",
+        ]
+    )
+
+    result = json.loads(out.read_text(encoding="utf-8"))
+    assert status == 0
+    assert result["items"]["per_register"] == {"prose": 4, "science": 2}
+    assert result["items"]["count"] == 6
+    assert result["items"]["max_per_work"] == 3
