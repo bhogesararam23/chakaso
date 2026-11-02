@@ -1,6 +1,6 @@
 # E2620 — H17: does folding the single space into the next word lower held-out bits per character at equal positions?
 
-**Status:** preregistered, not yet run. Committed before the run starts; the Results section is added after the report is on disk.
+**Status:** measured — **V-a: at equal updates and positions, the space-prefixed tokenizer lowers held-out bits per character beyond seed noise on both decision-bearing measures.** Preregistered and committed (`bc3b4a0`) before the run; the Results section was added after the report was on disk. The result confounds a better tokenizer with 40 % more text per update (declared); the equal-characters follow-up is [E2624](../E2624/record.md).
 **Type:** Research experiment, **preregistered**. It is not one of tasks T11–T15; it is the first experiment on a tokenizer hypothesis (H17) filed on
 2026-11-02, queued **after** E2617–E2619 and not displacing them.
 **Protocol file:** [`configs/experiments/E2620-space-prefixed.toml`](../../configs/experiments/E2620-space-prefixed.toml), read by
@@ -84,3 +84,37 @@ chakaso experiment study --work-dir data/experiments --experiment E2620 --seeds 
 python scripts/read_tokenizer_arm.py --treatment data/experiments/E2620/seed-7/report.json \
   --control experiments/E2617/E2617-report.json --out experiments/E2620/results.json
 ```
+
+## Results (added 2026-11-02)
+
+Produced by `scripts/read_tokenizer_arm.py` from files that are committed: [`E2620-report.json`](E2620-report.json) (the treatment), [`../E2617/E2617-report.json`](../E2617/E2617-report.json) (the control) and [`results.json`](results.json). The fitted vocabulary is committed beside the record as
+[`vocabulary-4a47f0281c81a9e5.json`](vocabulary-4a47f0281c81a9e5.json) ([ADR-0044](../../docs/decisions/ADR-0044-a-vocabulary-a-record-cites-is-committed-beside-it.md)); it loads, fingerprints as `4a47f0281c81a9e5`, and is 4,096 identifiers under the space-prefixed rule (frequency floor 3, fitted on the declared
+12,000,454-character sample). The arm ran to the 2,400-update ceiling on this host (3,959 s, 5,531 positions per second); the fit and corpus preparation took 462 s of the run's own preparation plus the fit (about 32 minutes in all). The reading script's guards passed: same corpus, split, parameter count, updates and batch; the held-out documents
+(34 test documents, every partition's count) are the control's, chosen by the control's own vocabulary (`434debe82f949347`).
+
+| Partition | control (default rule) | treatment (space-prefixed) | Δ = control − treatment | relative |
+| --- | ---: | ---: | ---: | ---: |
+| mathematics | 2.5753 | 2.5530 | +0.0223 | 0.87 % |
+| medicine | 1.8379 | 1.8102 | +0.0277 | 1.51 % |
+| prose | 1.8392 | 1.8175 | +0.0217 | 1.18 % |
+| science | 1.9488 | 1.9181 | +0.0307 | 1.57 % |
+| technology | 1.9022 | 1.8725 | +0.0297 | 1.56 % |
+| **O1, equal-weight mean** | **2.0207** | **1.9943** | **+0.0264** | 1.31 % |
+| **whole pack** | **2.0555** | **2.0235** | **+0.0320** | 1.56 % |
+
+Characters scored per partition differ between the arms by under 0.1 % (the declared tail residual), so the bits-per-character figures are over the same text. Characters per identifier on the held-out text: **2.099 → 2.933** (+39.7 %).
+
+### The preregistered reading
+
+* **Outcome: V-a.** Δ(O1) = **+0.0264** is over the 0.02 separable margin and Δ(whole pack) = **+0.0321** over the 0.00933 tie margin; the tokenizer lowers loss at equal positions beyond seed noise on both measures. Every one of the five partitions improves (by 0.022 to 0.031).
+* **Predictions.** P1 held: characters per identifier 2.93 (≥ 2.8; +40 %, over the 30 % floor). P2 held: whitespace-only identifiers fall to 5.8–8.6 % of the fitted vocabulary's output on 1.5M-character samples of each register (against 34–39 %), and single spaces to 0.2–3.8 % (from 30–36 %); characters per identifier there are 2.61–3.34
+  (from 1.99–2.31). P3 held: mathematics improves least in relative terms (0.87 %, against 1.2–1.6 % for the others), the register whose symbol-heavy text gains least from folding spaces.
+* **Consequence under the declared rule.** The space-prefixed rule becomes the **candidate** for the next experiments. It does **not** replace the default on this record: the equal-characters arm and two more seeds on each side come first.
+
+### What it does and does not show
+
+* **It shows** that with the model, parameters, updates and positions per update unchanged, a vocabulary that does not spend a third of its identifiers on word gaps scores 1.3 % lower on the equal-weight mean (and 1.6 % on the whole pack) over identical held-out documents, on one seed.
+* **It does not show** that the tokenizer is better *per character of training text*. The treatment's 19.7M positions cover 40 % more characters (about 57.7M against 41.3M of training text), so a model that simply saw more text would improve even with the default rule. The size of that effect is not measured here; [E2624](../E2624/record.md) holds the characters
+  seen fixed instead.
+* **It does not show** the gain survives another seed, a longer budget, a larger vocabulary or another corpus. The margins assumed here are E2614's, measured with the default tokenizer; the treatment's seed spread is unmeasured.
+* The fitted vocabulary and the control share the 12.0M-character fitting sample and frequency floor; the sensitivity of the outcome to that sample is untested. Nothing here is capability (K-001).
