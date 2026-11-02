@@ -194,6 +194,10 @@ class PairResult:
     length_only_accuracy: float
     good_longer: int
     good_shorter: int
+    #: The accuracy of "prefer the sentence with fewer identifiers", when a counter was given; ``None`` otherwise.
+    token_count_only_accuracy: float | None = None
+    good_fewer_tokens: int = 0
+    good_more_tokens: int = 0
 
     @property
     def chance_inside_interval(self) -> bool:
@@ -218,17 +222,26 @@ class PairResult:
             "length_only_accuracy": self.length_only_accuracy,
             "good_longer": self.good_longer,
             "good_shorter": self.good_shorter,
+            "token_count_only_accuracy": self.token_count_only_accuracy,
+            "good_fewer_tokens": self.good_fewer_tokens,
+            "good_more_tokens": self.good_more_tokens,
         }
 
 
 def score_pairs(
-    pairs: Sequence[MinimalPair], log_probability: Callable[[str], float]
+    pairs: Sequence[MinimalPair],
+    log_probability: Callable[[str], float],
+    *,
+    token_count: Callable[[str], int] | None = None,
 ) -> PairResult:
     """Score ``pairs`` with ``log_probability``: a pair is passed when the good sentence scores higher; a tie is half.
 
     ``log_probability`` is called once per sentence. The length-only reading is the accuracy of the rule "prefer the
     shorter sentence" (a tie is half), independent of the scorer; a scorer whose accuracy is close to it has not been
-    shown to know more than lengths.
+    shown to know more than lengths. With ``token_count`` the same is reported for "prefer the sentence with fewer
+    identifiers": a summed log-probability falls with every identifier, so an untrained model can pass pairs whose
+    bad sentence tokenizes into more of them (E2621 found this on 0.95 of one phenomenon), and a character count
+    cannot see it.
     """
     if not pairs:
         message = "cannot score zero pairs"
@@ -238,6 +251,8 @@ def score_pairs(
     ties = 0
     length_credit = 0.0
     longer = shorter = 0
+    token_credit = 0.0
+    fewer = more = 0
     for pair in pairs:
         good, bad = log_probability(pair.good), log_probability(pair.bad)
         if good == bad:
@@ -247,6 +262,15 @@ def score_pairs(
             value = 1.0 if good > bad else 0.0
         credit[pair.phenomenon] += value
         counts[pair.phenomenon] += 1
+        if token_count is not None:
+            good_tokens, bad_tokens = token_count(pair.good), token_count(pair.bad)
+            if good_tokens < bad_tokens:
+                token_credit += 1.0
+                fewer += 1
+            elif good_tokens == bad_tokens:
+                token_credit += 0.5
+            else:
+                more += 1
         if len(pair.good) < len(pair.bad):
             length_credit += 1.0
             shorter += 1
@@ -269,6 +293,9 @@ def score_pairs(
         length_only_accuracy=length_credit / total,
         good_longer=longer,
         good_shorter=shorter,
+        token_count_only_accuracy=None if token_count is None else token_credit / total,
+        good_fewer_tokens=fewer,
+        good_more_tokens=more,
     )
 
 

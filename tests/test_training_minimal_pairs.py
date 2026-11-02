@@ -161,3 +161,40 @@ def test_wilson_interval_is_symmetric_at_one_half() -> None:
 
     assert low + high == pytest.approx(1.0)
     assert math.isfinite(low) and math.isfinite(high)
+
+
+# ------------------------------------------------ a token-count reading beside the length-only one (E2621)
+
+
+def test_a_token_count_reading_is_reported_when_a_counter_is_given() -> None:
+    pairs = (
+        MinimalPair("a", "x", "Good one.", "Bad one longer."),  # good has fewer words
+        MinimalPair("b", "x", "Good number two here.", "Bad two."),  # good has more
+        MinimalPair("c", "x", "Same size ok.", "Same size no."),  # equal
+    )
+
+    result = score_pairs(pairs, lambda _text: 0.0, token_count=lambda text: len(text.split()))
+
+    # "Prefer fewer tokens" gets pair a, misses pair b, ties pair c.
+    assert result.token_count_only_accuracy == pytest.approx((1 + 0 + 0.5) / 3)
+    assert result.good_fewer_tokens == 1
+    assert result.good_more_tokens == 1
+
+
+def test_without_a_counter_the_token_count_reading_is_absent_not_zero() -> None:
+    result = score_pairs(_pairs(), _oracle)
+
+    assert result.token_count_only_accuracy is None
+    assert result.as_dict()["token_count_only_accuracy"] is None
+
+
+def test_pairs_balanced_in_tokens_make_the_token_count_reading_exactly_chance() -> None:
+    pairs = (
+        MinimalPair("a", "x", "one two", "two one"),
+        MinimalPair("b", "x", "red fox", "fox red"),
+    )
+
+    result = score_pairs(pairs, lambda _text: 0.0, token_count=lambda text: len(text.split()))
+
+    assert result.token_count_only_accuracy == 0.5
+    assert result.good_fewer_tokens == result.good_more_tokens == 0

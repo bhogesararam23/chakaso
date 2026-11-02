@@ -110,6 +110,8 @@ def test_a_trained_artifact_beats_its_untrained_control_on_the_probe(
     assert result["models"]["trained"]["result"]["accuracy"] == 1.0
     assert result["models"]["untrained-control"]["result"]["accuracy"] < 1.0
     assert result["models"]["trained"]["checkpoint_checksum"]
+    # The token-count reading is reported with the model's own tokenizer, beside the character-length one.
+    assert result["models"]["trained"]["result"]["token_count_only_accuracy"] is not None
     assert result["pair_set"]["name"] == "fixture"
 
 

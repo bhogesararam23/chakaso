@@ -142,43 +142,57 @@ def evaluate_artifact(
 
 
 def sequence_log_probabilities(
-    model: TrainedModel, vocabulary: SubwordVocabulary, texts: Sequence[str]
+    model: TrainedModel,
+    vocabulary: SubwordVocabulary,
+    texts: Sequence[str],
+    *,
+    batch_size: int = 64,
 ) -> list[float]:
     """The natural-log probability the model gives each text, as a document that begins after a separator.
 
     Training streams separate documents with ``DOCUMENT_END``, so a text is scored as the continuation of one:
-    ``log p(t1 | <doc-end>) + log p(t2 | <doc-end>, t1) + ...`` over its identifiers, with no end-of-text term. Each text
-    is scored on its own, so the value does not depend on what it is scored beside. The sum, not the mean, is returned:
-    a minimal-pair comparison is between whole sentences (see :mod:`chakaso.training.minimal_pairs`, which also reports
-    a length-only reading because a sum rewards short sentences).
+    ``log p(t1 | <doc-end>) + log p(t2 | <doc-end>, t1) + ...`` over its identifiers, with no end-of-text term.
+    The sum, not the mean, is returned: a minimal-pair comparison is between whole sentences (see
+    :mod:`chakaso.training.minimal_pairs`, which also reports a length-only and a token-count-only reading because a
+    sum rewards short sentences).
+
+    Texts of the same identifier count are scored together in one forward pass, which needs no padding and so
+    computes exactly what scoring them one at a time would (a test holds the two to 1e-4 nats); the result is in
+    the order of ``texts`` and a text's value does not depend on what it is scored beside.
 
     Raises:
         TrainingError: a text is empty, or has more identifiers than the model's context holds - it is refused
             rather than truncated, since a truncated sentence is a different sentence.
     """
     context = int(model.config.context_length)
-    model.eval()
-    totals: list[float] = []
-    with torch.no_grad():
-        for text in texts:
-            identifiers = vocabulary.encode(text)
-            if not identifiers:
-                message = (
-                    "cannot score an empty text: it has no identifiers to give a probability to"
-                )
-                raise TrainingError(message)
-            sequence = (DOCUMENT_END, *identifiers)
-            if len(sequence) - 1 > context:
-                message = (
-                    f"a text of {len(identifiers)} identifiers does not fit the model's context of {context} "
-                    "once the document-start separator is added; it is not truncated"
-                )
-                raise TrainingError(message)
-            inputs = torch.tensor([list(sequence[:-1])], dtype=torch.int64)
-            wanted = torch.tensor([list(sequence[1:])], dtype=torch.int64)
-            logits, _ = model(inputs)
-            selected = (
-                torch.log_softmax(logits, dim=-1).gather(-1, wanted.unsqueeze(-1)).squeeze(-1)
+    sequences: list[tuple[int, ...]] = []
+    for text in texts:
+        identifiers = vocabulary.encode(text)
+        if not identifiers:
+            message = "cannot score an empty text: it has no identifiers to give a probability to"
+            raise TrainingError(message)
+        if len(identifiers) > context:
+            message = (
+                f"a text of {len(identifiers)} identifiers does not fit the model's context of {context} "
+                "once the document-start separator is added; it is not truncated"
             )
-            totals.append(float(selected.sum()))
+            raise TrainingError(message)
+        sequences.append((DOCUMENT_END, *identifiers))
+    by_length: dict[int, list[int]] = {}
+    for index, sequence in enumerate(sequences):
+        by_length.setdefault(len(sequence), []).append(index)
+    totals = [0.0] * len(sequences)
+    model.eval()
+    with torch.no_grad():
+        for members in by_length.values():
+            for start in range(0, len(members), batch_size):
+                chunk = members[start : start + batch_size]
+                inputs = torch.tensor([list(sequences[i][:-1]) for i in chunk], dtype=torch.int64)
+                wanted = torch.tensor([list(sequences[i][1:]) for i in chunk], dtype=torch.int64)
+                logits, _ = model(inputs)
+                selected = (
+                    torch.log_softmax(logits, dim=-1).gather(-1, wanted.unsqueeze(-1)).squeeze(-1)
+                )
+                for row, index in enumerate(chunk):
+                    totals[index] = float(selected[row].sum())
     return totals

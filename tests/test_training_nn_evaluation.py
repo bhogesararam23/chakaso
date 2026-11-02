@@ -401,3 +401,35 @@ def test_a_model_fitted_to_a_sentence_prefers_it_to_a_scrambled_copy() -> None:
 
     assert trained_gap[0] - trained_gap[1] > 20.0
     assert abs(untrained_gap[0] - untrained_gap[1]) < trained_gap[0] - trained_gap[1]
+
+
+def test_scoring_many_sentences_at_once_gives_what_scoring_each_alone_gives() -> None:
+    from chakaso.training.nn_evaluation import sequence_log_probabilities
+
+    model = _wide_model()
+    texts = [
+        "the quick red fox",
+        "the owl slept",
+        "sand",
+        "the quiet owl slept over the dry sand",
+        "a fox ran",
+        "the quick red fox",  # a repeat is scored again, not looked up
+    ]
+
+    together = sequence_log_probabilities(model, _VOCABULARY, texts)
+    alone = [sequence_log_probabilities(model, _VOCABULARY, [text])[0] for text in texts]
+
+    assert together == pytest.approx(alone, abs=1e-4)
+    assert len(together) == len(texts)
+
+
+def test_batching_keeps_the_order_of_the_texts_it_was_given() -> None:
+    from chakaso.training.nn_evaluation import sequence_log_probabilities
+
+    model = _wide_model()
+    forward = ["the owl slept", "sand", "a fox ran over the dry sand"]
+
+    first = sequence_log_probabilities(model, _VOCABULARY, forward)
+    second = sequence_log_probabilities(model, _VOCABULARY, list(reversed(forward)))
+
+    assert first == pytest.approx(list(reversed(second)), abs=1e-4)

@@ -46,7 +46,12 @@ def score_artifact(
         sentences, sequence_log_probabilities(model, artifact.vocabulary, sentences), strict=True
     ):
         cache[sentence] = value
-    return score_pairs(pair_set.pairs, cache.__getitem__).as_dict()
+    vocabulary = artifact.vocabulary
+    return score_pairs(
+        pair_set.pairs,
+        cache.__getitem__,
+        token_count=lambda sentence: len(vocabulary.encode(sentence)),
+    ).as_dict()
 
 
 def untrained_control(artifact: ModelArtifact) -> Any:
