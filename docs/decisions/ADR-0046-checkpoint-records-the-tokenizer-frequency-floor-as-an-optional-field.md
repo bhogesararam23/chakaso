@@ -1,11 +1,13 @@
 # ADR-0046: a checkpoint records the tokenizer's frequency floor as an optional field, and says "unrecorded" when it is not
 
-- Status: Proposed
+- Status: Accepted (2026-11-02; implemented in the same change)
 - Date: 2026-11-01
 - Related: [ADR-0035](ADR-0035-transformer-checkpoint-format.md) (the format), [ADR-0044](ADR-0044-a-vocabulary-a-record-cites-is-committed-beside-it.md)
   (committed vocabularies), K-030 item 6.
 
-Nothing in this record is implemented. It exists so the format decision is made on purpose and not slipped into a patch.
+This record was written first (status Proposed, 2026-11-01) so the format decision was made on purpose and not slipped into a
+patch. It was accepted on 2026-11-02 when the project brief assigned the task (T14) to be resolved, and implemented test-first in
+the commit that changes its status. The *Context* below describes the state before the change.
 
 ## Context
 
@@ -81,7 +83,20 @@ the key (simulated by deleting it from the parsed document before reading named 
   with the same merges tokenise identically whatever floor produced them.
 * It does not touch `SubwordVocabulary.checksum()`, which already includes the floor.
 
-## Consequences if accepted
+## Consequences (as implemented)
 
-One optional field, one accessor, four tests, a note in ADR-0035's format description and in the model card's provenance section.
-No artifact on disk or in a release changes.
+* `ModelArtifact.tokenizer_min_frequency: int | None`, validated (a positive integer or `None`); `metadata_document()` emits the key only
+  when it is not `None`; `load_artifact` reads it with `.get`, refuses a stored value that is not a positive integer, and rebuilds
+  the vocabulary with it when present.
+* `nn_training` writes the floor of the vocabulary the run was handed, in both the usable and the resumable artifact. That is as
+  trustworthy as the vocabulary object: one built from a tokenizer file or a fit carries its true floor (the experiment pipeline
+  already checks it against the plan); one rebuilt from an old checkpoint carries the dataclass default, which is why a caller must
+  not feed a loaded old artifact's vocabulary to a new run as if its floor were known.
+* `TrainedModel.describe()` reports `tokenizer_min_frequency`, `None` for an unrecorded artifact.
+* Tests (five more than the four listed, all in `tests/test_training_nn_checkpoint.py` and `tests/test_training_nn_training.py`): a floor
+  of 3 round-trips as 3; an artifact in the pre-field shape loads, verifies and reports the floor unrecorded; re-saving it reproduces
+  its metadata document and checksum byte for byte; the new key is purely additive; invalid values are refused on construction and
+  on load; both training artifact kinds carry the run's floor. The pre-field shape was built by a test helper that was checked once
+  against a file written by the unmodified code (identical metadata string and checksum); no binary fixture is committed, because
+  checkpoint bytes stay out of Git.
+* No artifact on disk or in a release changes. `chakaso-base@0.1.0` still reports the floor as unrecorded; its training plan records 3.

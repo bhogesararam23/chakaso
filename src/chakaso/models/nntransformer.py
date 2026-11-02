@@ -435,6 +435,8 @@ class SubwordTransformerModel:
             "vocabulary_size": self._artifact.vocabulary.size,
             "corpus_fingerprint": self._artifact.corpus_fingerprint,
             "tokenizer_fingerprint": self._artifact.vocabulary.fingerprint,
+            # None means the artifact predates the field (ADR-0046): the floor is unrecorded, not 2.
+            "tokenizer_min_frequency": self._artifact.tokenizer_min_frequency,
             "checkpoint": self._artifact.checksum()[:16],
             "cached_decoding": self._cache() is not None,
             "prompt_template": self._template.version,

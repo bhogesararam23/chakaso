@@ -12,6 +12,15 @@ capability is implemented or still planned.
 
 ## Unreleased
 
+### 2026-11-02 (third session) — a checkpoint can say which frequency floor its tokenizer was fitted at
+
+**Changed**
+
+- **A new checkpoint records `tokenizer_min_frequency`; an old one reports it as unrecorded instead of 2** (ADR-0046, K-030 item 6).
+  The key is written only when known and no schema version changes, so every existing artifact — `chakaso-base@0.1.0` included —
+  still verifies, and loading then re-saving one reproduces its metadata document and checksum byte for byte. `describe()` reports the
+  field. Encoding, generation, the tokenizer fingerprint and every recorded number are unchanged.
+
 ### 2026-11-02 — the prose-share sweep and the one-pass control were run, and both are inconclusive about composition
 
 **Measured**

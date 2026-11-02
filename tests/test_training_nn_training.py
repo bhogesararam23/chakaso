@@ -31,7 +31,7 @@ from chakaso.training.nn_training import (  # noqa: E402
     train_transformer,
 )
 from chakaso.training.packing import pack_units  # noqa: E402
-from chakaso.training.subword import train_subword_vocabulary  # noqa: E402
+from chakaso.training.subword import SubwordVocabulary, train_subword_vocabulary  # noqa: E402
 from chakaso.training.transformer import CausalTransformer, TransformerConfig  # noqa: E402
 
 _VOCABULARY = train_subword_vocabulary(
@@ -615,3 +615,23 @@ def test_the_report_can_state_the_optimizer_recipe_the_loop_actually_builds() ->
     assert settings["weight_decay"] == 0.05 == built.defaults["weight_decay"]
     assert built.param_groups[0]["lr"] == 3e-3
     assert "norm scales included" in settings["decay_applied_to"]
+
+
+def test_both_artifact_kinds_record_the_floor_of_the_vocabulary_the_run_was_given(
+    tmp_path: Path,
+) -> None:
+    # Same merge table, a declared floor that is not the dataclass default, so a recorded 5 can only have come
+    # from the vocabulary the run was handed (ADR-0046).
+    vocabulary = SubwordVocabulary(merges=_VOCABULARY.merges, min_frequency=5)
+    path = tmp_path / "resumable.pt"
+
+    outcome = _run(
+        _examples(_TRAIN_TEXT),
+        _examples(_HELD_OUT_TEXT),
+        _config(max_steps=4, eval_every=2),
+        vocabulary=vocabulary,
+        checkpoint_path=path,
+    )
+
+    assert outcome.artifact().tokenizer_min_frequency == 5
+    assert load_artifact(path).tokenizer_min_frequency == 5

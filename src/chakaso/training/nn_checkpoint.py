@@ -107,10 +107,20 @@ class ModelArtifact:
     step: int = 0
     optimizer_state: Mapping[str, Any] | None = None
     environment: Mapping[str, str] = field(default_factory=dict)
+    #: The frequency floor the vocabulary's merge search stopped at, or ``None`` when the artifact does not
+    #: know it (ADR-0046). ``None`` is a statement — "unrecorded" — not a default of 2: the vocabulary object
+    #: rebuilt from a file that predates the field carries the dataclass default, which is not evidence.
+    tokenizer_min_frequency: int | None = None
 
     def __post_init__(self) -> None:
         if not self.corpus_fingerprint:
             message = "an artifact must record the corpus fingerprint it was trained on"
+            raise IncompatibleCheckpointError(message)
+        floor = self.tokenizer_min_frequency
+        if floor is not None and (
+            isinstance(floor, bool) or not isinstance(floor, int) or floor < 1
+        ):
+            message = f"tokenizer_min_frequency must be a positive integer or None, got {floor!r}"
             raise IncompatibleCheckpointError(message)
         if self.step < 0:
             message = f"step must not be negative, got {self.step}"
@@ -140,23 +150,27 @@ class ModelArtifact:
         return digest.hexdigest()
 
     def metadata_document(self) -> str:
-        """The canonical JSON the checksum covers: architecture, identity, environment, step."""
-        return json.dumps(
-            {
-                "schema_version": _SCHEMA_BY_FAMILY[family_of(self.config)],
-                "config": self.config.as_dict(),
-                "tokenizer_fingerprint": self.vocabulary.fingerprint,
-                "tokenizer_size": self.vocabulary.size,
-                "tokenizer_merges": [[left, right] for left, right in self.vocabulary.merges],
-                "corpus_fingerprint": self.corpus_fingerprint,
-                "step": self.step,
-                "run_metadata": dict(self.run_metadata),
-                "environment": dict(self.environment),
-                "tensor_names": sorted(self.state),
-            },
-            sort_keys=True,
-            separators=(",", ":"),
-        )
+        """The canonical JSON the checksum covers: architecture, identity, environment, step.
+
+        ``tokenizer_min_frequency`` appears only when it is known (ADR-0046). An artifact that does not know its
+        floor serialises exactly as it did before the field existed, so loading and re-saving a file written
+        by earlier code reproduces its metadata document, and therefore its checksum, byte for byte.
+        """
+        document: dict[str, Any] = {
+            "schema_version": _SCHEMA_BY_FAMILY[family_of(self.config)],
+            "config": self.config.as_dict(),
+            "tokenizer_fingerprint": self.vocabulary.fingerprint,
+            "tokenizer_size": self.vocabulary.size,
+            "tokenizer_merges": [[left, right] for left, right in self.vocabulary.merges],
+            "corpus_fingerprint": self.corpus_fingerprint,
+            "step": self.step,
+            "run_metadata": dict(self.run_metadata),
+            "environment": dict(self.environment),
+            "tensor_names": sorted(self.state),
+        }
+        if self.tokenizer_min_frequency is not None:
+            document["tokenizer_min_frequency"] = self.tokenizer_min_frequency
+        return json.dumps(document, sort_keys=True, separators=(",", ":"))
 
     def to_model(self) -> TrainedModel:
         """Rebuild the model this artifact describes, loading the stored tensors into it.
@@ -332,13 +346,26 @@ def load_artifact(path: Path) -> ModelArtifact:
         )
         raise CorruptedCheckpointError(message)
 
+    floor = recorded.get("tokenizer_min_frequency")
+    if floor is not None and (isinstance(floor, bool) or not isinstance(floor, int) or floor < 1):
+        message = (
+            f"checkpoint at {str(path)!r} records tokenizer_min_frequency {floor!r}, which is not a "
+            "positive integer"
+        )
+        raise IncompatibleCheckpointError(message)
+
     try:
         config_class: type[Architecture] = (
             DecoderConfig if family == "decoder" else TransformerConfig
         )
         config = config_class.from_mapping(recorded["config"])
-        vocabulary = SubwordVocabulary(
-            merges=tuple((int(pair[0]), int(pair[1])) for pair in recorded["tokenizer_merges"])
+        merges = tuple((int(pair[0]), int(pair[1])) for pair in recorded["tokenizer_merges"])
+        # Only a recorded floor is used to rebuild the vocabulary. When none was recorded the vocabulary keeps
+        # the dataclass default, and the artifact's own ``tokenizer_min_frequency`` (None) is what to trust.
+        vocabulary = (
+            SubwordVocabulary(merges=merges)
+            if floor is None
+            else SubwordVocabulary(merges=merges, min_frequency=floor)
         )
     except (KeyError, TypeError, ValueError) as exc:
         message = (
@@ -369,6 +396,7 @@ def load_artifact(path: Path) -> ModelArtifact:
         step=int(recorded.get("step", 0)),
         optimizer_state=raw.get("optimizer"),
         environment=dict(recorded.get("environment", {})),
+        tokenizer_min_frequency=floor,
     )
 
 

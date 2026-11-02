@@ -13,7 +13,7 @@ block names its population and scored denominators apart (K-027); a protocol dig
 printed beside the file digest (K-028); a corpus selection pins the catalogue it sampled, and `--verify` replays it
 (K-029); a fit that ends short of the declared vocabulary size is refused; JSON vocabulary and character-checkpoint saves
 are staged and no longer replace a file unasked; a checkpoint write no longer advances the run's random stream; a run
-report states its optimiser recipe. Six latent observations from the audit are filed as K-030, not fixed.
+report states its optimiser recipe. Six latent observations from the audit are filed as K-030: items 1, 2, 5 and 6 are closed (6 on 2026-11-02, ADR-0046), 3 partly, 4 reviewed.
 
 **The fix for K-025 moved an identity, and E2613's first launch found out.** Reporting the three duplicates in E2612's
 split changed `UnitSplit.fingerprint`, which keys the tokenizer cache, so the first E2613 launch refitted a different

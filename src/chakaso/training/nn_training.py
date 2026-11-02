@@ -285,6 +285,7 @@ class TrainingOutcome:
             step=self.best_step,
             optimizer_state=None,
             environment=describe_environment(),
+            tokenizer_min_frequency=self.vocabulary.min_frequency,
         )
 
 
@@ -879,4 +880,5 @@ def _interim_artifact(
         step=step,
         optimizer_state=dict(optimizer_state),
         environment=describe_environment(),
+        tokenizer_min_frequency=vocabulary.min_frequency,
     )

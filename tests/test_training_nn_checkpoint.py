@@ -8,6 +8,7 @@ would silently ignore, or a file that tries to carry a Python object.
 
 from __future__ import annotations
 
+import hashlib
 import importlib.metadata
 import json
 from pathlib import Path
@@ -511,3 +512,166 @@ def test_writing_a_checkpoint_does_not_advance_the_random_stream_the_run_is_draw
     torch.manual_seed(1234)
     save_artifact(artifact, tmp_path / "b.pt")
     assert torch.equal(torch.rand(3), expected)
+
+
+# ------------------------------------------------ the tokenizer's frequency floor (ADR-0046, K-030 item 6)
+
+
+def _write_as_written_before_adr_0046(artifact: ModelArtifact, path: Path) -> dict[str, object]:
+    """A file in the exact shape the code produced before the field existed.
+
+    The metadata document is built here the way ``metadata_document`` built it then — no ``tokenizer_min_frequency``
+    key — and sealed with the same checksum algorithm. (Checked once, on 2026-11-02, against a file written by the
+    unmodified code: the metadata strings were identical. A binary fixture is not committed because checkpoint
+    bytes stay out of Git.)
+    """
+    document = {
+        "schema_version": "chakaso-transformer-checkpoint/1",
+        "config": artifact.config.as_dict(),
+        "tokenizer_fingerprint": artifact.vocabulary.fingerprint,
+        "tokenizer_size": artifact.vocabulary.size,
+        "tokenizer_merges": [[a, b] for a, b in artifact.vocabulary.merges],
+        "corpus_fingerprint": artifact.corpus_fingerprint,
+        "step": artifact.step,
+        "run_metadata": dict(artifact.run_metadata),
+        "environment": dict(artifact.environment),
+        "tensor_names": sorted(artifact.state),
+    }
+    metadata = json.dumps(document, sort_keys=True, separators=(",", ":"))
+    tensors = {name: tensor.detach().cpu().contiguous() for name, tensor in artifact.state.items()}
+    digest = hashlib.sha256(metadata.encode("utf-8"))
+    for name in sorted(tensors):
+        digest.update(name.encode("utf-8"))
+        digest.update(str(tuple(tensors[name].shape)).encode("utf-8"))
+        digest.update(str(tensors[name].dtype).encode("utf-8"))
+        digest.update(tensors[name].view(torch.uint8).numpy().tobytes())
+    payload: dict[str, object] = {
+        "schema_version": "chakaso-transformer-checkpoint/1",
+        "metadata": metadata,
+        "checksum": digest.hexdigest(),
+        "tensors": tensors,
+        "optimizer": None,
+    }
+    _write_raw(path, payload)
+    return payload
+
+
+def _fitted_at(floor: int):  # type: ignore[no-untyped-def]
+    return train_subword_vocabulary(
+        ["the quick red fox ran over the dry sand and slept"] * 3,
+        target_size=260,
+        min_frequency=floor,
+    )
+
+
+def _with_floor(floor: int | None) -> ModelArtifact:
+    base = _artifact()
+    return ModelArtifact(
+        config=base.config,
+        state=base.state,
+        vocabulary=_fitted_at(3),
+        corpus_fingerprint=base.corpus_fingerprint,
+        run_metadata=base.run_metadata,
+        step=base.step,
+        environment=base.environment,
+        tokenizer_min_frequency=floor,
+    )
+
+
+def test_a_floor_the_vocabulary_was_fitted_at_survives_a_round_trip(tmp_path: Path) -> None:
+    target = tmp_path / "artifact.pt"
+    save_artifact(_with_floor(3), target)
+
+    loaded = load_artifact(target)
+
+    assert loaded.tokenizer_min_frequency == 3
+    assert loaded.vocabulary.min_frequency == 3
+
+
+def test_an_artifact_written_before_the_field_existed_still_loads_and_says_unrecorded(
+    tmp_path: Path,
+) -> None:
+    target = tmp_path / "old.pt"
+    written = _write_as_written_before_adr_0046(_with_floor(None), target)
+
+    loaded = load_artifact(target)
+
+    assert loaded.checksum() == written["checksum"]
+    assert loaded.tokenizer_min_frequency is None
+    assert "tokenizer_min_frequency" not in json.loads(loaded.metadata_document())
+
+
+def test_resaving_an_unrecorded_artifact_preserves_its_metadata_document_and_checksum(
+    tmp_path: Path,
+) -> None:
+    old = tmp_path / "old.pt"
+    original = _write_as_written_before_adr_0046(_with_floor(None), old)
+    loaded = load_artifact(old)
+    target = tmp_path / "resaved.pt"
+
+    save_artifact(loaded, target)
+
+    resaved = _raw(target)
+    assert resaved["metadata"] == original["metadata"]
+    assert resaved["checksum"] == original["checksum"]
+
+
+def test_the_new_key_is_additive_so_a_reader_built_before_it_finds_every_key_it_reads(
+    tmp_path: Path,
+) -> None:
+    target = tmp_path / "artifact.pt"
+    save_artifact(_with_floor(3), target)
+    document = json.loads(str(_raw(target)["metadata"]))
+    assert document["tokenizer_min_frequency"] == 3
+
+    # What a reader built before the field does: take the named keys it knows and nothing else.
+    known = {
+        "config",
+        "tokenizer_fingerprint",
+        "tokenizer_size",
+        "tokenizer_merges",
+        "corpus_fingerprint",
+        "step",
+        "run_metadata",
+        "environment",
+        "tensor_names",
+        "schema_version",
+    }
+    assert set(document) - known == {"tokenizer_min_frequency"}
+    assert {"config", "tokenizer_merges", "corpus_fingerprint"} <= set(document)
+
+
+def test_an_unrecorded_floor_is_not_written_as_a_key() -> None:
+    assert "tokenizer_min_frequency" not in json.loads(_with_floor(None).metadata_document())
+
+
+@pytest.mark.parametrize("bad", [0, -1, True, "3", 2.5])
+def test_a_floor_that_is_not_a_positive_integer_is_refused(bad: object) -> None:
+    with pytest.raises(IncompatibleCheckpointError, match="tokenizer_min_frequency"):
+        _with_floor(bad)  # type: ignore[arg-type]
+
+
+def test_a_stored_floor_that_is_not_a_positive_integer_is_a_corrupt_artifact(
+    tmp_path: Path,
+) -> None:
+    target = tmp_path / "artifact.pt"
+    save_artifact(_with_floor(3), target)
+    payload = _raw(target)
+    document = json.loads(str(payload["metadata"]))
+    document["tokenizer_min_frequency"] = "three"
+    metadata = json.dumps(document, sort_keys=True, separators=(",", ":"))
+    payload["metadata"] = metadata
+    # Re-seal so the checksum is honest and the refusal is about the value, not about tampering.
+    tensors: dict[str, torch.Tensor] = payload["tensors"]  # type: ignore[assignment]
+    digest = hashlib.sha256(metadata.encode("utf-8"))
+    for name in sorted(tensors):
+        tensor = tensors[name].detach().cpu().contiguous()
+        digest.update(name.encode("utf-8"))
+        digest.update(str(tuple(tensor.shape)).encode("utf-8"))
+        digest.update(str(tensor.dtype).encode("utf-8"))
+        digest.update(tensor.view(torch.uint8).numpy().tobytes())
+    payload["checksum"] = digest.hexdigest()
+    _write_raw(target, payload)
+
+    with pytest.raises(IncompatibleCheckpointError, match="tokenizer_min_frequency"):
+        load_artifact(target)
