@@ -13,7 +13,11 @@ Small, human-readable, reproducible-by-recreation artifacts:
   that they are small enough and licensed for redistribution,
 - a **vocabulary that a measured record cites and that no committed code can refit**, beside that record, as an input
   rather than a cache ([ADR-0044](../../decisions/ADR-0044-a-vocabulary-a-record-cites-is-committed-beside-it.md);
-  today only `experiments/E2612/vocabulary-434debe82f949347.json`, 38 KB).
+  today only `experiments/E2612/vocabulary-434debe82f949347.json`, 38 KB),
+- a **compact extract of an arm's report** where the raw report would not survive its container: the report with its bulky
+  per-work lists replaced by length and SHA-256 stubs, carrying the SHA-256 of the full report and of the checkpoint (22 KB each;
+  `experiments/E2615/reports/`, `experiments/E2616/E2616-report.json`). A result must be reproducible from committed files, and
+  `scripts/analyse_share_sweep.py` reproduces E2615's `results.json` byte-identically from these.
 
 ## Never committed
 

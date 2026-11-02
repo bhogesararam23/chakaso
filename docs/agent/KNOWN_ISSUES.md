@@ -794,6 +794,14 @@ as of that day.
    unrun arm.
 4. **No thread or determinism pinning.** Reproduction is by tolerance (0.0005 bits per character), which E2614's
    seed-7 repeat of E2612 arm T measured on this machine: the difference was exactly 0.0 on every metric, so the protocol was deterministic here. Thread count (14 in the reports) and kernel selection are still not pinned, so that says nothing about another machine.
+   *Reviewed 2026-11-02 (second session):* the tolerance is documented where it is declared (`REPRODUCTION_TOLERANCES`: half the last
+   reported decimal, set in E2606's preregistration) and its logic is unit-tested, but it is a *reporting* rule, not an
+   empirical bound on cross-machine drift. The only empirical determinism datum is still one same-machine repeat. Each report records
+   its own `torch`, `numpy`, Python and `torch_threads`, which is why the new arms can be told apart from the old: E2615 and E2616 ran at
+   4 threads on torch 2.15.0+cpu (6,913 positions/s) against 14 threads on 2.13.0+cpu (3,852). **No same-protocol repeat was run
+   there**, so the cross-machine effect is unmeasured; E2615's nested 50 % arm tying E2614's five-seed mean (O1 −0.0012, prose
+   +0.0014, both ties) bounds only the *sum* of that effect and the document-selection effect. A repeat of E2614 seed 7 on a new host
+   (~50 min on this one) is the direct test and has not been run.
 5. **`seed_study._PROTOCOL_FIELDS` omits the schedule, `decay_to`, accumulation, masking, work-split and cap fields.**
    Two runs that differed only in those would still be aggregated as one study.
    *Closed 2026-11-01:* the study's protocol identity now also carries `protocol_digest(report, include_seed=False)`,
@@ -815,6 +823,22 @@ state around the write; (3) record the optimiser's `defaults` in the report's bu
 preregistered arm, whether norms should be excluded from decay; (4) pin threads in the run and say so in the report,
 or state the tolerance as the contract; (5) derive the protocol identity from the plan instead of a hand-kept list;
 (6) a checkpoint-format revision.
+
+### K-031 — A pinned Gutenberg source can change upstream after the pin; the corpus identity survived once, by luck of where the change fell
+
+**Impact:** Medium for re-trainability. The catalogue pins each source's raw SHA-256, and `corpus prepare` refuses a mismatch,
+which is correct. On 2026-11-02 re-fetching the 430 pinned URLs found one mismatch: `science-pg3489` ("Fabre, Poet of Science"),
+whose upstream `Last-Modified` is 2026-11-01 09:00 UTC, after the 2026-10-30 retrieval. The original bytes could not be recovered (web.archive.org
+returned no response from the sandbox and its availability API rate-limited the one request that was made). The committed catalogue was left untouched; a scratch catalogue with the new digest
+produced a snapshot whose corpus fingerprint is `312571f9fa8351a8`, 9,388 documents and 149,000,499 characters, exactly the pinned
+identity, so the change lay outside the ingested text. Only the snapshot checksum differs (`3a446f54…` against `236c8d5a…`).
+E2615 and E2616 carry the new checksum and say so. That outcome is not guaranteed: a change inside the text would have broken the
+fingerprint and made every later comparison against E2612–E2614 unsound.
+
+**What would close it:** record a digest of each source's *ingested* text in the catalogue beside the raw digest, so drift can be
+classified as header-only or content before anything is trained; and decide where the raw bytes of a pinned corpus are kept, since a URL
+is not an archive (the unresolved half of the artifact policy's "where do released weights live" question applies to corpora too).
+Neither is implemented.
 
 ## Resolved
 

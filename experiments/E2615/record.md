@@ -248,7 +248,7 @@ be applied only to the fields that block holds; whatever it cannot check is repo
 **The corpus bytes differ in one source; the corpus identity does not.** The corpus was re-acquired from the 430 pinned
 URLs at Project Gutenberg's declared pacing. 429 files match their pinned SHA-256. `science-pg3489` ("Fabre, Poet of
 Science") does not: upstream's `Last-Modified` for it is 2026-11-01 09:00 UTC, after the 2026-10-30 retrieval. The original
-bytes could not be recovered (the Internet Archive is unreachable from this host). The drift guard was not weakened: the
+bytes could not be recovered (web.archive.org returned no response from this host, and its availability API rate-limited the one request made). The drift guard was not weakened: the
 committed catalogue is untouched. A scratch catalogue carrying the new digest was used to build the snapshot, and the result
 was accepted only because it reproduces the pinned identity exactly: **fingerprint `312571f9fa8351a8`, 9,388 documents,
 149,000,499 characters**, the values the data card records. The one thing that differs is the snapshot's own checksum
