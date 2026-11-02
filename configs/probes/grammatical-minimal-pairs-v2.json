@@ -1,0 +1,4810 @@
+{
+ "digest": "2487a4ab4424ce2feb2e7b570a0a99ab099e2a40f8f16f9486686c2d99f07208",
+ "licence": "Apache-2.0; every sentence was written by this project, none is taken from any corpus",
+ "name": "chakaso-grammatical-minimal-pairs",
+ "pairs": [
+  {
+   "bad": "The quiet ship work.",
+   "good": "The quiet ship works.",
+   "id": "subject_verb_agreement-0083a89c",
+   "phenomenon": "subject_verb_agreement"
+  },
+  {
+   "bad": "The poor bird work.",
+   "good": "The poor bird works.",
+   "id": "subject_verb_agreement-009c898f",
+   "phenomenon": "subject_verb_agreement"
+  },
+  {
+   "bad": "The old house work.",
+   "good": "The old house works.",
+   "id": "subject_verb_agreement-00ba6387",
+   "phenomenon": "subject_verb_agreement"
+  },
+  {
+   "bad": "The strong dog work.",
+   "good": "The strong dog works.",
+   "id": "subject_verb_agreement-00bde888",
+   "phenomenon": "subject_verb_agreement"
+  },
+  {
+   "bad": "The strong birds works.",
+   "good": "The strong birds work.",
+   "id": "subject_verb_agreement-0203acba",
+   "phenomenon": "subject_verb_agreement"
+  },
+  {
+   "bad": "The tall kings works.",
+   "good": "The tall kings work.",
+   "id": "subject_verb_agreement-04ee9778",
+   "phenomenon": "subject_verb_agreement"
+  },
+  {
+   "bad": "The kind man work.",
+   "good": "The kind man works.",
+   "id": "subject_verb_agreement-055c43e8",
+   "phenomenon": "subject_verb_agreement"
+  },
+  {
+   "bad": "The poor men works.",
+   "good": "The poor men work.",
+   "id": "subject_verb_agreement-05a2f308",
+   "phenomenon": "subject_verb_agreement"
+  },
+  {
+   "bad": "The kind child work.",
+   "good": "The kind child works.",
+   "id": "subject_verb_agreement-05ad6f54",
+   "phenomenon": "subject_verb_agreement"
+  },
+  {
+   "bad": "The great soldier work.",
+   "good": "The great soldier works.",
+   "id": "subject_verb_agreement-05f57d2d",
+   "phenomenon": "subject_verb_agreement"
+  },
+  {
+   "bad": "The old door work.",
+   "good": "The old door works.",
+   "id": "subject_verb_agreement-06393f93",
+   "phenomenon": "subject_verb_agreement"
+  },
+  {
+   "bad": "The tree work.",
+   "good": "The tree works.",
+   "id": "subject_verb_agreement-06d1d895",
+   "phenomenon": "subject_verb_agreement"
+  },
+  {
+   "bad": "The young houses works.",
+   "good": "The young houses work.",
+   "id": "subject_verb_agreement-081bb344",
+   "phenomenon": "subject_verb_agreement"
+  },
+  {
+   "bad": "The strong children works.",
+   "good": "The strong children work.",
+   "id": "subject_verb_agreement-0a5fb9c9",
+   "phenomenon": "subject_verb_agreement"
+  },
+  {
+   "bad": "The poor girls works.",
+   "good": "The poor girls work.",
+   "id": "subject_verb_agreement-0ad34f9d",
+   "phenomenon": "subject_verb_agreement"
+  },
+  {
+   "bad": "The kind doors works.",
+   "good": "The kind doors work.",
+   "id": "subject_verb_agreement-0ae3d38d",
+   "phenomenon": "subject_verb_agreement"
+  },
+  {
+   "bad": "The great letters works.",
+   "good": "The great letters work.",
+   "id": "subject_verb_agreement-0b1fdbb1",
+   "phenomenon": "subject_verb_agreement"
+  },
+  {
+   "bad": "The old children works.",
+   "good": "The old children work.",
+   "id": "subject_verb_agreement-0ba56773",
+   "phenomenon": "subject_verb_agreement"
+  },
+  {
+   "bad": "The old trees works.",
+   "good": "The old trees work.",
+   "id": "subject_verb_agreement-0f23f282",
+   "phenomenon": "subject_verb_agreement"
+  },
+  {
+   "bad": "The strong child work.",
+   "good": "The strong child works.",
+   "id": "subject_verb_agreement-0f95cfd2",
+   "phenomenon": "subject_verb_agreement"
+  },
+  {
+   "bad": "The bird work.",
+   "good": "The bird works.",
+   "id": "subject_verb_agreement-0fc6e0b6",
+   "phenomenon": "subject_verb_agreement"
+  },
+  {
+   "bad": "The strong kings works.",
+   "good": "The strong kings work.",
+   "id": "subject_verb_agreement-1121302b",
+   "phenomenon": "subject_verb_agreement"
+  },
+  {
+   "bad": "The poor letters works.",
+   "good": "The poor letters work.",
+   "id": "subject_verb_agreement-11aaaa32",
+   "phenomenon": "subject_verb_agreement"
+  },
+  {
+   "bad": "The quiet letters works.",
+   "good": "The quiet letters work.",
+   "id": "subject_verb_agreement-12e040f2",
+   "phenomenon": "subject_verb_agreement"
+  },
+  {
+   "bad": "The kind girl work.",
+   "good": "The kind girl works.",
+   "id": "subject_verb_agreement-1418f4c8",
+   "phenomenon": "subject_verb_agreement"
+  },
+  {
+   "bad": "The strong rivers works.",
+   "good": "The strong rivers work.",
+   "id": "subject_verb_agreement-14280713",
+   "phenomenon": "subject_verb_agreement"
+  },
+  {
+   "bad": "The quiet bird work.",
+   "good": "The quiet bird works.",
+   "id": "subject_verb_agreement-1438a1a8",
+   "phenomenon": "subject_verb_agreement"
+  },
+  {
+   "bad": "The kind kings works.",
+   "good": "The kind kings work.",
+   "id": "subject_verb_agreement-1447e5c1",
+   "phenomenon": "subject_verb_agreement"
+  },
+  {
+   "bad": "The kind door work.",
+   "good": "The kind door works.",
+   "id": "subject_verb_agreement-146cb9e4",
+   "phenomenon": "subject_verb_agreement"
+  },
+  {
+   "bad": "The letters works.",
+   "good": "The letters work.",
+   "id": "subject_verb_agreement-1531872f",
+   "phenomenon": "subject_verb_agreement"
+  },
+  {
+   "bad": "The strong house work.",
+   "good": "The strong house works.",
+   "id": "subject_verb_agreement-156ca3a5",
+   "phenomenon": "subject_verb_agreement"
+  },
+  {
+   "bad": "The brave dogs works.",
+   "good": "The brave dogs work.",
+   "id": "subject_verb_agreement-15734e45",
+   "phenomenon": "subject_verb_agreement"
+  },
+  {
+   "bad": "The great tree work.",
+   "good": "The great tree works.",
+   "id": "subject_verb_agreement-157660a9",
+   "phenomenon": "subject_verb_agreement"
+  },
+  {
+   "bad": "The poor soldier work.",
+   "good": "The poor soldier works.",
+   "id": "subject_verb_agreement-15f87e1b",
+   "phenomenon": "subject_verb_agreement"
+  },
+  {
+   "bad": "The brave tree work.",
+   "good": "The brave tree works.",
+   "id": "subject_verb_agreement-16518b43",
+   "phenomenon": "subject_verb_agreement"
+  },
+  {
+   "bad": "The quiet child work.",
+   "good": "The quiet child works.",
+   "id": "subject_verb_agreement-17a0cd69",
+   "phenomenon": "subject_verb_agreement"
+  },
+  {
+   "bad": "The brave houses works.",
+   "good": "The brave houses work.",
+   "id": "subject_verb_agreement-17febacc",
+   "phenomenon": "subject_verb_agreement"
+  },
+  {
+   "bad": "The brave soldier work.",
+   "good": "The brave soldier works.",
+   "id": "subject_verb_agreement-18394c78",
+   "phenomenon": "subject_verb_agreement"
+  },
+  {
+   "bad": "The great soldiers works.",
+   "good": "The great soldiers work.",
+   "id": "subject_verb_agreement-18a9c7fb",
+   "phenomenon": "subject_verb_agreement"
+  },
+  {
+   "bad": "The birds works.",
+   "good": "The birds work.",
+   "id": "subject_verb_agreement-199c67f6",
+   "phenomenon": "subject_verb_agreement"
+  },
+  {
+   "bad": "The king work.",
+   "good": "The king works.",
+   "id": "subject_verb_agreement-1aa53711",
+   "phenomenon": "subject_verb_agreement"
+  },
+  {
+   "bad": "The old woman work.",
+   "good": "The old woman works.",
+   "id": "subject_verb_agreement-1bd0ca1c",
+   "phenomenon": "subject_verb_agreement"
+  },
+  {
+   "bad": "The young house work.",
+   "good": "The young house works.",
+   "id": "subject_verb_agreement-1bf3ed68",
+   "phenomenon": "subject_verb_agreement"
+  },
+  {
+   "bad": "The quiet rivers works.",
+   "good": "The quiet rivers work.",
+   "id": "subject_verb_agreement-1c8a5079",
+   "phenomenon": "subject_verb_agreement"
+  },
+  {
+   "bad": "The quiet trees works.",
+   "good": "The quiet trees work.",
+   "id": "subject_verb_agreement-1d3bfdab",
+   "phenomenon": "subject_verb_agreement"
+  },
+  {
+   "bad": "The quiet boy work.",
+   "good": "The quiet boy works.",
+   "id": "subject_verb_agreement-1d865bfc",
+   "phenomenon": "subject_verb_agreement"
+  },
+  {
+   "bad": "The quiet man work.",
+   "good": "The quiet man works.",
+   "id": "subject_verb_agreement-1e8cdd49",
+   "phenomenon": "subject_verb_agreement"
+  },
+  {
+   "bad": "The kind houses works.",
+   "good": "The kind houses work.",
+   "id": "subject_verb_agreement-1ea74f00",
+   "phenomenon": "subject_verb_agreement"
+  },
+  {
+   "bad": "The strong ships works.",
+   "good": "The strong ships work.",
+   "id": "subject_verb_agreement-1ed204b7",
+   "phenomenon": "subject_verb_agreement"
+  },
+  {
+   "bad": "The quiet men works.",
+   "good": "The quiet men work.",
+   "id": "subject_verb_agreement-202e59e0",
+   "phenomenon": "subject_verb_agreement"
+  },
+  {
+   "bad": "The old ship work.",
+   "good": "The old ship works.",
+   "id": "subject_verb_agreement-2094d608",
+   "phenomenon": "subject_verb_agreement"
+  },
+  {
+   "bad": "The young dog work.",
+   "good": "The young dog works.",
+   "id": "subject_verb_agreement-20c7d003",
+   "phenomenon": "subject_verb_agreement"
+  },
+  {
+   "bad": "The small door work.",
+   "good": "The small door works.",
+   "id": "subject_verb_agreement-2193930b",
+   "phenomenon": "subject_verb_agreement"
+  },
+  {
+   "bad": "The kind house work.",
+   "good": "The kind house works.",
+   "id": "subject_verb_agreement-22e6c584",
+   "phenomenon": "subject_verb_agreement"
+  },
+  {
+   "bad": "The small girl work.",
+   "good": "The small girl works.",
+   "id": "subject_verb_agreement-230e39c1",
+   "phenomenon": "subject_verb_agreement"
+  },
+  {
+   "bad": "The quiet dogs works.",
+   "good": "The quiet dogs work.",
+   "id": "subject_verb_agreement-267560b0",
+   "phenomenon": "subject_verb_agreement"
+  },
+  {
+   "bad": "The young letters works.",
+   "good": "The young letters work.",
+   "id": "subject_verb_agreement-26aa7e2f",
+   "phenomenon": "subject_verb_agreement"
+  },
+  {
+   "bad": "The strong horses works.",
+   "good": "The strong horses work.",
+   "id": "subject_verb_agreement-273d7e0a",
+   "phenomenon": "subject_verb_agreement"
+  },
+  {
+   "bad": "The woman work.",
+   "good": "The woman works.",
+   "id": "subject_verb_agreement-27c55c4c",
+   "phenomenon": "subject_verb_agreement"
+  },
+  {
+   "bad": "The poor man work.",
+   "good": "The poor man works.",
+   "id": "subject_verb_agreement-28980443",
+   "phenomenon": "subject_verb_agreement"
+  },
+  {
+   "bad": "The kind tree work.",
+   "good": "The kind tree works.",
+   "id": "subject_verb_agreement-289b1925",
+   "phenomenon": "subject_verb_agreement"
+  },
+  {
+   "bad": "The strong king work.",
+   "good": "The strong king works.",
+   "id": "subject_verb_agreement-2a50f42e",
+   "phenomenon": "subject_verb_agreement"
+  },
+  {
+   "bad": "The strong woman work.",
+   "good": "The strong woman works.",
+   "id": "subject_verb_agreement-2b17df63",
+   "phenomenon": "subject_verb_agreement"
+  },
+  {
+   "bad": "The great door work.",
+   "good": "The great door works.",
+   "id": "subject_verb_agreement-2c993194",
+   "phenomenon": "subject_verb_agreement"
+  },
+  {
+   "bad": "The quiet house work.",
+   "good": "The quiet house works.",
+   "id": "subject_verb_agreement-2cbac533",
+   "phenomenon": "subject_verb_agreement"
+  },
+  {
+   "bad": "The old doors works.",
+   "good": "The old doors work.",
+   "id": "subject_verb_agreement-2ed9530d",
+   "phenomenon": "subject_verb_agreement"
+  },
+  {
+   "bad": "The tall boy work.",
+   "good": "The tall boy works.",
+   "id": "subject_verb_agreement-2f40931a",
+   "phenomenon": "subject_verb_agreement"
+  },
+  {
+   "bad": "The strong soldier work.",
+   "good": "The strong soldier works.",
+   "id": "subject_verb_agreement-30551820",
+   "phenomenon": "subject_verb_agreement"
+  },
+  {
+   "bad": "The brave ship work.",
+   "good": "The brave ship works.",
+   "id": "subject_verb_agreement-320f743f",
+   "phenomenon": "subject_verb_agreement"
+  },
+  {
+   "bad": "The tall doors works.",
+   "good": "The tall doors work.",
+   "id": "subject_verb_agreement-333416ec",
+   "phenomenon": "subject_verb_agreement"
+  },
+  {
+   "bad": "The quiet girls works.",
+   "good": "The quiet girls work.",
+   "id": "subject_verb_agreement-333bbb72",
+   "phenomenon": "subject_verb_agreement"
+  },
+  {
+   "bad": "The great woman work.",
+   "good": "The great woman works.",
+   "id": "subject_verb_agreement-33648ca7",
+   "phenomenon": "subject_verb_agreement"
+  },
+  {
+   "bad": "The kind ship work.",
+   "good": "The kind ship works.",
+   "id": "subject_verb_agreement-33ed99c6",
+   "phenomenon": "subject_verb_agreement"
+  },
+  {
+   "bad": "The brave boys works.",
+   "good": "The brave boys work.",
+   "id": "subject_verb_agreement-347a1d30",
+   "phenomenon": "subject_verb_agreement"
+  },
+  {
+   "bad": "The tall women works.",
+   "good": "The tall women work.",
+   "id": "subject_verb_agreement-34d8644b",
+   "phenomenon": "subject_verb_agreement"
+  },
+  {
+   "bad": "The old dog work.",
+   "good": "The old dog works.",
+   "id": "subject_verb_agreement-35092052",
+   "phenomenon": "subject_verb_agreement"
+  },
+  {
+   "bad": "The poor trees works.",
+   "good": "The poor trees work.",
+   "id": "subject_verb_agreement-36335c31",
+   "phenomenon": "subject_verb_agreement"
+  },
+  {
+   "bad": "The young men works.",
+   "good": "The young men work.",
+   "id": "subject_verb_agreement-36c20ed0",
+   "phenomenon": "subject_verb_agreement"
+  },
+  {
+   "bad": "The brave boy work.",
+   "good": "The brave boy works.",
+   "id": "subject_verb_agreement-36c49f11",
+   "phenomenon": "subject_verb_agreement"
+  },
+  {
+   "bad": "The old horse work.",
+   "good": "The old horse works.",
+   "id": "subject_verb_agreement-371b23c0",
+   "phenomenon": "subject_verb_agreement"
+  },
+  {
+   "bad": "The brave men works.",
+   "good": "The brave men work.",
+   "id": "subject_verb_agreement-38090297",
+   "phenomenon": "subject_verb_agreement"
+  },
+  {
+   "bad": "The young boy work.",
+   "good": "The young boy works.",
+   "id": "subject_verb_agreement-38620cd4",
+   "phenomenon": "subject_verb_agreement"
+  },
+  {
+   "bad": "The poor children works.",
+   "good": "The poor children work.",
+   "id": "subject_verb_agreement-3ae33cbf",
+   "phenomenon": "subject_verb_agreement"
+  },
+  {
+   "bad": "The small boy work.",
+   "good": "The small boy works.",
+   "id": "subject_verb_agreement-3cd95a27",
+   "phenomenon": "subject_verb_agreement"
+  },
+  {
+   "bad": "The great rivers works.",
+   "good": "The great rivers work.",
+   "id": "subject_verb_agreement-3cfe649b",
+   "phenomenon": "subject_verb_agreement"
+  },
+  {
+   "bad": "The strong horse work.",
+   "good": "The strong horse works.",
+   "id": "subject_verb_agreement-3f0e2be8",
+   "phenomenon": "subject_verb_agreement"
+  },
+  {
+   "bad": "The quiet ships works.",
+   "good": "The quiet ships work.",
+   "id": "subject_verb_agreement-3f66bf63",
+   "phenomenon": "subject_verb_agreement"
+  },
+  {
+   "bad": "The old king work.",
+   "good": "The old king works.",
+   "id": "subject_verb_agreement-400ca7fc",
+   "phenomenon": "subject_verb_agreement"
+  },
+  {
+   "bad": "The old child work.",
+   "good": "The old child works.",
+   "id": "subject_verb_agreement-4125e629",
+   "phenomenon": "subject_verb_agreement"
+  },
+  {
+   "bad": "The young dogs works.",
+   "good": "The young dogs work.",
+   "id": "subject_verb_agreement-41b9cf4a",
+   "phenomenon": "subject_verb_agreement"
+  },
+  {
+   "bad": "The strong girl work.",
+   "good": "The strong girl works.",
+   "id": "subject_verb_agreement-4270542a",
+   "phenomenon": "subject_verb_agreement"
+  },
+  {
+   "bad": "The great boy work.",
+   "good": "The great boy works.",
+   "id": "subject_verb_agreement-4507000a",
+   "phenomenon": "subject_verb_agreement"
+  },
+  {
+   "bad": "The great kings works.",
+   "good": "The great kings work.",
+   "id": "subject_verb_agreement-450771b1",
+   "phenomenon": "subject_verb_agreement"
+  },
+  {
+   "bad": "The horses works.",
+   "good": "The horses work.",
+   "id": "subject_verb_agreement-474e0bed",
+   "phenomenon": "subject_verb_agreement"
+  },
+  {
+   "bad": "The man work.",
+   "good": "The man works.",
+   "id": "subject_verb_agreement-4784c489",
+   "phenomenon": "subject_verb_agreement"
+  },
+  {
+   "bad": "The small house work.",
+   "good": "The small house works.",
+   "id": "subject_verb_agreement-484b2542",
+   "phenomenon": "subject_verb_agreement"
+  },
+  {
+   "bad": "The poor dogs works.",
+   "good": "The poor dogs work.",
+   "id": "subject_verb_agreement-4a61dd32",
+   "phenomenon": "subject_verb_agreement"
+  },
+  {
+   "bad": "The tall boys works.",
+   "good": "The tall boys work.",
+   "id": "subject_verb_agreement-4bd83c6c",
+   "phenomenon": "subject_verb_agreement"
+  },
+  {
+   "bad": "The kind rivers works.",
+   "good": "The kind rivers work.",
+   "id": "subject_verb_agreement-4cd1af8b",
+   "phenomenon": "subject_verb_agreement"
+  },
+  {
+   "bad": "The kind soldiers works.",
+   "good": "The kind soldiers work.",
+   "id": "subject_verb_agreement-4d8154ad",
+   "phenomenon": "subject_verb_agreement"
+  },
+  {
+   "bad": "The river near the ships work.",
+   "good": "The river near the ships works.",
+   "id": "subject_verb_agreement_with_attractor-000ba1bc",
+   "phenomenon": "subject_verb_agreement_with_attractor"
+  },
+  {
+   "bad": "The houses near the child works.",
+   "good": "The houses near the child work.",
+   "id": "subject_verb_agreement_with_attractor-002bd58d",
+   "phenomenon": "subject_verb_agreement_with_attractor"
+  },
+  {
+   "bad": "The children near the king works.",
+   "good": "The children near the king work.",
+   "id": "subject_verb_agreement_with_attractor-0036160c",
+   "phenomenon": "subject_verb_agreement_with_attractor"
+  },
+  {
+   "bad": "The dogs near the bird works.",
+   "good": "The dogs near the bird work.",
+   "id": "subject_verb_agreement_with_attractor-00668188",
+   "phenomenon": "subject_verb_agreement_with_attractor"
+  },
+  {
+   "bad": "The soldier near the boys work.",
+   "good": "The soldier near the boys works.",
+   "id": "subject_verb_agreement_with_attractor-007a16cb",
+   "phenomenon": "subject_verb_agreement_with_attractor"
+  },
+  {
+   "bad": "The children near the ship works.",
+   "good": "The children near the ship work.",
+   "id": "subject_verb_agreement_with_attractor-0092b3c5",
+   "phenomenon": "subject_verb_agreement_with_attractor"
+  },
+  {
+   "bad": "The trees near the ship works.",
+   "good": "The trees near the ship work.",
+   "id": "subject_verb_agreement_with_attractor-009c4998",
+   "phenomenon": "subject_verb_agreement_with_attractor"
+  },
+  {
+   "bad": "The river near the birds work.",
+   "good": "The river near the birds works.",
+   "id": "subject_verb_agreement_with_attractor-00acda86",
+   "phenomenon": "subject_verb_agreement_with_attractor"
+  },
+  {
+   "bad": "The soldier near the rivers work.",
+   "good": "The soldier near the rivers works.",
+   "id": "subject_verb_agreement_with_attractor-00ebc05c",
+   "phenomenon": "subject_verb_agreement_with_attractor"
+  },
+  {
+   "bad": "The ship near the soldiers work.",
+   "good": "The ship near the soldiers works.",
+   "id": "subject_verb_agreement_with_attractor-00fbf291",
+   "phenomenon": "subject_verb_agreement_with_attractor"
+  },
+  {
+   "bad": "The trees near the river works.",
+   "good": "The trees near the river work.",
+   "id": "subject_verb_agreement_with_attractor-0106e23b",
+   "phenomenon": "subject_verb_agreement_with_attractor"
+  },
+  {
+   "bad": "The letter near the girls work.",
+   "good": "The letter near the girls works.",
+   "id": "subject_verb_agreement_with_attractor-0107e5b6",
+   "phenomenon": "subject_verb_agreement_with_attractor"
+  },
+  {
+   "bad": "The child near the kings work.",
+   "good": "The child near the kings works.",
+   "id": "subject_verb_agreement_with_attractor-010b2f5d",
+   "phenomenon": "subject_verb_agreement_with_attractor"
+  },
+  {
+   "bad": "The soldiers near the king works.",
+   "good": "The soldiers near the king work.",
+   "id": "subject_verb_agreement_with_attractor-01173b91",
+   "phenomenon": "subject_verb_agreement_with_attractor"
+  },
+  {
+   "bad": "The trees near the letter works.",
+   "good": "The trees near the letter work.",
+   "id": "subject_verb_agreement_with_attractor-018d8aae",
+   "phenomenon": "subject_verb_agreement_with_attractor"
+  },
+  {
+   "bad": "The river near the women work.",
+   "good": "The river near the women works.",
+   "id": "subject_verb_agreement_with_attractor-0199c2c5",
+   "phenomenon": "subject_verb_agreement_with_attractor"
+  },
+  {
+   "bad": "The tree near the men work.",
+   "good": "The tree near the men works.",
+   "id": "subject_verb_agreement_with_attractor-01ba884e",
+   "phenomenon": "subject_verb_agreement_with_attractor"
+  },
+  {
+   "bad": "The letter near the soldiers work.",
+   "good": "The letter near the soldiers works.",
+   "id": "subject_verb_agreement_with_attractor-01e4a61e",
+   "phenomenon": "subject_verb_agreement_with_attractor"
+  },
+  {
+   "bad": "The children near the woman works.",
+   "good": "The children near the woman work.",
+   "id": "subject_verb_agreement_with_attractor-01efd56d",
+   "phenomenon": "subject_verb_agreement_with_attractor"
+  },
+  {
+   "bad": "The trees near the dog works.",
+   "good": "The trees near the dog work.",
+   "id": "subject_verb_agreement_with_attractor-01fb0add",
+   "phenomenon": "subject_verb_agreement_with_attractor"
+  },
+  {
+   "bad": "The soldier near the dogs work.",
+   "good": "The soldier near the dogs works.",
+   "id": "subject_verb_agreement_with_attractor-020205a8",
+   "phenomenon": "subject_verb_agreement_with_attractor"
+  },
+  {
+   "bad": "The birds near the tree works.",
+   "good": "The birds near the tree work.",
+   "id": "subject_verb_agreement_with_attractor-02275946",
+   "phenomenon": "subject_verb_agreement_with_attractor"
+  },
+  {
+   "bad": "The house near the birds work.",
+   "good": "The house near the birds works.",
+   "id": "subject_verb_agreement_with_attractor-0232bbb3",
+   "phenomenon": "subject_verb_agreement_with_attractor"
+  },
+  {
+   "bad": "The ships near the boy works.",
+   "good": "The ships near the boy work.",
+   "id": "subject_verb_agreement_with_attractor-0244752c",
+   "phenomenon": "subject_verb_agreement_with_attractor"
+  },
+  {
+   "bad": "The rivers near the house works.",
+   "good": "The rivers near the house work.",
+   "id": "subject_verb_agreement_with_attractor-025c85df",
+   "phenomenon": "subject_verb_agreement_with_attractor"
+  },
+  {
+   "bad": "The dogs near the horse works.",
+   "good": "The dogs near the horse work.",
+   "id": "subject_verb_agreement_with_attractor-026579f6",
+   "phenomenon": "subject_verb_agreement_with_attractor"
+  },
+  {
+   "bad": "The soldiers near the man works.",
+   "good": "The soldiers near the man work.",
+   "id": "subject_verb_agreement_with_attractor-02797abb",
+   "phenomenon": "subject_verb_agreement_with_attractor"
+  },
+  {
+   "bad": "The kings near the man works.",
+   "good": "The kings near the man work.",
+   "id": "subject_verb_agreement_with_attractor-02828f91",
+   "phenomenon": "subject_verb_agreement_with_attractor"
+  },
+  {
+   "bad": "The king near the children work.",
+   "good": "The king near the children works.",
+   "id": "subject_verb_agreement_with_attractor-02849c92",
+   "phenomenon": "subject_verb_agreement_with_attractor"
+  },
+  {
+   "bad": "The women near the letter works.",
+   "good": "The women near the letter work.",
+   "id": "subject_verb_agreement_with_attractor-028a77f1",
+   "phenomenon": "subject_verb_agreement_with_attractor"
+  },
+  {
+   "bad": "The dog near the soldiers work.",
+   "good": "The dog near the soldiers works.",
+   "id": "subject_verb_agreement_with_attractor-029ce537",
+   "phenomenon": "subject_verb_agreement_with_attractor"
+  },
+  {
+   "bad": "The girls near the letter works.",
+   "good": "The girls near the letter work.",
+   "id": "subject_verb_agreement_with_attractor-02b3429e",
+   "phenomenon": "subject_verb_agreement_with_attractor"
+  },
+  {
+   "bad": "The man near the dogs work.",
+   "good": "The man near the dogs works.",
+   "id": "subject_verb_agreement_with_attractor-02cfcd3d",
+   "phenomenon": "subject_verb_agreement_with_attractor"
+  },
+  {
+   "bad": "The birds near the horse works.",
+   "good": "The birds near the horse work.",
+   "id": "subject_verb_agreement_with_attractor-0328c2cf",
+   "phenomenon": "subject_verb_agreement_with_attractor"
+  },
+  {
+   "bad": "The horse near the kings work.",
+   "good": "The horse near the kings works.",
+   "id": "subject_verb_agreement_with_attractor-03423ddf",
+   "phenomenon": "subject_verb_agreement_with_attractor"
+  },
+  {
+   "bad": "The river near the boys work.",
+   "good": "The river near the boys works.",
+   "id": "subject_verb_agreement_with_attractor-035337f5",
+   "phenomenon": "subject_verb_agreement_with_attractor"
+  },
+  {
+   "bad": "The women near the child works.",
+   "good": "The women near the child work.",
+   "id": "subject_verb_agreement_with_attractor-03620734",
+   "phenomenon": "subject_verb_agreement_with_attractor"
+  },
+  {
+   "bad": "The women near the ship works.",
+   "good": "The women near the ship work.",
+   "id": "subject_verb_agreement_with_attractor-0365d5fe",
+   "phenomenon": "subject_verb_agreement_with_attractor"
+  },
+  {
+   "bad": "The ship near the houses work.",
+   "good": "The ship near the houses works.",
+   "id": "subject_verb_agreement_with_attractor-037b7c36",
+   "phenomenon": "subject_verb_agreement_with_attractor"
+  },
+  {
+   "bad": "The girls near the tree works.",
+   "good": "The girls near the tree work.",
+   "id": "subject_verb_agreement_with_attractor-03c97417",
+   "phenomenon": "subject_verb_agreement_with_attractor"
+  },
+  {
+   "bad": "The soldiers near the dog works.",
+   "good": "The soldiers near the dog work.",
+   "id": "subject_verb_agreement_with_attractor-03fd78c1",
+   "phenomenon": "subject_verb_agreement_with_attractor"
+  },
+  {
+   "bad": "The boys near the man works.",
+   "good": "The boys near the man work.",
+   "id": "subject_verb_agreement_with_attractor-040e3ab7",
+   "phenomenon": "subject_verb_agreement_with_attractor"
+  },
+  {
+   "bad": "The women near the man works.",
+   "good": "The women near the man work.",
+   "id": "subject_verb_agreement_with_attractor-0434b03c",
+   "phenomenon": "subject_verb_agreement_with_attractor"
+  },
+  {
+   "bad": "The boy near the trees work.",
+   "good": "The boy near the trees works.",
+   "id": "subject_verb_agreement_with_attractor-045444bd",
+   "phenomenon": "subject_verb_agreement_with_attractor"
+  },
+  {
+   "bad": "The horse near the ships work.",
+   "good": "The horse near the ships works.",
+   "id": "subject_verb_agreement_with_attractor-04783b62",
+   "phenomenon": "subject_verb_agreement_with_attractor"
+  },
+  {
+   "bad": "The man near the women work.",
+   "good": "The man near the women works.",
+   "id": "subject_verb_agreement_with_attractor-04abbd0a",
+   "phenomenon": "subject_verb_agreement_with_attractor"
+  },
+  {
+   "bad": "The bird near the men work.",
+   "good": "The bird near the men works.",
+   "id": "subject_verb_agreement_with_attractor-04b67da8",
+   "phenomenon": "subject_verb_agreement_with_attractor"
+  },
+  {
+   "bad": "The ship near the trees work.",
+   "good": "The ship near the trees works.",
+   "id": "subject_verb_agreement_with_attractor-04d1a103",
+   "phenomenon": "subject_verb_agreement_with_attractor"
+  },
+  {
+   "bad": "The dogs near the man works.",
+   "good": "The dogs near the man work.",
+   "id": "subject_verb_agreement_with_attractor-05240748",
+   "phenomenon": "subject_verb_agreement_with_attractor"
+  },
+  {
+   "bad": "The house near the soldiers work.",
+   "good": "The house near the soldiers works.",
+   "id": "subject_verb_agreement_with_attractor-052c751c",
+   "phenomenon": "subject_verb_agreement_with_attractor"
+  },
+  {
+   "bad": "The kings near the woman works.",
+   "good": "The kings near the woman work.",
+   "id": "subject_verb_agreement_with_attractor-0539805c",
+   "phenomenon": "subject_verb_agreement_with_attractor"
+  },
+  {
+   "bad": "The children near the man works.",
+   "good": "The children near the man work.",
+   "id": "subject_verb_agreement_with_attractor-054e966c",
+   "phenomenon": "subject_verb_agreement_with_attractor"
+  },
+  {
+   "bad": "The letters near the child works.",
+   "good": "The letters near the child work.",
+   "id": "subject_verb_agreement_with_attractor-056d1ca8",
+   "phenomenon": "subject_verb_agreement_with_attractor"
+  },
+  {
+   "bad": "The letters near the house works.",
+   "good": "The letters near the house work.",
+   "id": "subject_verb_agreement_with_attractor-05785c9c",
+   "phenomenon": "subject_verb_agreement_with_attractor"
+  },
+  {
+   "bad": "The doors near the ship works.",
+   "good": "The doors near the ship work.",
+   "id": "subject_verb_agreement_with_attractor-05dc928a",
+   "phenomenon": "subject_verb_agreement_with_attractor"
+  },
+  {
+   "bad": "The soldiers near the door works.",
+   "good": "The soldiers near the door work.",
+   "id": "subject_verb_agreement_with_attractor-05ddae92",
+   "phenomenon": "subject_verb_agreement_with_attractor"
+  },
+  {
+   "bad": "The ships near the man works.",
+   "good": "The ships near the man work.",
+   "id": "subject_verb_agreement_with_attractor-0608db8d",
+   "phenomenon": "subject_verb_agreement_with_attractor"
+  },
+  {
+   "bad": "The soldier near the birds work.",
+   "good": "The soldier near the birds works.",
+   "id": "subject_verb_agreement_with_attractor-061923d6",
+   "phenomenon": "subject_verb_agreement_with_attractor"
+  },
+  {
+   "bad": "The trees near the girl works.",
+   "good": "The trees near the girl work.",
+   "id": "subject_verb_agreement_with_attractor-06257770",
+   "phenomenon": "subject_verb_agreement_with_attractor"
+  },
+  {
+   "bad": "The woman near the girls work.",
+   "good": "The woman near the girls works.",
+   "id": "subject_verb_agreement_with_attractor-062aa049",
+   "phenomenon": "subject_verb_agreement_with_attractor"
+  },
+  {
+   "bad": "The dog near the doors work.",
+   "good": "The dog near the doors works.",
+   "id": "subject_verb_agreement_with_attractor-063dced2",
+   "phenomenon": "subject_verb_agreement_with_attractor"
+  },
+  {
+   "bad": "The king near the doors work.",
+   "good": "The king near the doors works.",
+   "id": "subject_verb_agreement_with_attractor-0640a6ad",
+   "phenomenon": "subject_verb_agreement_with_attractor"
+  },
+  {
+   "bad": "The door near the soldiers work.",
+   "good": "The door near the soldiers works.",
+   "id": "subject_verb_agreement_with_attractor-06469985",
+   "phenomenon": "subject_verb_agreement_with_attractor"
+  },
+  {
+   "bad": "The door near the kings work.",
+   "good": "The door near the kings works.",
+   "id": "subject_verb_agreement_with_attractor-065b8de9",
+   "phenomenon": "subject_verb_agreement_with_attractor"
+  },
+  {
+   "bad": "The man near the rivers work.",
+   "good": "The man near the rivers works.",
+   "id": "subject_verb_agreement_with_attractor-066ca8c3",
+   "phenomenon": "subject_verb_agreement_with_attractor"
+  },
+  {
+   "bad": "The girl near the birds work.",
+   "good": "The girl near the birds works.",
+   "id": "subject_verb_agreement_with_attractor-0684bdc8",
+   "phenomenon": "subject_verb_agreement_with_attractor"
+  },
+  {
+   "bad": "The children near the horse works.",
+   "good": "The children near the horse work.",
+   "id": "subject_verb_agreement_with_attractor-06b9472c",
+   "phenomenon": "subject_verb_agreement_with_attractor"
+  },
+  {
+   "bad": "The women near the king works.",
+   "good": "The women near the king work.",
+   "id": "subject_verb_agreement_with_attractor-06deaa3e",
+   "phenomenon": "subject_verb_agreement_with_attractor"
+  },
+  {
+   "bad": "The door near the dogs work.",
+   "good": "The door near the dogs works.",
+   "id": "subject_verb_agreement_with_attractor-06e62976",
+   "phenomenon": "subject_verb_agreement_with_attractor"
+  },
+  {
+   "bad": "The dogs near the tree works.",
+   "good": "The dogs near the tree work.",
+   "id": "subject_verb_agreement_with_attractor-070ec93f",
+   "phenomenon": "subject_verb_agreement_with_attractor"
+  },
+  {
+   "bad": "The man near the birds work.",
+   "good": "The man near the birds works.",
+   "id": "subject_verb_agreement_with_attractor-07825f8e",
+   "phenomenon": "subject_verb_agreement_with_attractor"
+  },
+  {
+   "bad": "The girl near the doors work.",
+   "good": "The girl near the doors works.",
+   "id": "subject_verb_agreement_with_attractor-078325a7",
+   "phenomenon": "subject_verb_agreement_with_attractor"
+  },
+  {
+   "bad": "The bird near the kings work.",
+   "good": "The bird near the kings works.",
+   "id": "subject_verb_agreement_with_attractor-07eed5da",
+   "phenomenon": "subject_verb_agreement_with_attractor"
+  },
+  {
+   "bad": "The girl near the ships work.",
+   "good": "The girl near the ships works.",
+   "id": "subject_verb_agreement_with_attractor-082678ec",
+   "phenomenon": "subject_verb_agreement_with_attractor"
+  },
+  {
+   "bad": "The woman near the letters work.",
+   "good": "The woman near the letters works.",
+   "id": "subject_verb_agreement_with_attractor-082bb1d4",
+   "phenomenon": "subject_verb_agreement_with_attractor"
+  },
+  {
+   "bad": "The soldier near the girls work.",
+   "good": "The soldier near the girls works.",
+   "id": "subject_verb_agreement_with_attractor-08300c7d",
+   "phenomenon": "subject_verb_agreement_with_attractor"
+  },
+  {
+   "bad": "The girls near the ship works.",
+   "good": "The girls near the ship work.",
+   "id": "subject_verb_agreement_with_attractor-0839f471",
+   "phenomenon": "subject_verb_agreement_with_attractor"
+  },
+  {
+   "bad": "The birds near the house works.",
+   "good": "The birds near the house work.",
+   "id": "subject_verb_agreement_with_attractor-0847f58d",
+   "phenomenon": "subject_verb_agreement_with_attractor"
+  },
+  {
+   "bad": "The kings near the letter works.",
+   "good": "The kings near the letter work.",
+   "id": "subject_verb_agreement_with_attractor-087f9133",
+   "phenomenon": "subject_verb_agreement_with_attractor"
+  },
+  {
+   "bad": "The dog near the letters work.",
+   "good": "The dog near the letters works.",
+   "id": "subject_verb_agreement_with_attractor-08fb59f2",
+   "phenomenon": "subject_verb_agreement_with_attractor"
+  },
+  {
+   "bad": "The bird near the doors work.",
+   "good": "The bird near the doors works.",
+   "id": "subject_verb_agreement_with_attractor-097c7ec4",
+   "phenomenon": "subject_verb_agreement_with_attractor"
+  },
+  {
+   "bad": "The trees near the house works.",
+   "good": "The trees near the house work.",
+   "id": "subject_verb_agreement_with_attractor-097fdcc4",
+   "phenomenon": "subject_verb_agreement_with_attractor"
+  },
+  {
+   "bad": "The ships near the soldier works.",
+   "good": "The ships near the soldier work.",
+   "id": "subject_verb_agreement_with_attractor-09a94c5b",
+   "phenomenon": "subject_verb_agreement_with_attractor"
+  },
+  {
+   "bad": "The boy near the girls work.",
+   "good": "The boy near the girls works.",
+   "id": "subject_verb_agreement_with_attractor-09c2ab0c",
+   "phenomenon": "subject_verb_agreement_with_attractor"
+  },
+  {
+   "bad": "The man near the children work.",
+   "good": "The man near the children works.",
+   "id": "subject_verb_agreement_with_attractor-09ca6583",
+   "phenomenon": "subject_verb_agreement_with_attractor"
+  },
+  {
+   "bad": "The house near the doors work.",
+   "good": "The house near the doors works.",
+   "id": "subject_verb_agreement_with_attractor-09f3e741",
+   "phenomenon": "subject_verb_agreement_with_attractor"
+  },
+  {
+   "bad": "The soldiers near the river works.",
+   "good": "The soldiers near the river work.",
+   "id": "subject_verb_agreement_with_attractor-0a10fa8c",
+   "phenomenon": "subject_verb_agreement_with_attractor"
+  },
+  {
+   "bad": "The man near the soldiers work.",
+   "good": "The man near the soldiers works.",
+   "id": "subject_verb_agreement_with_attractor-0a12f6a8",
+   "phenomenon": "subject_verb_agreement_with_attractor"
+  },
+  {
+   "bad": "The women near the door works.",
+   "good": "The women near the door work.",
+   "id": "subject_verb_agreement_with_attractor-0a643552",
+   "phenomenon": "subject_verb_agreement_with_attractor"
+  },
+  {
+   "bad": "The boys near the king works.",
+   "good": "The boys near the king work.",
+   "id": "subject_verb_agreement_with_attractor-0a90848d",
+   "phenomenon": "subject_verb_agreement_with_attractor"
+  },
+  {
+   "bad": "The ships near the house works.",
+   "good": "The ships near the house work.",
+   "id": "subject_verb_agreement_with_attractor-0ac4baaa",
+   "phenomenon": "subject_verb_agreement_with_attractor"
+  },
+  {
+   "bad": "The boys near the door works.",
+   "good": "The boys near the door work.",
+   "id": "subject_verb_agreement_with_attractor-0af4adbb",
+   "phenomenon": "subject_verb_agreement_with_attractor"
+  },
+  {
+   "bad": "The letters near the tree works.",
+   "good": "The letters near the tree work.",
+   "id": "subject_verb_agreement_with_attractor-0af6dbb4",
+   "phenomenon": "subject_verb_agreement_with_attractor"
+  },
+  {
+   "bad": "The doors near the horse works.",
+   "good": "The doors near the horse work.",
+   "id": "subject_verb_agreement_with_attractor-0b1546ac",
+   "phenomenon": "subject_verb_agreement_with_attractor"
+  },
+  {
+   "bad": "The girls near the house works.",
+   "good": "The girls near the house work.",
+   "id": "subject_verb_agreement_with_attractor-0b415d2a",
+   "phenomenon": "subject_verb_agreement_with_attractor"
+  },
+  {
+   "bad": "The trees near the door works.",
+   "good": "The trees near the door work.",
+   "id": "subject_verb_agreement_with_attractor-0b7e021f",
+   "phenomenon": "subject_verb_agreement_with_attractor"
+  },
+  {
+   "bad": "The kings near the door works.",
+   "good": "The kings near the door work.",
+   "id": "subject_verb_agreement_with_attractor-0b8e057a",
+   "phenomenon": "subject_verb_agreement_with_attractor"
+  },
+  {
+   "bad": "The kings near the boy works.",
+   "good": "The kings near the boy work.",
+   "id": "subject_verb_agreement_with_attractor-0ba7c6a2",
+   "phenomenon": "subject_verb_agreement_with_attractor"
+  },
+  {
+   "bad": "The birds near the man works.",
+   "good": "The birds near the man work.",
+   "id": "subject_verb_agreement_with_attractor-0bb2c2b3",
+   "phenomenon": "subject_verb_agreement_with_attractor"
+  },
+  {
+   "bad": "The horse near the rivers work.",
+   "good": "The horse near the rivers works.",
+   "id": "subject_verb_agreement_with_attractor-0bf4914d",
+   "phenomenon": "subject_verb_agreement_with_attractor"
+  },
+  {
+   "bad": "I left these child near the river.",
+   "good": "I left these children near the river.",
+   "id": "determiner_noun_agreement-00623878",
+   "phenomenon": "determiner_noun_agreement"
+  },
+  {
+   "bad": "I left this houses by the gate.",
+   "good": "I left this house by the gate.",
+   "id": "determiner_noun_agreement-00700f29",
+   "phenomenon": "determiner_noun_agreement"
+  },
+  {
+   "bad": "I heard these river in the field.",
+   "good": "I heard these rivers in the field.",
+   "id": "determiner_noun_agreement-00d14673",
+   "phenomenon": "determiner_noun_agreement"
+  },
+  {
+   "bad": "I found these boy in the field.",
+   "good": "I found these boys in the field.",
+   "id": "determiner_noun_agreement-00d73f07",
+   "phenomenon": "determiner_noun_agreement"
+  },
+  {
+   "bad": "I heard these tree in the field.",
+   "good": "I heard these trees in the field.",
+   "id": "determiner_noun_agreement-01f8a508",
+   "phenomenon": "determiner_noun_agreement"
+  },
+  {
+   "bad": "I heard this birds near the river.",
+   "good": "I heard this bird near the river.",
+   "id": "determiner_noun_agreement-0252d03a",
+   "phenomenon": "determiner_noun_agreement"
+  },
+  {
+   "bad": "I saw this men near the river.",
+   "good": "I saw this man near the river.",
+   "id": "determiner_noun_agreement-02abbaed",
+   "phenomenon": "determiner_noun_agreement"
+  },
+  {
+   "bad": "I heard this horses on the hill.",
+   "good": "I heard this horse on the hill.",
+   "id": "determiner_noun_agreement-02c2bd2d",
+   "phenomenon": "determiner_noun_agreement"
+  },
+  {
+   "bad": "I found this horses by the gate.",
+   "good": "I found this horse by the gate.",
+   "id": "determiner_noun_agreement-03dfb12d",
+   "phenomenon": "determiner_noun_agreement"
+  },
+  {
+   "bad": "I left these child at the door.",
+   "good": "I left these children at the door.",
+   "id": "determiner_noun_agreement-03f41cad",
+   "phenomenon": "determiner_noun_agreement"
+  },
+  {
+   "bad": "I heard these house in the field.",
+   "good": "I heard these houses in the field.",
+   "id": "determiner_noun_agreement-048e5922",
+   "phenomenon": "determiner_noun_agreement"
+  },
+  {
+   "bad": "I heard this women on the hill.",
+   "good": "I heard this woman on the hill.",
+   "id": "determiner_noun_agreement-04fb3ab7",
+   "phenomenon": "determiner_noun_agreement"
+  },
+  {
+   "bad": "I saw this birds in the field.",
+   "good": "I saw this bird in the field.",
+   "id": "determiner_noun_agreement-050461cc",
+   "phenomenon": "determiner_noun_agreement"
+  },
+  {
+   "bad": "I found these man in the field.",
+   "good": "I found these men in the field.",
+   "id": "determiner_noun_agreement-056adaf0",
+   "phenomenon": "determiner_noun_agreement"
+  },
+  {
+   "bad": "I saw this men by the gate.",
+   "good": "I saw this man by the gate.",
+   "id": "determiner_noun_agreement-05b097f1",
+   "phenomenon": "determiner_noun_agreement"
+  },
+  {
+   "bad": "I left this men near the river.",
+   "good": "I left this man near the river.",
+   "id": "determiner_noun_agreement-061bc0bf",
+   "phenomenon": "determiner_noun_agreement"
+  },
+  {
+   "bad": "I found these man on the hill.",
+   "good": "I found these men on the hill.",
+   "id": "determiner_noun_agreement-06ce4889",
+   "phenomenon": "determiner_noun_agreement"
+  },
+  {
+   "bad": "I found these river by the gate.",
+   "good": "I found these rivers by the gate.",
+   "id": "determiner_noun_agreement-074e98a8",
+   "phenomenon": "determiner_noun_agreement"
+  },
+  {
+   "bad": "I left these bird on the hill.",
+   "good": "I left these birds on the hill.",
+   "id": "determiner_noun_agreement-07f9469b",
+   "phenomenon": "determiner_noun_agreement"
+  },
+  {
+   "bad": "I saw this trees near the river.",
+   "good": "I saw this tree near the river.",
+   "id": "determiner_noun_agreement-08694e06",
+   "phenomenon": "determiner_noun_agreement"
+  },
+  {
+   "bad": "I heard this rivers near the river.",
+   "good": "I heard this river near the river.",
+   "id": "determiner_noun_agreement-092d82cd",
+   "phenomenon": "determiner_noun_agreement"
+  },
+  {
+   "bad": "I saw these bird on the hill.",
+   "good": "I saw these birds on the hill.",
+   "id": "determiner_noun_agreement-097a3374",
+   "phenomenon": "determiner_noun_agreement"
+  },
+  {
+   "bad": "I saw these boy in the field.",
+   "good": "I saw these boys in the field.",
+   "id": "determiner_noun_agreement-099509dd",
+   "phenomenon": "determiner_noun_agreement"
+  },
+  {
+   "bad": "I saw these child on the hill.",
+   "good": "I saw these children on the hill.",
+   "id": "determiner_noun_agreement-0a1414f7",
+   "phenomenon": "determiner_noun_agreement"
+  },
+  {
+   "bad": "I saw this trees by the gate.",
+   "good": "I saw this tree by the gate.",
+   "id": "determiner_noun_agreement-0a27b35f",
+   "phenomenon": "determiner_noun_agreement"
+  },
+  {
+   "bad": "I saw these woman near the river.",
+   "good": "I saw these women near the river.",
+   "id": "determiner_noun_agreement-0aa13f81",
+   "phenomenon": "determiner_noun_agreement"
+  },
+  {
+   "bad": "I heard these man on the hill.",
+   "good": "I heard these men on the hill.",
+   "id": "determiner_noun_agreement-0b06e552",
+   "phenomenon": "determiner_noun_agreement"
+  },
+  {
+   "bad": "I left these woman at the door.",
+   "good": "I left these women at the door.",
+   "id": "determiner_noun_agreement-0ba5711d",
+   "phenomenon": "determiner_noun_agreement"
+  },
+  {
+   "bad": "I left these woman near the river.",
+   "good": "I left these women near the river.",
+   "id": "determiner_noun_agreement-0ba8b9f0",
+   "phenomenon": "determiner_noun_agreement"
+  },
+  {
+   "bad": "I left this women near the river.",
+   "good": "I left this woman near the river.",
+   "id": "determiner_noun_agreement-0cb741b1",
+   "phenomenon": "determiner_noun_agreement"
+  },
+  {
+   "bad": "I found these horse in the field.",
+   "good": "I found these horses in the field.",
+   "id": "determiner_noun_agreement-0d204b60",
+   "phenomenon": "determiner_noun_agreement"
+  },
+  {
+   "bad": "I left these house near the river.",
+   "good": "I left these houses near the river.",
+   "id": "determiner_noun_agreement-0ef43b5b",
+   "phenomenon": "determiner_noun_agreement"
+  },
+  {
+   "bad": "I saw these horse by the gate.",
+   "good": "I saw these horses by the gate.",
+   "id": "determiner_noun_agreement-10cfaee2",
+   "phenomenon": "determiner_noun_agreement"
+  },
+  {
+   "bad": "I saw these man in the field.",
+   "good": "I saw these men in the field.",
+   "id": "determiner_noun_agreement-10f8cd30",
+   "phenomenon": "determiner_noun_agreement"
+  },
+  {
+   "bad": "I left this houses in the field.",
+   "good": "I left this house in the field.",
+   "id": "determiner_noun_agreement-12310654",
+   "phenomenon": "determiner_noun_agreement"
+  },
+  {
+   "bad": "I left these soldier by the gate.",
+   "good": "I left these soldiers by the gate.",
+   "id": "determiner_noun_agreement-123a3acd",
+   "phenomenon": "determiner_noun_agreement"
+  },
+  {
+   "bad": "I saw this rivers at the door.",
+   "good": "I saw this river at the door.",
+   "id": "determiner_noun_agreement-127d18e6",
+   "phenomenon": "determiner_noun_agreement"
+  },
+  {
+   "bad": "I saw these house on the hill.",
+   "good": "I saw these houses on the hill.",
+   "id": "determiner_noun_agreement-13992b3f",
+   "phenomenon": "determiner_noun_agreement"
+  },
+  {
+   "bad": "I left this rivers at the door.",
+   "good": "I left this river at the door.",
+   "id": "determiner_noun_agreement-1401abf5",
+   "phenomenon": "determiner_noun_agreement"
+  },
+  {
+   "bad": "I heard these boy near the river.",
+   "good": "I heard these boys near the river.",
+   "id": "determiner_noun_agreement-14c29233",
+   "phenomenon": "determiner_noun_agreement"
+  },
+  {
+   "bad": "I left this trees in the field.",
+   "good": "I left this tree in the field.",
+   "id": "determiner_noun_agreement-14d80b66",
+   "phenomenon": "determiner_noun_agreement"
+  },
+  {
+   "bad": "I heard these child on the hill.",
+   "good": "I heard these children on the hill.",
+   "id": "determiner_noun_agreement-14e47192",
+   "phenomenon": "determiner_noun_agreement"
+  },
+  {
+   "bad": "I saw these tree at the door.",
+   "good": "I saw these trees at the door.",
+   "id": "determiner_noun_agreement-163af56f",
+   "phenomenon": "determiner_noun_agreement"
+  },
+  {
+   "bad": "I left this houses near the river.",
+   "good": "I left this house near the river.",
+   "id": "determiner_noun_agreement-1645a683",
+   "phenomenon": "determiner_noun_agreement"
+  },
+  {
+   "bad": "I found these tree by the gate.",
+   "good": "I found these trees by the gate.",
+   "id": "determiner_noun_agreement-179799bb",
+   "phenomenon": "determiner_noun_agreement"
+  },
+  {
+   "bad": "I left this soldiers by the gate.",
+   "good": "I left this soldier by the gate.",
+   "id": "determiner_noun_agreement-18521f85",
+   "phenomenon": "determiner_noun_agreement"
+  },
+  {
+   "bad": "I found this men near the river.",
+   "good": "I found this man near the river.",
+   "id": "determiner_noun_agreement-18c06d09",
+   "phenomenon": "determiner_noun_agreement"
+  },
+  {
+   "bad": "I found these woman in the field.",
+   "good": "I found these women in the field.",
+   "id": "determiner_noun_agreement-190f45b4",
+   "phenomenon": "determiner_noun_agreement"
+  },
+  {
+   "bad": "I heard this children at the door.",
+   "good": "I heard this child at the door.",
+   "id": "determiner_noun_agreement-1957ecc9",
+   "phenomenon": "determiner_noun_agreement"
+  },
+  {
+   "bad": "I heard this children on the hill.",
+   "good": "I heard this child on the hill.",
+   "id": "determiner_noun_agreement-1a5d76d7",
+   "phenomenon": "determiner_noun_agreement"
+  },
+  {
+   "bad": "I heard these soldier on the hill.",
+   "good": "I heard these soldiers on the hill.",
+   "id": "determiner_noun_agreement-1bd0ba5c",
+   "phenomenon": "determiner_noun_agreement"
+  },
+  {
+   "bad": "I saw this children in the field.",
+   "good": "I saw this child in the field.",
+   "id": "determiner_noun_agreement-1c451dbb",
+   "phenomenon": "determiner_noun_agreement"
+  },
+  {
+   "bad": "I found these horse near the river.",
+   "good": "I found these horses near the river.",
+   "id": "determiner_noun_agreement-1c9d84d9",
+   "phenomenon": "determiner_noun_agreement"
+  },
+  {
+   "bad": "I heard these river by the gate.",
+   "good": "I heard these rivers by the gate.",
+   "id": "determiner_noun_agreement-1cdbd1a6",
+   "phenomenon": "determiner_noun_agreement"
+  },
+  {
+   "bad": "I found these tree in the field.",
+   "good": "I found these trees in the field.",
+   "id": "determiner_noun_agreement-1d29ebfa",
+   "phenomenon": "determiner_noun_agreement"
+  },
+  {
+   "bad": "I found this houses on the hill.",
+   "good": "I found this house on the hill.",
+   "id": "determiner_noun_agreement-1e25b80c",
+   "phenomenon": "determiner_noun_agreement"
+  },
+  {
+   "bad": "I found these house at the door.",
+   "good": "I found these houses at the door.",
+   "id": "determiner_noun_agreement-1e31784a",
+   "phenomenon": "determiner_noun_agreement"
+  },
+  {
+   "bad": "I heard these man near the river.",
+   "good": "I heard these men near the river.",
+   "id": "determiner_noun_agreement-1eb5cfbf",
+   "phenomenon": "determiner_noun_agreement"
+  },
+  {
+   "bad": "I saw this birds by the gate.",
+   "good": "I saw this bird by the gate.",
+   "id": "determiner_noun_agreement-1ec76cad",
+   "phenomenon": "determiner_noun_agreement"
+  },
+  {
+   "bad": "I heard this men in the field.",
+   "good": "I heard this man in the field.",
+   "id": "determiner_noun_agreement-1f429c69",
+   "phenomenon": "determiner_noun_agreement"
+  },
+  {
+   "bad": "I heard this soldiers at the door.",
+   "good": "I heard this soldier at the door.",
+   "id": "determiner_noun_agreement-1f9fe362",
+   "phenomenon": "determiner_noun_agreement"
+  },
+  {
+   "bad": "I left this houses on the hill.",
+   "good": "I left this house on the hill.",
+   "id": "determiner_noun_agreement-21fee15c",
+   "phenomenon": "determiner_noun_agreement"
+  },
+  {
+   "bad": "I found this horses near the river.",
+   "good": "I found this horse near the river.",
+   "id": "determiner_noun_agreement-224267af",
+   "phenomenon": "determiner_noun_agreement"
+  },
+  {
+   "bad": "I found this soldiers by the gate.",
+   "good": "I found this soldier by the gate.",
+   "id": "determiner_noun_agreement-236d05e5",
+   "phenomenon": "determiner_noun_agreement"
+  },
+  {
+   "bad": "I heard these bird in the field.",
+   "good": "I heard these birds in the field.",
+   "id": "determiner_noun_agreement-23985a69",
+   "phenomenon": "determiner_noun_agreement"
+  },
+  {
+   "bad": "I saw these horse on the hill.",
+   "good": "I saw these horses on the hill.",
+   "id": "determiner_noun_agreement-244671fd",
+   "phenomenon": "determiner_noun_agreement"
+  },
+  {
+   "bad": "I left this children by the gate.",
+   "good": "I left this child by the gate.",
+   "id": "determiner_noun_agreement-2452b58d",
+   "phenomenon": "determiner_noun_agreement"
+  },
+  {
+   "bad": "I left these woman on the hill.",
+   "good": "I left these women on the hill.",
+   "id": "determiner_noun_agreement-2580b282",
+   "phenomenon": "determiner_noun_agreement"
+  },
+  {
+   "bad": "I found these child at the door.",
+   "good": "I found these children at the door.",
+   "id": "determiner_noun_agreement-25cf5c81",
+   "phenomenon": "determiner_noun_agreement"
+  },
+  {
+   "bad": "I saw this women by the gate.",
+   "good": "I saw this woman by the gate.",
+   "id": "determiner_noun_agreement-267b4636",
+   "phenomenon": "determiner_noun_agreement"
+  },
+  {
+   "bad": "I found these river in the field.",
+   "good": "I found these rivers in the field.",
+   "id": "determiner_noun_agreement-274ad4ea",
+   "phenomenon": "determiner_noun_agreement"
+  },
+  {
+   "bad": "I found these man near the river.",
+   "good": "I found these men near the river.",
+   "id": "determiner_noun_agreement-29249894",
+   "phenomenon": "determiner_noun_agreement"
+  },
+  {
+   "bad": "I found these boy by the gate.",
+   "good": "I found these boys by the gate.",
+   "id": "determiner_noun_agreement-29a0bc1b",
+   "phenomenon": "determiner_noun_agreement"
+  },
+  {
+   "bad": "I saw this children near the river.",
+   "good": "I saw this child near the river.",
+   "id": "determiner_noun_agreement-29cae5b8",
+   "phenomenon": "determiner_noun_agreement"
+  },
+  {
+   "bad": "I left this horses near the river.",
+   "good": "I left this horse near the river.",
+   "id": "determiner_noun_agreement-2a7e7342",
+   "phenomenon": "determiner_noun_agreement"
+  },
+  {
+   "bad": "I found this trees by the gate.",
+   "good": "I found this tree by the gate.",
+   "id": "determiner_noun_agreement-2a835b7d",
+   "phenomenon": "determiner_noun_agreement"
+  },
+  {
+   "bad": "I found these river near the river.",
+   "good": "I found these rivers near the river.",
+   "id": "determiner_noun_agreement-2b4d43c6",
+   "phenomenon": "determiner_noun_agreement"
+  },
+  {
+   "bad": "I found these house near the river.",
+   "good": "I found these houses near the river.",
+   "id": "determiner_noun_agreement-2c15b14b",
+   "phenomenon": "determiner_noun_agreement"
+  },
+  {
+   "bad": "I found these bird in the field.",
+   "good": "I found these birds in the field.",
+   "id": "determiner_noun_agreement-2c585b9e",
+   "phenomenon": "determiner_noun_agreement"
+  },
+  {
+   "bad": "I saw this trees on the hill.",
+   "good": "I saw this tree on the hill.",
+   "id": "determiner_noun_agreement-2d2b2daf",
+   "phenomenon": "determiner_noun_agreement"
+  },
+  {
+   "bad": "I found these river on the hill.",
+   "good": "I found these rivers on the hill.",
+   "id": "determiner_noun_agreement-2e104353",
+   "phenomenon": "determiner_noun_agreement"
+  },
+  {
+   "bad": "I left this trees on the hill.",
+   "good": "I left this tree on the hill.",
+   "id": "determiner_noun_agreement-2ed94bb9",
+   "phenomenon": "determiner_noun_agreement"
+  },
+  {
+   "bad": "I left this men by the gate.",
+   "good": "I left this man by the gate.",
+   "id": "determiner_noun_agreement-2f00fd41",
+   "phenomenon": "determiner_noun_agreement"
+  },
+  {
+   "bad": "I saw this horses by the gate.",
+   "good": "I saw this horse by the gate.",
+   "id": "determiner_noun_agreement-2f0e9127",
+   "phenomenon": "determiner_noun_agreement"
+  },
+  {
+   "bad": "I saw these river at the door.",
+   "good": "I saw these rivers at the door.",
+   "id": "determiner_noun_agreement-3148b34a",
+   "phenomenon": "determiner_noun_agreement"
+  },
+  {
+   "bad": "I found these child near the river.",
+   "good": "I found these children near the river.",
+   "id": "determiner_noun_agreement-317438ba",
+   "phenomenon": "determiner_noun_agreement"
+  },
+  {
+   "bad": "I left this birds on the hill.",
+   "good": "I left this bird on the hill.",
+   "id": "determiner_noun_agreement-32a7725b",
+   "phenomenon": "determiner_noun_agreement"
+  },
+  {
+   "bad": "I left this boys on the hill.",
+   "good": "I left this boy on the hill.",
+   "id": "determiner_noun_agreement-32d0bff0",
+   "phenomenon": "determiner_noun_agreement"
+  },
+  {
+   "bad": "I heard these boy in the field.",
+   "good": "I heard these boys in the field.",
+   "id": "determiner_noun_agreement-34300b62",
+   "phenomenon": "determiner_noun_agreement"
+  },
+  {
+   "bad": "I saw these river on the hill.",
+   "good": "I saw these rivers on the hill.",
+   "id": "determiner_noun_agreement-35f26d36",
+   "phenomenon": "determiner_noun_agreement"
+  },
+  {
+   "bad": "I saw these bird by the gate.",
+   "good": "I saw these birds by the gate.",
+   "id": "determiner_noun_agreement-3668d2a3",
+   "phenomenon": "determiner_noun_agreement"
+  },
+  {
+   "bad": "I left this birds at the door.",
+   "good": "I left this bird at the door.",
+   "id": "determiner_noun_agreement-369f3eb6",
+   "phenomenon": "determiner_noun_agreement"
+  },
+  {
+   "bad": "I saw these child at the door.",
+   "good": "I saw these children at the door.",
+   "id": "determiner_noun_agreement-36a18b9e",
+   "phenomenon": "determiner_noun_agreement"
+  },
+  {
+   "bad": "I left this soldiers on the hill.",
+   "good": "I left this soldier on the hill.",
+   "id": "determiner_noun_agreement-36bb100e",
+   "phenomenon": "determiner_noun_agreement"
+  },
+  {
+   "bad": "I found this soldiers at the door.",
+   "good": "I found this soldier at the door.",
+   "id": "determiner_noun_agreement-37358ae5",
+   "phenomenon": "determiner_noun_agreement"
+  },
+  {
+   "bad": "I saw these woman by the gate.",
+   "good": "I saw these women by the gate.",
+   "id": "determiner_noun_agreement-377582cf",
+   "phenomenon": "determiner_noun_agreement"
+  },
+  {
+   "bad": "I saw this women on the hill.",
+   "good": "I saw this woman on the hill.",
+   "id": "determiner_noun_agreement-38129c1d",
+   "phenomenon": "determiner_noun_agreement"
+  },
+  {
+   "bad": "I saw these horse at the door.",
+   "good": "I saw these horses at the door.",
+   "id": "determiner_noun_agreement-3819144d",
+   "phenomenon": "determiner_noun_agreement"
+  },
+  {
+   "bad": "I heard this children in the field.",
+   "good": "I heard this child in the field.",
+   "id": "determiner_noun_agreement-38d9042f",
+   "phenomenon": "determiner_noun_agreement"
+  },
+  {
+   "bad": "I left this trees at the door.",
+   "good": "I left this tree at the door.",
+   "id": "determiner_noun_agreement-397e8c1a",
+   "phenomenon": "determiner_noun_agreement"
+  },
+  {
+   "bad": "The boy can works.",
+   "good": "The boy can work.",
+   "id": "modal_takes_base_form-00b31483",
+   "phenomenon": "modal_takes_base_form"
+  },
+  {
+   "bad": "The letters must works.",
+   "good": "The letters must work.",
+   "id": "modal_takes_base_form-024ebf23",
+   "phenomenon": "modal_takes_base_form"
+  },
+  {
+   "bad": "The trees will works.",
+   "good": "The trees will work.",
+   "id": "modal_takes_base_form-05ecca49",
+   "phenomenon": "modal_takes_base_form"
+  },
+  {
+   "bad": "The horse may works.",
+   "good": "The horse may work.",
+   "id": "modal_takes_base_form-1129f9d1",
+   "phenomenon": "modal_takes_base_form"
+  },
+  {
+   "bad": "The boy must works.",
+   "good": "The boy must work.",
+   "id": "modal_takes_base_form-122a4509",
+   "phenomenon": "modal_takes_base_form"
+  },
+  {
+   "bad": "The girl must works.",
+   "good": "The girl must work.",
+   "id": "modal_takes_base_form-126566aa",
+   "phenomenon": "modal_takes_base_form"
+  },
+  {
+   "bad": "The dogs may works.",
+   "good": "The dogs may work.",
+   "id": "modal_takes_base_form-16b6a953",
+   "phenomenon": "modal_takes_base_form"
+  },
+  {
+   "bad": "The ships can works.",
+   "good": "The ships can work.",
+   "id": "modal_takes_base_form-19aa11f3",
+   "phenomenon": "modal_takes_base_form"
+  },
+  {
+   "bad": "The horse can works.",
+   "good": "The horse can work.",
+   "id": "modal_takes_base_form-1b29ac68",
+   "phenomenon": "modal_takes_base_form"
+  },
+  {
+   "bad": "The men may works.",
+   "good": "The men may work.",
+   "id": "modal_takes_base_form-1d83a945",
+   "phenomenon": "modal_takes_base_form"
+  },
+  {
+   "bad": "The horse will works.",
+   "good": "The horse will work.",
+   "id": "modal_takes_base_form-1e6f8e1e",
+   "phenomenon": "modal_takes_base_form"
+  },
+  {
+   "bad": "The houses will works.",
+   "good": "The houses will work.",
+   "id": "modal_takes_base_form-1eb56223",
+   "phenomenon": "modal_takes_base_form"
+  },
+  {
+   "bad": "The letter may works.",
+   "good": "The letter may work.",
+   "id": "modal_takes_base_form-1eed402e",
+   "phenomenon": "modal_takes_base_form"
+  },
+  {
+   "bad": "The soldier may works.",
+   "good": "The soldier may work.",
+   "id": "modal_takes_base_form-25f11a43",
+   "phenomenon": "modal_takes_base_form"
+  },
+  {
+   "bad": "The ship may works.",
+   "good": "The ship may work.",
+   "id": "modal_takes_base_form-27122b4d",
+   "phenomenon": "modal_takes_base_form"
+  },
+  {
+   "bad": "The bird must works.",
+   "good": "The bird must work.",
+   "id": "modal_takes_base_form-27b3c571",
+   "phenomenon": "modal_takes_base_form"
+  },
+  {
+   "bad": "The horse must works.",
+   "good": "The horse must work.",
+   "id": "modal_takes_base_form-284876c5",
+   "phenomenon": "modal_takes_base_form"
+  },
+  {
+   "bad": "The kings can works.",
+   "good": "The kings can work.",
+   "id": "modal_takes_base_form-286b2af1",
+   "phenomenon": "modal_takes_base_form"
+  },
+  {
+   "bad": "The girl may works.",
+   "good": "The girl may work.",
+   "id": "modal_takes_base_form-291c9882",
+   "phenomenon": "modal_takes_base_form"
+  },
+  {
+   "bad": "The ship will works.",
+   "good": "The ship will work.",
+   "id": "modal_takes_base_form-2feee86b",
+   "phenomenon": "modal_takes_base_form"
+  },
+  {
+   "bad": "The letters may works.",
+   "good": "The letters may work.",
+   "id": "modal_takes_base_form-30054055",
+   "phenomenon": "modal_takes_base_form"
+  },
+  {
+   "bad": "The king must works.",
+   "good": "The king must work.",
+   "id": "modal_takes_base_form-30534b6e",
+   "phenomenon": "modal_takes_base_form"
+  },
+  {
+   "bad": "The door can works.",
+   "good": "The door can work.",
+   "id": "modal_takes_base_form-322b665d",
+   "phenomenon": "modal_takes_base_form"
+  },
+  {
+   "bad": "The river must works.",
+   "good": "The river must work.",
+   "id": "modal_takes_base_form-3384648f",
+   "phenomenon": "modal_takes_base_form"
+  },
+  {
+   "bad": "The dog must works.",
+   "good": "The dog must work.",
+   "id": "modal_takes_base_form-33a98477",
+   "phenomenon": "modal_takes_base_form"
+  },
+  {
+   "bad": "The houses may works.",
+   "good": "The houses may work.",
+   "id": "modal_takes_base_form-37a6bb7f",
+   "phenomenon": "modal_takes_base_form"
+  },
+  {
+   "bad": "The soldiers will works.",
+   "good": "The soldiers will work.",
+   "id": "modal_takes_base_form-386e16f8",
+   "phenomenon": "modal_takes_base_form"
+  },
+  {
+   "bad": "The tree will works.",
+   "good": "The tree will work.",
+   "id": "modal_takes_base_form-39a6ae62",
+   "phenomenon": "modal_takes_base_form"
+  },
+  {
+   "bad": "The horses may works.",
+   "good": "The horses may work.",
+   "id": "modal_takes_base_form-3ba1f954",
+   "phenomenon": "modal_takes_base_form"
+  },
+  {
+   "bad": "The trees can works.",
+   "good": "The trees can work.",
+   "id": "modal_takes_base_form-3e363167",
+   "phenomenon": "modal_takes_base_form"
+  },
+  {
+   "bad": "The river can works.",
+   "good": "The river can work.",
+   "id": "modal_takes_base_form-3fbbbbe4",
+   "phenomenon": "modal_takes_base_form"
+  },
+  {
+   "bad": "The letters will works.",
+   "good": "The letters will work.",
+   "id": "modal_takes_base_form-4382e2d1",
+   "phenomenon": "modal_takes_base_form"
+  },
+  {
+   "bad": "The women may works.",
+   "good": "The women may work.",
+   "id": "modal_takes_base_form-47821171",
+   "phenomenon": "modal_takes_base_form"
+  },
+  {
+   "bad": "The girls can works.",
+   "good": "The girls can work.",
+   "id": "modal_takes_base_form-4864eca0",
+   "phenomenon": "modal_takes_base_form"
+  },
+  {
+   "bad": "The men must works.",
+   "good": "The men must work.",
+   "id": "modal_takes_base_form-492cf7f1",
+   "phenomenon": "modal_takes_base_form"
+  },
+  {
+   "bad": "The letter will works.",
+   "good": "The letter will work.",
+   "id": "modal_takes_base_form-511e5663",
+   "phenomenon": "modal_takes_base_form"
+  },
+  {
+   "bad": "The rivers will works.",
+   "good": "The rivers will work.",
+   "id": "modal_takes_base_form-52589378",
+   "phenomenon": "modal_takes_base_form"
+  },
+  {
+   "bad": "The house will works.",
+   "good": "The house will work.",
+   "id": "modal_takes_base_form-542bfe9d",
+   "phenomenon": "modal_takes_base_form"
+  },
+  {
+   "bad": "The women must works.",
+   "good": "The women must work.",
+   "id": "modal_takes_base_form-58715984",
+   "phenomenon": "modal_takes_base_form"
+  },
+  {
+   "bad": "The child can works.",
+   "good": "The child can work.",
+   "id": "modal_takes_base_form-590823d6",
+   "phenomenon": "modal_takes_base_form"
+  },
+  {
+   "bad": "The house can works.",
+   "good": "The house can work.",
+   "id": "modal_takes_base_form-595125fa",
+   "phenomenon": "modal_takes_base_form"
+  },
+  {
+   "bad": "The boys must works.",
+   "good": "The boys must work.",
+   "id": "modal_takes_base_form-5aaf43f8",
+   "phenomenon": "modal_takes_base_form"
+  },
+  {
+   "bad": "The woman will works.",
+   "good": "The woman will work.",
+   "id": "modal_takes_base_form-5ad9ddd3",
+   "phenomenon": "modal_takes_base_form"
+  },
+  {
+   "bad": "The children must works.",
+   "good": "The children must work.",
+   "id": "modal_takes_base_form-5be4ff28",
+   "phenomenon": "modal_takes_base_form"
+  },
+  {
+   "bad": "The birds will works.",
+   "good": "The birds will work.",
+   "id": "modal_takes_base_form-5f9df172",
+   "phenomenon": "modal_takes_base_form"
+  },
+  {
+   "bad": "The ship can works.",
+   "good": "The ship can work.",
+   "id": "modal_takes_base_form-5fa44afb",
+   "phenomenon": "modal_takes_base_form"
+  },
+  {
+   "bad": "The doors may works.",
+   "good": "The doors may work.",
+   "id": "modal_takes_base_form-63f424ae",
+   "phenomenon": "modal_takes_base_form"
+  },
+  {
+   "bad": "The women will works.",
+   "good": "The women will work.",
+   "id": "modal_takes_base_form-64922015",
+   "phenomenon": "modal_takes_base_form"
+  },
+  {
+   "bad": "The door will works.",
+   "good": "The door will work.",
+   "id": "modal_takes_base_form-65fde902",
+   "phenomenon": "modal_takes_base_form"
+  },
+  {
+   "bad": "The houses must works.",
+   "good": "The houses must work.",
+   "id": "modal_takes_base_form-660b556a",
+   "phenomenon": "modal_takes_base_form"
+  },
+  {
+   "bad": "The girl can works.",
+   "good": "The girl can work.",
+   "id": "modal_takes_base_form-6779845e",
+   "phenomenon": "modal_takes_base_form"
+  },
+  {
+   "bad": "The letters can works.",
+   "good": "The letters can work.",
+   "id": "modal_takes_base_form-679a4b7d",
+   "phenomenon": "modal_takes_base_form"
+  },
+  {
+   "bad": "The soldiers must works.",
+   "good": "The soldiers must work.",
+   "id": "modal_takes_base_form-67f5be81",
+   "phenomenon": "modal_takes_base_form"
+  },
+  {
+   "bad": "The man can works.",
+   "good": "The man can work.",
+   "id": "modal_takes_base_form-694ea3e7",
+   "phenomenon": "modal_takes_base_form"
+  },
+  {
+   "bad": "The dog will works.",
+   "good": "The dog will work.",
+   "id": "modal_takes_base_form-6b4cc45f",
+   "phenomenon": "modal_takes_base_form"
+  },
+  {
+   "bad": "The children may works.",
+   "good": "The children may work.",
+   "id": "modal_takes_base_form-6dfa0c1d",
+   "phenomenon": "modal_takes_base_form"
+  },
+  {
+   "bad": "The child will works.",
+   "good": "The child will work.",
+   "id": "modal_takes_base_form-71fe9677",
+   "phenomenon": "modal_takes_base_form"
+  },
+  {
+   "bad": "The dogs must works.",
+   "good": "The dogs must work.",
+   "id": "modal_takes_base_form-7425f324",
+   "phenomenon": "modal_takes_base_form"
+  },
+  {
+   "bad": "The doors can works.",
+   "good": "The doors can work.",
+   "id": "modal_takes_base_form-7a1e0568",
+   "phenomenon": "modal_takes_base_form"
+  },
+  {
+   "bad": "The trees must works.",
+   "good": "The trees must work.",
+   "id": "modal_takes_base_form-7c64aae0",
+   "phenomenon": "modal_takes_base_form"
+  },
+  {
+   "bad": "The letter must works.",
+   "good": "The letter must work.",
+   "id": "modal_takes_base_form-7cd9caa7",
+   "phenomenon": "modal_takes_base_form"
+  },
+  {
+   "bad": "The dog may works.",
+   "good": "The dog may work.",
+   "id": "modal_takes_base_form-7cfff50e",
+   "phenomenon": "modal_takes_base_form"
+  },
+  {
+   "bad": "The men will works.",
+   "good": "The men will work.",
+   "id": "modal_takes_base_form-7f13991e",
+   "phenomenon": "modal_takes_base_form"
+  },
+  {
+   "bad": "The boys will works.",
+   "good": "The boys will work.",
+   "id": "modal_takes_base_form-85a340dd",
+   "phenomenon": "modal_takes_base_form"
+  },
+  {
+   "bad": "The horses must works.",
+   "good": "The horses must work.",
+   "id": "modal_takes_base_form-86ca1ecc",
+   "phenomenon": "modal_takes_base_form"
+  },
+  {
+   "bad": "The horses can works.",
+   "good": "The horses can work.",
+   "id": "modal_takes_base_form-87e61938",
+   "phenomenon": "modal_takes_base_form"
+  },
+  {
+   "bad": "The door may works.",
+   "good": "The door may work.",
+   "id": "modal_takes_base_form-88a33cbc",
+   "phenomenon": "modal_takes_base_form"
+  },
+  {
+   "bad": "The boy may works.",
+   "good": "The boy may work.",
+   "id": "modal_takes_base_form-88dac07c",
+   "phenomenon": "modal_takes_base_form"
+  },
+  {
+   "bad": "The king may works.",
+   "good": "The king may work.",
+   "id": "modal_takes_base_form-8ccf4789",
+   "phenomenon": "modal_takes_base_form"
+  },
+  {
+   "bad": "The dogs will works.",
+   "good": "The dogs will work.",
+   "id": "modal_takes_base_form-8ddc3a6d",
+   "phenomenon": "modal_takes_base_form"
+  },
+  {
+   "bad": "The soldier will works.",
+   "good": "The soldier will work.",
+   "id": "modal_takes_base_form-8e0cb384",
+   "phenomenon": "modal_takes_base_form"
+  },
+  {
+   "bad": "The birds may works.",
+   "good": "The birds may work.",
+   "id": "modal_takes_base_form-8eae6555",
+   "phenomenon": "modal_takes_base_form"
+  },
+  {
+   "bad": "The ship must works.",
+   "good": "The ship must work.",
+   "id": "modal_takes_base_form-8ee72da3",
+   "phenomenon": "modal_takes_base_form"
+  },
+  {
+   "bad": "The bird may works.",
+   "good": "The bird may work.",
+   "id": "modal_takes_base_form-93fc6b7a",
+   "phenomenon": "modal_takes_base_form"
+  },
+  {
+   "bad": "The boys can works.",
+   "good": "The boys can work.",
+   "id": "modal_takes_base_form-96458c30",
+   "phenomenon": "modal_takes_base_form"
+  },
+  {
+   "bad": "The letter can works.",
+   "good": "The letter can work.",
+   "id": "modal_takes_base_form-993d7c27",
+   "phenomenon": "modal_takes_base_form"
+  },
+  {
+   "bad": "The birds must works.",
+   "good": "The birds must work.",
+   "id": "modal_takes_base_form-9b40b458",
+   "phenomenon": "modal_takes_base_form"
+  },
+  {
+   "bad": "The boy will works.",
+   "good": "The boy will work.",
+   "id": "modal_takes_base_form-9b7edb47",
+   "phenomenon": "modal_takes_base_form"
+  },
+  {
+   "bad": "The bird can works.",
+   "good": "The bird can work.",
+   "id": "modal_takes_base_form-9bc8cf94",
+   "phenomenon": "modal_takes_base_form"
+  },
+  {
+   "bad": "The doors will works.",
+   "good": "The doors will work.",
+   "id": "modal_takes_base_form-9d0241e3",
+   "phenomenon": "modal_takes_base_form"
+  },
+  {
+   "bad": "The ships must works.",
+   "good": "The ships must work.",
+   "id": "modal_takes_base_form-9f728f40",
+   "phenomenon": "modal_takes_base_form"
+  },
+  {
+   "bad": "The girl will works.",
+   "good": "The girl will work.",
+   "id": "modal_takes_base_form-a4aa0e4a",
+   "phenomenon": "modal_takes_base_form"
+  },
+  {
+   "bad": "The tree can works.",
+   "good": "The tree can work.",
+   "id": "modal_takes_base_form-a833aca5",
+   "phenomenon": "modal_takes_base_form"
+  },
+  {
+   "bad": "The woman must works.",
+   "good": "The woman must work.",
+   "id": "modal_takes_base_form-a8b895f1",
+   "phenomenon": "modal_takes_base_form"
+  },
+  {
+   "bad": "The door must works.",
+   "good": "The door must work.",
+   "id": "modal_takes_base_form-ab850831",
+   "phenomenon": "modal_takes_base_form"
+  },
+  {
+   "bad": "The soldier can works.",
+   "good": "The soldier can work.",
+   "id": "modal_takes_base_form-ac351377",
+   "phenomenon": "modal_takes_base_form"
+  },
+  {
+   "bad": "The ships may works.",
+   "good": "The ships may work.",
+   "id": "modal_takes_base_form-ae4c7d82",
+   "phenomenon": "modal_takes_base_form"
+  },
+  {
+   "bad": "The tree must works.",
+   "good": "The tree must work.",
+   "id": "modal_takes_base_form-aedfc751",
+   "phenomenon": "modal_takes_base_form"
+  },
+  {
+   "bad": "The king will works.",
+   "good": "The king will work.",
+   "id": "modal_takes_base_form-b0c285ea",
+   "phenomenon": "modal_takes_base_form"
+  },
+  {
+   "bad": "The men can works.",
+   "good": "The men can work.",
+   "id": "modal_takes_base_form-b0d3c4d2",
+   "phenomenon": "modal_takes_base_form"
+  },
+  {
+   "bad": "The woman can works.",
+   "good": "The woman can work.",
+   "id": "modal_takes_base_form-b2f75f41",
+   "phenomenon": "modal_takes_base_form"
+  },
+  {
+   "bad": "The soldiers may works.",
+   "good": "The soldiers may work.",
+   "id": "modal_takes_base_form-b45a3374",
+   "phenomenon": "modal_takes_base_form"
+  },
+  {
+   "bad": "The child must works.",
+   "good": "The child must work.",
+   "id": "modal_takes_base_form-b4e4e3e0",
+   "phenomenon": "modal_takes_base_form"
+  },
+  {
+   "bad": "The children can works.",
+   "good": "The children can work.",
+   "id": "modal_takes_base_form-b5f370e9",
+   "phenomenon": "modal_takes_base_form"
+  },
+  {
+   "bad": "The soldiers can works.",
+   "good": "The soldiers can work.",
+   "id": "modal_takes_base_form-b653ca26",
+   "phenomenon": "modal_takes_base_form"
+  },
+  {
+   "bad": "The river may works.",
+   "good": "The river may work.",
+   "id": "modal_takes_base_form-baf5b4a1",
+   "phenomenon": "modal_takes_base_form"
+  },
+  {
+   "bad": "The boys may works.",
+   "good": "The boys may work.",
+   "id": "modal_takes_base_form-bcbb320c",
+   "phenomenon": "modal_takes_base_form"
+  },
+  {
+   "bad": "The rivers may works.",
+   "good": "The rivers may work.",
+   "id": "modal_takes_base_form-bf8e1097",
+   "phenomenon": "modal_takes_base_form"
+  },
+  {
+   "bad": "The man may works.",
+   "good": "The man may work.",
+   "id": "modal_takes_base_form-c1810db8",
+   "phenomenon": "modal_takes_base_form"
+  },
+  {
+   "bad": "The doors must works.",
+   "good": "The doors must work.",
+   "id": "modal_takes_base_form-c6b53d37",
+   "phenomenon": "modal_takes_base_form"
+  },
+  {
+   "bad": "Old the letters stand.",
+   "good": "The old letters stand.",
+   "id": "determiner_adjective_order-000bd567",
+   "phenomenon": "determiner_adjective_order"
+  },
+  {
+   "bad": "Great the horses sing.",
+   "good": "The great horses sing.",
+   "id": "determiner_adjective_order-0011dde0",
+   "phenomenon": "determiner_adjective_order"
+  },
+  {
+   "bad": "Brave the birds rest.",
+   "good": "The brave birds rest.",
+   "id": "determiner_adjective_order-0051d3d1",
+   "phenomenon": "determiner_adjective_order"
+  },
+  {
+   "bad": "Brave the dog stands.",
+   "good": "The brave dog stands.",
+   "id": "determiner_adjective_order-00709a6c",
+   "phenomenon": "determiner_adjective_order"
+  },
+  {
+   "bad": "Poor the letters stand.",
+   "good": "The poor letters stand.",
+   "id": "determiner_adjective_order-00ec9de0",
+   "phenomenon": "determiner_adjective_order"
+  },
+  {
+   "bad": "Brave the ships fall.",
+   "good": "The brave ships fall.",
+   "id": "determiner_adjective_order-01497180",
+   "phenomenon": "determiner_adjective_order"
+  },
+  {
+   "bad": "Great the doors sleep.",
+   "good": "The great doors sleep.",
+   "id": "determiner_adjective_order-016bac6f",
+   "phenomenon": "determiner_adjective_order"
+  },
+  {
+   "bad": "Poor the tree works.",
+   "good": "The poor tree works.",
+   "id": "determiner_adjective_order-017d7e38",
+   "phenomenon": "determiner_adjective_order"
+  },
+  {
+   "bad": "Brave the horse runs.",
+   "good": "The brave horse runs.",
+   "id": "determiner_adjective_order-01b855e7",
+   "phenomenon": "determiner_adjective_order"
+  },
+  {
+   "bad": "Great the letter works.",
+   "good": "The great letter works.",
+   "id": "determiner_adjective_order-01c2d7d1",
+   "phenomenon": "determiner_adjective_order"
+  },
+  {
+   "bad": "Poor the soldier rests.",
+   "good": "The poor soldier rests.",
+   "id": "determiner_adjective_order-01c7a1cf",
+   "phenomenon": "determiner_adjective_order"
+  },
+  {
+   "bad": "Old the trees sing.",
+   "good": "The old trees sing.",
+   "id": "determiner_adjective_order-020342c1",
+   "phenomenon": "determiner_adjective_order"
+  },
+  {
+   "bad": "Tall the house rests.",
+   "good": "The tall house rests.",
+   "id": "determiner_adjective_order-020756ad",
+   "phenomenon": "determiner_adjective_order"
+  },
+  {
+   "bad": "Poor the house runs.",
+   "good": "The poor house runs.",
+   "id": "determiner_adjective_order-024adc20",
+   "phenomenon": "determiner_adjective_order"
+  },
+  {
+   "bad": "Tall the soldier stands.",
+   "good": "The tall soldier stands.",
+   "id": "determiner_adjective_order-02ae7e5f",
+   "phenomenon": "determiner_adjective_order"
+  },
+  {
+   "bad": "Brave the boy speaks.",
+   "good": "The brave boy speaks.",
+   "id": "determiner_adjective_order-02ec1549",
+   "phenomenon": "determiner_adjective_order"
+  },
+  {
+   "bad": "Tall the house falls.",
+   "good": "The tall house falls.",
+   "id": "determiner_adjective_order-02eec5c6",
+   "phenomenon": "determiner_adjective_order"
+  },
+  {
+   "bad": "Brave the birds speak.",
+   "good": "The brave birds speak.",
+   "id": "determiner_adjective_order-03005301",
+   "phenomenon": "determiner_adjective_order"
+  },
+  {
+   "bad": "Old the house falls.",
+   "good": "The old house falls.",
+   "id": "determiner_adjective_order-03115543",
+   "phenomenon": "determiner_adjective_order"
+  },
+  {
+   "bad": "Old the doors wait.",
+   "good": "The old doors wait.",
+   "id": "determiner_adjective_order-03177f65",
+   "phenomenon": "determiner_adjective_order"
+  },
+  {
+   "bad": "Great the doors fall.",
+   "good": "The great doors fall.",
+   "id": "determiner_adjective_order-033b064e",
+   "phenomenon": "determiner_adjective_order"
+  },
+  {
+   "bad": "Brave the woman runs.",
+   "good": "The brave woman runs.",
+   "id": "determiner_adjective_order-03492e98",
+   "phenomenon": "determiner_adjective_order"
+  },
+  {
+   "bad": "Tall the kings wait.",
+   "good": "The tall kings wait.",
+   "id": "determiner_adjective_order-035d6a18",
+   "phenomenon": "determiner_adjective_order"
+  },
+  {
+   "bad": "Old the girls wait.",
+   "good": "The old girls wait.",
+   "id": "determiner_adjective_order-038c1b36",
+   "phenomenon": "determiner_adjective_order"
+  },
+  {
+   "bad": "Great the children rest.",
+   "good": "The great children rest.",
+   "id": "determiner_adjective_order-0390effb",
+   "phenomenon": "determiner_adjective_order"
+  },
+  {
+   "bad": "Tall the doors stand.",
+   "good": "The tall doors stand.",
+   "id": "determiner_adjective_order-03972129",
+   "phenomenon": "determiner_adjective_order"
+  },
+  {
+   "bad": "Great the boys sing.",
+   "good": "The great boys sing.",
+   "id": "determiner_adjective_order-039cdb5c",
+   "phenomenon": "determiner_adjective_order"
+  },
+  {
+   "bad": "Brave the boys rest.",
+   "good": "The brave boys rest.",
+   "id": "determiner_adjective_order-03f34f17",
+   "phenomenon": "determiner_adjective_order"
+  },
+  {
+   "bad": "Poor the horse walks.",
+   "good": "The poor horse walks.",
+   "id": "determiner_adjective_order-042d9b75",
+   "phenomenon": "determiner_adjective_order"
+  },
+  {
+   "bad": "Tall the soldiers wait.",
+   "good": "The tall soldiers wait.",
+   "id": "determiner_adjective_order-04410276",
+   "phenomenon": "determiner_adjective_order"
+  },
+  {
+   "bad": "Poor the child sings.",
+   "good": "The poor child sings.",
+   "id": "determiner_adjective_order-0465127c",
+   "phenomenon": "determiner_adjective_order"
+  },
+  {
+   "bad": "Great the river sleeps.",
+   "good": "The great river sleeps.",
+   "id": "determiner_adjective_order-04b0c92f",
+   "phenomenon": "determiner_adjective_order"
+  },
+  {
+   "bad": "Poor the man rests.",
+   "good": "The poor man rests.",
+   "id": "determiner_adjective_order-04b36d4b",
+   "phenomenon": "determiner_adjective_order"
+  },
+  {
+   "bad": "Old the man rests.",
+   "good": "The old man rests.",
+   "id": "determiner_adjective_order-04b66f11",
+   "phenomenon": "determiner_adjective_order"
+  },
+  {
+   "bad": "Poor the girl stands.",
+   "good": "The poor girl stands.",
+   "id": "determiner_adjective_order-04ba9a88",
+   "phenomenon": "determiner_adjective_order"
+  },
+  {
+   "bad": "Poor the kings speak.",
+   "good": "The poor kings speak.",
+   "id": "determiner_adjective_order-04f390a2",
+   "phenomenon": "determiner_adjective_order"
+  },
+  {
+   "bad": "Tall the horse waits.",
+   "good": "The tall horse waits.",
+   "id": "determiner_adjective_order-0517dad6",
+   "phenomenon": "determiner_adjective_order"
+  },
+  {
+   "bad": "Brave the child stands.",
+   "good": "The brave child stands.",
+   "id": "determiner_adjective_order-05760cf3",
+   "phenomenon": "determiner_adjective_order"
+  },
+  {
+   "bad": "Tall the woman runs.",
+   "good": "The tall woman runs.",
+   "id": "determiner_adjective_order-0579efa4",
+   "phenomenon": "determiner_adjective_order"
+  },
+  {
+   "bad": "Old the man waits.",
+   "good": "The old man waits.",
+   "id": "determiner_adjective_order-05bb79e6",
+   "phenomenon": "determiner_adjective_order"
+  },
+  {
+   "bad": "Brave the letter waits.",
+   "good": "The brave letter waits.",
+   "id": "determiner_adjective_order-061b5432",
+   "phenomenon": "determiner_adjective_order"
+  },
+  {
+   "bad": "Tall the dog works.",
+   "good": "The tall dog works.",
+   "id": "determiner_adjective_order-0620fbe6",
+   "phenomenon": "determiner_adjective_order"
+  },
+  {
+   "bad": "Great the children wait.",
+   "good": "The great children wait.",
+   "id": "determiner_adjective_order-06305713",
+   "phenomenon": "determiner_adjective_order"
+  },
+  {
+   "bad": "Old the boys sleep.",
+   "good": "The old boys sleep.",
+   "id": "determiner_adjective_order-063b47e2",
+   "phenomenon": "determiner_adjective_order"
+  },
+  {
+   "bad": "Old the letter falls.",
+   "good": "The old letter falls.",
+   "id": "determiner_adjective_order-064866a2",
+   "phenomenon": "determiner_adjective_order"
+  },
+  {
+   "bad": "Great the children work.",
+   "good": "The great children work.",
+   "id": "determiner_adjective_order-068cd24f",
+   "phenomenon": "determiner_adjective_order"
+  },
+  {
+   "bad": "Poor the letter runs.",
+   "good": "The poor letter runs.",
+   "id": "determiner_adjective_order-06c9f230",
+   "phenomenon": "determiner_adjective_order"
+  },
+  {
+   "bad": "Great the letters walk.",
+   "good": "The great letters walk.",
+   "id": "determiner_adjective_order-06ec7d27",
+   "phenomenon": "determiner_adjective_order"
+  },
+  {
+   "bad": "Poor the child works.",
+   "good": "The poor child works.",
+   "id": "determiner_adjective_order-0703891b",
+   "phenomenon": "determiner_adjective_order"
+  },
+  {
+   "bad": "Poor the dogs run.",
+   "good": "The poor dogs run.",
+   "id": "determiner_adjective_order-07773fb9",
+   "phenomenon": "determiner_adjective_order"
+  },
+  {
+   "bad": "Great the trees sing.",
+   "good": "The great trees sing.",
+   "id": "determiner_adjective_order-078282f1",
+   "phenomenon": "determiner_adjective_order"
+  },
+  {
+   "bad": "Great the men rest.",
+   "good": "The great men rest.",
+   "id": "determiner_adjective_order-07871406",
+   "phenomenon": "determiner_adjective_order"
+  },
+  {
+   "bad": "Great the ship waits.",
+   "good": "The great ship waits.",
+   "id": "determiner_adjective_order-07ae81f5",
+   "phenomenon": "determiner_adjective_order"
+  },
+  {
+   "bad": "Old the soldier sleeps.",
+   "good": "The old soldier sleeps.",
+   "id": "determiner_adjective_order-080a305c",
+   "phenomenon": "determiner_adjective_order"
+  },
+  {
+   "bad": "Brave the kings walk.",
+   "good": "The brave kings walk.",
+   "id": "determiner_adjective_order-082ec1e9",
+   "phenomenon": "determiner_adjective_order"
+  },
+  {
+   "bad": "Brave the man works.",
+   "good": "The brave man works.",
+   "id": "determiner_adjective_order-083ef3a8",
+   "phenomenon": "determiner_adjective_order"
+  },
+  {
+   "bad": "Brave the trees speak.",
+   "good": "The brave trees speak.",
+   "id": "determiner_adjective_order-08693c1c",
+   "phenomenon": "determiner_adjective_order"
+  },
+  {
+   "bad": "Tall the girl speaks.",
+   "good": "The tall girl speaks.",
+   "id": "determiner_adjective_order-089768a6",
+   "phenomenon": "determiner_adjective_order"
+  },
+  {
+   "bad": "Tall the king walks.",
+   "good": "The tall king walks.",
+   "id": "determiner_adjective_order-08b2491e",
+   "phenomenon": "determiner_adjective_order"
+  },
+  {
+   "bad": "Old the ships wait.",
+   "good": "The old ships wait.",
+   "id": "determiner_adjective_order-08d8ffd8",
+   "phenomenon": "determiner_adjective_order"
+  },
+  {
+   "bad": "Tall the bird waits.",
+   "good": "The tall bird waits.",
+   "id": "determiner_adjective_order-09090288",
+   "phenomenon": "determiner_adjective_order"
+  },
+  {
+   "bad": "Brave the trees fall.",
+   "good": "The brave trees fall.",
+   "id": "determiner_adjective_order-091682bc",
+   "phenomenon": "determiner_adjective_order"
+  },
+  {
+   "bad": "Old the bird runs.",
+   "good": "The old bird runs.",
+   "id": "determiner_adjective_order-0921990c",
+   "phenomenon": "determiner_adjective_order"
+  },
+  {
+   "bad": "Old the men run.",
+   "good": "The old men run.",
+   "id": "determiner_adjective_order-094cc48b",
+   "phenomenon": "determiner_adjective_order"
+  },
+  {
+   "bad": "Great the river works.",
+   "good": "The great river works.",
+   "id": "determiner_adjective_order-0993d9e2",
+   "phenomenon": "determiner_adjective_order"
+  },
+  {
+   "bad": "Old the horses fall.",
+   "good": "The old horses fall.",
+   "id": "determiner_adjective_order-0a2009a6",
+   "phenomenon": "determiner_adjective_order"
+  },
+  {
+   "bad": "Old the women fall.",
+   "good": "The old women fall.",
+   "id": "determiner_adjective_order-0a232b4a",
+   "phenomenon": "determiner_adjective_order"
+  },
+  {
+   "bad": "Poor the man falls.",
+   "good": "The poor man falls.",
+   "id": "determiner_adjective_order-0a265a1d",
+   "phenomenon": "determiner_adjective_order"
+  },
+  {
+   "bad": "Great the door rests.",
+   "good": "The great door rests.",
+   "id": "determiner_adjective_order-0a31cf44",
+   "phenomenon": "determiner_adjective_order"
+  },
+  {
+   "bad": "Tall the soldiers speak.",
+   "good": "The tall soldiers speak.",
+   "id": "determiner_adjective_order-0a5619b5",
+   "phenomenon": "determiner_adjective_order"
+  },
+  {
+   "bad": "Brave the king walks.",
+   "good": "The brave king walks.",
+   "id": "determiner_adjective_order-0a898f11",
+   "phenomenon": "determiner_adjective_order"
+  },
+  {
+   "bad": "Brave the girl falls.",
+   "good": "The brave girl falls.",
+   "id": "determiner_adjective_order-0acceb80",
+   "phenomenon": "determiner_adjective_order"
+  },
+  {
+   "bad": "Tall the soldiers rest.",
+   "good": "The tall soldiers rest.",
+   "id": "determiner_adjective_order-0ae129e7",
+   "phenomenon": "determiner_adjective_order"
+  },
+  {
+   "bad": "Tall the horse rests.",
+   "good": "The tall horse rests.",
+   "id": "determiner_adjective_order-0b153c9c",
+   "phenomenon": "determiner_adjective_order"
+  },
+  {
+   "bad": "Brave the doors sing.",
+   "good": "The brave doors sing.",
+   "id": "determiner_adjective_order-0b34b6fc",
+   "phenomenon": "determiner_adjective_order"
+  },
+  {
+   "bad": "Poor the doors speak.",
+   "good": "The poor doors speak.",
+   "id": "determiner_adjective_order-0b623a36",
+   "phenomenon": "determiner_adjective_order"
+  },
+  {
+   "bad": "Tall the soldiers walk.",
+   "good": "The tall soldiers walk.",
+   "id": "determiner_adjective_order-0b81909d",
+   "phenomenon": "determiner_adjective_order"
+  },
+  {
+   "bad": "Tall the dogs stand.",
+   "good": "The tall dogs stand.",
+   "id": "determiner_adjective_order-0baa916b",
+   "phenomenon": "determiner_adjective_order"
+  },
+  {
+   "bad": "Brave the women sing.",
+   "good": "The brave women sing.",
+   "id": "determiner_adjective_order-0baad33b",
+   "phenomenon": "determiner_adjective_order"
+  },
+  {
+   "bad": "Poor the king runs.",
+   "good": "The poor king runs.",
+   "id": "determiner_adjective_order-0bdb9d4e",
+   "phenomenon": "determiner_adjective_order"
+  },
+  {
+   "bad": "Great the dogs run.",
+   "good": "The great dogs run.",
+   "id": "determiner_adjective_order-0bdc764d",
+   "phenomenon": "determiner_adjective_order"
+  },
+  {
+   "bad": "Brave the child falls.",
+   "good": "The brave child falls.",
+   "id": "determiner_adjective_order-0c014ffd",
+   "phenomenon": "determiner_adjective_order"
+  },
+  {
+   "bad": "Old the door waits.",
+   "good": "The old door waits.",
+   "id": "determiner_adjective_order-0c069dfc",
+   "phenomenon": "determiner_adjective_order"
+  },
+  {
+   "bad": "Great the bird waits.",
+   "good": "The great bird waits.",
+   "id": "determiner_adjective_order-0c244e36",
+   "phenomenon": "determiner_adjective_order"
+  },
+  {
+   "bad": "Tall the birds run.",
+   "good": "The tall birds run.",
+   "id": "determiner_adjective_order-0c28dedf",
+   "phenomenon": "determiner_adjective_order"
+  },
+  {
+   "bad": "Brave the woman rests.",
+   "good": "The brave woman rests.",
+   "id": "determiner_adjective_order-0c2cf0b7",
+   "phenomenon": "determiner_adjective_order"
+  },
+  {
+   "bad": "Poor the girls rest.",
+   "good": "The poor girls rest.",
+   "id": "determiner_adjective_order-0c4a9681",
+   "phenomenon": "determiner_adjective_order"
+  },
+  {
+   "bad": "Great the birds walk.",
+   "good": "The great birds walk.",
+   "id": "determiner_adjective_order-0c523b7a",
+   "phenomenon": "determiner_adjective_order"
+  },
+  {
+   "bad": "Brave the river waits.",
+   "good": "The brave river waits.",
+   "id": "determiner_adjective_order-0c5cfc14",
+   "phenomenon": "determiner_adjective_order"
+  },
+  {
+   "bad": "Brave the dog works.",
+   "good": "The brave dog works.",
+   "id": "determiner_adjective_order-0cc66244",
+   "phenomenon": "determiner_adjective_order"
+  },
+  {
+   "bad": "Poor the girls wait.",
+   "good": "The poor girls wait.",
+   "id": "determiner_adjective_order-0ce586a7",
+   "phenomenon": "determiner_adjective_order"
+  },
+  {
+   "bad": "Great the bird sings.",
+   "good": "The great bird sings.",
+   "id": "determiner_adjective_order-0ce5fce2",
+   "phenomenon": "determiner_adjective_order"
+  },
+  {
+   "bad": "Old the trees speak.",
+   "good": "The old trees speak.",
+   "id": "determiner_adjective_order-0ce96116",
+   "phenomenon": "determiner_adjective_order"
+  },
+  {
+   "bad": "Poor the boys sing.",
+   "good": "The poor boys sing.",
+   "id": "determiner_adjective_order-0cfd55a6",
+   "phenomenon": "determiner_adjective_order"
+  },
+  {
+   "bad": "Great the king speaks.",
+   "good": "The great king speaks.",
+   "id": "determiner_adjective_order-0d168a70",
+   "phenomenon": "determiner_adjective_order"
+  },
+  {
+   "bad": "Old the women sing.",
+   "good": "The old women sing.",
+   "id": "determiner_adjective_order-0d2b1333",
+   "phenomenon": "determiner_adjective_order"
+  },
+  {
+   "bad": "Poor the girl runs.",
+   "good": "The poor girl runs.",
+   "id": "determiner_adjective_order-0d4c1b7e",
+   "phenomenon": "determiner_adjective_order"
+  },
+  {
+   "bad": "Poor the house sleeps.",
+   "good": "The poor house sleeps.",
+   "id": "determiner_adjective_order-0d67c304",
+   "phenomenon": "determiner_adjective_order"
+  },
+  {
+   "bad": "Poor the kings stand.",
+   "good": "The poor kings stand.",
+   "id": "determiner_adjective_order-0d73b4d5",
+   "phenomenon": "determiner_adjective_order"
+  },
+  {
+   "bad": "Old the boys speak.",
+   "good": "The old boys speak.",
+   "id": "determiner_adjective_order-0da2c2e3",
+   "phenomenon": "determiner_adjective_order"
+  },
+  {
+   "bad": "He blamed myself on the hill.",
+   "good": "He blamed himself on the hill.",
+   "id": "reflexive_pronoun_agreement-00edbe16",
+   "phenomenon": "reflexive_pronoun_agreement"
+  },
+  {
+   "bad": "They washed himself near the river.",
+   "good": "They washed themselves near the river.",
+   "id": "reflexive_pronoun_agreement-02190996",
+   "phenomenon": "reflexive_pronoun_agreement"
+  },
+  {
+   "bad": "He blamed herself by the gate.",
+   "good": "He blamed himself by the gate.",
+   "id": "reflexive_pronoun_agreement-02515b09",
+   "phenomenon": "reflexive_pronoun_agreement"
+  },
+  {
+   "bad": "He saw myself on the hill.",
+   "good": "He saw himself on the hill.",
+   "id": "reflexive_pronoun_agreement-034dd38c",
+   "phenomenon": "reflexive_pronoun_agreement"
+  },
+  {
+   "bad": "We saw herself near the river.",
+   "good": "We saw ourselves near the river.",
+   "id": "reflexive_pronoun_agreement-03c49fca",
+   "phenomenon": "reflexive_pronoun_agreement"
+  },
+  {
+   "bad": "We taught himself in the field.",
+   "good": "We taught ourselves in the field.",
+   "id": "reflexive_pronoun_agreement-03f40621",
+   "phenomenon": "reflexive_pronoun_agreement"
+  },
+  {
+   "bad": "We taught myself on the hill.",
+   "good": "We taught ourselves on the hill.",
+   "id": "reflexive_pronoun_agreement-04939788",
+   "phenomenon": "reflexive_pronoun_agreement"
+  },
+  {
+   "bad": "I washed ourselves on the hill.",
+   "good": "I washed myself on the hill.",
+   "id": "reflexive_pronoun_agreement-052800b2",
+   "phenomenon": "reflexive_pronoun_agreement"
+  },
+  {
+   "bad": "We taught themselves near the river.",
+   "good": "We taught ourselves near the river.",
+   "id": "reflexive_pronoun_agreement-057acc8c",
+   "phenomenon": "reflexive_pronoun_agreement"
+  },
+  {
+   "bad": "They blamed herself near the river.",
+   "good": "They blamed themselves near the river.",
+   "id": "reflexive_pronoun_agreement-07d13522",
+   "phenomenon": "reflexive_pronoun_agreement"
+  },
+  {
+   "bad": "She hurt myself on the hill.",
+   "good": "She hurt herself on the hill.",
+   "id": "reflexive_pronoun_agreement-08914302",
+   "phenomenon": "reflexive_pronoun_agreement"
+  },
+  {
+   "bad": "She saw ourselves at the door.",
+   "good": "She saw herself at the door.",
+   "id": "reflexive_pronoun_agreement-08ec31b4",
+   "phenomenon": "reflexive_pronoun_agreement"
+  },
+  {
+   "bad": "He washed themselves by the gate.",
+   "good": "He washed himself by the gate.",
+   "id": "reflexive_pronoun_agreement-091fa408",
+   "phenomenon": "reflexive_pronoun_agreement"
+  },
+  {
+   "bad": "He washed myself near the river.",
+   "good": "He washed himself near the river.",
+   "id": "reflexive_pronoun_agreement-09e3f9fa",
+   "phenomenon": "reflexive_pronoun_agreement"
+  },
+  {
+   "bad": "They blamed herself at the door.",
+   "good": "They blamed themselves at the door.",
+   "id": "reflexive_pronoun_agreement-0a436a0c",
+   "phenomenon": "reflexive_pronoun_agreement"
+  },
+  {
+   "bad": "We taught himself at the door.",
+   "good": "We taught ourselves at the door.",
+   "id": "reflexive_pronoun_agreement-0a9d0034",
+   "phenomenon": "reflexive_pronoun_agreement"
+  },
+  {
+   "bad": "We blamed themselves near the river.",
+   "good": "We blamed ourselves near the river.",
+   "id": "reflexive_pronoun_agreement-0af2451f",
+   "phenomenon": "reflexive_pronoun_agreement"
+  },
+  {
+   "bad": "They hurt himself in the field.",
+   "good": "They hurt themselves in the field.",
+   "id": "reflexive_pronoun_agreement-0bc2a5b9",
+   "phenomenon": "reflexive_pronoun_agreement"
+  },
+  {
+   "bad": "He washed themselves at the door.",
+   "good": "He washed himself at the door.",
+   "id": "reflexive_pronoun_agreement-0ca5f450",
+   "phenomenon": "reflexive_pronoun_agreement"
+  },
+  {
+   "bad": "We saw themselves by the gate.",
+   "good": "We saw ourselves by the gate.",
+   "id": "reflexive_pronoun_agreement-0d1c7350",
+   "phenomenon": "reflexive_pronoun_agreement"
+  },
+  {
+   "bad": "She saw himself on the hill.",
+   "good": "She saw herself on the hill.",
+   "id": "reflexive_pronoun_agreement-0ddbae4b",
+   "phenomenon": "reflexive_pronoun_agreement"
+  },
+  {
+   "bad": "He hurt herself by the gate.",
+   "good": "He hurt himself by the gate.",
+   "id": "reflexive_pronoun_agreement-0de6619a",
+   "phenomenon": "reflexive_pronoun_agreement"
+  },
+  {
+   "bad": "She washed themselves at the door.",
+   "good": "She washed herself at the door.",
+   "id": "reflexive_pronoun_agreement-0e526769",
+   "phenomenon": "reflexive_pronoun_agreement"
+  },
+  {
+   "bad": "We washed himself at the door.",
+   "good": "We washed ourselves at the door.",
+   "id": "reflexive_pronoun_agreement-0e592254",
+   "phenomenon": "reflexive_pronoun_agreement"
+  },
+  {
+   "bad": "She blamed ourselves at the door.",
+   "good": "She blamed herself at the door.",
+   "id": "reflexive_pronoun_agreement-0ee31a4a",
+   "phenomenon": "reflexive_pronoun_agreement"
+  },
+  {
+   "bad": "They saw herself on the hill.",
+   "good": "They saw themselves on the hill.",
+   "id": "reflexive_pronoun_agreement-0f3ee6b3",
+   "phenomenon": "reflexive_pronoun_agreement"
+  },
+  {
+   "bad": "He taught themselves in the field.",
+   "good": "He taught himself in the field.",
+   "id": "reflexive_pronoun_agreement-0f5357b8",
+   "phenomenon": "reflexive_pronoun_agreement"
+  },
+  {
+   "bad": "We washed myself in the field.",
+   "good": "We washed ourselves in the field.",
+   "id": "reflexive_pronoun_agreement-0f810770",
+   "phenomenon": "reflexive_pronoun_agreement"
+  },
+  {
+   "bad": "I hurt themselves near the river.",
+   "good": "I hurt myself near the river.",
+   "id": "reflexive_pronoun_agreement-0fdad0a9",
+   "phenomenon": "reflexive_pronoun_agreement"
+  },
+  {
+   "bad": "I hurt himself in the field.",
+   "good": "I hurt myself in the field.",
+   "id": "reflexive_pronoun_agreement-0feee2ef",
+   "phenomenon": "reflexive_pronoun_agreement"
+  },
+  {
+   "bad": "She washed myself near the river.",
+   "good": "She washed herself near the river.",
+   "id": "reflexive_pronoun_agreement-118ea1db",
+   "phenomenon": "reflexive_pronoun_agreement"
+  },
+  {
+   "bad": "They blamed himself by the gate.",
+   "good": "They blamed themselves by the gate.",
+   "id": "reflexive_pronoun_agreement-11bc380d",
+   "phenomenon": "reflexive_pronoun_agreement"
+  },
+  {
+   "bad": "She hurt ourselves by the gate.",
+   "good": "She hurt herself by the gate.",
+   "id": "reflexive_pronoun_agreement-1209fed0",
+   "phenomenon": "reflexive_pronoun_agreement"
+  },
+  {
+   "bad": "I blamed himself on the hill.",
+   "good": "I blamed myself on the hill.",
+   "id": "reflexive_pronoun_agreement-12ea07ec",
+   "phenomenon": "reflexive_pronoun_agreement"
+  },
+  {
+   "bad": "We hurt myself in the field.",
+   "good": "We hurt ourselves in the field.",
+   "id": "reflexive_pronoun_agreement-137ef433",
+   "phenomenon": "reflexive_pronoun_agreement"
+  },
+  {
+   "bad": "I saw herself in the field.",
+   "good": "I saw myself in the field.",
+   "id": "reflexive_pronoun_agreement-13faf508",
+   "phenomenon": "reflexive_pronoun_agreement"
+  },
+  {
+   "bad": "He hurt ourselves near the river.",
+   "good": "He hurt himself near the river.",
+   "id": "reflexive_pronoun_agreement-1407de30",
+   "phenomenon": "reflexive_pronoun_agreement"
+  },
+  {
+   "bad": "He hurt herself in the field.",
+   "good": "He hurt himself in the field.",
+   "id": "reflexive_pronoun_agreement-15702f20",
+   "phenomenon": "reflexive_pronoun_agreement"
+  },
+  {
+   "bad": "They saw ourselves near the river.",
+   "good": "They saw themselves near the river.",
+   "id": "reflexive_pronoun_agreement-15c0b8c8",
+   "phenomenon": "reflexive_pronoun_agreement"
+  },
+  {
+   "bad": "We saw himself at the door.",
+   "good": "We saw ourselves at the door.",
+   "id": "reflexive_pronoun_agreement-15dba46f",
+   "phenomenon": "reflexive_pronoun_agreement"
+  },
+  {
+   "bad": "He taught ourselves near the river.",
+   "good": "He taught himself near the river.",
+   "id": "reflexive_pronoun_agreement-16b0ef06",
+   "phenomenon": "reflexive_pronoun_agreement"
+  },
+  {
+   "bad": "I blamed himself at the door.",
+   "good": "I blamed myself at the door.",
+   "id": "reflexive_pronoun_agreement-177080d4",
+   "phenomenon": "reflexive_pronoun_agreement"
+  },
+  {
+   "bad": "I saw herself near the river.",
+   "good": "I saw myself near the river.",
+   "id": "reflexive_pronoun_agreement-178c8910",
+   "phenomenon": "reflexive_pronoun_agreement"
+  },
+  {
+   "bad": "They taught himself near the river.",
+   "good": "They taught themselves near the river.",
+   "id": "reflexive_pronoun_agreement-185ea0e0",
+   "phenomenon": "reflexive_pronoun_agreement"
+  },
+  {
+   "bad": "She blamed himself near the river.",
+   "good": "She blamed herself near the river.",
+   "id": "reflexive_pronoun_agreement-1862ef72",
+   "phenomenon": "reflexive_pronoun_agreement"
+  },
+  {
+   "bad": "We blamed myself in the field.",
+   "good": "We blamed ourselves in the field.",
+   "id": "reflexive_pronoun_agreement-18de057d",
+   "phenomenon": "reflexive_pronoun_agreement"
+  },
+  {
+   "bad": "She hurt himself at the door.",
+   "good": "She hurt herself at the door.",
+   "id": "reflexive_pronoun_agreement-1992cc20",
+   "phenomenon": "reflexive_pronoun_agreement"
+  },
+  {
+   "bad": "She washed myself on the hill.",
+   "good": "She washed herself on the hill.",
+   "id": "reflexive_pronoun_agreement-19b18e8f",
+   "phenomenon": "reflexive_pronoun_agreement"
+  },
+  {
+   "bad": "She saw themselves near the river.",
+   "good": "She saw herself near the river.",
+   "id": "reflexive_pronoun_agreement-1a3c2368",
+   "phenomenon": "reflexive_pronoun_agreement"
+  },
+  {
+   "bad": "He saw ourselves at the door.",
+   "good": "He saw himself at the door.",
+   "id": "reflexive_pronoun_agreement-1a448367",
+   "phenomenon": "reflexive_pronoun_agreement"
+  },
+  {
+   "bad": "I hurt herself at the door.",
+   "good": "I hurt myself at the door.",
+   "id": "reflexive_pronoun_agreement-1acd6215",
+   "phenomenon": "reflexive_pronoun_agreement"
+  },
+  {
+   "bad": "I blamed themselves near the river.",
+   "good": "I blamed myself near the river.",
+   "id": "reflexive_pronoun_agreement-1c6c0296",
+   "phenomenon": "reflexive_pronoun_agreement"
+  },
+  {
+   "bad": "I taught himself in the field.",
+   "good": "I taught myself in the field.",
+   "id": "reflexive_pronoun_agreement-1c8519c1",
+   "phenomenon": "reflexive_pronoun_agreement"
+  },
+  {
+   "bad": "She hurt myself near the river.",
+   "good": "She hurt herself near the river.",
+   "id": "reflexive_pronoun_agreement-1d244af5",
+   "phenomenon": "reflexive_pronoun_agreement"
+  },
+  {
+   "bad": "They washed herself by the gate.",
+   "good": "They washed themselves by the gate.",
+   "id": "reflexive_pronoun_agreement-1d578fc5",
+   "phenomenon": "reflexive_pronoun_agreement"
+  },
+  {
+   "bad": "He taught herself at the door.",
+   "good": "He taught himself at the door.",
+   "id": "reflexive_pronoun_agreement-1dc79e7a",
+   "phenomenon": "reflexive_pronoun_agreement"
+  },
+  {
+   "bad": "He blamed herself in the field.",
+   "good": "He blamed himself in the field.",
+   "id": "reflexive_pronoun_agreement-1e23db95",
+   "phenomenon": "reflexive_pronoun_agreement"
+  },
+  {
+   "bad": "They hurt ourselves near the river.",
+   "good": "They hurt themselves near the river.",
+   "id": "reflexive_pronoun_agreement-1eb388d9",
+   "phenomenon": "reflexive_pronoun_agreement"
+  },
+  {
+   "bad": "She blamed themselves by the gate.",
+   "good": "She blamed herself by the gate.",
+   "id": "reflexive_pronoun_agreement-1f08a134",
+   "phenomenon": "reflexive_pronoun_agreement"
+  },
+  {
+   "bad": "We saw himself on the hill.",
+   "good": "We saw ourselves on the hill.",
+   "id": "reflexive_pronoun_agreement-1fc82040",
+   "phenomenon": "reflexive_pronoun_agreement"
+  },
+  {
+   "bad": "She taught myself on the hill.",
+   "good": "She taught herself on the hill.",
+   "id": "reflexive_pronoun_agreement-2087a6f0",
+   "phenomenon": "reflexive_pronoun_agreement"
+  },
+  {
+   "bad": "They taught ourselves on the hill.",
+   "good": "They taught themselves on the hill.",
+   "id": "reflexive_pronoun_agreement-20b67bb8",
+   "phenomenon": "reflexive_pronoun_agreement"
+  },
+  {
+   "bad": "We hurt herself on the hill.",
+   "good": "We hurt ourselves on the hill.",
+   "id": "reflexive_pronoun_agreement-21db6601",
+   "phenomenon": "reflexive_pronoun_agreement"
+  },
+  {
+   "bad": "They hurt myself by the gate.",
+   "good": "They hurt themselves by the gate.",
+   "id": "reflexive_pronoun_agreement-22019e7d",
+   "phenomenon": "reflexive_pronoun_agreement"
+  },
+  {
+   "bad": "He hurt ourselves at the door.",
+   "good": "He hurt himself at the door.",
+   "id": "reflexive_pronoun_agreement-2392cced",
+   "phenomenon": "reflexive_pronoun_agreement"
+  },
+  {
+   "bad": "I saw himself on the hill.",
+   "good": "I saw myself on the hill.",
+   "id": "reflexive_pronoun_agreement-23c55e31",
+   "phenomenon": "reflexive_pronoun_agreement"
+  },
+  {
+   "bad": "We saw herself in the field.",
+   "good": "We saw ourselves in the field.",
+   "id": "reflexive_pronoun_agreement-24c52d2b",
+   "phenomenon": "reflexive_pronoun_agreement"
+  },
+  {
+   "bad": "They taught himself in the field.",
+   "good": "They taught themselves in the field.",
+   "id": "reflexive_pronoun_agreement-2639b5d6",
+   "phenomenon": "reflexive_pronoun_agreement"
+  },
+  {
+   "bad": "She taught ourselves near the river.",
+   "good": "She taught herself near the river.",
+   "id": "reflexive_pronoun_agreement-2b00de9e",
+   "phenomenon": "reflexive_pronoun_agreement"
+  },
+  {
+   "bad": "They taught myself at the door.",
+   "good": "They taught themselves at the door.",
+   "id": "reflexive_pronoun_agreement-2b688159",
+   "phenomenon": "reflexive_pronoun_agreement"
+  },
+  {
+   "bad": "She washed themselves by the gate.",
+   "good": "She washed herself by the gate.",
+   "id": "reflexive_pronoun_agreement-2c4738f4",
+   "phenomenon": "reflexive_pronoun_agreement"
+  },
+  {
+   "bad": "We blamed themselves by the gate.",
+   "good": "We blamed ourselves by the gate.",
+   "id": "reflexive_pronoun_agreement-2c9f438c",
+   "phenomenon": "reflexive_pronoun_agreement"
+  },
+  {
+   "bad": "They blamed ourselves on the hill.",
+   "good": "They blamed themselves on the hill.",
+   "id": "reflexive_pronoun_agreement-2cf035ad",
+   "phenomenon": "reflexive_pronoun_agreement"
+  },
+  {
+   "bad": "I washed ourselves at the door.",
+   "good": "I washed myself at the door.",
+   "id": "reflexive_pronoun_agreement-2d60feb1",
+   "phenomenon": "reflexive_pronoun_agreement"
+  },
+  {
+   "bad": "She saw myself by the gate.",
+   "good": "She saw herself by the gate.",
+   "id": "reflexive_pronoun_agreement-2f67e503",
+   "phenomenon": "reflexive_pronoun_agreement"
+  },
+  {
+   "bad": "I saw himself at the door.",
+   "good": "I saw myself at the door.",
+   "id": "reflexive_pronoun_agreement-300331a4",
+   "phenomenon": "reflexive_pronoun_agreement"
+  },
+  {
+   "bad": "They washed ourselves in the field.",
+   "good": "They washed themselves in the field.",
+   "id": "reflexive_pronoun_agreement-30481d91",
+   "phenomenon": "reflexive_pronoun_agreement"
+  },
+  {
+   "bad": "She blamed myself in the field.",
+   "good": "She blamed herself in the field.",
+   "id": "reflexive_pronoun_agreement-3067e318",
+   "phenomenon": "reflexive_pronoun_agreement"
+  },
+  {
+   "bad": "We washed themselves by the gate.",
+   "good": "We washed ourselves by the gate.",
+   "id": "reflexive_pronoun_agreement-30c43527",
+   "phenomenon": "reflexive_pronoun_agreement"
+  },
+  {
+   "bad": "We hurt himself at the door.",
+   "good": "We hurt ourselves at the door.",
+   "id": "reflexive_pronoun_agreement-34977c94",
+   "phenomenon": "reflexive_pronoun_agreement"
+  },
+  {
+   "bad": "He taught herself by the gate.",
+   "good": "He taught himself by the gate.",
+   "id": "reflexive_pronoun_agreement-363cd349",
+   "phenomenon": "reflexive_pronoun_agreement"
+  },
+  {
+   "bad": "I blamed herself in the field.",
+   "good": "I blamed myself in the field.",
+   "id": "reflexive_pronoun_agreement-36974348",
+   "phenomenon": "reflexive_pronoun_agreement"
+  },
+  {
+   "bad": "We washed myself near the river.",
+   "good": "We washed ourselves near the river.",
+   "id": "reflexive_pronoun_agreement-3705dcce",
+   "phenomenon": "reflexive_pronoun_agreement"
+  },
+  {
+   "bad": "He saw ourselves in the field.",
+   "good": "He saw himself in the field.",
+   "id": "reflexive_pronoun_agreement-3769b27d",
+   "phenomenon": "reflexive_pronoun_agreement"
+  },
+  {
+   "bad": "He taught ourselves on the hill.",
+   "good": "He taught himself on the hill.",
+   "id": "reflexive_pronoun_agreement-3816c4d9",
+   "phenomenon": "reflexive_pronoun_agreement"
+  },
+  {
+   "bad": "She taught himself by the gate.",
+   "good": "She taught herself by the gate.",
+   "id": "reflexive_pronoun_agreement-38effcba",
+   "phenomenon": "reflexive_pronoun_agreement"
+  },
+  {
+   "bad": "She hurt ourselves in the field.",
+   "good": "She hurt herself in the field.",
+   "id": "reflexive_pronoun_agreement-3ac494ab",
+   "phenomenon": "reflexive_pronoun_agreement"
+  },
+  {
+   "bad": "They taught ourselves by the gate.",
+   "good": "They taught themselves by the gate.",
+   "id": "reflexive_pronoun_agreement-3ae471f2",
+   "phenomenon": "reflexive_pronoun_agreement"
+  },
+  {
+   "bad": "I taught ourselves by the gate.",
+   "good": "I taught myself by the gate.",
+   "id": "reflexive_pronoun_agreement-3b115591",
+   "phenomenon": "reflexive_pronoun_agreement"
+  },
+  {
+   "bad": "They washed ourselves on the hill.",
+   "good": "They washed themselves on the hill.",
+   "id": "reflexive_pronoun_agreement-3bed982a",
+   "phenomenon": "reflexive_pronoun_agreement"
+  },
+  {
+   "bad": "He washed themselves on the hill.",
+   "good": "He washed himself on the hill.",
+   "id": "reflexive_pronoun_agreement-3df166e2",
+   "phenomenon": "reflexive_pronoun_agreement"
+  },
+  {
+   "bad": "We taught himself by the gate.",
+   "good": "We taught ourselves by the gate.",
+   "id": "reflexive_pronoun_agreement-3f0a9e3f",
+   "phenomenon": "reflexive_pronoun_agreement"
+  },
+  {
+   "bad": "They saw himself by the gate.",
+   "good": "They saw themselves by the gate.",
+   "id": "reflexive_pronoun_agreement-3f72d338",
+   "phenomenon": "reflexive_pronoun_agreement"
+  },
+  {
+   "bad": "They blamed herself in the field.",
+   "good": "They blamed themselves in the field.",
+   "id": "reflexive_pronoun_agreement-405127f6",
+   "phenomenon": "reflexive_pronoun_agreement"
+  },
+  {
+   "bad": "I washed themselves near the river.",
+   "good": "I washed myself near the river.",
+   "id": "reflexive_pronoun_agreement-426f6f9a",
+   "phenomenon": "reflexive_pronoun_agreement"
+  },
+  {
+   "bad": "I washed ourselves in the field.",
+   "good": "I washed myself in the field.",
+   "id": "reflexive_pronoun_agreement-42c65beb",
+   "phenomenon": "reflexive_pronoun_agreement"
+  },
+  {
+   "bad": "We hurt themselves near the river.",
+   "good": "We hurt ourselves near the river.",
+   "id": "reflexive_pronoun_agreement-4327d315",
+   "phenomenon": "reflexive_pronoun_agreement"
+  },
+  {
+   "bad": "They hurt ourselves at the door.",
+   "good": "They hurt themselves at the door.",
+   "id": "reflexive_pronoun_agreement-4399ae19",
+   "phenomenon": "reflexive_pronoun_agreement"
+  },
+  {
+   "bad": "I washed ourselves by the gate.",
+   "good": "I washed myself by the gate.",
+   "id": "reflexive_pronoun_agreement-4522412b",
+   "phenomenon": "reflexive_pronoun_agreement"
+  },
+  {
+   "bad": "He blamed myself near the river.",
+   "good": "He blamed himself near the river.",
+   "id": "reflexive_pronoun_agreement-45dc1b34",
+   "phenomenon": "reflexive_pronoun_agreement"
+  },
+  {
+   "bad": "The child has broke near the river.",
+   "good": "The child has broken near the river.",
+   "id": "past_participle_form-000147d1",
+   "phenomenon": "past_participle_form"
+  },
+  {
+   "bad": "The river has took on the hill.",
+   "good": "The river has taken on the hill.",
+   "id": "past_participle_form-004556d2",
+   "phenomenon": "past_participle_form"
+  },
+  {
+   "bad": "The bird has took on the hill.",
+   "good": "The bird has taken on the hill.",
+   "id": "past_participle_form-00cf6787",
+   "phenomenon": "past_participle_form"
+  },
+  {
+   "bad": "The soldier has wrote in the field.",
+   "good": "The soldier has written in the field.",
+   "id": "past_participle_form-01242177",
+   "phenomenon": "past_participle_form"
+  },
+  {
+   "bad": "The horse has saw by the gate.",
+   "good": "The horse has seen by the gate.",
+   "id": "past_participle_form-014cc332",
+   "phenomenon": "past_participle_form"
+  },
+  {
+   "bad": "The river has spoke by the gate.",
+   "good": "The river has spoken by the gate.",
+   "id": "past_participle_form-01b801e9",
+   "phenomenon": "past_participle_form"
+  },
+  {
+   "bad": "The bird has gave by the gate.",
+   "good": "The bird has given by the gate.",
+   "id": "past_participle_form-03156fb7",
+   "phenomenon": "past_participle_form"
+  },
+  {
+   "bad": "The house has spoke by the gate.",
+   "good": "The house has spoken by the gate.",
+   "id": "past_participle_form-03a2c4e4",
+   "phenomenon": "past_participle_form"
+  },
+  {
+   "bad": "The door has saw near the river.",
+   "good": "The door has seen near the river.",
+   "id": "past_participle_form-042c00fa",
+   "phenomenon": "past_participle_form"
+  },
+  {
+   "bad": "The ship has spoke in the field.",
+   "good": "The ship has spoken in the field.",
+   "id": "past_participle_form-056a8158",
+   "phenomenon": "past_participle_form"
+  },
+  {
+   "bad": "The dog has wrote at the door.",
+   "good": "The dog has written at the door.",
+   "id": "past_participle_form-057d86e9",
+   "phenomenon": "past_participle_form"
+  },
+  {
+   "bad": "The child has went in the field.",
+   "good": "The child has gone in the field.",
+   "id": "past_participle_form-05bf5370",
+   "phenomenon": "past_participle_form"
+  },
+  {
+   "bad": "The woman has broke by the gate.",
+   "good": "The woman has broken by the gate.",
+   "id": "past_participle_form-05cdd3ff",
+   "phenomenon": "past_participle_form"
+  },
+  {
+   "bad": "The girl has went on the hill.",
+   "good": "The girl has gone on the hill.",
+   "id": "past_participle_form-076976b6",
+   "phenomenon": "past_participle_form"
+  },
+  {
+   "bad": "The bird has spoke in the field.",
+   "good": "The bird has spoken in the field.",
+   "id": "past_participle_form-077626c0",
+   "phenomenon": "past_participle_form"
+  },
+  {
+   "bad": "The soldier has saw at the door.",
+   "good": "The soldier has seen at the door.",
+   "id": "past_participle_form-081291b1",
+   "phenomenon": "past_participle_form"
+  },
+  {
+   "bad": "The door has spoke at the door.",
+   "good": "The door has spoken at the door.",
+   "id": "past_participle_form-08b89d18",
+   "phenomenon": "past_participle_form"
+  },
+  {
+   "bad": "The ship has gave at the door.",
+   "good": "The ship has given at the door.",
+   "id": "past_participle_form-08fa9c19",
+   "phenomenon": "past_participle_form"
+  },
+  {
+   "bad": "The woman has wrote near the river.",
+   "good": "The woman has written near the river.",
+   "id": "past_participle_form-091b1c2b",
+   "phenomenon": "past_participle_form"
+  },
+  {
+   "bad": "The horse has saw on the hill.",
+   "good": "The horse has seen on the hill.",
+   "id": "past_participle_form-0964ca70",
+   "phenomenon": "past_participle_form"
+  },
+  {
+   "bad": "The man has wrote at the door.",
+   "good": "The man has written at the door.",
+   "id": "past_participle_form-096c9dee",
+   "phenomenon": "past_participle_form"
+  },
+  {
+   "bad": "The man has wrote on the hill.",
+   "good": "The man has written on the hill.",
+   "id": "past_participle_form-0a436916",
+   "phenomenon": "past_participle_form"
+  },
+  {
+   "bad": "The ship has gave on the hill.",
+   "good": "The ship has given on the hill.",
+   "id": "past_participle_form-0a4ef529",
+   "phenomenon": "past_participle_form"
+  },
+  {
+   "bad": "The woman has took near the river.",
+   "good": "The woman has taken near the river.",
+   "id": "past_participle_form-0ac754bd",
+   "phenomenon": "past_participle_form"
+  },
+  {
+   "bad": "The child has spoke by the gate.",
+   "good": "The child has spoken by the gate.",
+   "id": "past_participle_form-0aecb483",
+   "phenomenon": "past_participle_form"
+  },
+  {
+   "bad": "The king has went at the door.",
+   "good": "The king has gone at the door.",
+   "id": "past_participle_form-0b226b18",
+   "phenomenon": "past_participle_form"
+  },
+  {
+   "bad": "The girl has wrote by the gate.",
+   "good": "The girl has written by the gate.",
+   "id": "past_participle_form-0b9b4591",
+   "phenomenon": "past_participle_form"
+  },
+  {
+   "bad": "The bird has gave near the river.",
+   "good": "The bird has given near the river.",
+   "id": "past_participle_form-0bb2a02b",
+   "phenomenon": "past_participle_form"
+  },
+  {
+   "bad": "The dog has gave in the field.",
+   "good": "The dog has given in the field.",
+   "id": "past_participle_form-0c15f027",
+   "phenomenon": "past_participle_form"
+  },
+  {
+   "bad": "The king has spoke in the field.",
+   "good": "The king has spoken in the field.",
+   "id": "past_participle_form-0c560ce6",
+   "phenomenon": "past_participle_form"
+  },
+  {
+   "bad": "The tree has broke on the hill.",
+   "good": "The tree has broken on the hill.",
+   "id": "past_participle_form-0cabdbee",
+   "phenomenon": "past_participle_form"
+  },
+  {
+   "bad": "The door has broke by the gate.",
+   "good": "The door has broken by the gate.",
+   "id": "past_participle_form-0cac571d",
+   "phenomenon": "past_participle_form"
+  },
+  {
+   "bad": "The bird has wrote at the door.",
+   "good": "The bird has written at the door.",
+   "id": "past_participle_form-0d3df562",
+   "phenomenon": "past_participle_form"
+  },
+  {
+   "bad": "The door has spoke in the field.",
+   "good": "The door has spoken in the field.",
+   "id": "past_participle_form-0dae7589",
+   "phenomenon": "past_participle_form"
+  },
+  {
+   "bad": "The river has saw near the river.",
+   "good": "The river has seen near the river.",
+   "id": "past_participle_form-0e655c97",
+   "phenomenon": "past_participle_form"
+  },
+  {
+   "bad": "The house has took by the gate.",
+   "good": "The house has taken by the gate.",
+   "id": "past_participle_form-103c316f",
+   "phenomenon": "past_participle_form"
+  },
+  {
+   "bad": "The boy has gave near the river.",
+   "good": "The boy has given near the river.",
+   "id": "past_participle_form-10c8305c",
+   "phenomenon": "past_participle_form"
+  },
+  {
+   "bad": "The bird has went near the river.",
+   "good": "The bird has gone near the river.",
+   "id": "past_participle_form-11ad7fda",
+   "phenomenon": "past_participle_form"
+  },
+  {
+   "bad": "The woman has gave by the gate.",
+   "good": "The woman has given by the gate.",
+   "id": "past_participle_form-11bf1920",
+   "phenomenon": "past_participle_form"
+  },
+  {
+   "bad": "The door has gave in the field.",
+   "good": "The door has given in the field.",
+   "id": "past_participle_form-11f66356",
+   "phenomenon": "past_participle_form"
+  },
+  {
+   "bad": "The house has gave at the door.",
+   "good": "The house has given at the door.",
+   "id": "past_participle_form-123d96e3",
+   "phenomenon": "past_participle_form"
+  },
+  {
+   "bad": "The soldier has gave on the hill.",
+   "good": "The soldier has given on the hill.",
+   "id": "past_participle_form-126ede65",
+   "phenomenon": "past_participle_form"
+  },
+  {
+   "bad": "The boy has spoke in the field.",
+   "good": "The boy has spoken in the field.",
+   "id": "past_participle_form-12ca35bd",
+   "phenomenon": "past_participle_form"
+  },
+  {
+   "bad": "The horse has broke near the river.",
+   "good": "The horse has broken near the river.",
+   "id": "past_participle_form-12d9453a",
+   "phenomenon": "past_participle_form"
+  },
+  {
+   "bad": "The river has spoke at the door.",
+   "good": "The river has spoken at the door.",
+   "id": "past_participle_form-13333bed",
+   "phenomenon": "past_participle_form"
+  },
+  {
+   "bad": "The horse has broke in the field.",
+   "good": "The horse has broken in the field.",
+   "id": "past_participle_form-138c5259",
+   "phenomenon": "past_participle_form"
+  },
+  {
+   "bad": "The soldier has broke by the gate.",
+   "good": "The soldier has broken by the gate.",
+   "id": "past_participle_form-138eb426",
+   "phenomenon": "past_participle_form"
+  },
+  {
+   "bad": "The boy has went by the gate.",
+   "good": "The boy has gone by the gate.",
+   "id": "past_participle_form-1565f3e5",
+   "phenomenon": "past_participle_form"
+  },
+  {
+   "bad": "The letter has wrote by the gate.",
+   "good": "The letter has written by the gate.",
+   "id": "past_participle_form-158002b2",
+   "phenomenon": "past_participle_form"
+  },
+  {
+   "bad": "The door has gave near the river.",
+   "good": "The door has given near the river.",
+   "id": "past_participle_form-159b96c6",
+   "phenomenon": "past_participle_form"
+  },
+  {
+   "bad": "The bird has broke on the hill.",
+   "good": "The bird has broken on the hill.",
+   "id": "past_participle_form-162ee22f",
+   "phenomenon": "past_participle_form"
+  },
+  {
+   "bad": "The river has took by the gate.",
+   "good": "The river has taken by the gate.",
+   "id": "past_participle_form-1634c885",
+   "phenomenon": "past_participle_form"
+  },
+  {
+   "bad": "The soldier has took near the river.",
+   "good": "The soldier has taken near the river.",
+   "id": "past_participle_form-16b843b7",
+   "phenomenon": "past_participle_form"
+  },
+  {
+   "bad": "The boy has spoke by the gate.",
+   "good": "The boy has spoken by the gate.",
+   "id": "past_participle_form-1711033f",
+   "phenomenon": "past_participle_form"
+  },
+  {
+   "bad": "The boy has took on the hill.",
+   "good": "The boy has taken on the hill.",
+   "id": "past_participle_form-17732c77",
+   "phenomenon": "past_participle_form"
+  },
+  {
+   "bad": "The tree has saw near the river.",
+   "good": "The tree has seen near the river.",
+   "id": "past_participle_form-1783fc8e",
+   "phenomenon": "past_participle_form"
+  },
+  {
+   "bad": "The woman has went near the river.",
+   "good": "The woman has gone near the river.",
+   "id": "past_participle_form-178f5c84",
+   "phenomenon": "past_participle_form"
+  },
+  {
+   "bad": "The door has took at the door.",
+   "good": "The door has taken at the door.",
+   "id": "past_participle_form-17e56a08",
+   "phenomenon": "past_participle_form"
+  },
+  {
+   "bad": "The man has saw in the field.",
+   "good": "The man has seen in the field.",
+   "id": "past_participle_form-1814d73a",
+   "phenomenon": "past_participle_form"
+  },
+  {
+   "bad": "The river has broke in the field.",
+   "good": "The river has broken in the field.",
+   "id": "past_participle_form-188cc9bf",
+   "phenomenon": "past_participle_form"
+  },
+  {
+   "bad": "The ship has wrote at the door.",
+   "good": "The ship has written at the door.",
+   "id": "past_participle_form-199bd19c",
+   "phenomenon": "past_participle_form"
+  },
+  {
+   "bad": "The girl has saw near the river.",
+   "good": "The girl has seen near the river.",
+   "id": "past_participle_form-1a1df145",
+   "phenomenon": "past_participle_form"
+  },
+  {
+   "bad": "The river has wrote on the hill.",
+   "good": "The river has written on the hill.",
+   "id": "past_participle_form-1a9511db",
+   "phenomenon": "past_participle_form"
+  },
+  {
+   "bad": "The man has broke near the river.",
+   "good": "The man has broken near the river.",
+   "id": "past_participle_form-1b60e156",
+   "phenomenon": "past_participle_form"
+  },
+  {
+   "bad": "The soldier has wrote at the door.",
+   "good": "The soldier has written at the door.",
+   "id": "past_participle_form-1b8fd45f",
+   "phenomenon": "past_participle_form"
+  },
+  {
+   "bad": "The river has gave near the river.",
+   "good": "The river has given near the river.",
+   "id": "past_participle_form-1b91f2c3",
+   "phenomenon": "past_participle_form"
+  },
+  {
+   "bad": "The horse has spoke on the hill.",
+   "good": "The horse has spoken on the hill.",
+   "id": "past_participle_form-1c4ef7ca",
+   "phenomenon": "past_participle_form"
+  },
+  {
+   "bad": "The ship has spoke near the river.",
+   "good": "The ship has spoken near the river.",
+   "id": "past_participle_form-1cd4ac6b",
+   "phenomenon": "past_participle_form"
+  },
+  {
+   "bad": "The river has saw in the field.",
+   "good": "The river has seen in the field.",
+   "id": "past_participle_form-1d31e6db",
+   "phenomenon": "past_participle_form"
+  },
+  {
+   "bad": "The bird has took near the river.",
+   "good": "The bird has taken near the river.",
+   "id": "past_participle_form-1d9fb178",
+   "phenomenon": "past_participle_form"
+  },
+  {
+   "bad": "The man has gave at the door.",
+   "good": "The man has given at the door.",
+   "id": "past_participle_form-1df75f76",
+   "phenomenon": "past_participle_form"
+  },
+  {
+   "bad": "The child has wrote near the river.",
+   "good": "The child has written near the river.",
+   "id": "past_participle_form-1dfbeafb",
+   "phenomenon": "past_participle_form"
+  },
+  {
+   "bad": "The child has took on the hill.",
+   "good": "The child has taken on the hill.",
+   "id": "past_participle_form-1e300ad7",
+   "phenomenon": "past_participle_form"
+  },
+  {
+   "bad": "The woman has wrote at the door.",
+   "good": "The woman has written at the door.",
+   "id": "past_participle_form-1e38088c",
+   "phenomenon": "past_participle_form"
+  },
+  {
+   "bad": "The boy has gave on the hill.",
+   "good": "The boy has given on the hill.",
+   "id": "past_participle_form-1f4c0a0a",
+   "phenomenon": "past_participle_form"
+  },
+  {
+   "bad": "The king has broke on the hill.",
+   "good": "The king has broken on the hill.",
+   "id": "past_participle_form-1fbb7cf8",
+   "phenomenon": "past_participle_form"
+  },
+  {
+   "bad": "The child has gave in the field.",
+   "good": "The child has given in the field.",
+   "id": "past_participle_form-20072b98",
+   "phenomenon": "past_participle_form"
+  },
+  {
+   "bad": "The letter has took at the door.",
+   "good": "The letter has taken at the door.",
+   "id": "past_participle_form-22084cdf",
+   "phenomenon": "past_participle_form"
+  },
+  {
+   "bad": "The door has saw at the door.",
+   "good": "The door has seen at the door.",
+   "id": "past_participle_form-22693d41",
+   "phenomenon": "past_participle_form"
+  },
+  {
+   "bad": "The king has went by the gate.",
+   "good": "The king has gone by the gate.",
+   "id": "past_participle_form-22e6d9aa",
+   "phenomenon": "past_participle_form"
+  },
+  {
+   "bad": "The king has saw by the gate.",
+   "good": "The king has seen by the gate.",
+   "id": "past_participle_form-23c99298",
+   "phenomenon": "past_participle_form"
+  },
+  {
+   "bad": "The horse has went at the door.",
+   "good": "The horse has gone at the door.",
+   "id": "past_participle_form-24f58849",
+   "phenomenon": "past_participle_form"
+  },
+  {
+   "bad": "The ship has saw in the field.",
+   "good": "The ship has seen in the field.",
+   "id": "past_participle_form-25b04ff7",
+   "phenomenon": "past_participle_form"
+  },
+  {
+   "bad": "The man has went at the door.",
+   "good": "The man has gone at the door.",
+   "id": "past_participle_form-25db7476",
+   "phenomenon": "past_participle_form"
+  },
+  {
+   "bad": "The letter has took in the field.",
+   "good": "The letter has taken in the field.",
+   "id": "past_participle_form-263102b3",
+   "phenomenon": "past_participle_form"
+  },
+  {
+   "bad": "The bird has spoke by the gate.",
+   "good": "The bird has spoken by the gate.",
+   "id": "past_participle_form-26cc7c9d",
+   "phenomenon": "past_participle_form"
+  },
+  {
+   "bad": "The tree has took in the field.",
+   "good": "The tree has taken in the field.",
+   "id": "past_participle_form-2756c876",
+   "phenomenon": "past_participle_form"
+  },
+  {
+   "bad": "The river has wrote in the field.",
+   "good": "The river has written in the field.",
+   "id": "past_participle_form-2761b5e3",
+   "phenomenon": "past_participle_form"
+  },
+  {
+   "bad": "The house has wrote by the gate.",
+   "good": "The house has written by the gate.",
+   "id": "past_participle_form-27f1011d",
+   "phenomenon": "past_participle_form"
+  },
+  {
+   "bad": "The woman has gave near the river.",
+   "good": "The woman has given near the river.",
+   "id": "past_participle_form-28ef3079",
+   "phenomenon": "past_participle_form"
+  },
+  {
+   "bad": "The river has broke on the hill.",
+   "good": "The river has broken on the hill.",
+   "id": "past_participle_form-2938cc26",
+   "phenomenon": "past_participle_form"
+  },
+  {
+   "bad": "The bird has took by the gate.",
+   "good": "The bird has taken by the gate.",
+   "id": "past_participle_form-2adf6be3",
+   "phenomenon": "past_participle_form"
+  },
+  {
+   "bad": "The boy has gave at the door.",
+   "good": "The boy has given at the door.",
+   "id": "past_participle_form-2c27534a",
+   "phenomenon": "past_participle_form"
+  },
+  {
+   "bad": "The dog has went near the river.",
+   "good": "The dog has gone near the river.",
+   "id": "past_participle_form-2c3e75eb",
+   "phenomenon": "past_participle_form"
+  },
+  {
+   "bad": "The letter has gave near the river.",
+   "good": "The letter has given near the river.",
+   "id": "past_participle_form-2d9b6804",
+   "phenomenon": "past_participle_form"
+  },
+  {
+   "bad": "The letter has broke on the hill.",
+   "good": "The letter has broken on the hill.",
+   "id": "past_participle_form-2e9fb1bc",
+   "phenomenon": "past_participle_form"
+  },
+  {
+   "bad": "The house has took at the door.",
+   "good": "The house has taken at the door.",
+   "id": "past_participle_form-2febabe7",
+   "phenomenon": "past_participle_form"
+  },
+  {
+   "bad": "The girl has wrote near the river.",
+   "good": "The girl has written near the river.",
+   "id": "past_participle_form-30fbeb88",
+   "phenomenon": "past_participle_form"
+  },
+  {
+   "bad": "The woman has wrote in the field.",
+   "good": "The woman has written in the field.",
+   "id": "past_participle_form-31112fb6",
+   "phenomenon": "past_participle_form"
+  },
+  {
+   "bad": "The river has saw at the door.",
+   "good": "The river has seen at the door.",
+   "id": "past_participle_form-3129061e",
+   "phenomenon": "past_participle_form"
+  },
+  {
+   "bad": "The great king do not work.",
+   "good": "The great king does not work.",
+   "id": "auxiliary_agreement-000236ec",
+   "phenomenon": "auxiliary_agreement"
+  },
+  {
+   "bad": "The tall kings does not rest.",
+   "good": "The tall kings do not rest.",
+   "id": "auxiliary_agreement-000936c7",
+   "phenomenon": "auxiliary_agreement"
+  },
+  {
+   "bad": "The tree do not walk.",
+   "good": "The tree does not walk.",
+   "id": "auxiliary_agreement-00141202",
+   "phenomenon": "auxiliary_agreement"
+  },
+  {
+   "bad": "The kind ships does not sing.",
+   "good": "The kind ships do not sing.",
+   "id": "auxiliary_agreement-003f61bd",
+   "phenomenon": "auxiliary_agreement"
+  },
+  {
+   "bad": "The strong men does not wait.",
+   "good": "The strong men do not wait.",
+   "id": "auxiliary_agreement-0048fa6b",
+   "phenomenon": "auxiliary_agreement"
+  },
+  {
+   "bad": "The young women does not fall.",
+   "good": "The young women do not fall.",
+   "id": "auxiliary_agreement-005c7c47",
+   "phenomenon": "auxiliary_agreement"
+  },
+  {
+   "bad": "The small rivers does not sing.",
+   "good": "The small rivers do not sing.",
+   "id": "auxiliary_agreement-007476ac",
+   "phenomenon": "auxiliary_agreement"
+  },
+  {
+   "bad": "The great child do not sleep.",
+   "good": "The great child does not sleep.",
+   "id": "auxiliary_agreement-0088f95c",
+   "phenomenon": "auxiliary_agreement"
+  },
+  {
+   "bad": "The young child do not rest.",
+   "good": "The young child does not rest.",
+   "id": "auxiliary_agreement-00967bd2",
+   "phenomenon": "auxiliary_agreement"
+  },
+  {
+   "bad": "The strong ships does not work.",
+   "good": "The strong ships do not work.",
+   "id": "auxiliary_agreement-0099cecf",
+   "phenomenon": "auxiliary_agreement"
+  },
+  {
+   "bad": "The children does not speak.",
+   "good": "The children do not speak.",
+   "id": "auxiliary_agreement-00a9e414",
+   "phenomenon": "auxiliary_agreement"
+  },
+  {
+   "bad": "The old trees does not sing.",
+   "good": "The old trees do not sing.",
+   "id": "auxiliary_agreement-00ae2df8",
+   "phenomenon": "auxiliary_agreement"
+  },
+  {
+   "bad": "The brave house do not rest.",
+   "good": "The brave house does not rest.",
+   "id": "auxiliary_agreement-00b3cbd3",
+   "phenomenon": "auxiliary_agreement"
+  },
+  {
+   "bad": "The quiet soldiers does not sleep.",
+   "good": "The quiet soldiers do not sleep.",
+   "id": "auxiliary_agreement-00bccb3f",
+   "phenomenon": "auxiliary_agreement"
+  },
+  {
+   "bad": "The tall ships does not work.",
+   "good": "The tall ships do not work.",
+   "id": "auxiliary_agreement-00cc5541",
+   "phenomenon": "auxiliary_agreement"
+  },
+  {
+   "bad": "The kind horses does not speak.",
+   "good": "The kind horses do not speak.",
+   "id": "auxiliary_agreement-00d094e7",
+   "phenomenon": "auxiliary_agreement"
+  },
+  {
+   "bad": "The small rivers does not stand.",
+   "good": "The small rivers do not stand.",
+   "id": "auxiliary_agreement-00d0c055",
+   "phenomenon": "auxiliary_agreement"
+  },
+  {
+   "bad": "The strong girl do not work.",
+   "good": "The strong girl does not work.",
+   "id": "auxiliary_agreement-00dd494c",
+   "phenomenon": "auxiliary_agreement"
+  },
+  {
+   "bad": "The young dogs does not wait.",
+   "good": "The young dogs do not wait.",
+   "id": "auxiliary_agreement-00f6531f",
+   "phenomenon": "auxiliary_agreement"
+  },
+  {
+   "bad": "The strong dogs does not rest.",
+   "good": "The strong dogs do not rest.",
+   "id": "auxiliary_agreement-012e1b63",
+   "phenomenon": "auxiliary_agreement"
+  },
+  {
+   "bad": "The young child do not sing.",
+   "good": "The young child does not sing.",
+   "id": "auxiliary_agreement-0136a6f9",
+   "phenomenon": "auxiliary_agreement"
+  },
+  {
+   "bad": "The small kings does not sing.",
+   "good": "The small kings do not sing.",
+   "id": "auxiliary_agreement-01400691",
+   "phenomenon": "auxiliary_agreement"
+  },
+  {
+   "bad": "The great tree do not rest.",
+   "good": "The great tree does not rest.",
+   "id": "auxiliary_agreement-01bb25dd",
+   "phenomenon": "auxiliary_agreement"
+  },
+  {
+   "bad": "The young birds does not sing.",
+   "good": "The young birds do not sing.",
+   "id": "auxiliary_agreement-01c8249f",
+   "phenomenon": "auxiliary_agreement"
+  },
+  {
+   "bad": "The poor door do not speak.",
+   "good": "The poor door does not speak.",
+   "id": "auxiliary_agreement-020dac44",
+   "phenomenon": "auxiliary_agreement"
+  },
+  {
+   "bad": "The quiet river do not walk.",
+   "good": "The quiet river does not walk.",
+   "id": "auxiliary_agreement-022a5dff",
+   "phenomenon": "auxiliary_agreement"
+  },
+  {
+   "bad": "The old house do not wait.",
+   "good": "The old house does not wait.",
+   "id": "auxiliary_agreement-02426ad5",
+   "phenomenon": "auxiliary_agreement"
+  },
+  {
+   "bad": "The young man do not wait.",
+   "good": "The young man does not wait.",
+   "id": "auxiliary_agreement-0245b040",
+   "phenomenon": "auxiliary_agreement"
+  },
+  {
+   "bad": "The quiet horse do not walk.",
+   "good": "The quiet horse does not walk.",
+   "id": "auxiliary_agreement-024a9ff9",
+   "phenomenon": "auxiliary_agreement"
+  },
+  {
+   "bad": "The great girls does not work.",
+   "good": "The great girls do not work.",
+   "id": "auxiliary_agreement-024fb796",
+   "phenomenon": "auxiliary_agreement"
+  },
+  {
+   "bad": "The strong soldier do not speak.",
+   "good": "The strong soldier does not speak.",
+   "id": "auxiliary_agreement-02535db1",
+   "phenomenon": "auxiliary_agreement"
+  },
+  {
+   "bad": "The tall letters does not walk.",
+   "good": "The tall letters do not walk.",
+   "id": "auxiliary_agreement-02614e15",
+   "phenomenon": "auxiliary_agreement"
+  },
+  {
+   "bad": "The great birds does not run.",
+   "good": "The great birds do not run.",
+   "id": "auxiliary_agreement-02704bc8",
+   "phenomenon": "auxiliary_agreement"
+  },
+  {
+   "bad": "The brave birds does not stand.",
+   "good": "The brave birds do not stand.",
+   "id": "auxiliary_agreement-0274456c",
+   "phenomenon": "auxiliary_agreement"
+  },
+  {
+   "bad": "The brave doors does not work.",
+   "good": "The brave doors do not work.",
+   "id": "auxiliary_agreement-028a7945",
+   "phenomenon": "auxiliary_agreement"
+  },
+  {
+   "bad": "The young door do not walk.",
+   "good": "The young door does not walk.",
+   "id": "auxiliary_agreement-028efc27",
+   "phenomenon": "auxiliary_agreement"
+  },
+  {
+   "bad": "The quiet ships does not sleep.",
+   "good": "The quiet ships do not sleep.",
+   "id": "auxiliary_agreement-0299e025",
+   "phenomenon": "auxiliary_agreement"
+  },
+  {
+   "bad": "The strong woman do not sleep.",
+   "good": "The strong woman does not sleep.",
+   "id": "auxiliary_agreement-029fae5a",
+   "phenomenon": "auxiliary_agreement"
+  },
+  {
+   "bad": "The brave tree do not sing.",
+   "good": "The brave tree does not sing.",
+   "id": "auxiliary_agreement-02a84ab3",
+   "phenomenon": "auxiliary_agreement"
+  },
+  {
+   "bad": "The strong horses does not run.",
+   "good": "The strong horses do not run.",
+   "id": "auxiliary_agreement-02abf560",
+   "phenomenon": "auxiliary_agreement"
+  },
+  {
+   "bad": "The brave soldier do not sing.",
+   "good": "The brave soldier does not sing.",
+   "id": "auxiliary_agreement-02cfacbf",
+   "phenomenon": "auxiliary_agreement"
+  },
+  {
+   "bad": "The brave letter do not wait.",
+   "good": "The brave letter does not wait.",
+   "id": "auxiliary_agreement-02d4241b",
+   "phenomenon": "auxiliary_agreement"
+  },
+  {
+   "bad": "The quiet dogs does not run.",
+   "good": "The quiet dogs do not run.",
+   "id": "auxiliary_agreement-02dfdf33",
+   "phenomenon": "auxiliary_agreement"
+  },
+  {
+   "bad": "The small girls does not walk.",
+   "good": "The small girls do not walk.",
+   "id": "auxiliary_agreement-02e59bc4",
+   "phenomenon": "auxiliary_agreement"
+  },
+  {
+   "bad": "The old man do not run.",
+   "good": "The old man does not run.",
+   "id": "auxiliary_agreement-02e84863",
+   "phenomenon": "auxiliary_agreement"
+  },
+  {
+   "bad": "The kind woman do not sing.",
+   "good": "The kind woman does not sing.",
+   "id": "auxiliary_agreement-02fbbf17",
+   "phenomenon": "auxiliary_agreement"
+  },
+  {
+   "bad": "The strong letters does not sing.",
+   "good": "The strong letters do not sing.",
+   "id": "auxiliary_agreement-03049de7",
+   "phenomenon": "auxiliary_agreement"
+  },
+  {
+   "bad": "The young men does not work.",
+   "good": "The young men do not work.",
+   "id": "auxiliary_agreement-032b0473",
+   "phenomenon": "auxiliary_agreement"
+  },
+  {
+   "bad": "The great door do not sing.",
+   "good": "The great door does not sing.",
+   "id": "auxiliary_agreement-033b4e76",
+   "phenomenon": "auxiliary_agreement"
+  },
+  {
+   "bad": "The poor tree do not run.",
+   "good": "The poor tree does not run.",
+   "id": "auxiliary_agreement-034915fb",
+   "phenomenon": "auxiliary_agreement"
+  },
+  {
+   "bad": "The great river do not walk.",
+   "good": "The great river does not walk.",
+   "id": "auxiliary_agreement-034d35d3",
+   "phenomenon": "auxiliary_agreement"
+  },
+  {
+   "bad": "The tall bird do not fall.",
+   "good": "The tall bird does not fall.",
+   "id": "auxiliary_agreement-036b89fa",
+   "phenomenon": "auxiliary_agreement"
+  },
+  {
+   "bad": "The brave girls does not wait.",
+   "good": "The brave girls do not wait.",
+   "id": "auxiliary_agreement-03a8905d",
+   "phenomenon": "auxiliary_agreement"
+  },
+  {
+   "bad": "The kind dogs does not sleep.",
+   "good": "The kind dogs do not sleep.",
+   "id": "auxiliary_agreement-03c525d7",
+   "phenomenon": "auxiliary_agreement"
+  },
+  {
+   "bad": "The bird do not walk.",
+   "good": "The bird does not walk.",
+   "id": "auxiliary_agreement-03c74dfe",
+   "phenomenon": "auxiliary_agreement"
+  },
+  {
+   "bad": "The quiet child do not sleep.",
+   "good": "The quiet child does not sleep.",
+   "id": "auxiliary_agreement-03e41bd4",
+   "phenomenon": "auxiliary_agreement"
+  },
+  {
+   "bad": "The kind horses does not rest.",
+   "good": "The kind horses do not rest.",
+   "id": "auxiliary_agreement-0457fcaa",
+   "phenomenon": "auxiliary_agreement"
+  },
+  {
+   "bad": "The great children does not sleep.",
+   "good": "The great children do not sleep.",
+   "id": "auxiliary_agreement-045c1990",
+   "phenomenon": "auxiliary_agreement"
+  },
+  {
+   "bad": "The small river do not sleep.",
+   "good": "The small river does not sleep.",
+   "id": "auxiliary_agreement-049757cb",
+   "phenomenon": "auxiliary_agreement"
+  },
+  {
+   "bad": "The small bird do not fall.",
+   "good": "The small bird does not fall.",
+   "id": "auxiliary_agreement-04bcb6b4",
+   "phenomenon": "auxiliary_agreement"
+  },
+  {
+   "bad": "The letters does not sleep.",
+   "good": "The letters do not sleep.",
+   "id": "auxiliary_agreement-04c19937",
+   "phenomenon": "auxiliary_agreement"
+  },
+  {
+   "bad": "The strong trees does not speak.",
+   "good": "The strong trees do not speak.",
+   "id": "auxiliary_agreement-050a8d1b",
+   "phenomenon": "auxiliary_agreement"
+  },
+  {
+   "bad": "The old house do not sleep.",
+   "good": "The old house does not sleep.",
+   "id": "auxiliary_agreement-051770db",
+   "phenomenon": "auxiliary_agreement"
+  },
+  {
+   "bad": "The tall letters does not work.",
+   "good": "The tall letters do not work.",
+   "id": "auxiliary_agreement-0521bbcf",
+   "phenomenon": "auxiliary_agreement"
+  },
+  {
+   "bad": "The old horse do not stand.",
+   "good": "The old horse does not stand.",
+   "id": "auxiliary_agreement-055f5928",
+   "phenomenon": "auxiliary_agreement"
+  },
+  {
+   "bad": "The quiet boy do not fall.",
+   "good": "The quiet boy does not fall.",
+   "id": "auxiliary_agreement-05683ae5",
+   "phenomenon": "auxiliary_agreement"
+  },
+  {
+   "bad": "The tall child do not work.",
+   "good": "The tall child does not work.",
+   "id": "auxiliary_agreement-056e1eea",
+   "phenomenon": "auxiliary_agreement"
+  },
+  {
+   "bad": "The dog do not sleep.",
+   "good": "The dog does not sleep.",
+   "id": "auxiliary_agreement-05a65b0b",
+   "phenomenon": "auxiliary_agreement"
+  },
+  {
+   "bad": "The poor dogs does not wait.",
+   "good": "The poor dogs do not wait.",
+   "id": "auxiliary_agreement-05aab06e",
+   "phenomenon": "auxiliary_agreement"
+  },
+  {
+   "bad": "The small ship do not run.",
+   "good": "The small ship does not run.",
+   "id": "auxiliary_agreement-05d18837",
+   "phenomenon": "auxiliary_agreement"
+  },
+  {
+   "bad": "The old doors does not fall.",
+   "good": "The old doors do not fall.",
+   "id": "auxiliary_agreement-061e8f19",
+   "phenomenon": "auxiliary_agreement"
+  },
+  {
+   "bad": "The kind dog do not rest.",
+   "good": "The kind dog does not rest.",
+   "id": "auxiliary_agreement-063a235e",
+   "phenomenon": "auxiliary_agreement"
+  },
+  {
+   "bad": "The kind tree do not rest.",
+   "good": "The kind tree does not rest.",
+   "id": "auxiliary_agreement-063d788c",
+   "phenomenon": "auxiliary_agreement"
+  },
+  {
+   "bad": "The great houses does not sleep.",
+   "good": "The great houses do not sleep.",
+   "id": "auxiliary_agreement-0665bb7f",
+   "phenomenon": "auxiliary_agreement"
+  },
+  {
+   "bad": "The small soldier do not walk.",
+   "good": "The small soldier does not walk.",
+   "id": "auxiliary_agreement-0687c8eb",
+   "phenomenon": "auxiliary_agreement"
+  },
+  {
+   "bad": "The small houses does not run.",
+   "good": "The small houses do not run.",
+   "id": "auxiliary_agreement-06899f6a",
+   "phenomenon": "auxiliary_agreement"
+  },
+  {
+   "bad": "The kind boy do not work.",
+   "good": "The kind boy does not work.",
+   "id": "auxiliary_agreement-06d93eba",
+   "phenomenon": "auxiliary_agreement"
+  },
+  {
+   "bad": "The tall rivers does not sing.",
+   "good": "The tall rivers do not sing.",
+   "id": "auxiliary_agreement-06ecbf61",
+   "phenomenon": "auxiliary_agreement"
+  },
+  {
+   "bad": "The girl do not run.",
+   "good": "The girl does not run.",
+   "id": "auxiliary_agreement-06f1fac4",
+   "phenomenon": "auxiliary_agreement"
+  },
+  {
+   "bad": "The soldier do not work.",
+   "good": "The soldier does not work.",
+   "id": "auxiliary_agreement-06f3cec3",
+   "phenomenon": "auxiliary_agreement"
+  },
+  {
+   "bad": "The old dogs does not rest.",
+   "good": "The old dogs do not rest.",
+   "id": "auxiliary_agreement-06f4d764",
+   "phenomenon": "auxiliary_agreement"
+  },
+  {
+   "bad": "The old doors does not wait.",
+   "good": "The old doors do not wait.",
+   "id": "auxiliary_agreement-070c0663",
+   "phenomenon": "auxiliary_agreement"
+  },
+  {
+   "bad": "The young ships does not speak.",
+   "good": "The young ships do not speak.",
+   "id": "auxiliary_agreement-0715be76",
+   "phenomenon": "auxiliary_agreement"
+  },
+  {
+   "bad": "The kind ships does not work.",
+   "good": "The kind ships do not work.",
+   "id": "auxiliary_agreement-071662cd",
+   "phenomenon": "auxiliary_agreement"
+  },
+  {
+   "bad": "The horses does not walk.",
+   "good": "The horses do not walk.",
+   "id": "auxiliary_agreement-0719c797",
+   "phenomenon": "auxiliary_agreement"
+  },
+  {
+   "bad": "The small king do not speak.",
+   "good": "The small king does not speak.",
+   "id": "auxiliary_agreement-071bce8f",
+   "phenomenon": "auxiliary_agreement"
+  },
+  {
+   "bad": "The small bird do not speak.",
+   "good": "The small bird does not speak.",
+   "id": "auxiliary_agreement-072267cc",
+   "phenomenon": "auxiliary_agreement"
+  },
+  {
+   "bad": "The kind letters does not sing.",
+   "good": "The kind letters do not sing.",
+   "id": "auxiliary_agreement-0727cbb7",
+   "phenomenon": "auxiliary_agreement"
+  },
+  {
+   "bad": "The kind boys does not rest.",
+   "good": "The kind boys do not rest.",
+   "id": "auxiliary_agreement-0765efdb",
+   "phenomenon": "auxiliary_agreement"
+  },
+  {
+   "bad": "The brave child do not run.",
+   "good": "The brave child does not run.",
+   "id": "auxiliary_agreement-076af2f6",
+   "phenomenon": "auxiliary_agreement"
+  },
+  {
+   "bad": "The small rivers does not wait.",
+   "good": "The small rivers do not wait.",
+   "id": "auxiliary_agreement-078b6986",
+   "phenomenon": "auxiliary_agreement"
+  },
+  {
+   "bad": "The woman do not work.",
+   "good": "The woman does not work.",
+   "id": "auxiliary_agreement-07986954",
+   "phenomenon": "auxiliary_agreement"
+  },
+  {
+   "bad": "The great horse do not sing.",
+   "good": "The great horse does not sing.",
+   "id": "auxiliary_agreement-07c983d5",
+   "phenomenon": "auxiliary_agreement"
+  },
+  {
+   "bad": "The great child do not wait.",
+   "good": "The great child does not wait.",
+   "id": "auxiliary_agreement-07cb1792",
+   "phenomenon": "auxiliary_agreement"
+  },
+  {
+   "bad": "The strong ships does not wait.",
+   "good": "The strong ships do not wait.",
+   "id": "auxiliary_agreement-07e81806",
+   "phenomenon": "auxiliary_agreement"
+  },
+  {
+   "bad": "The poor dog do not wait.",
+   "good": "The poor dog does not wait.",
+   "id": "auxiliary_agreement-07f3b7f2",
+   "phenomenon": "auxiliary_agreement"
+  },
+  {
+   "bad": "The young women does not run.",
+   "good": "The young women do not run.",
+   "id": "auxiliary_agreement-080776b9",
+   "phenomenon": "auxiliary_agreement"
+  },
+  {
+   "bad": "The quiet children does not rest.",
+   "good": "The quiet children do not rest.",
+   "id": "auxiliary_agreement-08187ea9",
+   "phenomenon": "auxiliary_agreement"
+  },
+  {
+   "bad": "The kind door do not stand.",
+   "good": "The kind door does not stand.",
+   "id": "auxiliary_agreement-0825a7be",
+   "phenomenon": "auxiliary_agreement"
+  },
+  {
+   "bad": "The poor rivers does not rest.",
+   "good": "The poor rivers do not rest.",
+   "id": "auxiliary_agreement-0829df1d",
+   "phenomenon": "auxiliary_agreement"
+  }
+ ],
+ "provenance": "generated by scripts/build_minimal_pairs.py from a fixed lexicon and eight templates; selection is by SHA-256 of each frame's identity, so it does not depend on a random generator; only frames whose sentences have equal identifier counts under vocabulary 434debe82f949347",
+ "schema_version": "chakaso-minimal-pairs/1",
+ "version": "2.0.0"
+}

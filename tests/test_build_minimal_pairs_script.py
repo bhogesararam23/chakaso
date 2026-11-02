@@ -81,3 +81,58 @@ def test_every_sentence_encodes_and_decodes_exactly() -> None:
     for pair in pair_set.pairs:
         assert vocabulary.decode(vocabulary.encode(pair.good)) == pair.good
         assert vocabulary.decode(vocabulary.encode(pair.bad)) == pair.bad
+
+
+# ------------------------------------------------ version 2: balanced in identifiers (E2621 -> E2622)
+
+_COMMITTED_V2 = _ROOT / "configs" / "probes" / "grammatical-minimal-pairs-v2.json"
+_VOCABULARY_FILE = _ROOT / "experiments" / "E2612" / "vocabulary-434debe82f949347.json"
+_DIGEST_V2 = "2487a4ab4424ce2feb2e7b570a0a99ab099e2a40f8f16f9486686c2d99f07208"
+
+
+def test_version_two_has_equal_identifier_counts_in_every_pair() -> None:
+    from chakaso.training.subword import SubwordVocabulary
+
+    vocabulary = SubwordVocabulary.load(_VOCABULARY_FILE)
+    built = _script().build_pairs(vocabulary)  # type: ignore[attr-defined]
+
+    assert len(built.pairs) == 800
+    assert built.version == "2.0.0"
+    assert vocabulary.fingerprint in built.provenance
+    for pair in built.pairs:
+        assert len(vocabulary.encode(pair.good)) == len(vocabulary.encode(pair.bad)), (
+            pair.identifier
+        )
+
+
+def test_the_token_count_reading_of_version_two_is_exactly_chance() -> None:
+    from chakaso.training.minimal_pairs import score_pairs
+    from chakaso.training.subword import SubwordVocabulary
+
+    vocabulary = SubwordVocabulary.load(_VOCABULARY_FILE)
+    pair_set = load_pair_set(_COMMITTED_V2)
+
+    result = score_pairs(
+        pair_set.pairs,
+        lambda _sentence: 0.0,
+        token_count=lambda sentence: len(vocabulary.encode(sentence)),
+    )
+
+    assert result.token_count_only_accuracy == 0.5
+    assert result.good_fewer_tokens == result.good_more_tokens == 0
+
+
+def test_the_committed_version_two_is_what_the_generator_produces_and_version_one_is_untouched() -> (
+    None
+):
+    from chakaso.training.subword import SubwordVocabulary
+
+    built = _script().build_pairs(SubwordVocabulary.load(_VOCABULARY_FILE))  # type: ignore[attr-defined]
+    committed = load_pair_set(_COMMITTED_V2)
+
+    assert committed.pairs == built.pairs
+    assert committed.digest == built.digest == _DIGEST_V2
+    assert load_pair_set(_COMMITTED).digest == _DIGEST
+    # Good sentences are still unique, and a hundred pairs of each phenomenon remain.
+    assert len({pair.good for pair in committed.pairs}) == 800
+    assert set(Counter(pair.phenomenon for pair in committed.pairs).values()) == {100}
