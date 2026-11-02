@@ -166,3 +166,41 @@ def test_a_missing_checkpoint_is_an_error_not_a_crash(tmp_path: Path) -> None:
     )
 
     assert status == 1
+
+
+def test_extra_control_seeds_add_untrained_models_that_differ_from_one_another(
+    tmp_path: Path, trained: Path
+) -> None:
+    out = tmp_path / "out.json"
+
+    status = _script().main(  # type: ignore[attr-defined]
+        [
+            f"--pairs={_pair_file(tmp_path / 'pairs.json')}",
+            f"--checkpoint=trained={trained}",
+            "--control",
+            "--control-seeds=11,13",
+            f"--out={out}",
+        ]
+    )
+
+    models = json.loads(out.read_text(encoding="utf-8"))["models"]
+    assert status == 0
+    assert {"untrained-control", "untrained-control-seed-11", "untrained-control-seed-13"} <= set(
+        models
+    )
+    assert models["untrained-control-seed-11"]["seed"] == 11
+
+
+def test_a_different_seed_gives_a_different_untrained_model(trained: Path) -> None:
+    artifact = load_artifact(trained)
+    script = _script()
+
+    first = script.untrained_control(artifact, 11)  # type: ignore[attr-defined]
+    second = script.untrained_control(artifact, 13)  # type: ignore[attr-defined]
+
+    assert any(
+        not torch.equal(left, right)
+        for (_, left), (_, right) in zip(
+            first.state_dict().items(), second.state_dict().items(), strict=True
+        )
+    )

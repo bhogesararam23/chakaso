@@ -54,9 +54,9 @@ def score_artifact(
     ).as_dict()
 
 
-def untrained_control(artifact: ModelArtifact) -> Any:
+def untrained_control(artifact: ModelArtifact, seed: int = CONTROL_SEED) -> Any:
     """A randomly initialised model of the artifact's architecture, seeded so the control is reproducible."""
-    torch.manual_seed(CONTROL_SEED)
+    torch.manual_seed(seed)
     model = build_model(artifact.config)
     model.eval()
     return model
@@ -78,6 +78,12 @@ def main(argv: Sequence[str] | None = None) -> int:
         "--control",
         action="store_true",
         help="also score an untrained model of the first architecture",
+    )
+    parser.add_argument(
+        "--control-seeds",
+        default="",
+        help="comma-separated extra seeds: one more untrained control per seed, to see how much a single random "
+        "initialisation's per-phenomenon bias varies",
     )
     parser.add_argument(
         "--snapshot", type=Path, help="a corpus snapshot for the contamination screen"
@@ -112,6 +118,13 @@ def main(argv: Sequence[str] | None = None) -> int:
                 "seed": CONTROL_SEED,
                 "result": score_artifact(first, pair_set, model=untrained_control(first)),
             }
+        if first is not None and args.control_seeds.strip():
+            for seed in (int(item) for item in args.control_seeds.split(",")):
+                result["models"][f"untrained-control-seed-{seed}"] = {
+                    "tokenizer_fingerprint": first.vocabulary.fingerprint,
+                    "seed": seed,
+                    "result": score_artifact(first, pair_set, model=untrained_control(first, seed)),
+                }
         if args.snapshot is not None:
             flagged = contaminated_pairs(
                 pair_set.pairs, _snapshot_texts(args.snapshot), n=args.ngram
