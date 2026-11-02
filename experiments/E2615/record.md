@@ -1,7 +1,8 @@
 # E2615 — the prose-share sweep: how do held-out bits per character depend on the share of training identifiers drawn from prose?
 
-**Status:** preregistered — committed before any arm ran. No result exists; the Results section is added only after
-the reports are on disk.
+**Status:** measured — **H9-c, unresolved**. Four arms were run in a second session and the fifth point is E2612 arm P's
+committed numbers (see *Execution notes* and *Results*). Preregistered before any arm ran; the Results section was added
+after every report was on disk.
 **Type:** Research experiment, **preregistered**. It is hypothesis **H9** of the 2026-11-01 campaign, restated below
 because its original wording does not name a quantity that can be measured.
 **Protocol files:** [`E2615-s00`](../../configs/experiments/E2615-s00.toml), [`s25`](../../configs/experiments/E2615-s25.toml),
@@ -258,3 +259,98 @@ sweep will carry the new snapshot checksum.
 The source tree is not edited while an arm runs. Per-arm results are committed as small summaries; checkpoints and reports
 stay in `data/`, which is git-ignored, and whether `data/` survives the end of the session is not known (it survived one
 worker restart, which killed every process).
+
+## Results (added 2026-11-02, after all four arms and the committed endpoint were read together)
+
+Produced by `scripts/analyse_share_sweep.py` from files that are committed: the four compact extracts in
+[`reports/`](reports/), E2612's committed arm P block, and E2614's committed `results.json` as the noise study. The same
+command on the raw `data/` reports gives a byte-identical file, [`results.json`](results.json). Every arm ran to the 2,400-step
+ceiling (`budget_ceiling`, none stopped early, none diverged, none re-run) in 2,859–3,090 s. Realised prose shares were 0.0,
+0.250172, 0.499968 and 0.749896 against the declared 0, 0.25, 0.5 and 0.75, all inside the one-point limit.
+
+**Matched conditions.** All fourteen conditions the comparison requires equal (corpus, split, split seed, tokenizer,
+parameter count, architecture, seed, steps, schedule, batch, learning rate, scored positions and characters) are equal across
+the five points. The declared differences are the share, the group prefixes, the realised composition and packed counts, and
+two fields the endpoint's committed block does not record (`shuffle_training_units`, `document_masking`), which appear as
+differences because they are *unrecorded*, not because they were found different. The endpoint's per-partition character
+counts are borrowed from a fresh arm's report after the token counts of all five partitions were checked equal; the output
+names that borrowing.
+
+### Held-out bits per character
+
+| Prose share | prose | science | technology | medicine | mathematics | **O1 (equal-weight mean)** | technical, weighted | whole pack |
+| ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| 0.00 (`s00`) | 1.98002 | 1.93740 | **1.84069** | **1.78850** | **2.54801** | 2.01892 | **2.08090** | 2.10708 |
+| 0.25 (`s25`) | 1.87869 | **1.93514** | 1.86604 | 1.80456 | 2.56460 | **2.00981** | 2.09431 | 2.06374 |
+| 0.50 (`s50`) | 1.84121 | 1.94285 | 1.89806 | 1.82533 | 2.60065 | 2.02162 | 2.11916 | **2.06037** |
+| 0.75 (`s75`) | 1.81981 | 1.97102 | 1.96576 | 1.87058 | 2.63784 | 2.05300 | 2.16381 | 2.07089 |
+| 1.00 (E2612 arm P, committed) | **1.80926** | 2.05867 | 2.18647 | 1.99522 | 3.04361 | 2.21865 | 2.39222 | 2.16369 |
+
+Bold marks the lowest value in each column, and the columns do not agree on which arm that is. That is the reason O1 was fixed
+before the run: the whole-pack column, whose register weights are an accident of one seeded sample, would have named `s50`;
+O1 names `s25`; the technical columns name `s00`; prose names the endpoint.
+
+### The preregistered reading
+
+* **Outcome: H9-c — unresolved.** The lowest O1 is `s25` (2.00981). It is lower than `s00` by 0.00911 and than `s50` by
+  0.01181, both under the 0.02 margin, so H9-a (an interior arm better than *both* endpoints by more than 0.02) is not met;
+  and the lowest arm is not an endpoint, so H9-b is not met either. `s75` (+0.0432) and `s100` (+0.2088) are separably worse
+  than `s25`. **The arms the data cannot tell apart from the best are `s00`, `s25` and `s50`.** No share is named.
+* **Rule 3 applies.** The natural mixture stays the working default (ADR-0041), and the next unit adds seeds on `s00`, `s25`
+  and `s50`, not a finer grid.
+* **Adjacent steps, graded against the E2614 margins** (tie / indeterminate / separable):
+
+| Step | prose | science | technology | medicine | mathematics | O1 |
+| --- | --- | --- | --- | --- | --- | --- |
+| 0 → 0.25 | −0.1013 sep. | −0.0023 tie | +0.0254 sep. | +0.0161 indet. | +0.0166 tie | −0.0091 indet. |
+| 0.25 → 0.5 | −0.0375 sep. | +0.0077 tie | +0.0320 sep. | +0.0208 indet. | +0.0361 indet. | +0.0118 indet. |
+| 0.5 → 0.75 | −0.0214 sep. | +0.0282 sep. | +0.0677 sep. | +0.0452 sep. | +0.0372 indet. | +0.0314 sep. |
+| 0.75 → 1.0 | −0.0106 indet. | +0.0876 sep. | +0.2207 sep. | +0.1246 sep. | +0.4058 sep. | +0.1656 sep. |
+
+* **Dominance.** No arm is separably better than another on every register: a trade-off, the expected absence the record
+  said was itself the finding.
+* **P1 (prose non-increasing in share, `s00` worst by a large margin) — not contradicted.** Prose falls at every step; the
+  last step is indeterminate, not an increase.
+* **P2 (weighted technical aggregate non-decreasing in share) — not contradicted.** 2.0809, 2.0943, 2.1192, 2.1638, 2.3922.
+* **P3 (nested `s50` ties T's five-seed mean) — holds on the two named metrics.** `s50` minus the natural mixture's mean:
+  O1 −0.0012 (tie), prose +0.0014 (tie); science and mathematics tie; technology (−0.0051) and medicine (−0.0080) are
+  indeterminate. Which documents were drawn does not measurably matter at this resolution, so T remains usable as a
+  reference. This contrast also crosses machines (below), so what it bounds is the *sum* of the selection effect and any
+  machine effect; it cannot separate them.
+
+### What this does and does not say
+
+* **What the data show, descriptively.** Prose bits per character improve with prose share with diminishing returns (the last
+  quarter-step buys 0.0106, indeterminate), while the technical registers cost more at each step (technology +0.0254,
+  +0.0320, +0.0677, +0.2207). Over 0 → 0.5, O1 moves within 0.012, which is why the weighting, not the data, decides where
+  the "optimum" sits; the curve is flat for equal weights across the low half and rises clearly only past 0.5.
+* **It does not select a mixture.** O1 is a convention (the record said so before the run); a weighting that values prose
+  more would name a higher share, and one that values the technical registers more would name `s00`. `s00` is not proposed
+  as a mixture: a model that never saw a prose work is not general, and its O1 advantage over `s25` is not separable.
+* **Noise is assumed, not measured, at these shares.** The margins are E2614's, measured at the natural mixture, one corpus
+  selection and five seeds. A mixture with no prose may be noisier on prose; technology's separable margin (0.0084) is the
+  narrowest and rests on that one spread. "Indeterminate" means *not shown*, not *small*.
+* **The 100 % endpoint is comparable to the new arms on every checked condition, with these caveats.** It was run on another
+  machine (14 threads, torch 2.13.0+cpu) under earlier code (the pre-share mechanism, ADR-0045 (3)); its block does not
+  record two budget fields; its character counts are borrowed. Nothing in this sweep measures the cross-machine effect, since
+  no arm repeats an earlier protocol on this machine. The nearest evidence is P3's sum bound, above. Conclusions that depend
+  only on the four new arms (the `s00`/`s25`/`s50`/`s75` ordering) are not exposed to it; conclusions about the 0.75 → 1.0
+  step are.
+* **One seed per arm, truncated budget, archaic English, a handful of held-out works per technical register (medicine: one).**
+  As declared. A statement about these held-out documents is not a statement about language use, and nothing here is capability.
+
+### Deviations and disclosures
+
+* The corpus raw bytes differ from the pin in one source (`science-pg3489`); the corpus identity does not. See *Execution
+  notes*. The recorded snapshot checksum of every arm here is `3a446f54…`; E2612–E2614 recorded `236c8d5a…`.
+* The previous session's launch left no artifact and is not used.
+* The *Reproduction* commands above name raw report paths that no longer exist for a rebuilder. The command that produced
+  [`results.json`](results.json) is:
+
+```bash
+python scripts/analyse_share_sweep.py --arm 0.0=experiments/E2615/reports/E2615-s00.json \
+  --arm 0.25=experiments/E2615/reports/E2615-s25.json --arm 0.5=experiments/E2615/reports/E2615-s50.json \
+  --arm 0.75=experiments/E2615/reports/E2615-s75.json --arm "1.0=experiments/E2612/results.json#P_prose_control" \
+  --noise-study experiments/E2614/results.json --natural-mixture-study experiments/E2614/results.json \
+  --out experiments/E2615/results.json
+```

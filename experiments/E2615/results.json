@@ -1,0 +1,288 @@
+{
+  "adjacent_steps": [
+    {
+      "from_share": 0.0,
+      "macro": {
+        "difference": -0.009118,
+        "reading": "indeterminate"
+      },
+      "mathematics-": {
+        "difference": 0.016594,
+        "reading": "tie"
+      },
+      "medicine-": {
+        "difference": 0.016057,
+        "reading": "indeterminate"
+      },
+      "prose-": {
+        "difference": -0.101339,
+        "reading": "separable"
+      },
+      "science-": {
+        "difference": -0.002255,
+        "reading": "tie"
+      },
+      "technology-": {
+        "difference": 0.025356,
+        "reading": "separable"
+      },
+      "to_share": 0.25
+    },
+    {
+      "from_share": 0.25,
+      "macro": {
+        "difference": 0.011817,
+        "reading": "indeterminate"
+      },
+      "mathematics-": {
+        "difference": 0.036054,
+        "reading": "indeterminate"
+      },
+      "medicine-": {
+        "difference": 0.020776,
+        "reading": "indeterminate"
+      },
+      "prose-": {
+        "difference": -0.037471,
+        "reading": "separable"
+      },
+      "science-": {
+        "difference": 0.007708,
+        "reading": "tie"
+      },
+      "technology-": {
+        "difference": 0.032017,
+        "reading": "separable"
+      },
+      "to_share": 0.5
+    },
+    {
+      "from_share": 0.5,
+      "macro": {
+        "difference": 0.031382,
+        "reading": "separable"
+      },
+      "mathematics-": {
+        "difference": 0.037184,
+        "reading": "indeterminate"
+      },
+      "medicine-": {
+        "difference": 0.045245,
+        "reading": "separable"
+      },
+      "prose-": {
+        "difference": -0.021399,
+        "reading": "separable"
+      },
+      "science-": {
+        "difference": 0.028174,
+        "reading": "separable"
+      },
+      "technology-": {
+        "difference": 0.067705,
+        "reading": "separable"
+      },
+      "to_share": 0.75
+    },
+    {
+      "from_share": 0.75,
+      "macro": {
+        "difference": 0.165642,
+        "reading": "separable"
+      },
+      "mathematics-": {
+        "difference": 0.405774,
+        "reading": "separable"
+      },
+      "medicine-": {
+        "difference": 0.124644,
+        "reading": "separable"
+      },
+      "prose-": {
+        "difference": -0.010554,
+        "reading": "indeterminate"
+      },
+      "science-": {
+        "difference": 0.087641,
+        "reading": "separable"
+      },
+      "technology-": {
+        "difference": 0.220707,
+        "reading": "separable"
+      },
+      "to_share": 1.0
+    }
+  ],
+  "all_conditions_matched": true,
+  "arms": {
+    "0": {
+      "macro": 2.018923038907131,
+      "partitions": {
+        "mathematics-": 2.5480053323476373,
+        "medicine-": 1.7885020517045775,
+        "prose-": 1.9800242682865588,
+        "science-": 1.9373972691401677,
+        "technology-": 1.8406862730567137
+      },
+      "technical_weighted": 2.0809009245982737,
+      "whole_pack": 2.107081623768757
+    },
+    "0.25": {
+      "macro": 2.0098055289619285,
+      "partitions": {
+        "mathematics-": 2.564599328033974,
+        "medicine-": 1.804559219811208,
+        "prose-": 1.878685170696085,
+        "science-": 1.9351421210404551,
+        "technology-": 1.86604180522792
+      },
+      "technical_weighted": 2.094308961459034,
+      "whole_pack": 2.0637384906160543
+    },
+    "0.5": {
+      "macro": 2.0216221395578806,
+      "partitions": {
+        "mathematics-": 2.600653247328639,
+        "medicine-": 1.8253348907971463,
+        "prose-": 1.8412138760294636,
+        "science-": 1.9428499967771276,
+        "technology-": 1.898058686857026
+      },
+      "technical_weighted": 2.119157819264294,
+      "whole_pack": 2.0603739404063917
+    },
+    "0.75": {
+      "macro": 2.0530039535280826,
+      "partitions": {
+        "mathematics-": 2.6378376125315035,
+        "medicine-": 1.8705799093475055,
+        "prose-": 1.819814644174645,
+        "science-": 1.9710241884900759,
+        "technology-": 1.965763413096682
+      },
+      "technical_weighted": 2.163808780095769,
+      "whole_pack": 2.0708939420534045
+    },
+    "1": {
+      "macro": 2.218646122349795,
+      "partitions": {
+        "mathematics-": 3.0436111151099587,
+        "medicine-": 1.9952236891950486,
+        "prose-": 1.8092606546944157,
+        "science-": 2.058665231518157,
+        "technology-": 2.1864699212313927
+      },
+      "technical_weighted": 2.392215355264157,
+      "whole_pack": 2.163693122795988
+    }
+  },
+  "borrowed_from_a_full_report": {
+    "1": {
+      "borrowed_from_a_full_report": [
+        "test_partitions[*].metrics.characters_scored"
+      ],
+      "checked_equal_first": [
+        "tokens_scored"
+      ],
+      "not_recorded_in_committed_summary": [
+        "document_masking",
+        "shuffle_training_units"
+      ]
+    }
+  },
+  "declared_differences": [
+    "document_masking",
+    "share_group_prefix",
+    "share_of_tokens",
+    "shuffle_training_units",
+    "training_composition",
+    "training_group_prefixes",
+    "training_tokens_packed"
+  ],
+  "dominance_pairs": [],
+  "margins": {
+    "macro": {
+      "central": 0.0062048,
+      "upper": 0.02
+    },
+    "mathematics-": {
+      "central": 0.035,
+      "upper": 0.09808016
+    },
+    "medicine-": {
+      "central": 0.010359799999999999,
+      "upper": 0.029766420000000002
+    },
+    "prose-": {
+      "central": 0.00624635,
+      "upper": 0.02
+    },
+    "science-": {
+      "central": 0.00932936,
+      "upper": 0.02680529
+    },
+    "technology-": {
+      "central": 0.00291404,
+      "upper": 0.00837648
+    }
+  },
+  "matched_conditions": {
+    "architecture": true,
+    "corpus_fingerprint": true,
+    "effective_batch_size": true,
+    "learning_rate": true,
+    "max_steps": true,
+    "parameter_count": true,
+    "per_partition_tokens_and_characters": true,
+    "schedule": true,
+    "seed": true,
+    "split_fingerprint": true,
+    "split_seed": true,
+    "test_characters_scored": true,
+    "test_positions_scored": true,
+    "tokenizer_fingerprint": true,
+    "tokenizer_size": true
+  },
+  "primary_objective": "equal-weight mean of the five register partitions (lower is better)",
+  "selection_effect": {
+    "available": true,
+    "differences": {
+      "macro": {
+        "nested_half_minus_natural_mean": -0.001154,
+        "reading": "tie"
+      },
+      "mathematics-": {
+        "nested_half_minus_natural_mean": 0.010805,
+        "reading": "tie"
+      },
+      "medicine-": {
+        "nested_half_minus_natural_mean": -0.008029,
+        "reading": "indeterminate"
+      },
+      "prose-": {
+        "nested_half_minus_natural_mean": 0.001358,
+        "reading": "tie"
+      },
+      "science-": {
+        "nested_half_minus_natural_mean": -0.00483,
+        "reading": "tie"
+      },
+      "technology-": {
+        "nested_half_minus_natural_mean": -0.005073,
+        "reading": "indeterminate"
+      }
+    },
+    "natural_mixture_runs": 5
+  },
+  "sweep": {
+    "best_share": 0.25,
+    "best_value": 2.0098055289619285,
+    "margin": 0.02,
+    "outcome": "unresolved",
+    "within_margin_of_best": [
+      0.0,
+      0.25,
+      0.5
+    ]
+  }
+}
