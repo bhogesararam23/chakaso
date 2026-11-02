@@ -827,7 +827,7 @@ preregistered arm, whether norms should be excluded from decay; (4) pin threads 
 or state the tolerance as the contract; (5) derive the protocol identity from the plan instead of a hand-kept list;
 (6) a checkpoint-format revision.
 
-### K-031 — A pinned Gutenberg source can change upstream after the pin; the corpus identity survived once, by luck of where the change fell
+### K-031 — A pinned Gutenberg source can change upstream after the pin; the corpus identity survived once, by luck of where the change fell (drift is now classified; the raw-bytes archive is open)
 
 **Impact:** Medium for re-trainability. The catalogue pins each source's raw SHA-256, and `corpus prepare` refuses a mismatch,
 which is correct. On 2026-11-02 re-fetching the 430 pinned URLs found one mismatch: `science-pg3489` ("Fabre, Poet of Science"),
@@ -841,7 +841,12 @@ fingerprint and made every later comparison against E2612–E2614 unsound.
 **What would close it:** record a digest of each source's *ingested* text in the catalogue beside the raw digest, so drift can be
 classified as header-only or content before anything is trained; and decide where the raw bytes of a pinned corpus are kept, since a URL
 is not an archive (the unresolved half of the artifact policy's "where do released weights live" question applies to corpora too).
-Neither is implemented.
+
+*First half closed 2026-11-02 ([ADR-0047](../decisions/ADR-0047-a-pinned-corpus-declares-the-digest-of-the-text-it-ingests.md)):* a source may
+declare `ingested_sha256`, `ingest` refuses text that differs, `verify_raw` still refuses every raw mismatch and now names whether the
+ingested text is identical, and the committed multiregister catalogue declares all 430. On the current bytes the classifier reports exactly
+`science-pg3489: ingested-text-identical`. *Second half open:* the raw bytes (156 MB, ~59.5 MB gzipped) still exist only on this host's
+`data/`; where an archive lives is the owner's decision (ADR-0047 part 2), and the original `pg3489` bytes are not recoverable.
 
 ## Resolved
 

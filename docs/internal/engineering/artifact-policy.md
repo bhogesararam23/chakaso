@@ -56,6 +56,13 @@ bytes each consumer rebuilds from [E2608's record](../../../experiments/E2608/re
 record states. That works because the corpus is licensed and the training is reproducible; it stops being
 enough the moment someone is expected to load a weight they cannot spend an hour rebuilding.
 
+### Where do a pinned corpus's raw bytes live?
+
+Undecided, and recorded in [ADR-0047](../../decisions/ADR-0047-a-pinned-corpus-declares-the-digest-of-the-text-it-ingests.md) part 2 and K-031:
+the multiregister corpus's raw directory is 156 MB (about 59.5 MB gzipped), a URL is not an archive, and the original bytes of one of its 430
+sources could not be recovered after the source changed upstream. The recommendation is one archive of the verified raw directory, cited by
+its SHA-256 from the data card, in a place the owner chooses; publishing third-party text is a hosting decision, not a code change.
+
 ### Which dataset artifacts are redistributable?
 
 Depends on the licence of each source corpus — and since E2607 that dependency is recorded rather

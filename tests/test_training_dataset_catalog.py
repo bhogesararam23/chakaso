@@ -563,3 +563,23 @@ def test_declaring_a_directory_records_the_ingested_digest_of_every_source(tmp_p
 
     assert all(item.ingested_sha256 for item in declared.sources)
     declared.ingest(raw, tmp_path / "cache")  # and what it declares is what ingestion produces
+
+
+def test_the_committed_multiregister_catalogue_declares_every_sources_ingested_digest(
+    tmp_path: Path,
+) -> None:
+    path = (
+        Path(__file__).resolve().parent.parent
+        / "configs"
+        / "corpora"
+        / "gutenberg-multiregister-v1.toml"
+    )
+
+    catalog = load_catalog(path)
+
+    assert len(catalog.sources) == 430
+    assert all(item.ingested_sha256 for item in catalog.sources)
+    # The file is what the writer produces, so regenerating it changes nothing but the content declared.
+    rewritten = tmp_path / "rewritten.toml"
+    write_catalog(catalog, rewritten)
+    assert rewritten.read_text(encoding="utf-8") == path.read_text(encoding="utf-8")

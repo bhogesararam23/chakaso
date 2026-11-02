@@ -14,6 +14,7 @@ url = "https://www.gutenberg.org/cache/epub/16449/pg16449.txt"
 sha256 = "8bb27b9bbb937f3c76eade8282fab260f234e181ae6f153698982bed83061c98"
 title = "The Number Concept: Its Origin and Development"
 author = "Levi L. Conant"
+ingested_sha256 = "c98f7d39c88ed90cf3f96a758455daf2ecdb9354044567c9416905fa01defa55"
 
 [[sources]]
 slug = "mathematics-pg19600"
@@ -22,6 +23,7 @@ url = "https://www.gutenberg.org/cache/epub/19600/pg19600.txt"
 sha256 = "64b517ed23d2d7b3eb42f747406ea7ac973d19c60d1c2baf21d28085ac58447e"
 title = "Jerome Cardan: A Biographical Study"
 author = "W. G. Waters"
+ingested_sha256 = "33faea45e3cb64d32e5b5cf7b7aac91c91a8506223801b19f1a9c72037b4debe"
 
 [[sources]]
 slug = "mathematics-pg20214"
@@ -30,6 +32,7 @@ url = "https://www.gutenberg.org/cache/epub/20214/pg20214.txt"
 sha256 = "8b5d91355e16072424e58963e64ab16de3f7e843d1e1fa8c2887b56afa91e695"
 title = "Instruction for Using a Slide Rule"
 author = "W. Stanley"
+ingested_sha256 = "6e42933a4a8ede8a8db17c4fae91852b76352d6bb3c998cf7079ae8d8dce7ea4"
 
 [[sources]]
 slug = "mathematics-pg212"
@@ -38,6 +41,7 @@ url = "https://www.gutenberg.org/cache/epub/212/pg212.txt"
 sha256 = "70abd48001b410be28b602df047446bac180806a26b7bb1becbacd9396e79cf1"
 title = "A List of Factorial Math Constants"
 author = "Unknown"
+ingested_sha256 = "649e677e959f12ba6ead923e8b7a1daf3ca76af612418eaee60ceb8a3e5a766f"
 
 [[sources]]
 slug = "mathematics-pg22062"
@@ -46,6 +50,7 @@ url = "https://www.gutenberg.org/cache/epub/22062/pg22062.txt"
 sha256 = "1408cbb84bfcbdabf7451d47b2655f2484dda6daeec700ade6e45b5a16daf616"
 title = "The Mathematicall Praeface to Elements of Geometrie of Euclid of Megara"
 author = "John Dee"
+ingested_sha256 = "78590084984b9c0d268870b5f9f9ac612ed9792a4798d4fae03b6f2319d76437"
 
 [[sources]]
 slug = "mathematics-pg22599"
@@ -54,6 +59,7 @@ url = "https://www.gutenberg.org/cache/epub/22599/pg22599.txt"
 sha256 = "ea111013b197c83fb8ca502033b6460c2e9f83b451301ba9358aa52384ec2233"
 title = "The Hindu-Arabic Numerals"
 author = "David Eugene Smith"
+ingested_sha256 = "7e3e1693afcec3799b209f72be30a8d169df250d87728471619f6425c5a14377"
 
 [[sources]]
 slug = "mathematics-pg25664"
@@ -62,6 +68,7 @@ url = "https://www.gutenberg.org/cache/epub/25664/pg25664.txt"
 sha256 = "9d42912f6ecb5fb06028cda0cc53d92d3ea459431e6e1bcdee5f9e977b0fe590"
 title = "The Earliest Arithmetics in English"
 author = "Steele, Robert, 1860-1944 [Editor]; Alexander, de Villa Dei [Contributor]; Record, Robert, 1510?-1558 [Contributor]; Sacro Bosco, Joannes de, active 1230 [Contributor]"
+ingested_sha256 = "f1845493d5f1df1a4affc7061e89fa0c5b2ada17d6c26ab1485534bc6211156c"
 
 [[sources]]
 slug = "mathematics-pg2584"
@@ -70,6 +77,7 @@ url = "https://www.gutenberg.org/cache/epub/2584/pg2584.txt"
 sha256 = "5d487e7c63dc4e4ae20b819dfa4319654a37dc999df5c29d361a9012562e3316"
 title = "The First 1000 Euler Numbers"
 author = "Plouffe, Simon, 1956- [Editor]"
+ingested_sha256 = "cebb954d75951c027ff8304c57377e1893db826853287cc1840d40d76d6eb1ea"
 
 [[sources]]
 slug = "mathematics-pg2586"
@@ -78,6 +86,7 @@ url = "https://www.gutenberg.org/cache/epub/2586/pg2586.txt"
 sha256 = "1125f1f8bc81b8806680fa2c57a17db80af652168e8d07e53141458188206cdc"
 title = "The First 498 Bernoulli Numbers"
 author = "Plouffe, Simon, 1956- [Editor]"
+ingested_sha256 = "7fb3df53cc6b07b2ef2eae4a9dabcc451da423e02a0af8107e8ff169d874f12f"
 
 [[sources]]
 slug = "mathematics-pg302"
@@ -86,6 +95,7 @@ url = "https://www.gutenberg.org/cache/epub/302/pg302.txt"
 sha256 = "b293a096b5bab8d55bf42896d7b609f412587eee4c8cf93cde219abf12931d56"
 title = "The Fibonacci Number Series"
 author = "Michael Husted"
+ingested_sha256 = "7a12b621d4151408ceb46b02e3e4f8690a5ea9eef1e5991da08f0e7e5ad5eb3b"
 
 [[sources]]
 slug = "mathematics-pg33093"
@@ -94,6 +104,7 @@ url = "https://www.gutenberg.org/cache/epub/33093/pg33093.txt"
 sha256 = "cc2adc55e6c65e2fd8ad914ceb71fd45daaa80998216e952a914a130677f9530"
 title = "The Path-Way to Knowledg, Containing the First Principles of Geometrie"
 author = "Robert Record"
+ingested_sha256 = "c0fa90c689786d0f9907e94dae96b8070256a653c6f13e78d1bd6abb8849d101"
 
 [[sources]]
 slug = "mathematics-pg35550"
@@ -102,6 +113,7 @@ url = "https://www.gutenberg.org/cache/epub/35550/pg35550.txt"
 sha256 = "2114176ddad468659378c4d35c02db5036e6ddb7b7f98e1e380eed9666d742e0"
 title = "Archimedes"
 author = "Sir Thomas Little Heath"
+ingested_sha256 = "1443579736b78186ebf3ff86cc20879dfe4f1121233bef6b8d4c080e066bfab2"
 
 [[sources]]
 slug = "mathematics-pg37681"
@@ -110,6 +122,7 @@ url = "https://www.gutenberg.org/cache/epub/37681/pg37681.txt"
 sha256 = "df7e021fffbe738f5387d0a28dcc00d05218f993a601f0f9bee410fbb05aea9d"
 title = "The Teaching of Geometry"
 author = "David Eugene Smith"
+ingested_sha256 = "8f7d01523b910f70cce442bf57683d190aa2dbfa6742e9ee71ac256fb5896632"
 
 [[sources]]
 slug = "mathematics-pg38536"
@@ -118,6 +131,7 @@ url = "https://www.gutenberg.org/cache/epub/38536/pg38536.txt"
 sha256 = "421f6177b84e7d55ca087375e0fe6e38c6eaef723d31ef0a0f0c56454c4247aa"
 title = "A Review of Algebra"
 author = "Romeyn Henry Rivenburg"
+ingested_sha256 = "d3c5e5b6a0a43fd37ff56bc642948dbdc948cdb0104b184679d48404bca059ec"
 
 [[sources]]
 slug = "mathematics-pg39702"
@@ -126,6 +140,7 @@ url = "https://www.gutenberg.org/cache/epub/39702/pg39702.txt"
 sha256 = "eb3a19b32454346b38779b0235b53454c356b82b97d8be2fe9fed3a4eeda1de4"
 title = "The philosophy of mathematics"
 author = "Auguste Comte"
+ingested_sha256 = "402c2e2b50278faf77e13df58c892f87a1af90c4bfd87ca8440e2081fd356bfd"
 
 [[sources]]
 slug = "mathematics-pg49289"
@@ -134,6 +149,7 @@ url = "https://www.gutenberg.org/cache/epub/49289/pg49289.txt"
 sha256 = "925d25c3a9ee649d0a4fb99930af0ae43e602d61cd7004f6707f1924427adbbb"
 title = "Scientific Romances (First Series)"
 author = "Charles Howard Hinton"
+ingested_sha256 = "3149c06bf1a258b4927d84ed206d9a24c43a5dd0ac08618d704ad813750dbc06"
 
 [[sources]]
 slug = "mathematics-pg50468"
@@ -142,6 +158,7 @@ url = "https://www.gutenberg.org/cache/epub/50468/pg50468.txt"
 sha256 = "1df4a4cd6a1149da964b38f00e41c1fc6c31b798bb6227dec8fcea12ce0fc1b6"
 title = "The Oak Ridge ALGOL Compiler for the Control Data Corporation 1604"
 author = "L. L. Bumgarner"
+ingested_sha256 = "319e1f0b4d7b14397b638cb4e6a612ea686bf18ce885f244037e466a8b1e2b2f"
 
 [[sources]]
 slug = "mathematics-pg53161"
@@ -150,6 +167,7 @@ url = "https://www.gutenberg.org/cache/epub/53161/pg53161.txt"
 sha256 = "178aabbca30d0f8961becc26046cf27428983e3be6de2811a5ebac1de2966bad"
 title = "A View of Sir Isaac Newton's Philosophy"
 author = "Henry Pemberton"
+ingested_sha256 = "baf73d1cede60e4d26bbde136b457913c2c9237905f0c453f58b1297260c18db"
 
 [[sources]]
 slug = "mathematics-pg54300"
@@ -158,6 +176,7 @@ url = "https://www.gutenberg.org/cache/epub/54300/pg54300.txt"
 sha256 = "d6b9e43f10d339544a5a4a69baf7d5bffc50ca9a64c48d49686fcb40592986ba"
 title = "Marks' first lessons in geometry"
 author = "Bernhard Marks"
+ingested_sha256 = "ad2d96c9e5b1c72594d93873b5b4643a145a367fc5b24f024db421b55b192765"
 
 [[sources]]
 slug = "mathematics-pg54360"
@@ -166,6 +185,7 @@ url = "https://www.gutenberg.org/cache/epub/54360/pg54360.txt"
 sha256 = "f9f1683f4282d92621b1632ed708e8622563bdd2a5457bd7aab9f21dc98f3b06"
 title = "The Silicon Jungle"
 author = "David H. Rothman"
+ingested_sha256 = "b1f904cadd2ab720ea6a19d18698de816c1cb5d88537a443032b040208334c6e"
 
 [[sources]]
 slug = "mathematics-pg57532"
@@ -174,6 +194,7 @@ url = "https://www.gutenberg.org/cache/epub/57532/pg57532.txt"
 sha256 = "290061b3a888380a24fa2ad22221f6a7834aada3bec4a4c93f93bb37ada6e411"
 title = "Passages from the Life of a Philosopher"
 author = "Charles Babbage"
+ingested_sha256 = "aa16b937f8fb5658dfebd24a0b34ce4f72f32ba53fe1f0e8e513de28ad3d1e6b"
 
 [[sources]]
 slug = "mathematics-pg58881"
@@ -182,6 +203,7 @@ url = "https://www.gutenberg.org/cache/epub/58881/pg58881.txt"
 sha256 = "ee8b509dbf5ba6e9c0c7b68a9c7601509cc7f686855086791f3600217558e3bd"
 title = "A Philosophical Essay on Probabilities"
 author = "marquis de Pierre Simon Laplace"
+ingested_sha256 = "2a7acd5f22ce7e93f9ef04cd56d1c3dc168f91e84729e53c33ea2ba6c9998450"
 
 [[sources]]
 slug = "mathematics-pg63"
@@ -190,6 +212,7 @@ url = "https://www.gutenberg.org/cache/epub/63/pg63.txt"
 sha256 = "a29cdc90d50ff9564999787f1690e543b0af0265c9572c6a695ec280b11dfccc"
 title = "The Number \"e\""
 author = "Unknown"
+ingested_sha256 = "ad02cf0a43cabdcd1e7ff204276b2e3714ad652b3738108f9cd2cca843111293"
 
 [[sources]]
 slug = "mathematics-pg633"
@@ -198,6 +221,7 @@ url = "https://www.gutenberg.org/cache/epub/633/pg633.txt"
 sha256 = "5d2b9f319df62ef4a2cc25be875540b48db012b087ac47db0dc7de7773eff5e7"
 title = "The Golden Mean or Ratio[(1+sqrt(5))/2]"
 author = ""
+ingested_sha256 = "796f4adc744d8388b4a18fb985baaa3187f53ba732c702d999209a43b5f3d0b5"
 
 [[sources]]
 slug = "mathematics-pg634"
@@ -206,6 +230,7 @@ url = "https://www.gutenberg.org/cache/epub/634/pg634.txt"
 sha256 = "fa7ef5e10ac3daf578b7977ddc3d1810c6e028a7a0b8fff27dc4a0345d3d200d"
 title = "Miscellaneous Mathematical Constants"
 author = "Plouffe, Simon, 1956- [Editor]"
+ingested_sha256 = "196caa8ce279d79a743f5aba4c8b841523e453ccea4a3eb1f7de737671be1c00"
 
 [[sources]]
 slug = "mathematics-pg6527"
@@ -214,6 +239,7 @@ url = "https://www.gutenberg.org/cache/epub/6527/pg6527.txt"
 sha256 = "28bc2fc6b20cf826583d1cb03fd436ada370cc70949be218e1c9a494b57f7f13"
 title = "Debian GNU/Linux : Guide to Installation and Usage"
 author = "John Goerzen"
+ingested_sha256 = "f0755c7a03b1dab770b485c6adb28af1f825723cdd1d827c8f41057d755d2480"
 
 [[sources]]
 slug = "mathematics-pg682"
@@ -222,6 +248,7 @@ url = "https://www.gutenberg.org/cache/epub/682/pg682.txt"
 sha256 = "dae17cf7e263203c7189729fb7ac2e892d55f7574dd1ec49c6d2dc606ce603ca"
 title = "Catalan's Constant [Ramanujan's Formula]"
 author = "Greg Fee"
+ingested_sha256 = "a48077d0534fe09ace78740bec2300c595993b526ba42ae9d58b9d3fa09b96ef"
 
 [[sources]]
 slug = "mathematics-pg68662"
@@ -230,6 +257,7 @@ url = "https://www.gutenberg.org/cache/epub/68662/pg68662.txt"
 sha256 = "c7dc1494dc3172531d79f11108c231377a4c17be0dbf9eb1ccce1a163e9ffd2f"
 title = "Elements of arithmetic"
 author = "Augustus De Morgan"
+ingested_sha256 = "737b56ed3c939ba4a428543c4dd318819db037f22e38f9e0f055500a2e89105f"
 
 [[sources]]
 slug = "mathematics-pg68991"
@@ -238,6 +266,7 @@ url = "https://www.gutenberg.org/cache/epub/68991/pg68991.txt"
 sha256 = "90134429664b77c1343a3b11594cc6353188c624320677267271c5c19372c61c"
 title = "Giant brains; or, Machines that think"
 author = "Edmund Callis Berkeley"
+ingested_sha256 = "b18dd29af160aed26d6922d9ade0646fff323dbc471e9b47c0aab3ec90ac6ee1"
 
 [[sources]]
 slug = "mathematics-pg69386"
@@ -246,6 +275,7 @@ url = "https://www.gutenberg.org/cache/epub/69386/pg69386.txt"
 sha256 = "7fa09b2644ae2f52875f6b1ed97ed0cf5bc65f49988cf72f3845195eb0a21f64"
 title = "Origin of modern calculating machines"
 author = "J. A. V. Turck"
+ingested_sha256 = "c0cdd4b73483e506c9cb6e71b2d5dfc4cbf4e8cf3ad05692fca3663ca352be85"
 
 [[sources]]
 slug = "mathematics-pg72572"
@@ -254,6 +284,7 @@ url = "https://www.gutenberg.org/cache/epub/72572/pg72572.txt"
 sha256 = "35c9a1745c106938ce0364653f0c865945f5ee3e0745b75d32f5e49b5bd534f3"
 title = "Computers\u2014the machines we think with"
 author = "D. S. Halacy"
+ingested_sha256 = "f59f440201ae5cf9ea1632f62eb7d370b6960fad0a88fa75c674100e6aa02652"
 
 [[sources]]
 slug = "mathematics-pg729"
@@ -262,6 +293,7 @@ url = "https://www.gutenberg.org/cache/epub/729/pg729.txt"
 sha256 = "187f85054f9d32b1c755e5a1c68c064beafa349e6981cebc9f0d311f92b1aa16"
 title = "Hackers, Heroes of the Computer Revolution. Chapters 1 and 2"
 author = "Steven Levy"
+ingested_sha256 = "38a9fb903ae209cd60ea84494c23c8fe47c3bbca990a09475bb08ea1397ccf04"
 
 [[sources]]
 slug = "mathematics-pg75904"
@@ -270,6 +302,7 @@ url = "https://www.gutenberg.org/cache/epub/75904/pg75904.txt"
 sha256 = "39f6c7358bf68f3b533801be35139d35af4c90e17d7fcd7469eee0b51779a2b8"
 title = "The slide rule"
 author = "Charles N. Pickworth"
+ingested_sha256 = "e479823257b4e40855598d7c034b43498efa5565f6fc44d860c9e8999c6c3e7a"
 
 [[sources]]
 slug = "mathematics-pg812"
@@ -278,6 +311,7 @@ url = "https://www.gutenberg.org/cache/epub/812/pg812.txt"
 sha256 = "6c0388597576ce179b87cf730c1b58eb9e43cc621d07a5a18a65988341799406"
 title = "Catalan's Constant to 1,500,000 Places"
 author = ""
+ingested_sha256 = "48fd7b0efeeeea8db86d7419da8a4f0358bc1de30d9c3df9a6f4c22254f39412"
 
 [[sources]]
 slug = "mathematics-pg97"
@@ -286,6 +320,7 @@ url = "https://www.gutenberg.org/cache/epub/97/pg97.txt"
 sha256 = "eb84ae1a164f9d54c7bd831c847f99046f6a3199ba78b0bd7c98c09d108a3a9a"
 title = "Flatland: A Romance of Many Dimensions"
 author = "Edwin Abbott Abbott"
+ingested_sha256 = "6aba820bd70ac90fbe43fbbdaf3b610313a39d2ab30d442e1389d9e714353cca"
 
 [[sources]]
 slug = "medicine-pg14196"
@@ -294,6 +329,7 @@ url = "https://www.gutenberg.org/cache/epub/14196/pg14196.txt"
 sha256 = "9612330030ca5ccaa40f599d13d1e83454de567dbf2d56b84bb72110f7aec3d9"
 title = "The Nervous Housewife"
 author = "Abraham Myerson"
+ingested_sha256 = "1af39829e19ebe0015a8840380d908466c406079566f78a4b59a64cd3943508c"
 
 [[sources]]
 slug = "medicine-pg1739"
@@ -302,6 +338,7 @@ url = "https://www.gutenberg.org/cache/epub/1739/pg1739.txt"
 sha256 = "f4a98ffea73c73cbcaeacba5281596758cd540a4aee7616e3527e407ff67c70f"
 title = "The Black Death, and The Dancing Mania"
 author = "J. F. C. Hecker"
+ingested_sha256 = "77ecad9d49ece42d7bf12fc18947265370e80c6f28387383120c69d5f307f68e"
 
 [[sources]]
 slug = "medicine-pg18843"
@@ -310,6 +347,7 @@ url = "https://www.gutenberg.org/cache/epub/18843/pg18843.txt"
 sha256 = "21d3e9930aad3bdfe5f2846901a580e279c1125d36a02c5d4ad86aaa35230d2f"
 title = "Applied Psychology for Nurses"
 author = "Mary F. Porter"
+ingested_sha256 = "dd82c3b662f5aec8d910767b415fd43940d2861b15406a0d2aaf0056b592ac95"
 
 [[sources]]
 slug = "medicine-pg24854"
@@ -318,6 +356,7 @@ url = "https://www.gutenberg.org/cache/epub/24854/pg24854.txt"
 sha256 = "ad09a32162fa1549f087422c55972f66dbccca1dc439732060af9c0f12135b8c"
 title = "The Eugenic Marriage, Volume 2 (of 4)"
 author = "W. Grant Hague"
+ingested_sha256 = "744e430d4ca4646270fa8c5ea623d06cca67fb3306cc5bb214fd7cc7e5ea6b09"
 
 [[sources]]
 slug = "medicine-pg25020"
@@ -326,6 +365,7 @@ url = "https://www.gutenberg.org/cache/epub/25020/pg25020.txt"
 sha256 = "153289cddcac9faeda07e0dbae4476aff1e245d5c87d5953f3dc8da31d1d06bd"
 title = "Humanistic Nursing"
 author = "Josephine G. Paterson"
+ingested_sha256 = "bfdfc84939a37ed7bd13b4c186b2aaa3926748b18ce12692a9704f4a6820bab4"
 
 [[sources]]
 slug = "medicine-pg28428"
@@ -334,6 +374,7 @@ url = "https://www.gutenberg.org/cache/epub/28428/pg28428.txt"
 sha256 = "bfe7e9ec73b7507097f6df7f06c1115a32360209c33860e37f041299e19459e0"
 title = "Manual of Surgery Volume Second: Extremities\u2014Head\u2014Neck. Sixth Edition."
 author = "Alexis Thomson"
+ingested_sha256 = "4ce14ede79e666dd34fc4da51d6cd0d921a5cde38b66d78b3ee130fc5365f7b3"
 
 [[sources]]
 slug = "medicine-pg37109"
@@ -342,6 +383,7 @@ url = "https://www.gutenberg.org/cache/epub/37109/pg37109.txt"
 sha256 = "3fb9fea70f7b4967293eb9f78f27ba29237b2f0eec4e6fda8a4cbb6c0ee3a60c"
 title = "Health Through Will Power"
 author = "James J. Walsh"
+ingested_sha256 = "1a6454d4f58fe9ca4c5409b6836ca091fb9a1688e72df21229b6e29faf472151"
 
 [[sources]]
 slug = "medicine-pg37144"
@@ -350,6 +392,7 @@ url = "https://www.gutenberg.org/cache/epub/37144/pg37144.txt"
 sha256 = "aa85e7c084685edc0402f504b07112cc7f4374dd36c39d9ba0fb61a9f39d4036"
 title = "Observations on madness and melancholy"
 author = "John Haslam"
+ingested_sha256 = "02c359f9d161cfda4d9f206d04e34c7b4870e464c753c4766d6356e7a24a95bc"
 
 [[sources]]
 slug = "medicine-pg37326"
@@ -358,6 +401,7 @@ url = "https://www.gutenberg.org/cache/epub/37326/pg37326.txt"
 sha256 = "58c02f962e0fb69361afda0832f4fc217d3986cf648535d1fae1a075c2c4c7bd"
 title = "Turkish and Other Baths: A Guide to Good Health and Longevity"
 author = "Gordon Stables"
+ingested_sha256 = "8bec2cdf8d7e8be1010ce466f572122dc5dd3ebac1d0271a3f5e77dfd2e8ed87"
 
 [[sources]]
 slug = "medicine-pg4273"
@@ -366,6 +410,7 @@ url = "https://www.gutenberg.org/cache/epub/4273/pg4273.txt"
 sha256 = "50f0c7bf482f2430aed7e8dcebb967bb79eec352bc936bb288fc6734166a3018"
 title = "Nature Cure: Philosophy & Practice Based on the Unity of Disease & Cure"
 author = "Henry Lindlahr"
+ingested_sha256 = "dc5c3701c2d5ccb71a3cb8684ca87ca35e222ad52fd2282b9f79a854ccfefaed"
 
 [[sources]]
 slug = "medicine-pg43415"
@@ -374,6 +419,7 @@ url = "https://www.gutenberg.org/cache/epub/43415/pg43415.txt"
 sha256 = "6855169d01a10edd93790176807630e3d4b05acc26e010eee156776b9e72e934"
 title = "Insomnia; and Other Disorders of Sleep"
 author = "Henry M. Lyman"
+ingested_sha256 = "66a2346dcac5d181927cde5720a890ae306ca25f55b88894f80df8b4ac1b78d4"
 
 [[sources]]
 slug = "medicine-pg4343"
@@ -382,6 +428,7 @@ url = "https://www.gutenberg.org/cache/epub/4343/pg4343.txt"
 sha256 = "1219fef6f5bcfcb764daa41ab27f66706e5b7df3bfde2b9e2c7f77a5df8a54f1"
 title = "How and When to Be Your Own Doctor"
 author = "Isabel A. Moser"
+ingested_sha256 = "9c490413aeba76aa23d10c3ead115d4deed689fcf16a66060589745c896e6a8d"
 
 [[sources]]
 slug = "medicine-pg49662"
@@ -390,6 +437,7 @@ url = "https://www.gutenberg.org/cache/epub/49662/pg49662.txt"
 sha256 = "f14912aa7d5ef976816ae35582ddde9f5c43ac8f627f4cc1364f3b377bdedce1"
 title = "The Cure of Rupture by Paraffin Injections"
 author = "Charles Conrad Miller"
+ingested_sha256 = "51793fa8d45c8d586b24cd7b79ca84a494a40d6253b479aa20fb271aa8c08f66"
 
 [[sources]]
 slug = "medicine-pg51410"
@@ -398,6 +446,7 @@ url = "https://www.gutenberg.org/cache/epub/51410/pg51410.txt"
 sha256 = "379197c131f7ef65f9d1765c4f4c4b79131f2fbd94e00dc8937bd60aa022615f"
 title = "Dr. Elsie Inglis"
 author = "Lady Frances Balfour"
+ingested_sha256 = "55235b804ba5b8d1bb63249804f1b2f2301e3aee245a71ae75999a774a79ee6f"
 
 [[sources]]
 slug = "medicine-pg52297"
@@ -406,6 +455,7 @@ url = "https://www.gutenberg.org/cache/epub/52297/pg52297.txt"
 sha256 = "138d27444d6f56c4c95c89b6907a7edf5c5ba01223a4ef548be378890f53df24"
 title = "Medical Women: Two Essays"
 author = "Sophia Jex-Blake"
+ingested_sha256 = "b0ef4ad72db13bd74a433f26cbf7b9bdc2a0a6c3233971b1bf3b07edc54a192f"
 
 [[sources]]
 slug = "medicine-pg52874"
@@ -414,6 +464,7 @@ url = "https://www.gutenberg.org/cache/epub/52874/pg52874.txt"
 sha256 = "08198d2c9ae6da1162bdd4c7a56087e475f6235b9e86cd4c4cccac8e47d2091d"
 title = "The Cleveland Medical Gazette, Vol. 1, No. 3, January 1886"
 author = "Various"
+ingested_sha256 = "fb504cc0f2e848f4405ad70bfebf3a21fc4adc3b902dd3968e8b7d108ec9e0bf"
 
 [[sources]]
 slug = "medicine-pg56407"
@@ -422,6 +473,7 @@ url = "https://www.gutenberg.org/cache/epub/56407/pg56407.txt"
 sha256 = "503c97da6dddb794f13e58d3ad3aa966e3eaf71b9f66558a25b388dd5199f28b"
 title = "A Sketch of the Life of Elizabeth T. Stone and of Her Persecutions"
 author = "Elizabeth T. Stone"
+ingested_sha256 = "7f324f28f79851740f36b5348703f97c8633453af3746f7a5ea119c2a128e807"
 
 [[sources]]
 slug = "medicine-pg57535"
@@ -430,6 +482,7 @@ url = "https://www.gutenberg.org/cache/epub/57535/pg57535.txt"
 sha256 = "08e44762cd01983147653484585455dea707641d76216c6c3c2f89667cd837c9"
 title = "Medical Sketches of the Expedition to Egypt, from India"
 author = "Sir James McGrigor"
+ingested_sha256 = "3a2f01330b2361e5c7c688c6a7cd6f4a8289f270de651d316e3f752eaa2534d9"
 
 [[sources]]
 slug = "medicine-pg59865"
@@ -438,6 +491,7 @@ url = "https://www.gutenberg.org/cache/epub/59865/pg59865.txt"
 sha256 = "3cf559dd30db6c1565368f7942d31575ca883642aeed57b7ae4bf343621d5578"
 title = "The Elephant Man and Other Reminiscences"
 author = "Frederick Treves"
+ingested_sha256 = "961141331ce0fbfac54e624ad1a759d62bd1fadeba1ba70f08a513c8eb685a05"
 
 [[sources]]
 slug = "medicine-pg61569"
@@ -446,6 +500,7 @@ url = "https://www.gutenberg.org/cache/epub/61569/pg61569.txt"
 sha256 = "37c57bb0346832774bc738565f74bf710f0b60175dd67e38ddad6eb914c93e0d"
 title = "The Archives of Dentistry, Vol. VII, No. 4, April 1890"
 author = "Various"
+ingested_sha256 = "b618ac61b53e1b1cccbbb55f47f52fcbc933dbf4270fe7349df30fbac516e63f"
 
 [[sources]]
 slug = "medicine-pg65003"
@@ -454,6 +509,7 @@ url = "https://www.gutenberg.org/cache/epub/65003/pg65003.txt"
 sha256 = "7f6f391da73cbaeacbfc1dfc5c712f80a6a38222776725ef2fbabb6aaf70e367"
 title = "Porneiopathology"
 author = "Robert James Culverwell"
+ingested_sha256 = "114145f0f4d690382124dbe345265868c8e52a62f41733d0eec3b11050432cc2"
 
 [[sources]]
 slug = "medicine-pg68032"
@@ -462,6 +518,7 @@ url = "https://www.gutenberg.org/cache/epub/68032/pg68032.txt"
 sha256 = "1ecba428fe56e8cae985a97b54594d79136055006fe52ad53baadc840d22b199"
 title = "Diabetes"
 author = "Russell M. Wilder"
+ingested_sha256 = "df0bbec0051f7c2a118368d1a27d0b5183932a9a88c260acef818597481495f6"
 
 [[sources]]
 slug = "medicine-pg69197"
@@ -470,6 +527,7 @@ url = "https://www.gutenberg.org/cache/epub/69197/pg69197.txt"
 sha256 = "2dd6fdde041e93ea35ada0d9b59e158bbf6c1b0bb8e042d139ee9f75f2d8be5c"
 title = "Sketches from the history of medicine, ancient and modern"
 author = "W. Sedgwick Saunders"
+ingested_sha256 = "4cdac14ed2ac037efaf6398c24fc0402db08b4506449675b4709b964c51777e7"
 
 [[sources]]
 slug = "medicine-pg7293"
@@ -478,6 +536,7 @@ url = "https://www.gutenberg.org/cache/epub/7293/pg7293.txt"
 sha256 = "4f6633781b50dc8034b16a690f352bf582eb676fe5824cca45a8561d18987ef7"
 title = "The Opium Habit"
 author = "Horace B. Day"
+ingested_sha256 = "b18dc425166062ce3c602f01811b2aa3518a19d99d1fcd0604a6c48355279075"
 
 [[sources]]
 slug = "medicine-pg73394"
@@ -486,6 +545,7 @@ url = "https://www.gutenberg.org/cache/epub/73394/pg73394.txt"
 sha256 = "4168a2a4a1a8ae7040764a421c1dcd33d4ab4fe75a7a54c9bd77c7fd21765440"
 title = "The virtues of common water"
 author = "John Smith"
+ingested_sha256 = "176bf473f76218d543587bbecae53a356f85230b48bd1ee5879b016a42b42bde"
 
 [[sources]]
 slug = "prose-pg10493"
@@ -494,6 +554,7 @@ url = "https://www.gutenberg.org/cache/epub/10493/pg10493.txt"
 sha256 = "dd540617bc9e35e1d5d41d25d7157aa41284b04f1129b91fd2d556ec57f65f13"
 title = "The Old Bush Songs"
 author = "Paterson, A. B. (Andrew Barton), 1864-1941 [Compiler]"
+ingested_sha256 = "5bc6c5481e98f6fc7dc3210edea195948f6add1f2b06e7ae8cc3f2df13e9cd27"
 
 [[sources]]
 slug = "prose-pg1101"
@@ -502,6 +563,7 @@ url = "https://www.gutenberg.org/cache/epub/1101/pg1101.txt"
 sha256 = "f68f8c4514925961b5672a7ee4026ca6c399ce39588b21d10d72f46d4b620c74"
 title = "King Henry VI, Part 2"
 author = "William Shakespeare"
+ingested_sha256 = "405de47d4264e8aac57399329a391400a9d4659d197854d91bacb75803cb8c57"
 
 [[sources]]
 slug = "prose-pg11014"
@@ -510,6 +572,7 @@ url = "https://www.gutenberg.org/cache/epub/11014/pg11014.txt"
 sha256 = "237c8dad3c3bcf8257a628d5081849447e957c500d1b2df66969a33320f11201"
 title = "Christmas in Legend and Story: A Book for Boys and Girls"
 author = "Elva Sophronia Smith"
+ingested_sha256 = "0cf1cba9e83371a4e0e9793b4ea121c818a2b48cf38c0762e8a0c3217a9f5d21"
 
 [[sources]]
 slug = "prose-pg11254"
@@ -518,6 +581,7 @@ url = "https://www.gutenberg.org/cache/epub/11254/pg11254.txt"
 sha256 = "a77fea3fcd362ed7ba5794c70155b824112238c078c3e5f2e4619bfd3cb5eb60"
 title = "Poetical Works of Johnson, Parnell, Gray, and Smollett"
 author = "Samuel Johnson"
+ingested_sha256 = "b73d08c914b88a76f042ab60785c2ac4a254b929ddc27e2bc6581df4c20f95c2"
 
 [[sources]]
 slug = "prose-pg12256"
@@ -526,6 +590,7 @@ url = "https://www.gutenberg.org/cache/epub/12256/pg12256.txt"
 sha256 = "504f09c9e3b454bb5ecf6c554b4470e7053e261d3041fd6024d8400e63785516"
 title = "Mistress Penwick"
 author = "Dutton Payne"
+ingested_sha256 = "74903dac6d1c78e0cc158efb03b94b5cfb15ee4b70d1d1d4303b5725bf434645"
 
 [[sources]]
 slug = "prose-pg12808"
@@ -534,6 +599,7 @@ url = "https://www.gutenberg.org/cache/epub/12808/pg12808.txt"
 sha256 = "d77df9eeccae7acdbb4c59b9d0f2b451613c04ba16cb7ca47246b9427ba0195a"
 title = "Frank on a Gun-Boat"
 author = "Harry Castlemon"
+ingested_sha256 = "c391b64df07ca51b4ce9bf3eceb51031cad5a7e3ee362bb440d2351d0652129e"
 
 [[sources]]
 slug = "prose-pg12841"
@@ -542,6 +608,7 @@ url = "https://www.gutenberg.org/cache/epub/12841/pg12841.txt"
 sha256 = "7bce43b9961cbb110391f8032518485b3204af9c9d73ad89877dbe21c099fd38"
 title = "John Marr and Other Poems"
 author = "Herman Melville"
+ingested_sha256 = "651a12017d2f2d3f9c8522d4027ea49a42f817b688714f8c8edefc5eee1d6441"
 
 [[sources]]
 slug = "prose-pg12938"
@@ -550,6 +617,7 @@ url = "https://www.gutenberg.org/cache/epub/12938/pg12938.txt"
 sha256 = "451e53564103ea7ec5b158dbcc56b81c819d5fc29f32eba19bf77af438ca1f54"
 title = "The Brighton Boys with the Flying Corps"
 author = "James R. Driscoll"
+ingested_sha256 = "8e5b4c0ecd7cbab34eb6f31ffea74dcad02217b982b54595a0bdcfaf97c057b0"
 
 [[sources]]
 slug = "prose-pg13218"
@@ -558,6 +626,7 @@ url = "https://www.gutenberg.org/cache/epub/13218/pg13218.txt"
 sha256 = "e8ed5ca2c7d8ecf56153696ba8095ca2d19ecb7853954d080eff05532a9a04aa"
 title = "Don Orsino"
 author = "F. Marion Crawford"
+ingested_sha256 = "62ceb2ae1987c91e848192afb528efabb2dc5fedfbdfac1dfea1c8362f33fc0c"
 
 [[sources]]
 slug = "prose-pg13496"
@@ -566,6 +635,7 @@ url = "https://www.gutenberg.org/cache/epub/13496/pg13496.txt"
 sha256 = "12eda37351c40bbcb6e6ba16e4e7c9395537d1ca6e92ff71340441d2210663ff"
 title = "The White Morning: A Novel of the Power of the German Women in Wartime"
 author = "Gertrude Franklin Horn Atherton"
+ingested_sha256 = "8d96597553a5dcde7c596f47867d4a9584d5e7ce2a60fd7fd71438f28dd6d43d"
 
 [[sources]]
 slug = "prose-pg13756"
@@ -574,6 +644,7 @@ url = "https://www.gutenberg.org/cache/epub/13756/pg13756.txt"
 sha256 = "9a728798ce39b88b14bfe61c60977b58ab8ce35aef17a9f91f35dbd5b36a607d"
 title = "Story of Chester Lawrence"
 author = "Nephi Anderson"
+ingested_sha256 = "da85eea7a1d21dc3fc038cee3a228b29b7652256967f1864d49c3444ea52d47f"
 
 [[sources]]
 slug = "prose-pg13971"
@@ -582,6 +653,7 @@ url = "https://www.gutenberg.org/cache/epub/13971/pg13971.txt"
 sha256 = "e16c0d8d6638c3471fa936a77a99e4d98d88c5bd6afadfdb7a0b58c3362d8e8d"
 title = "The Fifteen Comforts of Matrimony: Responses from Men"
 author = "Various"
+ingested_sha256 = "b34daece6d7d236ea6d01dbd5065b85305b5db86cc37859e3167bee1272f7e83"
 
 [[sources]]
 slug = "prose-pg14419"
@@ -590,6 +662,7 @@ url = "https://www.gutenberg.org/cache/epub/14419/pg14419.txt"
 sha256 = "cb0b6c47906786e78b89cc0aba5d9b7b36853e60604e2eda3211b9796f8f58c7"
 title = "Grammatical Sketch of the Heve Language"
 author = "Buckingham Smith"
+ingested_sha256 = "8136ea62ac65f183d1158648c04ba29c745367c9d0ccd98e0b700764db717f4f"
 
 [[sources]]
 slug = "prose-pg15214"
@@ -598,6 +671,7 @@ url = "https://www.gutenberg.org/cache/epub/15214/pg15214.txt"
 sha256 = "94750ec4ab19b081c4eab43a286bd666fb3a05b5049bc34f79cf801a835baf5f"
 title = "Sevenoaks: A Story of Today"
 author = "J. G. Holland"
+ingested_sha256 = "059a2c9d26c71aea860b8b7a32d91af206e5f6f5acdc684c8b4b3d823674f655"
 
 [[sources]]
 slug = "prose-pg158"
@@ -606,6 +680,7 @@ url = "https://www.gutenberg.org/cache/epub/158/pg158.txt"
 sha256 = "532b122b4e6a76cc556d6fdcd729b5892f5c4ce4a1b7060b9f832adfad8680dc"
 title = "Emma"
 author = "Jane Austen"
+ingested_sha256 = "7c07dee096efcb970918024b7e0ef269b1d7b17c3f64db71af441e1c56aca67c"
 
 [[sources]]
 slug = "prose-pg16601"
@@ -614,6 +689,7 @@ url = "https://www.gutenberg.org/cache/epub/16601/pg16601.txt"
 sha256 = "77071c8e930fa793b061fb82e893889baa77e6bb3ab9acedc8f3c76fbb2ef0ce"
 title = "The Death-Wake"
 author = "Thomas Tod Stoddart"
+ingested_sha256 = "ff892483c9d86d97519342605f1edb0ca8daacb50ac3e2b6dab16a772d76354f"
 
 [[sources]]
 slug = "prose-pg16644"
@@ -622,6 +698,7 @@ url = "https://www.gutenberg.org/cache/epub/16644/pg16644.txt"
 sha256 = "f221bbfa1a2f33107512b877406d02d2400a32ed5121295bdfeb7f84293f3208"
 title = "The Puritan Twins"
 author = "Lucy Fitch Perkins"
+ingested_sha256 = "f101a6bae68a225ef831baedaaa8e5032ea37de462b2c9950906e589c27e732c"
 
 [[sources]]
 slug = "prose-pg16823"
@@ -630,6 +707,7 @@ url = "https://www.gutenberg.org/cache/epub/16823/pg16823.txt"
 sha256 = "83d16c80193ab948a08e7902d2b30145201d66472751c0f8d02cfb065bde3010"
 title = "My Neighbors: Stories of the Welsh People"
 author = "Caradoc Evans"
+ingested_sha256 = "43ec9ee9aafa47ffcfb16c3df32fa3c11b7e83dc17b67bf1f7e3821a2678127d"
 
 [[sources]]
 slug = "prose-pg17497"
@@ -638,6 +716,7 @@ url = "https://www.gutenberg.org/cache/epub/17497/pg17497.txt"
 sha256 = "cc27275c887d29058b7f0ee86bf8550171565e1429f4bd7fc39d425b7e99a975"
 title = "Ole Mammy's Torment"
 author = "Annie F. Johnston"
+ingested_sha256 = "0b8d3d9183b36373093346bc2a36cc8cd1e2e8dc3201868273bca10177a8d7a9"
 
 [[sources]]
 slug = "prose-pg1754"
@@ -646,6 +725,7 @@ url = "https://www.gutenberg.org/cache/epub/1754/pg1754.txt"
 sha256 = "6805d1a3f78fa0bbf325dc95d41d173e5ae4c1d05b7cdb04d0fa5f82ccf52da3"
 title = "The sea-gull"
 author = "Anton Pavlovich Chekhov"
+ingested_sha256 = "c0df63d21048db42be67b0f61308f16dfc3c17506d4405c9b954952a6c697c22"
 
 [[sources]]
 slug = "prose-pg17702"
@@ -654,6 +734,7 @@ url = "https://www.gutenberg.org/cache/epub/17702/pg17702.txt"
 sha256 = "948a99e5ccd95fe02efbe226927aa6bcf2a7c9b51e8f9efa8af8ae129dcd8cc9"
 title = "The Tales of the Heptameron, Vol. 2 (of 5)"
 author = "King of Navarre consort of Henry II Queen Marguerite"
+ingested_sha256 = "8abc5d656f512a63a8da4f9ca61273388fa1f64d3d4110ff5d684764df061015"
 
 [[sources]]
 slug = "prose-pg17792"
@@ -662,6 +743,7 @@ url = "https://www.gutenberg.org/cache/epub/17792/pg17792.txt"
 sha256 = "0606ca34b24aed025e7ab07bfaf2e1dc8fbc1493b866c3137ea12e9cca7e7760"
 title = "The Jamesons"
 author = "Mary Eleanor Wilkins Freeman"
+ingested_sha256 = "5d07e7fe93176f50fefc16b1a4bc02abff8f68ae049885cc14b896986ad10bd8"
 
 [[sources]]
 slug = "prose-pg17981"
@@ -670,6 +752,7 @@ url = "https://www.gutenberg.org/cache/epub/17981/pg17981.txt"
 sha256 = "0128363b4432a61e7635db1e3da52b354668eb9a85ba13bd2ea92573b374fecf"
 title = "Under Handicap"
 author = "Jackson Gregory"
+ingested_sha256 = "091eee13f51bb80b85eec46873df91581972c1d5593b45efce8c1623ef36bf44"
 
 [[sources]]
 slug = "prose-pg1819"
@@ -678,6 +761,7 @@ url = "https://www.gutenberg.org/cache/epub/1819/pg1819.txt"
 sha256 = "6f75a1da0474e2e3cec4fc5f3be7fb92a879f8fbe2cd9a6c974262a3ad649dc1"
 title = "The Messengers"
 author = "Richard Harding Davis"
+ingested_sha256 = "a707a35d4f9c8f8d28811ac0d1011fe038340685e1989146e2dcb320f9103358"
 
 [[sources]]
 slug = "prose-pg18681"
@@ -686,6 +770,7 @@ url = "https://www.gutenberg.org/cache/epub/18681/pg18681.txt"
 sha256 = "a0a72010147a2f80f0c59241bfd2b696d83c58579c85da5ad5de60fadcdbe39e"
 title = "Across the Fruited Plain"
 author = "Florence Crannell Means"
+ingested_sha256 = "1224a7d7f630aaf2625f21caaec4a0090135b3945dea79daf71c2d8145cb6a87"
 
 [[sources]]
 slug = "prose-pg18960"
@@ -694,6 +779,7 @@ url = "https://www.gutenberg.org/cache/epub/18960/pg18960.txt"
 sha256 = "194af0bafadfcfd52575786abc3f5a777f69a9866112fd1d09c113cdb6562860"
 title = "The King's Men: A Tale of To-morrow"
 author = "Robert Grant"
+ingested_sha256 = "4039ef26b0068ca2ff7fea1e9da7fdc04356a54185c6ba94c0c50e08642da8eb"
 
 [[sources]]
 slug = "prose-pg1935"
@@ -702,6 +788,7 @@ url = "https://www.gutenberg.org/cache/epub/1935/pg1935.txt"
 sha256 = "c01df28fc7ddd4e0119089e252f36937ec7dc7f8e2beb0b8845986a5ac21b9da"
 title = "The Tremendous Adventures of Major Gahagan"
 author = "William Makepeace Thackeray"
+ingested_sha256 = "d21fb530ff18ccc7b9c87a497551ac066a1459444fed4879778e9dd7c3dbe9d7"
 
 [[sources]]
 slug = "prose-pg19463"
@@ -710,6 +797,7 @@ url = "https://www.gutenberg.org/cache/epub/19463/pg19463.txt"
 sha256 = "5fa397b5f8a6e6e28a404f66a9c944277d609f9eb17c9d6073bdc9a8ba2c84fb"
 title = "James Fenimore Cooper"
 author = "Thomas Raynesford Lounsbury"
+ingested_sha256 = "81c8c21113cf5321cc6bd856c57c2d594cc5bc5c4b24bd7900d6ad71361aef6f"
 
 [[sources]]
 slug = "prose-pg19470"
@@ -718,6 +806,7 @@ url = "https://www.gutenberg.org/cache/epub/19470/pg19470.txt"
 sha256 = "1a84ab3821bb194bdebb458c099b105375c47b71e6e238c67b12e29d08eda060"
 title = "Yorkshire Lyrics"
 author = "John Hartley"
+ingested_sha256 = "bfc84cb4a4a0245ea7ffac2f9f08d85485e308ddd6c331fb2ee2185c4f250a52"
 
 [[sources]]
 slug = "prose-pg2011"
@@ -726,6 +815,7 @@ url = "https://www.gutenberg.org/cache/epub/2011/pg2011.txt"
 sha256 = "2bc7cf3da942d8a29f96b6628639db0ad1b0bc36bef2baaa37f51cec793a696a"
 title = "Rudder Grange"
 author = "Frank R. Stockton"
+ingested_sha256 = "51a027994ed7f98cbdf6219f9c1e3a4283e764de3eeac4b780d02420ca609b89"
 
 [[sources]]
 slug = "prose-pg20205"
@@ -734,6 +824,7 @@ url = "https://www.gutenberg.org/cache/epub/20205/pg20205.txt"
 sha256 = "ac8eda1db756d99d15897b7aca90b9352fc8c197737d0ee1352ba260202c3102"
 title = "The Maya Chronicles"
 author = "Brinton, Daniel G. (Daniel Garrison), 1837-1899 [Editor]"
+ingested_sha256 = "db9f72f990578bed72672b93121536b3338e5f752026ef7fa48f0fe9c2a7001a"
 
 [[sources]]
 slug = "prose-pg2025"
@@ -742,6 +833,7 @@ url = "https://www.gutenberg.org/cache/epub/2025/pg2025.txt"
 sha256 = "a7d28998191ea8b90e90b2764592162184f209a3e4b31d3c0ee5bf600139e331"
 title = "My Lady Caprice"
 author = "Jeffery Farnol"
+ingested_sha256 = "b2150e4d8540ff015afaa2bc61bd085465aee5561be395bd0d361066c0bfcade"
 
 [[sources]]
 slug = "prose-pg20387"
@@ -750,6 +842,7 @@ url = "https://www.gutenberg.org/cache/epub/20387/pg20387.txt"
 sha256 = "f4aed96e96b6ccf20452cc0dad1732c7885c4941bf8b401ba3f287b94fa99269"
 title = "A Thin Ghost and Others"
 author = "M. R. James"
+ingested_sha256 = "63b86f63cda762da944a04c6f976556cf4c8e7088b3f9335ffc12e81eba08996"
 
 [[sources]]
 slug = "prose-pg20796"
@@ -758,6 +851,7 @@ url = "https://www.gutenberg.org/cache/epub/20796/pg20796.txt"
 sha256 = "74c1312d0cce9f019f7922f3c31ce6f3d3d1a7505808cd5b67a72319c2836ff7"
 title = "The Colors of Space"
 author = "Marion Zimmer Bradley"
+ingested_sha256 = "d8ebb621b8096bebc6571227fcc6973548d50655e9d624e570792e1ade3a9f3b"
 
 [[sources]]
 slug = "prose-pg21110"
@@ -766,6 +860,7 @@ url = "https://www.gutenberg.org/cache/epub/21110/pg21110.txt"
 sha256 = "07a87b7424d841bac86c469c67b0d69fd9e48365540f65d7609f3bc99d180ea2"
 title = "A College Girl"
 author = "Mrs. George de Horne Vaizey"
+ingested_sha256 = "53de82fb1fb7fbc192f9a7596165a743ab29337363befbc65494726dd5a73594"
 
 [[sources]]
 slug = "prose-pg21327"
@@ -774,6 +869,7 @@ url = "https://www.gutenberg.org/cache/epub/21327/pg21327.txt"
 sha256 = "775af6fa13630f0d4fc24c51a52b76e34a28dc7c42ccdc6b5d4c5d928b1ebb47"
 title = "The Works of Guy de Maupassant, Vol. 1"
 author = "Guy de Maupassant"
+ingested_sha256 = "5f436dbd3e87093d1cf31ea07fcd98de37d291cb51ac4579435bcd430ecd53cf"
 
 [[sources]]
 slug = "prose-pg21331"
@@ -782,6 +878,7 @@ url = "https://www.gutenberg.org/cache/epub/21331/pg21331.txt"
 sha256 = "6e01cb7a87797ed15a9925e39656c4f4eb8f348add8e587c09439ec9ea188ea4"
 title = "The Adventures of Hajji Baba of Ispahan"
 author = "James Justinian Morier"
+ingested_sha256 = "d2e093c55ec2b63e2148dc87436887cbb1ba28d05da62889d8c4aa7f5599a4d5"
 
 [[sources]]
 slug = "prose-pg21469"
@@ -790,6 +887,7 @@ url = "https://www.gutenberg.org/cache/epub/21469/pg21469.txt"
 sha256 = "58ee0c340dab4209a460c6a93e640f6bfad68243858a3aa74bb8b246fbdc1cd1"
 title = "The Mate of the \"Lily\"; Or, Notes from Harry Musgrave's Log Book"
 author = "William Henry Giles Kingston"
+ingested_sha256 = "733f5bcf2fcd4753ed96812deb771fa6c0de3cec9002b80046e5f2576939df5c"
 
 [[sources]]
 slug = "prose-pg21766"
@@ -798,6 +896,7 @@ url = "https://www.gutenberg.org/cache/epub/21766/pg21766.txt"
 sha256 = "3c289faa75262013af61193c1c0583ce5398adf48e305d0d4075b1095e9823fa"
 title = "Ionica"
 author = "William Johnson Cory"
+ingested_sha256 = "4bd7d03e8e648d2b9b869b269a6fa4ac4651b929d9d405e75191b149d4508b3b"
 
 [[sources]]
 slug = "prose-pg21942"
@@ -806,6 +905,7 @@ url = "https://www.gutenberg.org/cache/epub/21942/pg21942.txt"
 sha256 = "951d05f7e36a91e4745ad871fe2326a1d9fee704297490184251d4e627c0e276"
 title = "Dickory Dock"
 author = "L. T. Meade"
+ingested_sha256 = "190b1877184a166dedc28198f6d459a7938b48d829e06cb136ae464ad23935a4"
 
 [[sources]]
 slug = "prose-pg22217"
@@ -814,6 +914,7 @@ url = "https://www.gutenberg.org/cache/epub/22217/pg22217.txt"
 sha256 = "0e013b21421bce98b7988f6ba0855349ed9558cfeccba54d9833b4286e48d770"
 title = "My Reminiscences"
 author = "Rabindranath Tagore"
+ingested_sha256 = "cbcd06167316ce51f1764c327ea48dbfe0a04a85fa2fb24d66f86370b6f64ab9"
 
 [[sources]]
 slug = "prose-pg22597"
@@ -822,6 +923,7 @@ url = "https://www.gutenberg.org/cache/epub/22597/pg22597.txt"
 sha256 = "4b7d2e99e2ea35269f86cec4166b5cdfead36d14dc1ed50258dcd497d500d639"
 title = "Question of Comfort"
 author = "Les Cole"
+ingested_sha256 = "a7216fa3dd4199a31f635a0ddf81401caea744842bc8ef6b5ef6663b2f3f4c76"
 
 [[sources]]
 slug = "prose-pg22717"
@@ -830,6 +932,7 @@ url = "https://www.gutenberg.org/cache/epub/22717/pg22717.txt"
 sha256 = "42840bde985c23c5d4a54ac9f17b17b4799eedbf8e7974cea35b5af92d8bdd34"
 title = "Lundy's Lane, and Other Poems"
 author = "Duncan Campbell Scott"
+ingested_sha256 = "1860fc03a2065971dbaa4064579b7be499bb4a62e0484085f0cf4bc8e2a7694b"
 
 [[sources]]
 slug = "prose-pg24215"
@@ -838,6 +941,7 @@ url = "https://www.gutenberg.org/cache/epub/24215/pg24215.txt"
 sha256 = "58f4d965664f930cee434fb9b6ee52da8f0cb498e3aca1f9249709e58b8f8841"
 title = "The Comedies of William Congreve: Volume 1 [of 2]"
 author = "William Congreve"
+ingested_sha256 = "589d57654c29640e3ac0770bcfcfdaf87335b8fac78b1d5f3cdb8cd845e45faf"
 
 [[sources]]
 slug = "prose-pg24567"
@@ -846,6 +950,7 @@ url = "https://www.gutenberg.org/cache/epub/24567/pg24567.txt"
 sha256 = "2248c2fbff33c501bef5c8404b54f995ecf6e014fc2a2338e393fa5a7897527c"
 title = "Blind Man's Lantern"
 author = "Allen Kim Lang"
+ingested_sha256 = "4a595426904b7f65efb7da4d959632da7502bf14d93f8ccc4dd6b5104a3c2309"
 
 [[sources]]
 slug = "prose-pg25090"
@@ -854,6 +959,7 @@ url = "https://www.gutenberg.org/cache/epub/25090/pg25090.txt"
 sha256 = "12779df48707d43322bc86316a836c464b0797e1a23db303ac2f124101a36d07"
 title = "The tale of Billy Woodchuck"
 author = "Arthur Scott Bailey"
+ingested_sha256 = "0a98fe8917964d6f2a8eb1f1cc115774056d5a81f9498dcd6c22a99e124c0bc0"
 
 [[sources]]
 slug = "prose-pg25551"
@@ -862,6 +968,7 @@ url = "https://www.gutenberg.org/cache/epub/25551/pg25551.txt"
 sha256 = "68237bbe37423dd4977c1c45921b736032ab44578f9fb39f846770bb8a2f67ee"
 title = "Six Girls: A Home Story"
 author = "Fannie Belle Irving"
+ingested_sha256 = "dcf3a607c02189c755055de2992d22ae0830d862baeb6572b3a9163539d970e9"
 
 [[sources]]
 slug = "prose-pg25572"
@@ -870,6 +977,7 @@ url = "https://www.gutenberg.org/cache/epub/25572/pg25572.txt"
 sha256 = "dbd54ee66e0aae79fa61437cdf1678452c7c89b26d158c10c834093eeb0a9a41"
 title = "Capt'n Davy's Honeymoon"
 author = "Sir Hall Caine"
+ingested_sha256 = "13341484c721673dece70d9185017faec11bb067d9f69bec75479aa182c3ec13"
 
 [[sources]]
 slug = "prose-pg25971"
@@ -878,6 +986,7 @@ url = "https://www.gutenberg.org/cache/epub/25971/pg25971.txt"
 sha256 = "70f96395a72c157d678977eccaf2691137c97f9ff2349d0f6a06de2ea7b320ad"
 title = "The Creators: A Comedy"
 author = "May Sinclair"
+ingested_sha256 = "8043404e31a4e3827fc8be3cc795ee18c6b8d8a39705e7905ee134f873e32934"
 
 [[sources]]
 slug = "prose-pg26053"
@@ -886,6 +995,7 @@ url = "https://www.gutenberg.org/cache/epub/26053/pg26053.txt"
 sha256 = "254cbca76c21ff861400644b7cd6caeb00d1f755067d57e5ec4d29caa06ce950"
 title = "This Giddy Globe"
 author = "Oliver Herford"
+ingested_sha256 = "e0ac001a8ae18075062e0ffcd474501e3c6b6bab488c0923667a65d98d943388"
 
 [[sources]]
 slug = "prose-pg26088"
@@ -894,6 +1004,7 @@ url = "https://www.gutenberg.org/cache/epub/26088/pg26088.txt"
 sha256 = "a2a1d0ea06cc04ede582490fef90b10e877550ed8f45d0a137629318a34fe920"
 title = "A Son of Hagar: A Romance of Our Time"
 author = "Sir Hall Caine"
+ingested_sha256 = "0d90d87e19f9ae9a17482c532923040e05adef2c5eaaf93409b0fc51b5580739"
 
 [[sources]]
 slug = "prose-pg26294"
@@ -902,6 +1013,7 @@ url = "https://www.gutenberg.org/cache/epub/26294/pg26294.txt"
 sha256 = "08286407e2ff19cbe1e9b07476711051f801518a77abea2778778b0174707555"
 title = "The Apologia and Florida of Apuleius of Madaura"
 author = "Apuleius"
+ingested_sha256 = "e3409b22026fe79342b2f07de414da9825835854df474b4888a44f2db6e9a8d1"
 
 [[sources]]
 slug = "prose-pg26407"
@@ -910,6 +1022,7 @@ url = "https://www.gutenberg.org/cache/epub/26407/pg26407.txt"
 sha256 = "150469b0f06d0500ca4f4dca35dce9be08fb905283998dceb782e20876c9a313"
 title = "An Arrow in a Sunbeam, and Other Tales"
 author = "Sarah Orne Jewett"
+ingested_sha256 = "067cf732b5138ee699feca76b3282bb132f51c1cc736686225b42cc84b311923"
 
 [[sources]]
 slug = "prose-pg26519"
@@ -918,6 +1031,7 @@ url = "https://www.gutenberg.org/cache/epub/26519/pg26519.txt"
 sha256 = "a5ca7e2aaa60ccf3449e6bcd8e3abc106e25215232a7e218e607868fe6f70999"
 title = "To Love"
 author = "Margaret Peterson"
+ingested_sha256 = "d456372f63929c618e41183dc194532302355b0af69efb736b283d34c0be5b6e"
 
 [[sources]]
 slug = "prose-pg26714"
@@ -926,6 +1040,7 @@ url = "https://www.gutenberg.org/cache/epub/26714/pg26714.txt"
 sha256 = "a81f7137286966259612228b40c9f5218336ee047893046a992865a37458a20f"
 title = "The Captain's Bunk"
 author = "M. B. Manwell"
+ingested_sha256 = "5c8e3c745a53d54523f755a4a490649145ebea7d8461991f5a225e58a829362a"
 
 [[sources]]
 slug = "prose-pg27093"
@@ -934,6 +1049,7 @@ url = "https://www.gutenberg.org/cache/epub/27093/pg27093.txt"
 sha256 = "f33a04a10c17581ae2e57994af29a3cf4225fb93cb88d2f3a70a1a79c50959bc"
 title = "The Boy Ranchers; Or, Solving the Mystery at Diamond X"
 author = "Willard F. Baker"
+ingested_sha256 = "735dc981b4ab27beaf833406a87ea41169a75fcf07be929a80f4b77614550a0b"
 
 [[sources]]
 slug = "prose-pg27857"
@@ -942,6 +1058,7 @@ url = "https://www.gutenberg.org/cache/epub/27857/pg27857.txt"
 sha256 = "1f4775c3d8f52f459974817299b2e12ee912aa3f3753eb826ea04b52fed160e1"
 title = "The Dominant Dollar"
 author = "Will Lillibridge"
+ingested_sha256 = "b8bb118a575a24296e64b7d0055afb398879b64112a3d8e2053286a50eee2834"
 
 [[sources]]
 slug = "prose-pg28309"
@@ -950,6 +1067,7 @@ url = "https://www.gutenberg.org/cache/epub/28309/pg28309.txt"
 sha256 = "d91e0b6bb79e56ed1e9db338b44a03f9eb96a02c52406f96128cf5472dd48407"
 title = "Christopher Hibbault, Roadmaker"
 author = "Marguerite Bryant"
+ingested_sha256 = "c517085cb995ce6fa24065555c2a6b01557d35bc0fffcda4f476fe587e3b23e3"
 
 [[sources]]
 slug = "prose-pg28366"
@@ -958,6 +1076,7 @@ url = "https://www.gutenberg.org/cache/epub/28366/pg28366.txt"
 sha256 = "22b0448b1cb2af8cf68d22c1c11aeb5307d1ac9b7b1ac74e73cb3f972df800e6"
 title = "Nancy Stair: A Novel"
 author = "Elinor Macartney Lane"
+ingested_sha256 = "115ad3ba8e6fb17e749047eba0cb13f179755376b3dabad0af7b64142d735ee5"
 
 [[sources]]
 slug = "prose-pg28489"
@@ -966,6 +1085,7 @@ url = "https://www.gutenberg.org/cache/epub/28489/pg28489.txt"
 sha256 = "d426ddaba7d0b6733e673772ecc982c8d262da7a9a87a59182acd2789e751857"
 title = "The Belov\u00e9d Vagabond"
 author = "William John Locke"
+ingested_sha256 = "6a7f6f6d580516c433f865ba0e15e1e05fc9f9c6284d01a2016eb801918abd8b"
 
 [[sources]]
 slug = "prose-pg2860"
@@ -974,6 +1094,7 @@ url = "https://www.gutenberg.org/cache/epub/2860/pg2860.txt"
 sha256 = "c93c4cbd11b7c194ae7afb796d589d32fb71509d439327cfd61c5e774274f568"
 title = "Framley Parsonage"
 author = "Anthony Trollope"
+ingested_sha256 = "6cb485bdaf52e606d548b6fc9640f394441c5a5e18d977d170ec3ebc9132eb6a"
 
 [[sources]]
 slug = "prose-pg28675"
@@ -982,6 +1103,7 @@ url = "https://www.gutenberg.org/cache/epub/28675/pg28675.txt"
 sha256 = "b7c978f801b58d75212899a1cb7a179cb444b31ac5b0075f4b0b3701d0852fdb"
 title = "Red Men and White"
 author = "Owen Wister"
+ingested_sha256 = "a2bee019f8a58d77cfe30680638e1b184a8e0391c44214e3b65c826193f21f99"
 
 [[sources]]
 slug = "prose-pg29196"
@@ -990,6 +1112,7 @@ url = "https://www.gutenberg.org/cache/epub/29196/pg29196.txt"
 sha256 = "6a3dd973117b64ede00dc89b63650e41ef270160856cae2fca97ff0d407547ea"
 title = "Mutineer"
 author = "Robert Shea"
+ingested_sha256 = "d5d5577757b1348e43512e3e8127ee808441b2ca0e85d3076cf77ee6a14b1a28"
 
 [[sources]]
 slug = "prose-pg29888"
@@ -998,6 +1121,7 @@ url = "https://www.gutenberg.org/cache/epub/29888/pg29888.txt"
 sha256 = "a428a074aa65525be7f509ebec1c8c428e5952053b48d2a92e7d4e354f6b7bb6"
 title = "The Hunting of the Snark: An Agony, in Eight Fits"
 author = "Lewis Carroll"
+ingested_sha256 = "199563a049008beb25eaeb34126d6911f990beddc9254fc9300f0ccdc25c66a5"
 
 [[sources]]
 slug = "prose-pg30113"
@@ -1006,6 +1130,7 @@ url = "https://www.gutenberg.org/cache/epub/30113/pg30113.txt"
 sha256 = "6efeb5f90f79312de3cbc5c54018e7b2168f768ca3b9a0a88bd5e394460282b7"
 title = "The One-Way Trail: A story of the cattle country"
 author = "Ridgwell Cullum"
+ingested_sha256 = "95e3507ddcaf2fd11f023cb4aa42baaeafa408ed065491560a6300565c6004d7"
 
 [[sources]]
 slug = "prose-pg3028"
@@ -1014,6 +1139,7 @@ url = "https://www.gutenberg.org/cache/epub/3028/pg3028.txt"
 sha256 = "3c20313a37ac20ca95b5537a5d6d7dd137659a6b8c1054a2c5fed5d05ce2a11c"
 title = "The Peterkin papers"
 author = "Lucretia P. Hale"
+ingested_sha256 = "bdc364e63213692ca288784167c814d46d878bbb874b2bd3241839fbf77c919a"
 
 [[sources]]
 slug = "prose-pg30332"
@@ -1022,6 +1148,7 @@ url = "https://www.gutenberg.org/cache/epub/30332/pg30332.txt"
 sha256 = "168adf418e2c32641d9770a2c07ea79a5249edded29b0781239ce45a0a876c15"
 title = "The Earthly Paradise: A Poem (Part II)"
 author = "William Morris"
+ingested_sha256 = "6a22535258a37d45f0695a9228b5915491533845f698ac3dc796d577f89f7841"
 
 [[sources]]
 slug = "prose-pg30679"
@@ -1030,6 +1157,7 @@ url = "https://www.gutenberg.org/cache/epub/30679/pg30679.txt"
 sha256 = "359444d039c1746222a203d04ea0cf16c42909f27c122523aff8f0ddbdb69da7"
 title = "The Trouble with Telstar"
 author = "John Berryman"
+ingested_sha256 = "a90fe4f2e640f7b5bcf5a2c22f9ce0d5f523a8098b37a135a21e89f0d843e79f"
 
 [[sources]]
 slug = "prose-pg30825"
@@ -1038,6 +1166,7 @@ url = "https://www.gutenberg.org/cache/epub/30825/pg30825.txt"
 sha256 = "16bf412fd199b2e2351ead1d99e70fd90e39910b3ffacf71aa8433b26cbc7a20"
 title = "The Camp Fire Girls on Ellen's Isle; Or, The Trail of the Seven Cedars"
 author = "Hildegard G. Frey"
+ingested_sha256 = "b50bce83e6ff7e9c2c6ed0cca6ed3e277b0bc5a42bb1da4db630d7daba2b52a6"
 
 [[sources]]
 slug = "prose-pg3112"
@@ -1046,6 +1175,7 @@ url = "https://www.gutenberg.org/cache/epub/3112/pg3112.txt"
 sha256 = "fdec0f1754495b66464f17eba186f9d609275ee2a9e65adf366be91b35983f79"
 title = "The Pilgrim, and the American of Today\u2014(1892)"
 author = "Charles Dudley Warner"
+ingested_sha256 = "9bb72b1085b7599d0c17f22e7c1a0d917040b934526e8c1c0ec4de5b8ba04b37"
 
 [[sources]]
 slug = "prose-pg31935"
@@ -1054,6 +1184,7 @@ url = "https://www.gutenberg.org/cache/epub/31935/pg31935.txt"
 sha256 = "d1a33220a56f600b54f2342019a456007241ccf9d4d7d73ada63c3587502bcc5"
 title = "Sumerian Liturgies and Psalms"
 author = "Stephen Langdon"
+ingested_sha256 = "61f7b390d9ea8476001a3b9602b7b3a03697e1ae9a77286a91be3800fdc0647e"
 
 [[sources]]
 slug = "prose-pg31976"
@@ -1062,6 +1193,7 @@ url = "https://www.gutenberg.org/cache/epub/31976/pg31976.txt"
 sha256 = "30619d95cdfabf456839ead0cf43845712a2a613eeee6828ac0dc97a19384fa0"
 title = "Derelict"
 author = "Alan Edward Nourse"
+ingested_sha256 = "9f420a52a5ca0bc73d58a782086c7cae427db3bd1fb1713a50263995b5b30151"
 
 [[sources]]
 slug = "prose-pg32070"
@@ -1070,6 +1202,7 @@ url = "https://www.gutenberg.org/cache/epub/32070/pg32070.txt"
 sha256 = "894c5c9f922d43933ed07683f2647eea04108139e038e08a8502248dcb4e2b40"
 title = "Specimens of German Romance; Vol. I. The Patricians"
 author = "C. F. van der Velde"
+ingested_sha256 = "803f2d7a1f6bd5277eab97c6e99998f846e0d39fffa8d65a1573237745fe580a"
 
 [[sources]]
 slug = "prose-pg32238"
@@ -1078,6 +1211,7 @@ url = "https://www.gutenberg.org/cache/epub/32238/pg32238.txt"
 sha256 = "6969a032349ef01f0db001f8c0b9fe982bc7175b0a0c61969f0551eef036f110"
 title = "A Thought For Tomorrow"
 author = "Robert E. Gilbert"
+ingested_sha256 = "88d0a7d412bf923f9d00b2e835503dbf8f1d85d5070d07435193bea044676be3"
 
 [[sources]]
 slug = "prose-pg32613"
@@ -1086,6 +1220,7 @@ url = "https://www.gutenberg.org/cache/epub/32613/pg32613.txt"
 sha256 = "739604473ae8844fe51304d780f7a5d0eb50414395616ea5b6d24a66234a7d96"
 title = "Tabby"
 author = "Winston K. Marks"
+ingested_sha256 = "d62dc65050e58b989e5992e2c31b40622fa2123874defb469a9198acf988c1e3"
 
 [[sources]]
 slug = "prose-pg32826"
@@ -1094,6 +1229,7 @@ url = "https://www.gutenberg.org/cache/epub/32826/pg32826.txt"
 sha256 = "986278120689741c24593bdee62eacb463217f3b7b6fd10c0011cdd27b519632"
 title = "Fairfax and His Pride: A Novel"
 author = "Marie Van Vorst"
+ingested_sha256 = "deb064e41f7f379153850cf6da8fb32d19ec70db65eaf609002fd21262c28e2d"
 
 [[sources]]
 slug = "prose-pg32832"
@@ -1102,6 +1238,7 @@ url = "https://www.gutenberg.org/cache/epub/32832/pg32832.txt"
 sha256 = "bcb75b8d47381c0ad424d11c6b4634d91a9f0dde9ae3c69c6ef6c85469f4ac6e"
 title = "Piper in the Woods"
 author = "Philip K. Dick"
+ingested_sha256 = "eb4941279e06f19f8d868bed99b3894d30a19ba81fddd9a96f2b82c9a6b4b6af"
 
 [[sources]]
 slug = "prose-pg33047"
@@ -1110,6 +1247,7 @@ url = "https://www.gutenberg.org/cache/epub/33047/pg33047.txt"
 sha256 = "1b39fc4cf91373eb9096db29c581bb27de856678a2b49aa93853c61b9cc69685"
 title = "The Eye of Wilbur Mook"
 author = "H. B. Hickey"
+ingested_sha256 = "02b960f26e11bb7a0b28f3771b93261e1837de901edd9e474b839c80e5318fba"
 
 [[sources]]
 slug = "prose-pg33080"
@@ -1118,6 +1256,7 @@ url = "https://www.gutenberg.org/cache/epub/33080/pg33080.txt"
 sha256 = "4072319c10182e639aec043c94e5f014b90701aaec62b44aaff2bded895a1539"
 title = "A Letter from Mr. Cibber to Mr. Pope"
 author = "Colley Cibber"
+ingested_sha256 = "9d07228bb5bebab3fa489cd65295e85eb3275fadf7ce62f01d8248030f875ea5"
 
 [[sources]]
 slug = "prose-pg33948"
@@ -1126,6 +1265,7 @@ url = "https://www.gutenberg.org/cache/epub/33948/pg33948.txt"
 sha256 = "9faba7edf501e290b65baef1b8e04649cf351d40a6a9be0589e9a9fb0fef376a"
 title = "The Hollow Tree Snowed-In Book"
 author = "Albert Bigelow Paine"
+ingested_sha256 = "a075d29e2ee6dcf41afc0d2e464665d8994b4d37229b8a17ceedd222f803dfe9"
 
 [[sources]]
 slug = "prose-pg3397"
@@ -1134,6 +1274,7 @@ url = "https://www.gutenberg.org/cache/epub/3397/pg3397.txt"
 sha256 = "81eeb5cbabcc14be0aa12fc9a83644a9927704067195747f3162e4f3e2a53840"
 title = "Roundabout to Boston (from Literary Friends and Acquaintance)"
 author = "William Dean Howells"
+ingested_sha256 = "719a1a146d1e21ca642785f3dccd9cf01ef3aa5e854eeeeff68c32b7d6e38a3a"
 
 [[sources]]
 slug = "prose-pg34171"
@@ -1142,6 +1283,7 @@ url = "https://www.gutenberg.org/cache/epub/34171/pg34171.txt"
 sha256 = "40226851fb310bda063db227cc19b8fd5d77e56d0c987259d573b8a81960339e"
 title = "Toppleton's Client; Or, A Spirit in Exile"
 author = "John Kendrick Bangs"
+ingested_sha256 = "997e735e403c3cb4de980d7fd1fa20cd2de3b2531929dc0836b0b0b9144b00dc"
 
 [[sources]]
 slug = "prose-pg34227"
@@ -1150,6 +1292,7 @@ url = "https://www.gutenberg.org/cache/epub/34227/pg34227.txt"
 sha256 = "c8a764981c0dca173c7fd8a3ad3b74d646ebfdd7159a3a1d52380a6662a4a0d2"
 title = "Her Letter, His Answer & Her Last Letter"
 author = "Bret Harte"
+ingested_sha256 = "0501031157de1b47dd490eb79854b1b76292d8bdb67f16dd83d9e80bea15d5cb"
 
 [[sources]]
 slug = "prose-pg34761"
@@ -1158,6 +1301,7 @@ url = "https://www.gutenberg.org/cache/epub/34761/pg34761.txt"
 sha256 = "a7634c55af3f1168d232ff0880b6f39267aee820182aaeac1612ca2c289c1f83"
 title = "Dr. Adriaan"
 author = "Louis Couperus"
+ingested_sha256 = "48c7e8806b9773ae58f1869cb6e3779a69fa4c21da1bdd02dc0eee416140ff60"
 
 [[sources]]
 slug = "prose-pg34850"
@@ -1166,6 +1310,7 @@ url = "https://www.gutenberg.org/cache/epub/34850/pg34850.txt"
 sha256 = "ea95952229615dd267bcc0ac60342814623441661d009e3c3f20c360ed1a7eae"
 title = "Signal in the Dark"
 author = "Mildred A. Wirt"
+ingested_sha256 = "f64584f527a5ab03c9123a43dbd6119b1a09d58661c0d0074a0ea54c0e8024a8"
 
 [[sources]]
 slug = "prose-pg35247"
@@ -1174,6 +1319,7 @@ url = "https://www.gutenberg.org/cache/epub/35247/pg35247.txt"
 sha256 = "4968a0ded9eb6330effda02efacf9a0979c36e6982485426a7072a7233b53018"
 title = "That Affair at Elizabeth"
 author = "Burton Egbert Stevenson"
+ingested_sha256 = "4354da2a9564dbf9b6c145f57f3d4591cef22ca4bec0aee46ea671418fa41220"
 
 [[sources]]
 slug = "prose-pg35382"
@@ -1182,6 +1328,7 @@ url = "https://www.gutenberg.org/cache/epub/35382/pg35382.txt"
 sha256 = "56742465ae60fbf973b0cca960393f3fe000ef4f3a1a0e6c30643de65acf9e4f"
 title = "The Romance of Biography (Vol 1 of 2)"
 author = "Mrs. Jameson"
+ingested_sha256 = "ddd347542c3ad1f3121466dd55bed261f863f287278199cb826b8a4dd43f23d1"
 
 [[sources]]
 slug = "prose-pg35769"
@@ -1190,6 +1337,7 @@ url = "https://www.gutenberg.org/cache/epub/35769/pg35769.txt"
 sha256 = "bc3587d1285571985463a607d20afa83e208092a8e45c80e6ec6847bcef0e279"
 title = "Dilemmas of Pride, (Vol 1 of 3)"
 author = "Mrs. Loudon"
+ingested_sha256 = "8251f3558eec44f44913c282c3797096db62135cdec6da9ba0aa6946a0802c32"
 
 [[sources]]
 slug = "prose-pg36005"
@@ -1198,6 +1346,7 @@ url = "https://www.gutenberg.org/cache/epub/36005/pg36005.txt"
 sha256 = "34ea8cfacae1e49ca2bafc834f9e9baccea6cbe306fa73563242f20e647a20ee"
 title = "My Treasure"
 author = "Handford, Thomas W. [Editor]; Greenaway, Kate, 1846-1901 [Illustrator]"
+ingested_sha256 = "676318ad9a44234444b98da17f18b0f1d1ea57d792de95fbb06d4d393d0b4c6f"
 
 [[sources]]
 slug = "prose-pg36028"
@@ -1206,6 +1355,7 @@ url = "https://www.gutenberg.org/cache/epub/36028/pg36028.txt"
 sha256 = "ba944ce87e7be52c7cbb39e619590fd1068db3c4d4035acdd42b0ff6cb540236"
 title = "Royal Highness"
 author = "Thomas Mann"
+ingested_sha256 = "c73bf75c5c7682cc47aa8786c29e81f6607950ef0763c6dfc2d7b0e05db46bf5"
 
 [[sources]]
 slug = "prose-pg36042"
@@ -1214,6 +1364,7 @@ url = "https://www.gutenberg.org/cache/epub/36042/pg36042.txt"
 sha256 = "773a85736a6c8d4fa012f07a097e87e990f4c36c902513112ad2bdc08f847a70"
 title = "The Cave by the Beech Fork: A Story of Kentucky\u20141815"
 author = "Henry S. Spalding"
+ingested_sha256 = "c12154d9b12bd786cc10ee52c7d71133546e78b6bcd107c56595d0a81fba2294"
 
 [[sources]]
 slug = "prose-pg36290"
@@ -1222,6 +1373,7 @@ url = "https://www.gutenberg.org/cache/epub/36290/pg36290.txt"
 sha256 = "29d6d7647acc01384147486482b69a56d627d922982bf4153f3a58022852a9be"
 title = "Ormond; Or, The Secret Witness. Volume 2 (of 3)"
 author = "Charles Brockden Brown"
+ingested_sha256 = "a3eddb5520c6e3e33611a84e2061513afdbf70935e3ad51ae1e5e9c78c32bd2e"
 
 [[sources]]
 slug = "prose-pg36494"
@@ -1230,6 +1382,7 @@ url = "https://www.gutenberg.org/cache/epub/36494/pg36494.txt"
 sha256 = "4367beade6d32bebb1719b8024ccbc9f5fdde1583500af0cef91504eb4caa169"
 title = "The Devil's Elixir, Vol. 1 (of 2)"
 author = "E. T. A. Hoffmann"
+ingested_sha256 = "99e4eb35ea45d21e1002cd45b3584a9b3cce4890b9b2c224c309cac3d6694160"
 
 [[sources]]
 slug = "prose-pg36954"
@@ -1238,6 +1391,7 @@ url = "https://www.gutenberg.org/cache/epub/36954/pg36954.txt"
 sha256 = "be6ec2f1622f82cc9ce552873592c8a4b9bb375be0fd80225fff51225fd28fef"
 title = "City Ballads"
 author = "Will Carleton"
+ingested_sha256 = "efc8f76d9ff6fdcbe856f1a5612e24244d9124cbaf479a48d9e011a4e96ee1c5"
 
 [[sources]]
 slug = "prose-pg3794"
@@ -1246,6 +1400,7 @@ url = "https://www.gutenberg.org/cache/epub/3794/pg3794.txt"
 sha256 = "7e49d8ef8742d5ef9d6a100a0249b5bcaf609bcecfb263b83fa1c89201b09257"
 title = "L. Annaeus Seneca on Benefits"
 author = "Lucius Annaeus Seneca"
+ingested_sha256 = "04c9f60f99fae57f330d7e3a8dcbf529ff386c4676a067423fadf1b00c385b5b"
 
 [[sources]]
 slug = "prose-pg3822"
@@ -1254,6 +1409,7 @@ url = "https://www.gutenberg.org/cache/epub/3822/pg3822.txt"
 sha256 = "18d22e6337cb7e5cd3881362eabe4bfb69497eeb20b1e9673604a8660e65c7e7"
 title = "Balzac"
 author = "Frederick Lawton"
+ingested_sha256 = "c68d6f2182c69c51fd484c747b0345c8ef105f0c5c2cc8d6af23aa4e11809b03"
 
 [[sources]]
 slug = "prose-pg38323"
@@ -1262,6 +1418,7 @@ url = "https://www.gutenberg.org/cache/epub/38323/pg38323.txt"
 sha256 = "e6fd704849019381c9c0d0d520fd00bf2955880bcdba6b582d0a377e000d972c"
 title = "The Chevalier d'Auriac"
 author = "S. Levett Yeats"
+ingested_sha256 = "b48a6c793dddd9dab61bf0c00ae9349f983687c625153e462e5460c55c8aa759"
 
 [[sources]]
 slug = "prose-pg38895"
@@ -1270,6 +1427,7 @@ url = "https://www.gutenberg.org/cache/epub/38895/pg38895.txt"
 sha256 = "463841b27bd2dcc4d287ad92651e4928eeb995e705bfd37124259fe7d6917e2b"
 title = "The Cloister and the Hearth: A Tale of the Middle Ages"
 author = "Charles Reade"
+ingested_sha256 = "607197d8145d61ac9d08bd08238a68e467115a5a2a59d4f25c8542b32b034705"
 
 [[sources]]
 slug = "prose-pg38902"
@@ -1278,6 +1436,7 @@ url = "https://www.gutenberg.org/cache/epub/38902/pg38902.txt"
 sha256 = "025f42a722d7ba3fddfa0bf5f77643563d395be2a6e9f964acea38fdb0263f36"
 title = "Buzz a Buzz; Or, The Bees"
 author = "Wilhelm Busch"
+ingested_sha256 = "d16e30fed782e3e6406f94a454d23ef00593c687708e60da132088fa2d26d710"
 
 [[sources]]
 slug = "prose-pg39349"
@@ -1286,6 +1445,7 @@ url = "https://www.gutenberg.org/cache/epub/39349/pg39349.txt"
 sha256 = "adddedcc3fcb6651befe8369e7e4fa7e5360bc0c2b86b3096f4f36c9d657614b"
 title = "Wyndham's Pal"
 author = "Harold Bindloss"
+ingested_sha256 = "fd98c11201504216a87f190dbd5fb20bd41e7f92f232d9c2b5af4eb7b7eb99ef"
 
 [[sources]]
 slug = "prose-pg39970"
@@ -1294,6 +1454,7 @@ url = "https://www.gutenberg.org/cache/epub/39970/pg39970.txt"
 sha256 = "722e6183ba6d427f5dc14841b2224280992966d43c9c615600bd7dd579eccd08"
 title = "The Hill of Venus"
 author = "Nathan Gallizier"
+ingested_sha256 = "1abddcc92e585b793b9d55fe379ee31d13a742e06ad4b81d83ba7984d801310b"
 
 [[sources]]
 slug = "prose-pg40656"
@@ -1302,6 +1463,7 @@ url = "https://www.gutenberg.org/cache/epub/40656/pg40656.txt"
 sha256 = "4f9cbb0fb4c770f35625cc353f39ae5b2f2aa12fe9b66f7272333cf7b2fd64a9"
 title = "Little Johannes"
 author = "Frederik van Eeden"
+ingested_sha256 = "d19db271e0f5cb432286c7bbdab14a5c943f132faeac2fffe01c52bd72422407"
 
 [[sources]]
 slug = "prose-pg40666"
@@ -1310,6 +1472,7 @@ url = "https://www.gutenberg.org/cache/epub/40666/pg40666.txt"
 sha256 = "fae56af396eb02662fc89c40e999c9b2b3ade6df95428cbfc8488038c61da634"
 title = "Missing at Marshlands"
 author = "Cleo F. Garis"
+ingested_sha256 = "f06e50dac98474dc8d5a6c1a34ce0f5e955aa6cf61a3aa047c5c973ad787770e"
 
 [[sources]]
 slug = "prose-pg40959"
@@ -1318,6 +1481,7 @@ url = "https://www.gutenberg.org/cache/epub/40959/pg40959.txt"
 sha256 = "6aaab61715e41cba6ddefe19e6eb4f8cec9a5b69689cfd74cfa5818d4e0444a8"
 title = "Le Cocu (Novels of Paul de Kock Volume XVIII)"
 author = "Paul de Kock"
+ingested_sha256 = "1353eb7496f9711587bcc100a90394d20102981a34a16d1ff687111fabb5ebed"
 
 [[sources]]
 slug = "prose-pg41460"
@@ -1326,6 +1490,7 @@ url = "https://www.gutenberg.org/cache/epub/41460/pg41460.txt"
 sha256 = "a964f979a1dcf192bd3ccf00679d562906390cdad4e3b13ae16186a4bd7e1ac9"
 title = "The King of Alsander"
 author = "James Elroy Flecker"
+ingested_sha256 = "2a5ac3bada5a5e5118d7e5c4c6a64af67242d95eac0c140c908e26274b0902a5"
 
 [[sources]]
 slug = "prose-pg41810"
@@ -1334,6 +1499,7 @@ url = "https://www.gutenberg.org/cache/epub/41810/pg41810.txt"
 sha256 = "9f6ccb6a7f467519be5521ad4c5e1bac53872716acb89e25561d170fe2e50002"
 title = "A Spanish Anthology"
 author = "Ford, J. D. M. (Jeremiah Denis Matthias), 1873-1958 [Editor]"
+ingested_sha256 = "89fedfbc0b5597fa0be1002d3edd66ab6df481f1029fdc3b849805159ee53d0d"
 
 [[sources]]
 slug = "prose-pg42153"
@@ -1342,6 +1508,7 @@ url = "https://www.gutenberg.org/cache/epub/42153/pg42153.txt"
 sha256 = "bfc576e7457b284fe5ee84486c6598753c230c9c97301c5fcfb5fb043415f984"
 title = "The Making of a Prig"
 author = "Evelyn Sharp"
+ingested_sha256 = "f5993705f4e4986976c283519749a209405d52d2551126deb239875cabadbfda"
 
 [[sources]]
 slug = "prose-pg4216"
@@ -1350,6 +1517,7 @@ url = "https://www.gutenberg.org/cache/epub/4216/pg4216.txt"
 sha256 = "fdecc6aec8ade7524bc2578da62eca3615f17bf54ee0240c6bbbb9bd49ab0729"
 title = "Touch and Go: A Play in Three Acts"
 author = "D. H. Lawrence"
+ingested_sha256 = "df0903b1d098782a17d7bf1025a451610bcfe023517ea2689703a420e0b23cb1"
 
 [[sources]]
 slug = "prose-pg42534"
@@ -1358,6 +1526,7 @@ url = "https://www.gutenberg.org/cache/epub/42534/pg42534.txt"
 sha256 = "762604424f2786a7260f52a60f4ce1e3b48b5fed567069d55813f8db87cb54ad"
 title = "The Narrow House"
 author = "Evelyn Scott"
+ingested_sha256 = "440b111ed1d26d3c6c412714dc065c42e9dd72a7bdb0bf2702a2a8ca1ada77ed"
 
 [[sources]]
 slug = "prose-pg42572"
@@ -1366,6 +1535,7 @@ url = "https://www.gutenberg.org/cache/epub/42572/pg42572.txt"
 sha256 = "e84e8e5b3edf72d4c367ca5c65f38572828b3edf8d8060ecceebf527e6da2d55"
 title = "The Adopted Daughter: A Tale for Young Persons"
 author = "Elizabeth Sandham"
+ingested_sha256 = "3bca0ebaf7741049696d8407f9f02cacddac70e21d9eced64daa315c554d6347"
 
 [[sources]]
 slug = "prose-pg4344"
@@ -1374,6 +1544,7 @@ url = "https://www.gutenberg.org/cache/epub/4344/pg4344.txt"
 sha256 = "5301d6f310cd35c1c00ca0e98e2a959bd1d52d0d67dde52bfc7dae656cb5186d"
 title = "Marie; a story of Russian love"
 author = "Aleksandr Sergeevich Pushkin"
+ingested_sha256 = "2122660acd751325d4320feff499ce9c9d80b1d243efb97e7a93a555af41ce60"
 
 [[sources]]
 slug = "prose-pg44"
@@ -1382,6 +1553,7 @@ url = "https://www.gutenberg.org/cache/epub/44/pg44.txt"
 sha256 = "69b91d6fb1304445ad0604e00cd8199d160823aa80af5c9fc47eea746590342f"
 title = "The Song of the Lark"
 author = "Willa Cather"
+ingested_sha256 = "1708764ec44d33437027941ac33354d21fabc0d47015e3f2b90f7d28eb633b5c"
 
 [[sources]]
 slug = "prose-pg44633"
@@ -1390,6 +1562,7 @@ url = "https://www.gutenberg.org/cache/epub/44633/pg44633.txt"
 sha256 = "05650110fc504b1f6a447cdb9fb3889b777bd51bad3f216e13c549b57b762216"
 title = "Held to Answer: A Novel"
 author = "MacFarlane, Peter Clark, 1871-1924; King, W. B. [Illustrator]"
+ingested_sha256 = "fa7f9ede1c58568edc5c58d8035a1aee55a13c10f467b17ed37e90ef71ae8d60"
 
 [[sources]]
 slug = "prose-pg44680"
@@ -1398,6 +1571,7 @@ url = "https://www.gutenberg.org/cache/epub/44680/pg44680.txt"
 sha256 = "f39a9fa391cc9988588fcd5886a6268504fb6c41f7489570fe29367863f0c464"
 title = "Jungle and Stream; Or, The Adventures of Two Boys in Siam"
 author = "George Manville Fenn"
+ingested_sha256 = "937bb405bf04cbe401c64094692ec7d5f1483eb7466725988c1068fa746bb377"
 
 [[sources]]
 slug = "prose-pg44747"
@@ -1406,6 +1580,7 @@ url = "https://www.gutenberg.org/cache/epub/44747/pg44747.txt"
 sha256 = "8340b1d412be834fe71ed41f932ce354286c3577750f83694981c9f6ffa2af85"
 title = "The Red and the Black: A Chronicle of 1830"
 author = "Stendhal"
+ingested_sha256 = "ee81e7cb5d07e714f0cda7d3d2308effe5e0d0170ee68098b90957aab7b8d590"
 
 [[sources]]
 slug = "prose-pg45100"
@@ -1414,6 +1589,7 @@ url = "https://www.gutenberg.org/cache/epub/45100/pg45100.txt"
 sha256 = "44b179922595e29afbf70e2ad5c48f4a86ebd3576f25717e520976d50d72fa0e"
 title = "The Whirl: A Romance of Washington Society"
 author = "Davis, Foxcroft, 1860-1916; Fisher, Harrison, 1875-1934 [Illustrator]; Justice, Martin, 1869-1961 [Illustrator]"
+ingested_sha256 = "ca975737c5e353d281f7878c26f9c083de8e66e8365973bf3e9569394168d77c"
 
 [[sources]]
 slug = "prose-pg4534"
@@ -1422,6 +1598,7 @@ url = "https://www.gutenberg.org/cache/epub/4534/pg4534.txt"
 sha256 = "6c180c3e4a7af2dd2800853376a48179be6b6def3c07a7b5b1e9d38d357ae3a3"
 title = "Sylvia's Lovers \u2014 Volume 1"
 author = "Elizabeth Cleghorn Gaskell"
+ingested_sha256 = "e0457fdb48448012cded8705d447e091948a727afae78b06ab1f26bf36bcdbfa"
 
 [[sources]]
 slug = "prose-pg45839"
@@ -1430,6 +1607,7 @@ url = "https://www.gutenberg.org/cache/epub/45839/pg45839.txt"
 sha256 = "acfba25d79e3d632faa3d6c33c3402a4b69270af0f1c7425132566e693023600"
 title = "Dracula"
 author = "Bram Stoker"
+ingested_sha256 = "7541a9e74d20bf3ca6fa6fee280e87873d584c212b3389e320c072b8ce0d624a"
 
 [[sources]]
 slug = "prose-pg4614"
@@ -1438,6 +1616,7 @@ url = "https://www.gutenberg.org/cache/epub/4614/pg4614.txt"
 sha256 = "fffc3cdc9662c1470ade606215c51b3983a6681710b3e926e75230cec1c1452f"
 title = "From a College Window"
 author = "Arthur Christopher Benson"
+ingested_sha256 = "b9203333a71977c77b0b3ce7e09c64434561110c1ed519909fe7f789dc1cea97"
 
 [[sources]]
 slug = "prose-pg46200"
@@ -1446,6 +1625,7 @@ url = "https://www.gutenberg.org/cache/epub/46200/pg46200.txt"
 sha256 = "e00d06be390b9235b8dafaf1ab21c797a2a3530a820744584644acf058864172"
 title = "Plowing On Sunday"
 author = "Sterling North"
+ingested_sha256 = "a69cf14d0649f80ef0ebc15cafb3be26192744c2c3561271478b403073c18fb6"
 
 [[sources]]
 slug = "prose-pg46605"
@@ -1454,6 +1634,7 @@ url = "https://www.gutenberg.org/cache/epub/46605/pg46605.txt"
 sha256 = "5f5ee9f8d1dbe9714396bba838e0a8bddf6eb716d49ef8b2d6943668a6a54216"
 title = "Thomas Otway"
 author = "Thomas Otway"
+ingested_sha256 = "082c79534bfa06f25a73b53f8f8393bb776083d79ab85369c3d2988502eda863"
 
 [[sources]]
 slug = "prose-pg4679"
@@ -1462,6 +1643,7 @@ url = "https://www.gutenberg.org/cache/epub/4679/pg4679.txt"
 sha256 = "0643e87edeae009095dc190e2cd3913b4979de4dfe9d23a374b30b2ce227cda1"
 title = "Johnson's Lives of the Poets \u2014 Volume 1"
 author = "Samuel Johnson"
+ingested_sha256 = "2433468f8ca16cd01c1e580ae6e0f331a41816099db5b498171f48ccb0c1d7a6"
 
 [[sources]]
 slug = "prose-pg46905"
@@ -1470,6 +1652,7 @@ url = "https://www.gutenberg.org/cache/epub/46905/pg46905.txt"
 sha256 = "b73ab5050b5e2f73ff56c3858a8c4b32d6faaf7f4617cc417e7d9d9abec50293"
 title = "The Kentucky Warbler"
 author = "James Lane Allen"
+ingested_sha256 = "d95575fd0c56cb7eb3ece9ebf6ddcb904d4525342ff87751a0668a63f31d273b"
 
 [[sources]]
 slug = "prose-pg46988"
@@ -1478,6 +1661,7 @@ url = "https://www.gutenberg.org/cache/epub/46988/pg46988.txt"
 sha256 = "b10b795e3f8ae2bad7954404d8b1a98fc02d84755ae3ddee64c520d01d072eaf"
 title = "Mother West Wind \"When\" Stories"
 author = "Thornton W. Burgess"
+ingested_sha256 = "3e055c11cec039514b96e296bc3fe049f521cd236164ee365e4c7f9b0437a236"
 
 [[sources]]
 slug = "prose-pg47036"
@@ -1486,6 +1670,7 @@ url = "https://www.gutenberg.org/cache/epub/47036/pg47036.txt"
 sha256 = "37ad12160edae4c1323e6c3f04a86a939a564966672fb05db323f09596893d53"
 title = "The Jade Flute: Chinese Poems in Prose"
 author = "Various"
+ingested_sha256 = "6bf8a92fc0931680558712a3c807062bb19e308220e2567281f3c68d93a7aa4a"
 
 [[sources]]
 slug = "prose-pg47126"
@@ -1494,6 +1679,7 @@ url = "https://www.gutenberg.org/cache/epub/47126/pg47126.txt"
 sha256 = "86ad736e63cf8877ccaa77d0696e17c80607c50f14b35893ed3726a8135edce9"
 title = "Why We Punctuate; or, Reason Versus Rule in the Use of Marks"
 author = "William Livingston Klein"
+ingested_sha256 = "cdf90a43d52a938fd217a7b1bf7ffb2fba3973cb300ba08c726e79b2e62313ae"
 
 [[sources]]
 slug = "prose-pg47178"
@@ -1502,6 +1688,7 @@ url = "https://www.gutenberg.org/cache/epub/47178/pg47178.txt"
 sha256 = "dd5a8e55119c58c31552097faf8b313c5ad9d6a7a7bc7e921ce0449da27122c0"
 title = "Fairy Tales from Many Lands"
 author = "Katharine Pyle"
+ingested_sha256 = "411ef16fcb98765e3559f37d438a79cd862f8e2690927fac17920ed71d607f9f"
 
 [[sources]]
 slug = "prose-pg47546"
@@ -1510,6 +1697,7 @@ url = "https://www.gutenberg.org/cache/epub/47546/pg47546.txt"
 sha256 = "0249957289650b0d04647578bac639e1dda69af0f701b413dbe698672d3db350"
 title = "Iconoclasts: A Book of Dramatists"
 author = "James Huneker"
+ingested_sha256 = "b21b705ed57979b9e8f0fdcfc64f967199b486c4cd99775d3bd1109ef2e14438"
 
 [[sources]]
 slug = "prose-pg4959"
@@ -1518,6 +1706,7 @@ url = "https://www.gutenberg.org/cache/epub/4959/pg4959.txt"
 sha256 = "c587663f6a9058a9228380e9fe8aaca14a12f8ba0c11dc926cd2e09be6d41f64"
 title = "The Life and Adventures of Maj. Roger Sherman Potter"
 author = "F. Colburn Adams"
+ingested_sha256 = "e5f32e31b13b5a137a5d44a8679e5d33dc001cc242d71d2db49c08b4921c2cbc"
 
 [[sources]]
 slug = "prose-pg4969"
@@ -1526,6 +1715,7 @@ url = "https://www.gutenberg.org/cache/epub/4969/pg4969.txt"
 sha256 = "95a624c74de98ce00e1e84461845f651dc5b5f55431523225f56d58c174237f5"
 title = "The Belton Estate"
 author = "Anthony Trollope"
+ingested_sha256 = "4dfcb6124c15bf56a2549177bfb73e4ea596da0d0b29b8db9b1895cd14f484ab"
 
 [[sources]]
 slug = "prose-pg4983"
@@ -1534,6 +1724,7 @@ url = "https://www.gutenberg.org/cache/epub/4983/pg4983.txt"
 sha256 = "39aa0a3a92730c43b73237d222eb95e9e79b5766042b22f7f3155069c3301ccb"
 title = "Slips of speech"
 author = "John Hendricks Bechtel"
+ingested_sha256 = "143b06dceeeb306485cc7b52a3e6739cdd26c98b220ac616ff39a7211d5bff63"
 
 [[sources]]
 slug = "prose-pg49882"
@@ -1542,6 +1733,7 @@ url = "https://www.gutenberg.org/cache/epub/49882/pg49882.txt"
 sha256 = "cf01a171d2d66eaa3a7f16f0fc2b95ba8ecd843f9a14692ea52d512187882456"
 title = "A Day Well Spent: A Farce, in One Act"
 author = "John Oxenford"
+ingested_sha256 = "7346cd33de6301a94f067ff332c076ee9551c7cfa815d38e31de5cdce0bcd09f"
 
 [[sources]]
 slug = "prose-pg49913"
@@ -1550,6 +1742,7 @@ url = "https://www.gutenberg.org/cache/epub/49913/pg49913.txt"
 sha256 = "708ca7f1074685a71d21a000ec5f28d66618e5cf8730eede8192b377e56664c8"
 title = "Nine Unlikely Tales"
 author = "E. Nesbit"
+ingested_sha256 = "80f9fadf9e189940e6a46cee5d3e060ce5d1a3aa5f6f7c2a0878c22d766057d0"
 
 [[sources]]
 slug = "prose-pg50353"
@@ -1558,6 +1751,7 @@ url = "https://www.gutenberg.org/cache/epub/50353/pg50353.txt"
 sha256 = "065ca96f34473eda726715e3f703ac6d41ac048ab4f0494036cf3f955feb8d33"
 title = "Troubled Waters"
 author = "Robert Leckie"
+ingested_sha256 = "c8da000f61b7e2e4c4362872e8bdd74b15a040e7eb44abd978c297a573b3c626"
 
 [[sources]]
 slug = "prose-pg50591"
@@ -1566,6 +1760,7 @@ url = "https://www.gutenberg.org/cache/epub/50591/pg50591.txt"
 sha256 = "61fb13adc306bd4653e80fd5ca61e43a7917a29a68570d50e04b5a35d896b50f"
 title = "Songs of Three Counties, and Other Poems"
 author = "Radclyffe Hall"
+ingested_sha256 = "55b83ffd0b569f6adbd790c1d41ccaebf0e493bce7abbbfeb5429ee7a48d8b93"
 
 [[sources]]
 slug = "prose-pg5127"
@@ -1574,6 +1769,7 @@ url = "https://www.gutenberg.org/cache/epub/5127/pg5127.txt"
 sha256 = "ec7822db5bf081b8193a546d444bfbf4377b4869244ea3d9ee30044a64643c8e"
 title = "Shakespeare, Bacon, and the Great Unknown"
 author = "Andrew Lang"
+ingested_sha256 = "5f8bc220d87a475f69b5153cea2aab64479af12b429e3ff689522a17b6264fa7"
 
 [[sources]]
 slug = "prose-pg5159"
@@ -1582,6 +1778,7 @@ url = "https://www.gutenberg.org/cache/epub/5159/pg5159.txt"
 sha256 = "00d6bbdad0418ab5a84607397552f69e081be88b8e0ea6e9b16f8036bf2960ff"
 title = "Celtic Literature"
 author = "Matthew Arnold"
+ingested_sha256 = "324957ca1d08196d4338b18558babf4946e21b0bdfeb86ff3dc5e91185546b29"
 
 [[sources]]
 slug = "prose-pg52217"
@@ -1590,6 +1787,7 @@ url = "https://www.gutenberg.org/cache/epub/52217/pg52217.txt"
 sha256 = "cba2e3f59934c5dfe95495973b7d82627c8b772b1e8aacd2c725b619f1194c2c"
 title = "Young Hunters in Porto Rico; or, The Search for a Lost Treasure"
 author = "Edward Stratemeyer"
+ingested_sha256 = "32a7322954bd754e7d708d7ed081f8e1a5c2c1658b20b422bf4d99d5d10165af"
 
 [[sources]]
 slug = "prose-pg52397"
@@ -1598,6 +1796,7 @@ url = "https://www.gutenberg.org/cache/epub/52397/pg52397.txt"
 sha256 = "88cff05af1b3fb2bfe8c8758210659d1923c2cbbf38ce865df3f88cf5e95e642"
 title = "Motor Matt's Short Circuit; or, The Mahout's Vow"
 author = "Stanley R. Matthews"
+ingested_sha256 = "17b68c8284765eb3f48b207aa7c90732a2db822e39ee5c6d77bf43d26fc4bbf5"
 
 [[sources]]
 slug = "prose-pg52548"
@@ -1606,6 +1805,7 @@ url = "https://www.gutenberg.org/cache/epub/52548/pg52548.txt"
 sha256 = "e1b232a2814fbd247536241e8cf585809012f6eafb952018bb200343633239b0"
 title = "The Seafarers"
 author = "John Bloundelle-Burton"
+ingested_sha256 = "8e45d326789831f00529044b3fef5ab69f02c12b997c1c85926a987e63a24fde"
 
 [[sources]]
 slug = "prose-pg53042"
@@ -1614,6 +1814,7 @@ url = "https://www.gutenberg.org/cache/epub/53042/pg53042.txt"
 sha256 = "38bed57471972f6e5145c610234ef92308b29eb7b7cbcb8c958af1c7ef4e84b7"
 title = "A Hitch in Space"
 author = "Fritz Leiber"
+ingested_sha256 = "b9487d3bca0a409ac049725ac8172fa8a539679df72044af50e1e2e52c01c222"
 
 [[sources]]
 slug = "prose-pg53250"
@@ -1622,6 +1823,7 @@ url = "https://www.gutenberg.org/cache/epub/53250/pg53250.txt"
 sha256 = "377f98e30dbb95b17a9fda27734fade1dac20589c3e5666015a64e01d32682c6"
 title = "The Golden Age"
 author = "Kenneth Grahame"
+ingested_sha256 = "a481bf0c1938efcf5cb02c5a506b8923a34387f62544c65a7f3368925a954d16"
 
 [[sources]]
 slug = "prose-pg53697"
@@ -1630,6 +1832,7 @@ url = "https://www.gutenberg.org/cache/epub/53697/pg53697.txt"
 sha256 = "615cd0271475eaf6cacae268750766a46cccefa83d3f3739b2f314bc413431a3"
 title = "The House of Armour"
 author = "Marshall Saunders"
+ingested_sha256 = "0c5251bf5c2d29184afdfc5c350af55943deb36329d2619bf20aa8d386b90418"
 
 [[sources]]
 slug = "prose-pg54657"
@@ -1638,6 +1841,7 @@ url = "https://www.gutenberg.org/cache/epub/54657/pg54657.txt"
 sha256 = "cd25636d471b9848143a9095e40a6a1cb46cfc3eefdf751e6ac44ce30a77f52f"
 title = "Phrases and Names, Their Origins and Meanings"
 author = "Trench H. Johnson"
+ingested_sha256 = "d53e6cc630b8eb209085cf44f94dce31846b43a358af23fcb5033f44f06384ea"
 
 [[sources]]
 slug = "prose-pg55021"
@@ -1646,6 +1850,7 @@ url = "https://www.gutenberg.org/cache/epub/55021/pg55021.txt"
 sha256 = "4d6995df9c00060a0bef7ec6616cec3f4c14feb6bfac734d93fc0a794f09cde8"
 title = "Through Swamp and Glade: A Tale of the Seminole War"
 author = "Kirk Munroe"
+ingested_sha256 = "94e3c0c8b8f6ac2095595e36d41feb8e868371fbd1511d457fe16289285cba0f"
 
 [[sources]]
 slug = "prose-pg55272"
@@ -1654,6 +1859,7 @@ url = "https://www.gutenberg.org/cache/epub/55272/pg55272.txt"
 sha256 = "0387de29448384db98159a7abeb1fc11862acf242400b9fd2cb91d48df82940a"
 title = "Kings-at-Arms"
 author = "Marjorie Bowen"
+ingested_sha256 = "992376611f874acaf29161d6f2228864b8d79976db9d78595fabe1c7296bb4d5"
 
 [[sources]]
 slug = "prose-pg5534"
@@ -1662,6 +1868,7 @@ url = "https://www.gutenberg.org/cache/epub/5534/pg5534.txt"
 sha256 = "a5b9be634977c4b15f0aec947a6303aa8dc2b321bd5782831f12f37ce50472d8"
 title = "A Thorny Path \u2014 Volume 05"
 author = "Georg Ebers"
+ingested_sha256 = "b74ea4295e3d1f884e400ad9f9febdeb265eee69034312f7c878b956b2916b42"
 
 [[sources]]
 slug = "prose-pg55406"
@@ -1670,6 +1877,7 @@ url = "https://www.gutenberg.org/cache/epub/55406/pg55406.txt"
 sha256 = "0cc745ac89e51855f720a1ce1dda3f26d4a84624084790ea443324b0f81b9388"
 title = "The Greek Romances of Heliodorus, Longus and Achilles Tatius"
 author = "Achilles Tatius"
+ingested_sha256 = "4841eaa4d2ce623f20775058f054ded6252d230bb150caf24a8516e7ef5a7be6"
 
 [[sources]]
 slug = "prose-pg55963"
@@ -1678,6 +1886,7 @@ url = "https://www.gutenberg.org/cache/epub/55963/pg55963.txt"
 sha256 = "1847f859202fdf78a51d51d2fb3aeba8e8189571b1523387bb056b90580db915"
 title = "Shepherd Singing Ragtime, and Other Poems"
 author = "Louis Golding"
+ingested_sha256 = "95b83e95e5aba03231b057afb18ead2f11d8f60cc64e4f363b3c75ccaea18794"
 
 [[sources]]
 slug = "prose-pg5616"
@@ -1686,6 +1895,7 @@ url = "https://www.gutenberg.org/cache/epub/5616/pg5616.txt"
 sha256 = "bbf62c4940dbf477f083f7ced59cbb19efff155bfe94406095a58561a15b325b"
 title = "The Madman: His Parables and Poems"
 author = "Kahlil Gibran"
+ingested_sha256 = "069612c731bab5a3358320d385d97c7191fdffc46bc1d98533c5432ee79caec9"
 
 [[sources]]
 slug = "prose-pg56828"
@@ -1694,6 +1904,7 @@ url = "https://www.gutenberg.org/cache/epub/56828/pg56828.txt"
 sha256 = "0aab43486879d8f84a5c6c49f73e76a2a8fa9f7a47e8c97bc4673cf4c4a6107b"
 title = "Plain Tales of the North"
 author = "Thierry Mallet"
+ingested_sha256 = "3ecb83b27521bfbc72836c1969311413a9eef6f475e3de967d207c6117bc31c6"
 
 [[sources]]
 slug = "prose-pg57203"
@@ -1702,6 +1913,7 @@ url = "https://www.gutenberg.org/cache/epub/57203/pg57203.txt"
 sha256 = "45cd46a2a192423c8536a4d488b64540e55c5626408b1f1fcc1031022061ddd2"
 title = "Left to Themselves: Being the Ordeal of Philip and Gerald"
 author = "Edward Prime-Stevenson"
+ingested_sha256 = "2aaafbbb5fd92abf7dd3f0bd6dd5efd5f89ef9cd19e9502b40a976c2e5a6ed02"
 
 [[sources]]
 slug = "prose-pg5769"
@@ -1710,6 +1922,7 @@ url = "https://www.gutenberg.org/cache/epub/5769/pg5769.txt"
 sha256 = "83a0557ea21a77f4db83f41298235012175747287b92740fb797001dceeff80d"
 title = "The Shagganappi"
 author = "E. Pauline Johnson"
+ingested_sha256 = "649a4fee16ed9ead9d75ebcad0fb81e0c056864fc263d9a1a583d2194f23211c"
 
 [[sources]]
 slug = "prose-pg58791"
@@ -1718,6 +1931,7 @@ url = "https://www.gutenberg.org/cache/epub/58791/pg58791.txt"
 sha256 = "8ae67698db3a59ac4f23c01a3d28f37be7f6948c5ab0bbfc2af9aac0749bad68"
 title = "Precepts in Practice; or, Stories Illustrating the Proverbs"
 author = "A. L. O. E."
+ingested_sha256 = "4aa450a470adb71f2d5bb0e3b76a97c58f4c807305075af6c59ebf0fe6b28235"
 
 [[sources]]
 slug = "prose-pg59036"
@@ -1726,6 +1940,7 @@ url = "https://www.gutenberg.org/cache/epub/59036/pg59036.txt"
 sha256 = "8c0299825dec402fe7c7b50148355e71857e766b3c4c6e24b4bb633f2dd44108"
 title = "The York Problem"
 author = "Herbert D. Kastle"
+ingested_sha256 = "c325b0dc76c92c8aba153e85a5f84cb5a30cfb8ecdf57e6ebd88dc43cad16129"
 
 [[sources]]
 slug = "prose-pg59182"
@@ -1734,6 +1949,7 @@ url = "https://www.gutenberg.org/cache/epub/59182/pg59182.txt"
 sha256 = "050ef31b6ff27af6f43f9cda06da34ce6d5487d8002108e82c33e3b320c68023"
 title = "Top o' the World: A Once Upon a Time Tale"
 author = "Mark Swan"
+ingested_sha256 = "d14c2660c25aec7896ccc34d7704f176b473d837b97538a342e1e601a4a98edd"
 
 [[sources]]
 slug = "prose-pg59282"
@@ -1742,6 +1958,7 @@ url = "https://www.gutenberg.org/cache/epub/59282/pg59282.txt"
 sha256 = "537433a751475c8895bd339bd8e82583c9c52110ae59d4dba52d140c432a9c98"
 title = "Buster Bear's Twins"
 author = "Thornton W. Burgess"
+ingested_sha256 = "75356f33517a7aa7fb583f16d8b4b9957c8b31a71165a1a2376e2884cbd52a5b"
 
 [[sources]]
 slug = "prose-pg59708"
@@ -1750,6 +1967,7 @@ url = "https://www.gutenberg.org/cache/epub/59708/pg59708.txt"
 sha256 = "456b80324105ab769f8eb447c113a0787005e6222f67e9f501ab2e39205e6edb"
 title = "Index of the Project Gutenberg Works of Jonathan Swift"
 author = "Jonathan Swift"
+ingested_sha256 = "4b9518e038bf3d16c6467fe8d3af228a03b93541d3b193d9741b910106194219"
 
 [[sources]]
 slug = "prose-pg60370"
@@ -1758,6 +1976,7 @@ url = "https://www.gutenberg.org/cache/epub/60370/pg60370.txt"
 sha256 = "388f41c9b5a1a53f88e854b6f123d23833605810b13e5cdca81a61d3e30c89de"
 title = "Boy Scouts with Joffre; Or, In the Trenches in Belgium"
 author = "G. Harvey Ralphson"
+ingested_sha256 = "c5ba6cb387b5e8a6513e1978218b85ecfebb4f4c67165d0bfd2d05aac6124c69"
 
 [[sources]]
 slug = "prose-pg604"
@@ -1766,6 +1985,7 @@ url = "https://www.gutenberg.org/cache/epub/604/pg604.txt"
 sha256 = "e431eec11233d99b3c2e08b338b542a5388390cf7f6420d9b38562aa7fea48a1"
 title = "Gulliver of Mars"
 author = "Edwin Lester Arnold"
+ingested_sha256 = "67ccdb7c1e40a774b462434e407d2be360c9228e14a5dd32a3d9a16ea9d343d8"
 
 [[sources]]
 slug = "prose-pg60907"
@@ -1774,6 +1994,7 @@ url = "https://www.gutenberg.org/cache/epub/60907/pg60907.txt"
 sha256 = "111ad82c3a11725c812ebd05fb1c7e386275d0c360cb0db2d03695700be64c68"
 title = "Assassin"
 author = "Bascom Jones"
+ingested_sha256 = "89a7e5efe6a04b872f1de263c6da1f3ff33c7688aadcb257752dee904f75a0cb"
 
 [[sources]]
 slug = "prose-pg60984"
@@ -1782,6 +2003,7 @@ url = "https://www.gutenberg.org/cache/epub/60984/pg60984.txt"
 sha256 = "d31a9faac3ea561e9a6bda8869f2120f5c65c3a80b379ab48b7d587e8f8d2c46"
 title = "The Sportsman's Club Afloat"
 author = "Harry Castlemon"
+ingested_sha256 = "019c41660874579208251ca78201ff7591b150a7f9b827cc2f1da57c81ae84f6"
 
 [[sources]]
 slug = "prose-pg62560"
@@ -1790,6 +2012,7 @@ url = "https://www.gutenberg.org/cache/epub/62560/pg62560.txt"
 sha256 = "e9ab40cb21fc350d3ddd07852a322f05691139a31c2bfc096be4b261c2e592b6"
 title = "The wooden Pegasus"
 author = "Edith Sitwell"
+ingested_sha256 = "2e6875fdb7974f44a1992a09c8969f4368f74e408e33926de092a728e4f1e2b7"
 
 [[sources]]
 slug = "prose-pg62855"
@@ -1798,6 +2021,7 @@ url = "https://www.gutenberg.org/cache/epub/62855/pg62855.txt"
 sha256 = "602d690a1cc7f4bdee76fdf8a3dd12d33d6cf6badc7dfd76f10e42b353f9aa72"
 title = "Treasury of American Indian Tales"
 author = "Theodore Whitson Ressler"
+ingested_sha256 = "867f2b12768d8415f696b189df4990552eb933336af5fc7dfa1167ea0971f781"
 
 [[sources]]
 slug = "prose-pg63159"
@@ -1806,6 +2030,7 @@ url = "https://www.gutenberg.org/cache/epub/63159/pg63159.txt"
 sha256 = "5b70e1fb78a84e262a2a52dd80724cc383ffa74d3616ff95e562f8c6672c3868"
 title = "Treasure of the Brasada"
 author = "Les Savage"
+ingested_sha256 = "ca348e1423ab5a4da16b55647dcc7d71c310eaa9302a27ee7afce24e0a5ec668"
 
 [[sources]]
 slug = "prose-pg63526"
@@ -1814,6 +2039,7 @@ url = "https://www.gutenberg.org/cache/epub/63526/pg63526.txt"
 sha256 = "d4a02f7a254c111472329a91831e19d0c82ad41ac6c730d531e6b269d5b7e64d"
 title = "A Woman of Yesterday"
 author = "Caroline Atwater Mason"
+ingested_sha256 = "bdbdc029c3168a8d84f5570fc537fe2e80d74a3a574d18858115843c40c2713b"
 
 [[sources]]
 slug = "prose-pg63535"
@@ -1822,6 +2048,7 @@ url = "https://www.gutenberg.org/cache/epub/63535/pg63535.txt"
 sha256 = "e967bdf6805021bfb83af325bb7c7e92a00da5bf6c475ba0d61817233b9d5996"
 title = "The Fairy Latchkey"
 author = "Magdalene Horsfall"
+ingested_sha256 = "644e405874753312e986af9039b5135a2f2ef1e4721c14e833a143c142aa759a"
 
 [[sources]]
 slug = "prose-pg64147"
@@ -1830,6 +2057,7 @@ url = "https://www.gutenberg.org/cache/epub/64147/pg64147.txt"
 sha256 = "3667c5b8db39dd908fc7067e57972cca34aa41619813fa64252a5bfe6f884fbb"
 title = "A Stolen Name; Or, The Man Who Defied Nick Carter"
 author = "Nicholas Carter"
+ingested_sha256 = "ade4cfe6224b1458630f5d0e25d7c798eddacfc83c79a8d185c58f55ea845515"
 
 [[sources]]
 slug = "prose-pg6457"
@@ -1838,6 +2066,7 @@ url = "https://www.gutenberg.org/cache/epub/6457/pg6457.txt"
 sha256 = "0ffcc14c8150d0a4d4696b82e50d764563bedf01d8b59375dd26d3f12acf9305"
 title = "The Diary and Letters of Madame D'Arblay \u2014 Volume 3"
 author = "Fanny Burney"
+ingested_sha256 = "ecfbe0926c41c852d6ee6c73dec49784bbaa1b84abca378fb28169f054709c8e"
 
 [[sources]]
 slug = "prose-pg64692"
@@ -1846,6 +2075,7 @@ url = "https://www.gutenberg.org/cache/epub/64692/pg64692.txt"
 sha256 = "05377ed78ac29a0ac21f94698e29a414573bb5e2996c9962ee4e218015a689c3"
 title = "Australian Essays"
 author = "Francis Adams"
+ingested_sha256 = "779ef20690277a19c4e4911046eff8700da86bb48dc2862f7bbc3ac8ae31b0ba"
 
 [[sources]]
 slug = "prose-pg65143"
@@ -1854,6 +2084,7 @@ url = "https://www.gutenberg.org/cache/epub/65143/pg65143.txt"
 sha256 = "9e710813217cc6b2490b98253bd73f085585370ff17040906a27554f9c6a51d6"
 title = "Derval Hampton: A Story of the Sea, Volume 1 (of 2)"
 author = "James Grant"
+ingested_sha256 = "eba62db39e4ff62670c275de033fd6fcaac1afffd7badb9ca0c2ba67e03f6367"
 
 [[sources]]
 slug = "prose-pg65272"
@@ -1862,6 +2093,7 @@ url = "https://www.gutenberg.org/cache/epub/65272/pg65272.txt"
 sha256 = "3c974cc1e450968786ff74f79304e151c2cbaab74b8336332164a88b79b1f8bf"
 title = "The Hunt Pack"
 author = "White, Samuel Alexander, 1885-1956"
+ingested_sha256 = "c8722a6f8a717bb15340894d20b7dbddddb1bac12775ffd0cace00bb36a5cfa2"
 
 [[sources]]
 slug = "prose-pg67337"
@@ -1870,6 +2102,7 @@ url = "https://www.gutenberg.org/cache/epub/67337/pg67337.txt"
 sha256 = "174c1288c874761f9a83d27afdfef79d4fc749776077bc338afe934bd74ae7bf"
 title = "The Two Dianas, Volume 1 (of 3)"
 author = "Paul Meurice"
+ingested_sha256 = "956780c06970430abd8a312b9b059f8f1cb121d8838cdaeca490b113036ad01b"
 
 [[sources]]
 slug = "prose-pg67476"
@@ -1878,6 +2111,7 @@ url = "https://www.gutenberg.org/cache/epub/67476/pg67476.txt"
 sha256 = "cd920549d73419e1a3e8b782f289b88d5f175d31f346a6c03924555dfd017d54"
 title = "The Automaton Ear, and Other Sketches"
 author = "Florence McLandburgh"
+ingested_sha256 = "2c909f224265243f8cb52f0d1ae8cef2e9980b1910845cf4b4c7e12c796704fd"
 
 [[sources]]
 slug = "prose-pg6751"
@@ -1886,6 +2120,7 @@ url = "https://www.gutenberg.org/cache/epub/6751/pg6751.txt"
 sha256 = "3a91d0c3879cdbcc44c627835fafb30772a5c03faaf3e42de2bc61445abc8a05"
 title = "The Winds of the World"
 author = "Talbot Mundy"
+ingested_sha256 = "25208efdef01e89b05c9da3b9e3116834f4aa99439264791083659a45224b4d0"
 
 [[sources]]
 slug = "prose-pg6787"
@@ -1894,6 +2129,7 @@ url = "https://www.gutenberg.org/cache/epub/6787/pg6787.txt"
 sha256 = "8b8d9d9b25905fcbc9861bb0fac29a7a3315b3f24d155df153dd4dacb67e16ba"
 title = "The Death of Wallenstein"
 author = "Friedrich Schiller"
+ingested_sha256 = "75a165350e1d8852d4979fd73a1ac22f69ada62370f21ab9151cfdd9aa0928c6"
 
 [[sources]]
 slug = "prose-pg68291"
@@ -1902,6 +2138,7 @@ url = "https://www.gutenberg.org/cache/epub/68291/pg68291.txt"
 sha256 = "809ea2e9be9272f83b4e9ab4e2ced09db33033590b596ad87622238460900e38"
 title = "Studying the short-story"
 author = "Esenwein, J. Berg (Joseph Berg), 1867-1946 [Editor]"
+ingested_sha256 = "337d892b9816ba958fef62b16c36d612b19a43d9e913beb96d36a4b2cd092cf6"
 
 [[sources]]
 slug = "prose-pg68813"
@@ -1910,6 +2147,7 @@ url = "https://www.gutenberg.org/cache/epub/68813/pg68813.txt"
 sha256 = "cefeebdb542ad055a9daa6ac8366b4dddc7c1882846bcc6d03783837cdcab97e"
 title = "Josiah in New York; or, A coupon from the Fresh Air Fund"
 author = "James Otis"
+ingested_sha256 = "c08cefc86747e3179b9024f117e39eba20d14da30bd77bdc04de85978ebb75b8"
 
 [[sources]]
 slug = "prose-pg69010"
@@ -1918,6 +2156,7 @@ url = "https://www.gutenberg.org/cache/epub/69010/pg69010.txt"
 sha256 = "19a0eff316e8fd34c9159a9f0015a7f5de992f256ff263a5993bc3529e9e1862"
 title = "Lafitte, a play in prologue and four acts"
 author = "Lucile Rutland"
+ingested_sha256 = "8ec8a8e47df7d01decd04f9bbd51b9ca20cf1013b0bebd03a61ce9e1b87eb641"
 
 [[sources]]
 slug = "prose-pg69193"
@@ -1926,6 +2165,7 @@ url = "https://www.gutenberg.org/cache/epub/69193/pg69193.txt"
 sha256 = "544d2295b8031098185ca8aadd9bac0200af7f343f7ce3f36954fe04223fe7a8"
 title = "Children of destiny"
 author = "Molly Elliot Seawell"
+ingested_sha256 = "26be4a260b20a539906da24c22a53e9c1adcd5fc752b2d6b4a30e53d00cd8969"
 
 [[sources]]
 slug = "prose-pg69331"
@@ -1934,6 +2174,7 @@ url = "https://www.gutenberg.org/cache/epub/69331/pg69331.txt"
 sha256 = "f80bf0990bffc3dedda7e6b8dd7c27c581b08712de501e2cbafad6e294774c47"
 title = "Les beaux messieurs de Bois-Dor\u00e9 Vol. 1 (of 2)"
 author = "George Sand"
+ingested_sha256 = "98edcc56c7c3f1a9647860966f7ec12f526b1a36eb535bbe1c742713a312136d"
 
 [[sources]]
 slug = "prose-pg69427"
@@ -1942,6 +2183,7 @@ url = "https://www.gutenberg.org/cache/epub/69427/pg69427.txt"
 sha256 = "8dbd4d34e988ea33ebb5f02a2bf2ef2b7fd0f6884965b3f3909ec1156857fccc"
 title = "Stonepastures"
 author = "Eleanor Stuart"
+ingested_sha256 = "588bacf91d5049de9ab2e1545bb6714035d64855b28ca66412d30957b45c0f2e"
 
 [[sources]]
 slug = "prose-pg69703"
@@ -1950,6 +2192,7 @@ url = "https://www.gutenberg.org/cache/epub/69703/pg69703.txt"
 sha256 = "2853c8ec0dc416dd09bdddd12fb8ba06639541fe90ed6f66a41e3befbac229d9"
 title = "The master mind of Mars"
 author = "Edgar Rice Burroughs"
+ingested_sha256 = "bdb94e1b14fe92d117cfba421284913d746bc50baf48f5c7f8fdd9143fbbb535"
 
 [[sources]]
 slug = "prose-pg69746"
@@ -1958,6 +2201,7 @@ url = "https://www.gutenberg.org/cache/epub/69746/pg69746.txt"
 sha256 = "3f02497f3ed14c7f2d725e773e837a36c2eb2d40a18830dfe9b921c4010baffe"
 title = "The book of friendly giants"
 author = "Eunice Fuller"
+ingested_sha256 = "aad65a50302973031c6e023e229a7eebb58d9b5c26fce2c0fb460b5c9d0fd70d"
 
 [[sources]]
 slug = "prose-pg70101"
@@ -1966,6 +2210,7 @@ url = "https://www.gutenberg.org/cache/epub/70101/pg70101.txt"
 sha256 = "fe5db52c3720b3b5868fc6546c68f28d5f1ce43a579eadd749a4268c1e77f195"
 title = "Apache devil"
 author = "Edgar Rice Burroughs"
+ingested_sha256 = "f7a361cca4ce48b06a59bc2eab66c21a9b8c8d3fbfb4db62e236ff0b8cd0d093"
 
 [[sources]]
 slug = "prose-pg7057"
@@ -1974,6 +2219,7 @@ url = "https://www.gutenberg.org/cache/epub/7057/pg7057.txt"
 sha256 = "0466a527042cab6b5f016bfa97e8a68926afd9a2ec3ac3b268f7e271e798ca6f"
 title = "David Poindexter's Disappearance, and Other Tales"
 author = "Julian Hawthorne"
+ingested_sha256 = "cec7755ba9595cadbc0b03afe314b610dbbc671b772f80111848e17d0a1f5244"
 
 [[sources]]
 slug = "prose-pg70843"
@@ -1982,6 +2228,7 @@ url = "https://www.gutenberg.org/cache/epub/70843/pg70843.txt"
 sha256 = "f274a234de853778e4da4717e6664d32c6d6bafbe5b001173c778313e73eeb2b"
 title = "Hurrah for Peter Perry!"
 author = "Eleanora H. Stooke"
+ingested_sha256 = "d092d563e309ce9b41f6e41ee860e9fe14acd4986a53fbca2f0958cd8eb64500"
 
 [[sources]]
 slug = "prose-pg71683"
@@ -1990,6 +2237,7 @@ url = "https://www.gutenberg.org/cache/epub/71683/pg71683.txt"
 sha256 = "e04926d95e82cf46355c38841d2d5f6f97d867a26cbcdfcfb60cad7b8d4ee271"
 title = "Miscellanies"
 author = "Ralph Waldo Emerson"
+ingested_sha256 = "7c9ae6e2ae7c1c4f800d4245d022a64d47c7190a6ee3eb27daea2a4c9971cfbd"
 
 [[sources]]
 slug = "prose-pg7231"
@@ -1998,6 +2246,7 @@ url = "https://www.gutenberg.org/cache/epub/7231/pg7231.txt"
 sha256 = "9608e43a58e6e751445cf005d23dd24bc872ad7fcf22a421e9df14b280d5dabc"
 title = "Light O' the Morning: The Story of an Irish Girl"
 author = "L. T. Meade"
+ingested_sha256 = "c5f0daa7e4577dd42875838c99abfdd003406ebebcf1a9f33c5163a557cbf293"
 
 [[sources]]
 slug = "prose-pg72873"
@@ -2006,6 +2255,7 @@ url = "https://www.gutenberg.org/cache/epub/72873/pg72873.txt"
 sha256 = "95cc60a811cc72fb846dc25ea0dd4d10252e7a20a82ecf5dc9748c42dacb2561"
 title = "Gloria"
 author = "George Frederic Turner"
+ingested_sha256 = "de3ee757d0cf9853f49a6201d51dea1bef51456ac1b6753e60f1c8cfe885ea96"
 
 [[sources]]
 slug = "prose-pg72998"
@@ -2014,6 +2264,7 @@ url = "https://www.gutenberg.org/cache/epub/72998/pg72998.txt"
 sha256 = "23adb339e96ece466048c9e0b6e12c5fcda9f16bcb5eb4c8e329943d2043990a"
 title = "Worth his while"
 author = "Amy Ella Blanchard"
+ingested_sha256 = "3e454e248f4961dac878c40a83af587b3a248dbd957916113c7871d3879cb13f"
 
 [[sources]]
 slug = "prose-pg73683"
@@ -2022,6 +2273,7 @@ url = "https://www.gutenberg.org/cache/epub/73683/pg73683.txt"
 sha256 = "f7b361ebfdecdf5cf54e1a2e5c332fdb8d6f598bbf9c39f301a2607d30807417"
 title = "The virgin of the sun"
 author = "George Chetwynd Griffith"
+ingested_sha256 = "510ebca3e7a19d87f3c6730a999e3f712504621dd69a5ab53bcf33f1d668b961"
 
 [[sources]]
 slug = "prose-pg73728"
@@ -2030,6 +2282,7 @@ url = "https://www.gutenberg.org/cache/epub/73728/pg73728.txt"
 sha256 = "3fa94152bd9459c50cf796d6066e069ef39c59566b1f0ac393f2779763711b47"
 title = "American ideas for English readers"
 author = "James Russell Lowell"
+ingested_sha256 = "4fc8299bc0c5d9282b89bd2c857c3a80659db0353ec23b608d98e43ba29e383e"
 
 [[sources]]
 slug = "prose-pg74046"
@@ -2038,6 +2291,7 @@ url = "https://www.gutenberg.org/cache/epub/74046/pg74046.txt"
 sha256 = "b9e5c757bc0248f95c00305db65599e326b262facd1a45b3e95ed07194bbb1da"
 title = "The Lakewood boys in the South Sea islands"
 author = "L. P. Wyman"
+ingested_sha256 = "ece7ad71b6705a6d78c9a86c5e80e6f57931dac5a22c4cd24441f6c70cf7a595"
 
 [[sources]]
 slug = "prose-pg7431"
@@ -2046,6 +2300,7 @@ url = "https://www.gutenberg.org/cache/epub/7431/pg7431.txt"
 sha256 = "600fb9446e106b17d30cdcf909dec07de583934b02b51ebf879782aaf00f9823"
 title = "Confessions and Criticisms"
 author = "Julian Hawthorne"
+ingested_sha256 = "d6600ab23a4f8c4b3a314adefbb005b2be7541d760cdd852db41d4ad13df39ad"
 
 [[sources]]
 slug = "prose-pg74489"
@@ -2054,6 +2309,7 @@ url = "https://www.gutenberg.org/cache/epub/74489/pg74489.txt"
 sha256 = "d6c12447c7ecb2899c9f3b10d88530c32b8d986f3c515afc400ce9bd9181335a"
 title = "A royal smuggler"
 author = "William Dalton"
+ingested_sha256 = "bf209da90f33d039952385980e55999477bcf08dc1cf78aae19f977b1cece509"
 
 [[sources]]
 slug = "prose-pg74601"
@@ -2062,6 +2318,7 @@ url = "https://www.gutenberg.org/cache/epub/74601/pg74601.txt"
 sha256 = "4d0969049426c248b7fbf3e9f11c45c3e446e4b09584c66fbaf914c91631d8aa"
 title = "The Black Forge Mills"
 author = "William P. Chipman"
+ingested_sha256 = "3bcc7149e3dc26c728150e5f76420f252ab38a6229ccabe21d5e1965ae069a1d"
 
 [[sources]]
 slug = "prose-pg74876"
@@ -2070,6 +2327,7 @@ url = "https://www.gutenberg.org/cache/epub/74876/pg74876.txt"
 sha256 = "f239fe95c4cd8e9786ef641188602b28a8f5613638629ec33fa7ef1fe7126913"
 title = "Lady Lucy's secret"
 author = "Lucy Ellen Guernsey"
+ingested_sha256 = "5c29f7e66902e564d6c8d32305ba939ab11cbb3777c8a7fff26239435b2f7848"
 
 [[sources]]
 slug = "prose-pg75407"
@@ -2078,6 +2336,7 @@ url = "https://www.gutenberg.org/cache/epub/75407/pg75407.txt"
 sha256 = "5feffcb008ff2ce2922c6466f33d059b220b8c4f96ba5692c169bf80182c05c1"
 title = "Tragedy at Ravensthorpe"
 author = "J. J. Connington"
+ingested_sha256 = "64886348c283c39d3c704891ef7e952d1eb3b3393ec37b0a043a22cbfcc214c3"
 
 [[sources]]
 slug = "prose-pg75675"
@@ -2086,6 +2345,7 @@ url = "https://www.gutenberg.org/cache/epub/75675/pg75675.txt"
 sha256 = "142a006920ad7bff9c5634ba2a7e5f39f40541b7dd7155939a40c27858527e7b"
 title = "Following darkness"
 author = "Forrest Reid"
+ingested_sha256 = "ae8c7acd184bb91250a6d8f19112f65dec8d6f9768e7c2c4d307db5a8f8545c4"
 
 [[sources]]
 slug = "prose-pg76205"
@@ -2094,6 +2354,7 @@ url = "https://www.gutenberg.org/cache/epub/76205/pg76205.txt"
 sha256 = "b8c4166980a5796711d71ca1429bc3852a914d942cf632d24bc0de1017419543"
 title = "The Spring Song"
 author = "Forrest Reid"
+ingested_sha256 = "9a2785d1d5d79808c20a5524b1bbc988d925849cff25c97c11d5b614e3359c0b"
 
 [[sources]]
 slug = "prose-pg76257"
@@ -2102,6 +2363,7 @@ url = "https://www.gutenberg.org/cache/epub/76257/pg76257.txt"
 sha256 = "ebaf1fcca72c6aa01421c0209ec500eac98008c889aebc60fef7035d0e143e11"
 title = "The crimson circle"
 author = "Edgar Wallace"
+ingested_sha256 = "a1ba0ac1b3adc93fcc9524f51395548c6e2c7b960c4694f27d3e771a84ac5942"
 
 [[sources]]
 slug = "prose-pg76514"
@@ -2110,6 +2372,7 @@ url = "https://www.gutenberg.org/cache/epub/76514/pg76514.txt"
 sha256 = "30b22096829e6e7985339b5324472b5ccfea70f1bb506a1f98c8660dd13d9857"
 title = "Timber line"
 author = "Alida Malkus"
+ingested_sha256 = "9727c8f396b60f67401748ee1f78ce24451abdec57fcd34d2c0478107d10dcce"
 
 [[sources]]
 slug = "prose-pg76994"
@@ -2118,6 +2381,7 @@ url = "https://www.gutenberg.org/cache/epub/76994/pg76994.txt"
 sha256 = "335fb172fd93949465ab220e084ad0378861977e42d325de6972e7abc9dd7ce6"
 title = "Neesby Court"
 author = "Ethel S. Cann"
+ingested_sha256 = "77f08a04cd1ac1f03efea54b1c4b30767b2ee930dbb061ca4877782e0de72f41"
 
 [[sources]]
 slug = "prose-pg77705"
@@ -2126,6 +2390,7 @@ url = "https://www.gutenberg.org/cache/epub/77705/pg77705.txt"
 sha256 = "0e7c99cea83205f10d8d1c3128a1aada6c851cf51007237eaa46b1137b0e2ee1"
 title = "Disarm! Disarm!"
 author = "Bertha von Suttner"
+ingested_sha256 = "b97965ccff3cf1377097566493f976c6befed18bbd2a69ca158bc6f17f35b76d"
 
 [[sources]]
 slug = "prose-pg78"
@@ -2134,6 +2399,7 @@ url = "https://www.gutenberg.org/cache/epub/78/pg78.txt"
 sha256 = "9fac1bdb66c2a3e955baaf1ce4601ba18145921679041779c2403e49b6bf4260"
 title = "Tarzan of the Apes"
 author = "Edgar Rice Burroughs"
+ingested_sha256 = "26e8fd083e13547bdf1f6f11cc783b632243b3cca7f32375decdfb73f49d0cff"
 
 [[sources]]
 slug = "prose-pg78147"
@@ -2142,6 +2408,7 @@ url = "https://www.gutenberg.org/cache/epub/78147/pg78147.txt"
 sha256 = "c9593413ce80263cfc44e22e1be06267781e863252336a0cb603809246905ac8"
 title = "Plutarch's essays and miscellanies, Vol. 2 (of 5)"
 author = "Plutarch"
+ingested_sha256 = "acdba4eeaedb3c36af6bd7c3e6ade5c245d89433db0dfb166c2834999d151c03"
 
 [[sources]]
 slug = "prose-pg78329"
@@ -2150,6 +2417,7 @@ url = "https://www.gutenberg.org/cache/epub/78329/pg78329.txt"
 sha256 = "2395f827993c124cc3540c8526b157a17105be1edcfe2416ce69c6cc29964df0"
 title = "Angel Pavement"
 author = "J. B. Priestley"
+ingested_sha256 = "ef26ae8d6a1cc8fcf926843006e48d747b23de9464f1d3f80bf96e51447ca638"
 
 [[sources]]
 slug = "prose-pg7835"
@@ -2158,6 +2426,7 @@ url = "https://www.gutenberg.org/cache/epub/7835/pg7835.txt"
 sha256 = "e361aefb84cb9a02d996a4e867f17e932e3532d48ec23da776bc729f27602990"
 title = "Lothair"
 author = "Earl of Beaconsfield Benjamin Disraeli"
+ingested_sha256 = "ebea7f1b37c4ef939f05d61dafc660619bf8313f08df9e4cec8248bdb6863be1"
 
 [[sources]]
 slug = "prose-pg78424"
@@ -2166,6 +2435,7 @@ url = "https://www.gutenberg.org/cache/epub/78424/pg78424.txt"
 sha256 = "c7c2a893a82c50bc729942285109590ea8772b5ecb3e2a41218d242c144437fa"
 title = "The art of narration"
 author = "Mary Ellen Chase"
+ingested_sha256 = "fe3475a0d05ee084f28364368ee7a88c7992af7e548c726d4b71f8a68b364204"
 
 [[sources]]
 slug = "prose-pg7880"
@@ -2174,6 +2444,7 @@ url = "https://www.gutenberg.org/cache/epub/7880/pg7880.txt"
 sha256 = "5ed41362120a1b9ea227c1597a4ee5b333458c8974d9f84a029384fc31135758"
 title = "Passages from the French and Italian Notebooks, Volume 2."
 author = "Nathaniel Hawthorne"
+ingested_sha256 = "9952a28193a87a673b057f70427d27d26046098e16b32ee403cebdab72e3c22b"
 
 [[sources]]
 slug = "prose-pg79483"
@@ -2182,6 +2453,7 @@ url = "https://www.gutenberg.org/cache/epub/79483/pg79483.txt"
 sha256 = "c111f5f236e8c64e1b49e57ea209d2eca502124e20f7b590093ab7cfdffec72a"
 title = "Blunder enlightening"
 author = "Dave Dryfoos"
+ingested_sha256 = "03cef39f45f1d75cbc575075f48d5fed6420e883daae760210bfc86ffc87270c"
 
 [[sources]]
 slug = "prose-pg79781"
@@ -2190,6 +2462,7 @@ url = "https://www.gutenberg.org/cache/epub/79781/pg79781.txt"
 sha256 = "58bca298fe8615410a854154caa9b9b99cf3c74dffdbc4e80609c25cab29ec78"
 title = "A pamphlet against anthologies"
 author = "Laura Riding"
+ingested_sha256 = "563c9ab944d21b515d2d896963d2351135ded19547a14a851989f9cf41589f4a"
 
 [[sources]]
 slug = "prose-pg8091"
@@ -2198,6 +2471,7 @@ url = "https://www.gutenberg.org/cache/epub/8091/pg8091.txt"
 sha256 = "188a7b2588eed42001f792648627b42fc7365b9b3335119e1891f6d004c65fcc"
 title = "Sketches and Studies"
 author = "Nathaniel Hawthorne"
+ingested_sha256 = "e4b70137be8c06020fc6bc7da915b86583b3240e9993cc16a0803173fefa93d3"
 
 [[sources]]
 slug = "prose-pg8135"
@@ -2206,6 +2480,7 @@ url = "https://www.gutenberg.org/cache/epub/8135/pg8135.txt"
 sha256 = "8f3b690924691a4f989e0920c26aed88c4e9dfe68144c6c3cefac0ee9a8dfe9a"
 title = "The Cathedral: A Novel"
 author = "Hugh Walpole"
+ingested_sha256 = "5a010d8328378f35ef4ee866cea884f9b90a95232cbb2eeaa672606b2bb2cad0"
 
 [[sources]]
 slug = "prose-pg8210"
@@ -2214,6 +2489,7 @@ url = "https://www.gutenberg.org/cache/epub/8210/pg8210.txt"
 sha256 = "28d27b790de679d158409a0386b3513de3a562feef63a19d75652c7a0ec01979"
 title = "Biographia Epistolaris, Volume 1"
 author = "Samuel Taylor Coleridge"
+ingested_sha256 = "4b658d6d2fffd70841812824da3d08994cca7593b443c14f5e1a1f653e6d2b60"
 
 [[sources]]
 slug = "prose-pg8824"
@@ -2222,6 +2498,7 @@ url = "https://www.gutenberg.org/cache/epub/8824/pg8824.txt"
 sha256 = "5c71f74d3a74fff18123067e49cb3cd5e792ca46c370caa577b4c227baaf1056"
 title = "Poems in Two Volumes, Volume 2"
 author = "William Wordsworth"
+ingested_sha256 = "f6422bafd9d0ce46048553baa53850ab706fbd1ba3a3f95a2d30cbe88bbc6939"
 
 [[sources]]
 slug = "prose-pg9403"
@@ -2230,6 +2507,7 @@ url = "https://www.gutenberg.org/cache/epub/9403/pg9403.txt"
 sha256 = "b06d3d5f3ae08080a5d18f508c502ce2511eb5e10dc31360bb3f782c9ddc76a5"
 title = "The Life and Works of Friedrich Schiller"
 author = "Calvin Thomas"
+ingested_sha256 = "86463ffce37232fb2c0cc3b8314d3f39b49be30ce6d437a1d69ba75bb5cd76d0"
 
 [[sources]]
 slug = "prose-pg9663"
@@ -2238,6 +2516,7 @@ url = "https://www.gutenberg.org/cache/epub/9663/pg9663.txt"
 sha256 = "71fb54a3bd0f7498a77bd4d35f2e5cc6fe40ab88f14f34359b1770e3e0b77de4"
 title = "Domnei: A Comedy of Woman-Worship"
 author = "James Branch Cabell"
+ingested_sha256 = "a118c0ec448339f9cab04f2e356432c5e44873ea039477ce7b180ee531eac435"
 
 [[sources]]
 slug = "prose-pg9807"
@@ -2246,6 +2525,7 @@ url = "https://www.gutenberg.org/cache/epub/9807/pg9807.txt"
 sha256 = "44add9e8c65d401ff10e90e71a7e64f7edc0018e00fdaf7e1bb65252ab69fd13"
 title = "Scarhaven Keep"
 author = "J. S. Fletcher"
+ingested_sha256 = "d237e48822eeb8f9d34c25fece0a2e596d8d8b076f27c9506706b6d39667d223"
 
 [[sources]]
 slug = "science-pg10266"
@@ -2254,6 +2534,7 @@ url = "https://www.gutenberg.org/cache/epub/10266/pg10266.txt"
 sha256 = "2301e2dc8f934e4182187607b92ef0ebb5b543672b0caae9340f27be8a7e8a5d"
 title = "The Glands Regulating Personality"
 author = "Louis Berman"
+ingested_sha256 = "63101a92c702d9a833d49fb2fbc3ac408c7d001807325b39e57274818a351f10"
 
 [[sources]]
 slug = "science-pg11896"
@@ -2262,6 +2543,7 @@ url = "https://www.gutenberg.org/cache/epub/11896/pg11896.txt"
 sha256 = "80705a9e602075a0c0d4d31dea598d12dd33e303819dee0c6d54c63267233bb1"
 title = "Citizen Bird: Scenes from Bird-Life in Plain English for Beginners"
 author = "Mabel Osgood Wright"
+ingested_sha256 = "6bcc43e257196b2bc668ea08becaa85d657e7338e3cc7a4cd06867af3cea8dac"
 
 [[sources]]
 slug = "science-pg1234"
@@ -2270,6 +2552,7 @@ url = "https://www.gutenberg.org/cache/epub/1234/pg1234.txt"
 sha256 = "4ee76197ac9a24ba8febfa7f48d9492ffa187a1f9f6ba952ab21c502b8c68767"
 title = "Organic Syntheses"
 author = "Conant, James Bryant, 1893-1978 [Editor]"
+ingested_sha256 = "022e86c18d6f30cd924c9d39b7f7243425284b770ff349b1482ec12f6302dcd0"
 
 [[sources]]
 slug = "science-pg16136"
@@ -2278,6 +2561,7 @@ url = "https://www.gutenberg.org/cache/epub/16136/pg16136.txt"
 sha256 = "461648be1175ea69998bd28e288827e2400fbcf89a3a91a1977694cf77573a3e"
 title = "American Addresses, with a Lecture on the Study of Biology"
 author = "Thomas Henry Huxley"
+ingested_sha256 = "cb8470753c4f051fdd0d95b22988c45f3217c3003149a209b6fc73c8ff5bf6eb"
 
 [[sources]]
 slug = "science-pg16442"
@@ -2286,6 +2570,7 @@ url = "https://www.gutenberg.org/cache/epub/16442/pg16442.txt"
 sha256 = "7f68254e0c6e4deae91a619c2f4d34ccf7ed4ee48cb91cd3f1cb2ddcb526e3c4"
 title = "The Doctrine of Evolution: Its Basis and Its Scope"
 author = "Henry Edward Crampton"
+ingested_sha256 = "bcd486aef89537f212f6c2f6c900e679fa16641ea4424c2ea07c1cadcb49a68a"
 
 [[sources]]
 slug = "science-pg17966"
@@ -2294,6 +2579,7 @@ url = "https://www.gutenberg.org/cache/epub/17966/pg17966.txt"
 sha256 = "a4f1f3587c8a314381df04dd6fcc17f84301ea54945790efeb55ce13024c698d"
 title = "Life History of the Kangaroo Rat"
 author = "Charles Taylor Vorhies"
+ingested_sha256 = "bc203c78d237bde0a83856ebffb6397821a26c771738e73f9e2cba5f33c9ddf8"
 
 [[sources]]
 slug = "science-pg20421"
@@ -2302,6 +2588,7 @@ url = "https://www.gutenberg.org/cache/epub/20421/pg20421.txt"
 sha256 = "3d246fda1f4c088fd81bedc1ef72919842e3a52535be27843bad59a1d3a226f5"
 title = "Proserpina, Volume 1"
 author = "John Ruskin"
+ingested_sha256 = "ec48c05ba43e199eb17c4c627deff41f5ef6bcad17f2b78b0d0ae160447c6bce"
 
 [[sources]]
 slug = "science-pg20556"
@@ -2310,6 +2597,7 @@ url = "https://www.gutenberg.org/cache/epub/20556/pg20556.txt"
 sha256 = "32aa3efcd9a4060e2f6370af8da24f4400ca758af23c33eed58064318e30b145"
 title = "Lamarck, the Founder of Evolution: His Life and Work"
 author = "A. S. Packard"
+ingested_sha256 = "840795e640202125a3061b81ddd0f2a88b40c7a95da962f72b3f117706fcc9ac"
 
 [[sources]]
 slug = "science-pg20751"
@@ -2318,6 +2606,7 @@ url = "https://www.gutenberg.org/cache/epub/20751/pg20751.txt"
 sha256 = "2318b83ad1b4d2d1e600d102b431bba8a1a7e4cc54ac5452d447c10d57d23c5f"
 title = "Priestley in America, 1794-1804"
 author = "Edgar Fahs Smith"
+ingested_sha256 = "93bd011fcc4103ce60065982255249a2abd082e17c437f1dbac4e2da2db8b439"
 
 [[sources]]
 slug = "science-pg2089"
@@ -2326,6 +2615,7 @@ url = "https://www.gutenberg.org/cache/epub/2089/pg2089.txt"
 sha256 = "6a75905c859f017d969ac6ed68b4f9a3bb15b55759b349b95fc70fb5fd6aa9fe"
 title = "On the Reception of the 'Origin of Species'"
 author = "Thomas Henry Huxley"
+ingested_sha256 = "91cc27400474eb7cf323a342b364a79804c6514fc4276b49902d7711b1157d85"
 
 [[sources]]
 slug = "science-pg23422"
@@ -2334,6 +2624,7 @@ url = "https://www.gutenberg.org/cache/epub/23422/pg23422.txt"
 sha256 = "b55595c4a30a02ec016b3646d461de723515dfc0569bdb5890331c387508bc04"
 title = "Essays Towards a Theory of Knowledge"
 author = "Alexander Philip"
+ingested_sha256 = "813963919ea46b356bcbd4699bc4d4876524d7ce453d3a47c7c055522e26243b"
 
 [[sources]]
 slug = "science-pg23921"
@@ -2342,6 +2633,7 @@ url = "https://www.gutenberg.org/cache/epub/23921/pg23921.txt"
 sha256 = "03eb3ceb5eaa8ceff965739a9d5156ce0dc4f00633664c60eb855901b0a4c584"
 title = "Barometer and Weather Guide"
 author = "Fitzroy, Robert, 1805-1865 [Compiler]"
+ingested_sha256 = "4d8eea5f94a5e071507ad88dc3688946b8198950103228a284a45115d4cdbb1d"
 
 [[sources]]
 slug = "science-pg24506"
@@ -2350,6 +2642,7 @@ url = "https://www.gutenberg.org/cache/epub/24506/pg24506.txt"
 sha256 = "e7a4b96632ccf82eb451a3f8fcd02386ce395e3ea017c35a33e210ce94ff7382"
 title = "Essays on early ornithology and kindred subjects"
 author = "James Roxburgh McClymont"
+ingested_sha256 = "d63fd9eb24cc2d79b5674f9a3b5d79c484725fb486df8ccb4e33341b322a6412"
 
 [[sources]]
 slug = "science-pg26158"
@@ -2358,6 +2651,7 @@ url = "https://www.gutenberg.org/cache/epub/26158/pg26158.txt"
 sha256 = "ae91317c603423be6dfaeb71f0fac0ae9bbfc2397f8e29053d97de6c70331f01"
 title = "Seed Dispersal"
 author = "W. J. Beal"
+ingested_sha256 = "de644f4ec2025d03773b526575cbc9469fff295b19da4c9b0a6fb9aafac89063"
 
 [[sources]]
 slug = "science-pg2631"
@@ -2366,6 +2660,7 @@ url = "https://www.gutenberg.org/cache/epub/2631/pg2631.txt"
 sha256 = "d3939a47bdc99d354073fdbeaf1dcc9616c0869367600ef0fa518078cd974cc6"
 title = "Mr. Gladstone and Genesis"
 author = "Thomas Henry Huxley"
+ingested_sha256 = "32ad02bc1b275b93475397121f156756c79881d2ef1c355fa0abe398ce045a46"
 
 [[sources]]
 slug = "science-pg26346"
@@ -2374,6 +2669,7 @@ url = "https://www.gutenberg.org/cache/epub/26346/pg26346.txt"
 sha256 = "42660a8211aee9aa9abe67064a10a98a02bce7491bfbb17b5078be0467da47e4"
 title = "Our Bird Comrades"
 author = "Leander S. Keyser"
+ingested_sha256 = "478c2c3ba8884879cb1c5ac40f2d5730dfc61dde71feeff6429a8332a0995ebb"
 
 [[sources]]
 slug = "science-pg27213"
@@ -2382,6 +2678,7 @@ url = "https://www.gutenberg.org/cache/epub/27213/pg27213.txt"
 sha256 = "6a05243b5b342a1e9d02966d0a7ddb5a2f74509cff2cfb1c64124afec61e36e5"
 title = "The Heart of Nature; or, The Quest for Natural Beauty"
 author = "Sir Francis Edward Younghusband"
+ingested_sha256 = "d668a2ccd26b7daadba2842126f759eafd0d573481b599c4c77da2a32d8fdd5d"
 
 [[sources]]
 slug = "science-pg27465"
@@ -2390,6 +2687,7 @@ url = "https://www.gutenberg.org/cache/epub/27465/pg27465.txt"
 sha256 = "523c2fb94cb9542ff6c2fd8047c6ba38c725c2cb6b30b3e81628799ee628c379"
 title = "Birds in the Calendar"
 author = "Frederick G. Aflalo"
+ingested_sha256 = "ed99d23a88104d8f46a34f8b8f94f39c725ef75554d7e67304a40f41a7a8dda5"
 
 [[sources]]
 slug = "science-pg278"
@@ -2398,6 +2696,7 @@ url = "https://www.gutenberg.org/cache/epub/278/pg278.txt"
 sha256 = "821f17ce246f6bb19e4fac47ece3b97417be4b5d306d8ca0783a3e52fb969a0c"
 title = "Trinity Site: 1945-1995."
 author = "White Sands Missile Range . Public Affairs Office"
+ingested_sha256 = "2cc242ec0ee121c626b6dd521f4b5f6e566f3245d358fd1c410fc64b426c8c73"
 
 [[sources]]
 slug = "science-pg27933"
@@ -2406,6 +2705,7 @@ url = "https://www.gutenberg.org/cache/epub/27933/pg27933.txt"
 sha256 = "460cc3e0bdfe5b7d1582a466b11f614dcc5b72bbda20df0d59aa877fdd8e4f2c"
 title = "Forest Neighbors: Life Stories of Wild Animals"
 author = "William Davenport Hulbert"
+ingested_sha256 = "fe80bdc39570cb219618c5f88d21740c56e028ffa6fff7b8504409cdd01946a7"
 
 [[sources]]
 slug = "science-pg30495"
@@ -2414,6 +2714,7 @@ url = "https://www.gutenberg.org/cache/epub/30495/pg30495.txt"
 sha256 = "466db02dc2cdfc740e2b582482fae5b093ba6776e689bb9f3f7faffb4c4ab9d1"
 title = "A History of Science \u2014 Volume 5"
 author = "Henry Smith Williams"
+ingested_sha256 = "a482eecbf899a4bdfd86d528b911f03835955be641e72a374f7f87391576839d"
 
 [[sources]]
 slug = "science-pg30701"
@@ -2422,6 +2723,7 @@ url = "https://www.gutenberg.org/cache/epub/30701/pg30701.txt"
 sha256 = "f5cd7097fec85695613a92e39f056175019c555337a82c673be21969c8194d1d"
 title = "A Critique of the Theory of Evolution"
 author = "Thomas Hunt Morgan"
+ingested_sha256 = "e462171f8035109cd0c5c2da7abd1281323daf9c7c058aaa9416e578179ef3c8"
 
 [[sources]]
 slug = "science-pg31224"
@@ -2430,6 +2732,7 @@ url = "https://www.gutenberg.org/cache/epub/31224/pg31224.txt"
 sha256 = "980e5ab3f94a807d087ad1ee7883955ad6ac54113a855ac2ceb8be34c6d17df0"
 title = "Geographic Distribution of the Pocket Mouse, Perognathus fasciatus"
 author = "J. Knox Jones"
+ingested_sha256 = "ef536667952c0c831e64610802d56bd279ab20d7cbeb287033e609ffb5291f87"
 
 [[sources]]
 slug = "science-pg31334"
@@ -2438,6 +2741,7 @@ url = "https://www.gutenberg.org/cache/epub/31334/pg31334.txt"
 sha256 = "553e9d8c352d327fc08083d8913274e70c4499523f312b5ea7e9d581da7644f4"
 title = "Descriptions of Two Species of Frogs, Genus Ptychohyla"
 author = "William Edward Duellman"
+ingested_sha256 = "d678056221776ec9e7ab3906a566e57cb085d48f55a541bd9820e508280cef66"
 
 [[sources]]
 slug = "science-pg32282"
@@ -2446,6 +2750,7 @@ url = "https://www.gutenberg.org/cache/epub/32282/pg32282.txt"
 sha256 = "74805f3c45e51c003d1e9cc6797a0c65e2c5eb46d3869caf744680d56bb59462"
 title = "Elevator Systems of the Eiffel Tower, 1889"
 author = "Robert M. Vogel"
+ingested_sha256 = "b0fbd2d5ea37c79dfe1e545e9560856c559386ed680333262a4008d0c67289b4"
 
 [[sources]]
 slug = "science-pg33810"
@@ -2454,6 +2759,7 @@ url = "https://www.gutenberg.org/cache/epub/33810/pg33810.txt"
 sha256 = "672df2867f236c2814d1a77cef3ad55e3f7b4f5b0c04efb68dc8f609b1d72ac6"
 title = "On the magnet, magnetick bodies also, and on the great magnet the earth"
 author = "Gilbert, William, 1544-1603 [Adapter]; Thompson, Silvanus P. (Silvanus Phillips), 1851-1916 [Translator]"
+ingested_sha256 = "838fdcc197850f57ea9afd5d5a7251ef83d828d4ab12da0a097ad43446ceb87d"
 
 [[sources]]
 slug = "science-pg33874"
@@ -2462,6 +2768,7 @@ url = "https://www.gutenberg.org/cache/epub/33874/pg33874.txt"
 sha256 = "e1dc5963e3abdd08c3fa452bab4bac9f9281b06caf5797ebee3a2ab1a088a695"
 title = "Wild Bees, Wasps and Ants and Other Stinging Insects"
 author = "Edward Saunders"
+ingested_sha256 = "dc5217252fdfeee2978c4d85aa75371da675986fe61ca93ccf4bcc9270ce5c27"
 
 [[sources]]
 slug = "science-pg3489"
@@ -2470,6 +2777,7 @@ url = "https://www.gutenberg.org/cache/epub/3489/pg3489.txt"
 sha256 = "0725e404f69f95e2be56bab4c51d9c40583efd44f080b3c70c105573d09ef9c8"
 title = "Fabre, Poet of Science"
 author = "Georges Victor Legros"
+ingested_sha256 = "49606a5471790cbfcbd406b1b690803511891c554844839064bc7cad3435ea23"
 
 [[sources]]
 slug = "science-pg36261"
@@ -2478,6 +2786,7 @@ url = "https://www.gutenberg.org/cache/epub/36261/pg36261.txt"
 sha256 = "d666716b6a8d6f868106a29ab869c9d2d3c234ba87b8a4308abbe22f039605da"
 title = "The Chain of Life in Geological Time"
 author = "Sir John William Dawson"
+ingested_sha256 = "ac24629da20f1058c42b2ec2ff8c50a5cb0dd14783cbf625d302d7670ff669fe"
 
 [[sources]]
 slug = "science-pg36288"
@@ -2486,6 +2795,7 @@ url = "https://www.gutenberg.org/cache/epub/36288/pg36288.txt"
 sha256 = "4fd869537e74f35c54abe4b435158455866c10ffc08301443ae80678976d91a2"
 title = "The Plurality of Worlds"
 author = "William Whewell"
+ingested_sha256 = "fab40c6ae47c21cd7ae203b062bf3d1e47ceced7b3fc50c2f18b139484f9d195"
 
 [[sources]]
 slug = "science-pg36504"
@@ -2494,6 +2804,7 @@ url = "https://www.gutenberg.org/cache/epub/36504/pg36504.txt"
 sha256 = "5c090591c6d9f7c7c61544cbdfee3ad85be41fbda7946b51698ce54a768dbd37"
 title = "Freshwater Sponges, Hydroids & Polyzoa"
 author = "Nelson Annandale"
+ingested_sha256 = "f553f2e46c3dd74b8622f5ac3381f80e1630f7593e29b799c2e477f53a4d4584"
 
 [[sources]]
 slug = "science-pg37427"
@@ -2502,6 +2813,7 @@ url = "https://www.gutenberg.org/cache/epub/37427/pg37427.txt"
 sha256 = "f6540b725a66915a9b8924fa046e19a60bc1cf198d15e8355e36dda497463980"
 title = "Scientific Culture, and Other Essays"
 author = "Jr. Josiah P. Cooke"
+ingested_sha256 = "9c5f88f0f7ce8acfc96237b0adf290e93fd79790495765552d7375894859dd40"
 
 [[sources]]
 slug = "science-pg37602"
@@ -2510,6 +2822,7 @@ url = "https://www.gutenberg.org/cache/epub/37602/pg37602.txt"
 sha256 = "e4cb645382d7cd2a19f7a4045ffc2004d8e58f4c761381460f79d72a321bcf35"
 title = "A Synopsis of Neotropical Hylid Frogs, Genus Osteocephalus"
 author = "Linda Trueb"
+ingested_sha256 = "437f316b914974f61cabe70c50ae1fcd91b1e124b367f5cbc1d5109305658fff"
 
 [[sources]]
 slug = "science-pg39477"
@@ -2518,6 +2831,7 @@ url = "https://www.gutenberg.org/cache/epub/39477/pg39477.txt"
 sha256 = "5a26c7f0fbc9597ab6609727dfa8a30cb4244af98e92a1f75320eb6876f8bd7b"
 title = "Zoological Illustrations, Volume 3"
 author = "William Swainson"
+ingested_sha256 = "3cfb5f56e4bfcf913b61248e41634da93ee8ed71994bb42def96837b3d0cad9c"
 
 [[sources]]
 slug = "science-pg39975"
@@ -2526,6 +2840,7 @@ url = "https://www.gutenberg.org/cache/epub/39975/pg39975.txt"
 sha256 = "9c2aed7e7e07b058222e9d287e73721f070b6ac5850c8079683fb2a8ab2a0a91"
 title = "Audubon and His Journals, Volume 1"
 author = "John James Audubon"
+ingested_sha256 = "76acf872dffe92876e62e209d4767b7c56688e4f16e07a8a364939fd178f8b50"
 
 [[sources]]
 slug = "science-pg40256"
@@ -2534,6 +2849,7 @@ url = "https://www.gutenberg.org/cache/epub/40256/pg40256.txt"
 sha256 = "ebd90b0fa1540b49e108532c254bc4c5a0bd1cf350cf35f23f577daa2d8af260"
 title = "Barium: A Cause of the Loco-Weed Disease"
 author = "Albert C. Crawford"
+ingested_sha256 = "998c04dc6a27d3708be296440ae7961d80f259d4666707541a582e0627d38ca1"
 
 [[sources]]
 slug = "science-pg42234"
@@ -2542,6 +2858,7 @@ url = "https://www.gutenberg.org/cache/epub/42234/pg42234.txt"
 sha256 = "a745aba5a56e604e842466f612091f5491db70a3e871b8e0b87c6d41e5a97998"
 title = "The Storm"
 author = "Daniel Defoe"
+ingested_sha256 = "52e67079e33dc314079ccc702b7460f7d2b90846bb07f438ea4509aa144dd755"
 
 [[sources]]
 slug = "science-pg42414"
@@ -2550,6 +2867,7 @@ url = "https://www.gutenberg.org/cache/epub/42414/pg42414.txt"
 sha256 = "91ebb4965de48994818f40bc6ce3902cb440c01ff6ceaa2ab179c87348ad3d5b"
 title = "The Animal World, A Book of Natural History"
 author = "Theodore Wood"
+ingested_sha256 = "b177d5bfbf4a3f0b704230316e67b235271a7c92d5f397e85f8102f2267d637c"
 
 [[sources]]
 slug = "science-pg44638"
@@ -2558,6 +2876,7 @@ url = "https://www.gutenberg.org/cache/epub/44638/pg44638.txt"
 sha256 = "39a2219bf435c759fed24532a08b3102bfa2013b8dd88e30f087dfa512e4a3a0"
 title = "Plant lore, legends, and lyrics"
 author = "Richard Folkard"
+ingested_sha256 = "46d2bcab9099ab4f51e1b522bb37c7de2a4f60a126a4c7d8d940da845701f213"
 
 [[sources]]
 slug = "science-pg45676"
@@ -2566,6 +2885,7 @@ url = "https://www.gutenberg.org/cache/epub/45676/pg45676.txt"
 sha256 = "21e82021663b8632caca78f6ff24c71e6a28f69a3fc9e48fa818dddaf7be6a82"
 title = "Flower Guide: Wild Flowers East of the Rockies"
 author = "Chester A. Reed"
+ingested_sha256 = "34ee0e04a6eb0270359087a167a8ce11bdcd8fcb3df96bd5fb0dcfd2275a5c47"
 
 [[sources]]
 slug = "science-pg45708"
@@ -2574,6 +2894,7 @@ url = "https://www.gutenberg.org/cache/epub/45708/pg45708.txt"
 sha256 = "f8bfec7fb47eb207e66ee228518848790425e84a833125f53802bd43744724ca"
 title = "Spring notes from Tennessee"
 author = "Bradford Torrey"
+ingested_sha256 = "77864364bb52212f18646d4cf435068f58af2dbdf4457708e2e4bf35f8732940"
 
 [[sources]]
 slug = "science-pg45729"
@@ -2582,6 +2903,7 @@ url = "https://www.gutenberg.org/cache/epub/45729/pg45729.txt"
 sha256 = "9ec36c487cd40b0e919f5db9a8ea0d5c5b35d9e15c67a30e5f4fa802020818df"
 title = "Buffon's Natural History. Volume 04 (of 10)"
 author = "comte de Georges Louis Leclerc Buffon"
+ingested_sha256 = "08db5b4facb4fe29647d760a6411b4299677dbd2c6d8ef2e86ff2dbacc75d0a8"
 
 [[sources]]
 slug = "science-pg45820"
@@ -2590,6 +2912,7 @@ url = "https://www.gutenberg.org/cache/epub/45820/pg45820.txt"
 sha256 = "ad326c79275ae38f7248be6a2cfa827fcabcca25696a1a778fb8b5b6c19c4a68"
 title = "Buffon's Natural History. Volume 07 (of 10)"
 author = "comte de Georges Louis Leclerc Buffon"
+ingested_sha256 = "70addd5167cec5a8e4947838f4fb5c091c5c6f736fcaf3170118efa24a536716"
 
 [[sources]]
 slug = "science-pg46416"
@@ -2598,6 +2921,7 @@ url = "https://www.gutenberg.org/cache/epub/46416/pg46416.txt"
 sha256 = "b2f2a414717a627267597975635673a5d6b24bf06ee65575d2f554884e725f3e"
 title = "Birds' Nests, Eggs and Egg-Collecting"
 author = "Richard Kearton"
+ingested_sha256 = "7dac429aeddc60531245014f84efefd8f1e32f287bc2e8356c3e8e7ab5740fe9"
 
 [[sources]]
 slug = "science-pg46764"
@@ -2606,6 +2930,7 @@ url = "https://www.gutenberg.org/cache/epub/46764/pg46764.txt"
 sha256 = "02f1c8f79c8e1e58e46e6a9e5de266f21a51249288a8333b260edb68211197ab"
 title = "The Birds of Washington (Volume 1 of 2)"
 author = "William Leon Dawson"
+ingested_sha256 = "c1e5ce882f4e360e5817b84889e7d38c95860941e4f01ce1eae51afcd862269c"
 
 [[sources]]
 slug = "science-pg47938"
@@ -2614,6 +2939,7 @@ url = "https://www.gutenberg.org/cache/epub/47938/pg47938.txt"
 sha256 = "088cf8726764e07a5654a6a72100216df0ca02271182a15ffb68bdf5a7256f4c"
 title = "On Digestive Proteolysis"
 author = "R. H. Chittenden"
+ingested_sha256 = "3fe493ea12a9f7c597afdc1e3377fce44ffb38668567ad39f72d58853130124b"
 
 [[sources]]
 slug = "science-pg48280"
@@ -2622,6 +2948,7 @@ url = "https://www.gutenberg.org/cache/epub/48280/pg48280.txt"
 sha256 = "3409bcfc685d4cc1adfbe43b19eb341f4c9ca8483e991efcc6755f0ca3e4fc05"
 title = "Life Movements in Plants, Volume I"
 author = "Jagadis Chandra Bose"
+ingested_sha256 = "6aa37db8ab5044de75e241153b01c40498508e07c7212c8b8bbf36325b74e8d6"
 
 [[sources]]
 slug = "science-pg48516"
@@ -2630,6 +2957,7 @@ url = "https://www.gutenberg.org/cache/epub/48516/pg48516.txt"
 sha256 = "8553c7532b2c0861f29a01e0450e270857c9389c9bd96caab684c4798d376cdd"
 title = "Curiosities of Science, Past and Present"
 author = "John Timbs"
+ingested_sha256 = "b04378a04da58350cf69f40945a391d3c8a05c5cfdbc14670b411418a85add69"
 
 [[sources]]
 slug = "science-pg51078"
@@ -2638,6 +2966,7 @@ url = "https://www.gutenberg.org/cache/epub/51078/pg51078.txt"
 sha256 = "056a79e9c56e5b5dd5ed8fd3e04215ed3de3eddbf5135a8b4f07f923fd88d904"
 title = "Venoms: Venomous Animals and Antivenomous Serum-therapeutics"
 author = "A. Calmette"
+ingested_sha256 = "3afa116b62f8f807318457d78216e5564523e4f83800c4b684562be8613fe23e"
 
 [[sources]]
 slug = "science-pg51284"
@@ -2646,6 +2975,7 @@ url = "https://www.gutenberg.org/cache/epub/51284/pg51284.txt"
 sha256 = "c825f4bdb4602fb7172185286c55429c564fe0079c01c708ffa771fc0c57a93b"
 title = "The Ways of the Planets"
 author = "Martha Evans Martin"
+ingested_sha256 = "76336862d4f94d43d957eb80a41113abc3010365fdfc15d3fa8ed7d619b2b579"
 
 [[sources]]
 slug = "science-pg52923"
@@ -2654,6 +2984,7 @@ url = "https://www.gutenberg.org/cache/epub/52923/pg52923.txt"
 sha256 = "6a958e680d4b89a917890035f8c7b4b82dc0ebe5d11202dc559f8adda8769622"
 title = "Memoir and Correspondence of Caroline Herschel"
 author = "Mrs. John Herschel"
+ingested_sha256 = "9c9a4998f46dc72f9f0ad790328af4c5b3582496646212de68b300527583af72"
 
 [[sources]]
 slug = "science-pg54376"
@@ -2662,6 +2993,7 @@ url = "https://www.gutenberg.org/cache/epub/54376/pg54376.txt"
 sha256 = "53cd7ba2f6307ba62fb4aa73799d0b557f0ee009217f140990de5ef2126c9bb4"
 title = "Pleasant Ways in Science"
 author = "Richard A. Proctor"
+ingested_sha256 = "ac6a258d7f7ef7add66047c6293140d8d914202185c70082b6140b84acbcd5d8"
 
 [[sources]]
 slug = "science-pg55150"
@@ -2670,6 +3002,7 @@ url = "https://www.gutenberg.org/cache/epub/55150/pg55150.txt"
 sha256 = "893d3d8fc0cbe7a43b1314a282e1d762593eb7215a1c235ef4bab9903ac645f1"
 title = "Many-Storied Mountains: The Life of Glacier National Park"
 author = "Greg Beaumont"
+ingested_sha256 = "6a49149db3e05160f6c978ac145ee9804f0694678fe9c15e3552e86ee8e5a045"
 
 [[sources]]
 slug = "science-pg55631"
@@ -2678,6 +3011,7 @@ url = "https://www.gutenberg.org/cache/epub/55631/pg55631.txt"
 sha256 = "645e69970b80f144feed1b49eb063c8b2d80b3b4af19b61c861cc8c3a606bf01"
 title = "History of Chemistry, Volume 2 (of 2)"
 author = "T. E. Thorpe"
+ingested_sha256 = "82adf25fc4cc417afc5e244510ed83f0472378080c9b6bc34b169c9419ab6acf"
 
 [[sources]]
 slug = "science-pg57280"
@@ -2686,6 +3020,7 @@ url = "https://www.gutenberg.org/cache/epub/57280/pg57280.txt"
 sha256 = "6bed06aea3a9eba5043cb73930ffead3630f5dae050d4eb1a49059e9e576530f"
 title = "The Fern Bulletin, April 1912"
 author = "Various"
+ingested_sha256 = "2733ddc1b23883f2bc721761ebe1b16e1819eb5d74b692e57a0f576886e66ea5"
 
 [[sources]]
 slug = "science-pg57530"
@@ -2694,6 +3029,7 @@ url = "https://www.gutenberg.org/cache/epub/57530/pg57530.txt"
 sha256 = "a35355db15cddfd21a5cfb9548154ffe742d3891a79f7a0c9850abe95d040e2f"
 title = "Volcanoes of the United States"
 author = "Steven R. Brantley"
+ingested_sha256 = "483a76dd983e84dd49b3b1d9af6985aa4d4cf01e15dfb55e8188e5aadf76e3a1"
 
 [[sources]]
 slug = "science-pg58235"
@@ -2702,6 +3038,7 @@ url = "https://www.gutenberg.org/cache/epub/58235/pg58235.txt"
 sha256 = "1bf38fbaeab55c5b821945d31f8705ce3b30e7f17b9e4d47c638e11ed8d2897a"
 title = "Beach Rambles in Search of Seaside Pebbles and Crystals"
 author = "John George Francis"
+ingested_sha256 = "e31bebc1fb0fe81f72607d1fd4f2cccf49a474cb5591ad13515df23857b11e1d"
 
 [[sources]]
 slug = "science-pg58695"
@@ -2710,6 +3047,7 @@ url = "https://www.gutenberg.org/cache/epub/58695/pg58695.txt"
 sha256 = "98c91da852148376ecf0065f8066126ad60aa98bf8a4598c29d751f8dac13f0a"
 title = "Whale Primer, with Special Attention to the California Gray Whale"
 author = "Theodore J. Walker"
+ingested_sha256 = "c3772ef97d3f16230e5157440bb08071adc195426df94932ce6f43fb0d2456bc"
 
 [[sources]]
 slug = "science-pg59171"
@@ -2718,6 +3056,7 @@ url = "https://www.gutenberg.org/cache/epub/59171/pg59171.txt"
 sha256 = "a55ecb2654a027e6f92880f79c295b05928821c77ae4889925c09c74710e79f7"
 title = "Degeneration: A Chapter in Darwinism"
 author = "Sir E. Ray Lankester"
+ingested_sha256 = "71b1632df2bc0b330ba179cc7efd381b86a0f1bf831cde49d596350e5e49c67a"
 
 [[sources]]
 slug = "science-pg59475"
@@ -2726,6 +3065,7 @@ url = "https://www.gutenberg.org/cache/epub/59475/pg59475.txt"
 sha256 = "9a112a48bdf8c16fd1f65b52380d6617742723b062f674e2832ce61c666af079"
 title = "Wild Animals of North America"
 author = "Edward William Nelson"
+ingested_sha256 = "748af01ddbdb5f131ed534a1c207e0ef498b3a13b972a983c2408e99510dbec7"
 
 [[sources]]
 slug = "science-pg59512"
@@ -2734,6 +3074,7 @@ url = "https://www.gutenberg.org/cache/epub/59512/pg59512.txt"
 sha256 = "627822b8743ff3a89ed6b25690c04e26a9691d70fac77f8b9629c88b3e636f40"
 title = "In the Wilds of South America"
 author = "Leo E. Miller"
+ingested_sha256 = "d0db38b30f12105a334d609aa6a3bde7e34f462a7f09d10046e55d00c9848a13"
 
 [[sources]]
 slug = "science-pg62884"
@@ -2742,6 +3083,7 @@ url = "https://www.gutenberg.org/cache/epub/62884/pg62884.txt"
 sha256 = "7cb86c9879ed7deb7247112b2cbed607864cf879ff1b312b8027c012faa6bd7c"
 title = "The flowering plants of South Africa; vol. 1"
 author = "Pole Evans, I. B. (Illtyd Buller), 1879-1968 [Editor]"
+ingested_sha256 = "e59d85a113adcf513da083e9e644906065351e99466673a9602fa7f22338ccae"
 
 [[sources]]
 slug = "science-pg6321"
@@ -2750,6 +3092,7 @@ url = "https://www.gutenberg.org/cache/epub/6321/pg6321.txt"
 sha256 = "def662f973b7e3fc3095ab5171d1df5fd65f8f632548b765e89e7bace0e99c44"
 title = "The Naturalist in Nicaragua"
 author = "Thomas Belt"
+ingested_sha256 = "e925cdc683e5caa2f166b0608c4831b479aac29020c557ef55e42f49d3f24841"
 
 [[sources]]
 slug = "science-pg63422"
@@ -2758,6 +3101,7 @@ url = "https://www.gutenberg.org/cache/epub/63422/pg63422.txt"
 sha256 = "0f8906e2634506ebe699c591694f11b3a23da1676d4fc3e896b2c21d8fb065f7"
 title = "Roentgen Rays and Phenomena of the Anode and Cathode."
 author = "Edward P. Thompson"
+ingested_sha256 = "b2ea607727a8de4ed489bde76745720f87e7db46d126c0a49bf481cb53814dca"
 
 [[sources]]
 slug = "science-pg63923"
@@ -2766,6 +3110,7 @@ url = "https://www.gutenberg.org/cache/epub/63923/pg63923.txt"
 sha256 = "21277353c700fb6e019cf8cb37f5bef3d50858b1242aacda65c2646a7f62ffc0"
 title = "The Old Red Sandstone; or, New Walks in an Old Field"
 author = "Hugh Miller"
+ingested_sha256 = "a44eb4bc5933eae44d438a8b764c823977927759aee827b67b0a36e15ef0e73c"
 
 [[sources]]
 slug = "science-pg63992"
@@ -2774,6 +3119,7 @@ url = "https://www.gutenberg.org/cache/epub/63992/pg63992.txt"
 sha256 = "22475ae7de04027d61b5ad56b65555cd106c86e4199d72714a8898bfc168e9af"
 title = "The Real Fairy Folk"
 author = "Louise Jamison"
+ingested_sha256 = "40aff1d2002241b6d4dd848d823d7430e08b9bfb747db193b92b5dd4800a9ee9"
 
 [[sources]]
 slug = "science-pg64649"
@@ -2782,6 +3128,7 @@ url = "https://www.gutenberg.org/cache/epub/64649/pg64649.txt"
 sha256 = "549a7fb8197b7edcd66b664b0f8fceae59d61f59ccf3df2247323bc9980b7a1e"
 title = "The Herschels and Modern Astronomy"
 author = "Agnes M. Clerke"
+ingested_sha256 = "dba5366370ba852cd1a7f92eb89ee052480284284003ab29ecdc2ed360321b3d"
 
 [[sources]]
 slug = "science-pg66246"
@@ -2790,6 +3137,7 @@ url = "https://www.gutenberg.org/cache/epub/66246/pg66246.txt"
 sha256 = "055e4bf1aa0917f9aeea32591707a52c8569229f0d71f9a18302131de476db1b"
 title = "Our Atomic World: The Story of Atomic Energy"
 author = "C. Jackson Craven"
+ingested_sha256 = "517713c4d29e67941b54db4ff5fc7cdfad9f2c8e4226c3ec200af4b191f4510c"
 
 [[sources]]
 slug = "science-pg66669"
@@ -2798,6 +3146,7 @@ url = "https://www.gutenberg.org/cache/epub/66669/pg66669.txt"
 sha256 = "f5635c738da3a47e05ecd255f00385c93310c0948e0b21e0e08210011db2ba81"
 title = "The Sea-Shore, Shown to the Children"
 author = "Theodore Wood"
+ingested_sha256 = "76ff7d0acd6521d6c78cc71f897b16c68765b48653afc267cd18727ff30d5a8d"
 
 [[sources]]
 slug = "science-pg66726"
@@ -2806,6 +3155,7 @@ url = "https://www.gutenberg.org/cache/epub/66726/pg66726.txt"
 sha256 = "3edb1d73c50b5f52d38daaec727f703264eba6a47c6906de37ec8acfbd90c898"
 title = "More Minor Horrors"
 author = "Sir A. E. Shipley"
+ingested_sha256 = "811ca8c9bf26a5599587bf35d3e894dd590c06c2bfb7992b97150293d405a8ad"
 
 [[sources]]
 slug = "science-pg67201"
@@ -2814,6 +3164,7 @@ url = "https://www.gutenberg.org/cache/epub/67201/pg67201.txt"
 sha256 = "75bc017f30471a28eabd1d86b3527adddf468848cdc49718648ed7cadeceed45"
 title = "More Beetles"
 author = "Jean-Henri Fabre"
+ingested_sha256 = "8f31595acb5d2c820e25c7a7ea838b17ce3e3b8e6f0c4d462f854d7d5e44d60c"
 
 [[sources]]
 slug = "science-pg68670"
@@ -2822,6 +3173,7 @@ url = "https://www.gutenberg.org/cache/epub/68670/pg68670.txt"
 sha256 = "8bf82f9788c5677588a3cad7ea9e344116890c7f2f4d13b27343d9b167f7f056"
 title = "The micro-organisms of the soil"
 author = "Edward J. Russell"
+ingested_sha256 = "e4f474d8a5bde16586c533e66d3cad5c75ce28042b1c46003ef57f7eee10de31"
 
 [[sources]]
 slug = "science-pg69093"
@@ -2830,6 +3182,7 @@ url = "https://www.gutenberg.org/cache/epub/69093/pg69093.txt"
 sha256 = "128443b65ef8dfd38a9f06bd243ce24fab7cc09166a867f06e53231bd1b82b7f"
 title = "History of scientific ideas"
 author = "William Whewell"
+ingested_sha256 = "23d9381c17d2b41a775f262ccd6901149e50130cc83b68435ff602885efe5d3c"
 
 [[sources]]
 slug = "science-pg69109"
@@ -2838,6 +3191,7 @@ url = "https://www.gutenberg.org/cache/epub/69109/pg69109.txt"
 sha256 = "b32d0f8ac2e523ff2ead259a3200a45cf07e59de7764f277d6790b4b913daa78"
 title = "The cretaceous birds of New Jersey"
 author = "Storrs L. Olson"
+ingested_sha256 = "71248c25e359bff464314acd6a67ce14b6d96b0a97e50b92edfaf6d360d77b40"
 
 [[sources]]
 slug = "science-pg69362"
@@ -2846,6 +3200,7 @@ url = "https://www.gutenberg.org/cache/epub/69362/pg69362.txt"
 sha256 = "7f96b7996c39097a5fbb5fc589ac44adb020a7008126d1ded8ef1384682bb456"
 title = "Mendel's principles of heredity: A defence"
 author = "William Bateson"
+ingested_sha256 = "546000e9ebd89ae80a301859545445968283a3b8bf7a7da6f4505b1878dec52c"
 
 [[sources]]
 slug = "science-pg69985"
@@ -2854,6 +3209,7 @@ url = "https://www.gutenberg.org/cache/epub/69985/pg69985.txt"
 sha256 = "3811b83e06f8ee5bba3df78ba1e4aba1049959b997d2e78bce40c00845997f25"
 title = "Ilex cassine, the aboriginal North American tea"
 author = "Edwin M. Hale"
+ingested_sha256 = "b09f83ff2cb7930f2223fafae7f78a40c0e6152323538cee1d36d8b3c63d8339"
 
 [[sources]]
 slug = "science-pg70045"
@@ -2862,6 +3218,7 @@ url = "https://www.gutenberg.org/cache/epub/70045/pg70045.txt"
 sha256 = "c4b97db25c215c00d7d32ac4f39582c1f1bf529d2945ef4e5d464c8b394d6d6b"
 title = "Coloured engravings of heaths; vol. 2"
 author = "active 1799-1828 Henry Cranke Andrews"
+ingested_sha256 = "1e55738a73913b4e45b99c504b08163c1e2ec3d4b0e8bb60c8d42031abca0e90"
 
 [[sources]]
 slug = "science-pg71454"
@@ -2870,6 +3227,7 @@ url = "https://www.gutenberg.org/cache/epub/71454/pg71454.txt"
 sha256 = "e0eca02f714114c5d60d18cf6702acd769cf1f18e726f752b13574dde6c3153a"
 title = "Guide to the study of animal ecology"
 author = "Charles C. Adams"
+ingested_sha256 = "a0f18d675ef7d6937e322bb8a54be4bc0473a82fdb3e9371afca42e100c0f263"
 
 [[sources]]
 slug = "science-pg71514"
@@ -2878,6 +3236,7 @@ url = "https://www.gutenberg.org/cache/epub/71514/pg71514.txt"
 sha256 = "82d236a8cefe8e14c0d4b86ac29853068c8b9168db966003d22aa145bcc84c4f"
 title = "The Kansas University science bulletin, Vol. I, No. 8, September 1902"
 author = "Various [Editor]"
+ingested_sha256 = "2eddb119bba90b3932936598853ffa558c44f55f74f91203bd046233f2b8c7a3"
 
 [[sources]]
 slug = "science-pg72330"
@@ -2886,6 +3245,7 @@ url = "https://www.gutenberg.org/cache/epub/72330/pg72330.txt"
 sha256 = "5a3016833af53aa10e1d6092b3c4aebacc67f6e15d0c21708e67cd5397bcd06a"
 title = "The mighty deep"
 author = "Agnes Giberne"
+ingested_sha256 = "adf08b10a11f81d8fd008a71c5df08e8bd6ace4c6ca8613f66f70fbbda3509b5"
 
 [[sources]]
 slug = "science-pg72936"
@@ -2894,6 +3254,7 @@ url = "https://www.gutenberg.org/cache/epub/72936/pg72936.txt"
 sha256 = "92e2a06c0f94320c02f19884159c40cc923d0071d68535c98d2d413eaedb4a56"
 title = "The life of Jean Henri Fabre, the entomologist, 1823-1910"
 author = "Augustin Fabre"
+ingested_sha256 = "2be5b015ef30319c3bace5f64cc46ebe9eaffd5237e25d59a4d9a66f7a9f776d"
 
 [[sources]]
 slug = "science-pg73234"
@@ -2902,6 +3263,7 @@ url = "https://www.gutenberg.org/cache/epub/73234/pg73234.txt"
 sha256 = "3e6bce461969d33a3b7e8ae95edafc4a5384e9137b6f618a8323f2138b924694"
 title = "Robert Boyle"
 author = "Flora Masson"
+ingested_sha256 = "bc18a22404e72245911be2b312977758b0dfffc14bdf2ae146ee274238143d63"
 
 [[sources]]
 slug = "science-pg74948"
@@ -2910,6 +3272,7 @@ url = "https://www.gutenberg.org/cache/epub/74948/pg74948.txt"
 sha256 = "673476e919f2624ade00f65995884080d2007dee36175e7b3ff2917f53d74da9"
 title = "A new system of chemical philosophy, Volume 2, Part 1"
 author = "John Dalton"
+ingested_sha256 = "6a4368304b0c349abe1dda627518b7cfc7bb3d3eb6728d195a7e0475d7994f3b"
 
 [[sources]]
 slug = "science-pg75203"
@@ -2918,6 +3281,7 @@ url = "https://www.gutenberg.org/cache/epub/75203/pg75203.txt"
 sha256 = "ec3ce7141868e443c337c1296040102088a8dea08325460d458b04eb90fb4dfe"
 title = "Chemistry for beginners"
 author = "Hereward Carrington"
+ingested_sha256 = "2a4a09293b3e13823baaa13c341b6fc9dd65c723b790b5b3736e40a158f7d5bb"
 
 [[sources]]
 slug = "science-pg75287"
@@ -2926,6 +3290,7 @@ url = "https://www.gutenberg.org/cache/epub/75287/pg75287.txt"
 sha256 = "80a411cef2db58969e3340ca9e48882b4c6463d2452e7d6c11d7750e307a7003"
 title = "Bird studies with a camera"
 author = "Frank M. Chapman"
+ingested_sha256 = "5aef9da050c2718c410569db508893064ee4efa6baee9d3d956a720457be1bcb"
 
 [[sources]]
 slug = "science-pg77076"
@@ -2934,6 +3299,7 @@ url = "https://www.gutenberg.org/cache/epub/77076/pg77076.txt"
 sha256 = "dcff6f21bae0349b2aca3df5c662e89f596fa0a053da6c6a334b73b4dc35e35c"
 title = "Classics of modern science"
 author = "Knickerbocker, William S. (William Skinkle), 1892-1972 [Editor]"
+ingested_sha256 = "cc8b6f5107662643dec14ac4f2e4ae6ec4865c0a3d07f80eae2b7363bc0bc0fe"
 
 [[sources]]
 slug = "science-pg77792"
@@ -2942,6 +3308,7 @@ url = "https://www.gutenberg.org/cache/epub/77792/pg77792.txt"
 sha256 = "9f87c504a73508d1732a1508167fcef67a7c55601acc2fc1db49965fe0d4cc02"
 title = "The story of the universe. Volume 2 (of 4)"
 author = "Singleton, Esther, 1865-1930 [Editor]"
+ingested_sha256 = "f915407876a729d99bfef6765a43b2801556998132e79e0af428b5e7b1af5f0b"
 
 [[sources]]
 slug = "science-pg77827"
@@ -2950,6 +3317,7 @@ url = "https://www.gutenberg.org/cache/epub/77827/pg77827.txt"
 sha256 = "c05c704c20fdfc5eaf21e18ac12876427bdc261d4f1417b26af3975ec454fc36"
 title = "The story of the universe. Volume 3 (of 4)"
 author = "Singleton, Esther, 1865-1930 [Editor]"
+ingested_sha256 = "8aa128af9017fa99393d89fc511ff76b631a1045a6299ba61bc433a961a85af0"
 
 [[sources]]
 slug = "science-pg78368"
@@ -2958,6 +3326,7 @@ url = "https://www.gutenberg.org/cache/epub/78368/pg78368.txt"
 sha256 = "fa01feb7108c10df06e1878631908a49f38419f2bb0e0eefe965370a08ac6b71"
 title = "The nature of living matter"
 author = "Lancelot Thomas Hogben"
+ingested_sha256 = "31b8d04101ffeb50b45bab8a64baa4bfe72fbc1c7e5298181a164f5060558143"
 
 [[sources]]
 slug = "science-pg79181"
@@ -2966,6 +3335,7 @@ url = "https://www.gutenberg.org/cache/epub/79181/pg79181.txt"
 sha256 = "5a3bca350d6d0fec55719e8defb1525168e7cc7b9272a723bf578a2aaa22f95b"
 title = "Chemistry"
 author = "John Howard Appleton"
+ingested_sha256 = "c249e91e66ef51ecf36f899f1df5f370d5be4c519aa9bcd4e15c6750985fb714"
 
 [[sources]]
 slug = "technology-pg11648"
@@ -2974,6 +3344,7 @@ url = "https://www.gutenberg.org/cache/epub/11648/pg11648.txt"
 sha256 = "7f49b6b5b47efa8642eb2c7b57db36aba514a7be024a22be0e31e7fb1c8c458e"
 title = "Scientific American Supplement, No. 595, May 28, 1887"
 author = "Various"
+ingested_sha256 = "9d6ab32e8a9dff0bf4c64ab8e275b96e5de545e01165a1cc1004aa11aba93a37"
 
 [[sources]]
 slug = "technology-pg12069"
@@ -2982,6 +3353,7 @@ url = "https://www.gutenberg.org/cache/epub/12069/pg12069.txt"
 sha256 = "f87da9d1edb4eafeddef1bd3c587121d479c701485d8dd2ae21eb1d070a09102"
 title = "Joe Tilden's Recipes for Epicures"
 author = "Joe Tilden"
+ingested_sha256 = "00f60c43e168ee444827586beee50960588387ae988d54964a8465b211f15231"
 
 [[sources]]
 slug = "technology-pg12655"
@@ -2990,6 +3362,7 @@ url = "https://www.gutenberg.org/cache/epub/12655/pg12655.txt"
 sha256 = "78e63335ced1fa63f6164fe6cc145eab26a559501094e2d9ec44574f96e4028a"
 title = "The Boy Mechanic, Volume 1: 700 Things for Boys to Do"
 author = "Windsor, H. H. (Henry Haven), 1859-1924 [Editor]"
+ingested_sha256 = "60c8cfa212f2a52f18ed89badb6b7c76e2f36e4ca271c1b226ac82da0abad7d4"
 
 [[sources]]
 slug = "technology-pg13962"
@@ -2998,6 +3371,7 @@ url = "https://www.gutenberg.org/cache/epub/13962/pg13962.txt"
 sha256 = "a1a433b40f11cdd6a6cc070fe4523ba2e6418f1e513a66adff1d32dc02697449"
 title = "Scientific American Supplement, No. 455, September 20, 1884"
 author = "Various"
+ingested_sha256 = "99e05b630613add419a9503e14c728d1402e13242b67c693ad64f5a0e780082a"
 
 [[sources]]
 slug = "technology-pg15193"
@@ -3006,6 +3380,7 @@ url = "https://www.gutenberg.org/cache/epub/15193/pg15193.txt"
 sha256 = "d3d1a3e58b6c474549293fda24f95948aa28fbede47ce792de880377643df32e"
 title = "Scientific American Supplement, No. 841, February 13, 1892"
 author = "Various"
+ingested_sha256 = "22fb4115e72a916ded1e3d2dc53a18969ac0696b6513c74d65a2ec0624760078"
 
 [[sources]]
 slug = "technology-pg16360"
@@ -3014,6 +3389,7 @@ url = "https://www.gutenberg.org/cache/epub/16360/pg16360.txt"
 sha256 = "da4b2468db3ce2352261b714048e3bc38a1942a2466703935b96fee003aeed60"
 title = "Scientific American Supplement, No. 561, October 2, 1886"
 author = "Various"
+ingested_sha256 = "e53737ababb507c375968f3c4a3928efeda62459463b7cc95fa433763cc7edba"
 
 [[sources]]
 slug = "technology-pg20317"
@@ -3022,6 +3398,7 @@ url = "https://www.gutenberg.org/cache/epub/20317/pg20317.txt"
 sha256 = "4cb53d7618786a1fdadbf45292333a4a3cd06bcc416fc4664ff82eb2b733b050"
 title = "A Treatise on Staff Making and Pivoting"
 author = "Eugene Edward Hall"
+ingested_sha256 = "198d56e938c584506773bd106ea1edc704d2a579314f2f4168d02bf9ac96cc8d"
 
 [[sources]]
 slug = "technology-pg22684"
@@ -3030,6 +3407,7 @@ url = "https://www.gutenberg.org/cache/epub/22684/pg22684.txt"
 sha256 = "d470cc1596a5e1f51d958d16f6c40c90e426682cdcbd956949f580758f62fbf9"
 title = "Patent Laws of the Republic of Hawaii"
 author = "Hawaii"
+ingested_sha256 = "936824ca4aa30c25e464999cf544871477a5dc583271bbc6182ba5668573ee8d"
 
 [[sources]]
 slug = "technology-pg26120"
@@ -3038,6 +3416,7 @@ url = "https://www.gutenberg.org/cache/epub/26120/pg26120.txt"
 sha256 = "ea9148f8333556ec3ca621f9158c0717e058a99c15f158fefc19d884a0e5437c"
 title = "Chats on Old Lace and Needlework"
 author = "Emily Leigh Lowes"
+ingested_sha256 = "145d9f50779a21dd377484bf6b53e4c0cd35f51cf5f9aaef653b593e16e1de11"
 
 [[sources]]
 slug = "technology-pg27557"
@@ -3046,6 +3425,7 @@ url = "https://www.gutenberg.org/cache/epub/27557/pg27557.txt"
 sha256 = "68eb86d52f4209a3b236e3be44fe5ad77d20247c82065a37109234a40a1731c3"
 title = "Learning to Fly: A Practical Manual for Beginners"
 author = "Claude Grahame-White"
+ingested_sha256 = "0639100e1b861c3e37202a3ad0ce17671c839b0a0748a3c2c83c1dfe5893403d"
 
 [[sources]]
 slug = "technology-pg28109"
@@ -3054,6 +3434,7 @@ url = "https://www.gutenberg.org/cache/epub/28109/pg28109.txt"
 sha256 = "602fc27cb46914ceebb92037ac748de2a6df40928e8e1581c4c2f7a7a6d643a5"
 title = "How to make rugs"
 author = "Candace Wheeler"
+ingested_sha256 = "8780d2c88925f07ad2815ce899b7e9ac2dbf7b3973312e49e35b9c24476a2ee8"
 
 [[sources]]
 slug = "technology-pg29982"
@@ -3062,6 +3443,7 @@ url = "https://www.gutenberg.org/cache/epub/29982/pg29982.txt"
 sha256 = "cc0a28323ba4d4bb3ab62cc995bab28518d416469b4b6a043ad715641c4bdae1"
 title = "Culture and Cooking; Or, Art in the Kitchen"
 author = "Catherine Owen"
+ingested_sha256 = "1ce0e155b6ddaeb7a90adf9783d7d8e749184f7a3c6fc3c7a020f5988fa365f5"
 
 [[sources]]
 slug = "technology-pg31179"
@@ -3070,6 +3452,7 @@ url = "https://www.gutenberg.org/cache/epub/31179/pg31179.txt"
 sha256 = "a6ae2b825af5ca6168a039197071a497618d48c127e16d4f7b69483dfd81bb4b"
 title = "Fulton's \"Steam Battery\": Blockship and Catamaran"
 author = "Howard Irving Chapelle"
+ingested_sha256 = "10254e1151f9bdc03efdd481352777ba3b5e82e2680eb2e7b87ee462174f1897"
 
 [[sources]]
 slug = "technology-pg34701"
@@ -3078,6 +3461,7 @@ url = "https://www.gutenberg.org/cache/epub/34701/pg34701.txt"
 sha256 = "f7043944e165d37491249e0d63de40fbaa556fd17ebe50e5a31ca2830e4ceaba"
 title = "Steam Engines"
 author = "Anonymous"
+ingested_sha256 = "15d3f30a510df3f8cfb7ffe2c4a6420bbf738d4813b5116689740f2130f4f153"
 
 [[sources]]
 slug = "technology-pg37671"
@@ -3086,6 +3470,7 @@ url = "https://www.gutenberg.org/cache/epub/37671/pg37671.txt"
 sha256 = "bc5bd5b920e3df73521dd56ee25a1eb13b08a2afd40ccbda31cc5bd59b803912"
 title = "The Panama Canal and Its Makers"
 author = "Vaughan Cornish"
+ingested_sha256 = "396a153f03d7a0da6a29363659b20d9058112b60c1149d2f5816b1a26f794a04"
 
 [[sources]]
 slug = "technology-pg404"
@@ -3094,6 +3479,7 @@ url = "https://www.gutenberg.org/cache/epub/404/pg404.txt"
 sha256 = "69f9dcd0e00114e110f72b5f205e706bb4aa7be88710b3034d1f440f7d2b9b84"
 title = "Industrial Biography: Iron Workers and Tool Makers"
 author = "Samuel Smiles"
+ingested_sha256 = "9aa327688bbf765554312ff1f32a5841104025a2b765cf463783feafcb11cd09"
 
 [[sources]]
 slug = "technology-pg42154"
@@ -3102,6 +3488,7 @@ url = "https://www.gutenberg.org/cache/epub/42154/pg42154.txt"
 sha256 = "140f4d5789477ce8ec3b7c8cb096b88bfe5e4de717e1b42784ca238ed5146d14"
 title = "Miss Leslie's Lady's New Receipt-Book, 3rd ed."
 author = "Eliza Leslie"
+ingested_sha256 = "5922026f16a41f9e7bc6639edc108b24e1c8b13cd089cc2b1cc240a64ecad4d2"
 
 [[sources]]
 slug = "technology-pg42344"
@@ -3110,6 +3497,7 @@ url = "https://www.gutenberg.org/cache/epub/42344/pg42344.txt"
 sha256 = "f550fa504e4d6cfae85c0fadee99d7a6d5992b6a97169a992ec8410314fd79c3"
 title = "My Airships; The Story of My Life"
 author = "Alberto Santos-Dumont"
+ingested_sha256 = "20f852d262863276833bbe456044046ebcacc950f8c86ea386e24cee2f6fe7c1"
 
 [[sources]]
 slug = "technology-pg43027"
@@ -3118,6 +3506,7 @@ url = "https://www.gutenberg.org/cache/epub/43027/pg43027.txt"
 sha256 = "d07a5fd22ac9bd65fb886c95c68fb3af2d6299a4cbc0fa7ad49895c202789c72"
 title = "Getting Gold: A Gold-Mining Handbook for Practical Men"
 author = "J. C. F. Johnson"
+ingested_sha256 = "b875dfb8bf516c42230da4f157310975c2466e96dffe8d27649274eafee91ff7"
 
 [[sources]]
 slug = "technology-pg44188"
@@ -3126,6 +3515,7 @@ url = "https://www.gutenberg.org/cache/epub/44188/pg44188.txt"
 sha256 = "e055c8a37bf6fbd6783d93b21d8800bbb1349ad0f4048f8b52816ea0878c5ae8"
 title = "Boys' second book of inventions"
 author = "Ray Stannard Baker"
+ingested_sha256 = "4e67ce8bc6dfda96e396aef094d92b6752c919414427f59ab3d3b5d0e75690f3"
 
 [[sources]]
 slug = "technology-pg44276"
@@ -3134,6 +3524,7 @@ url = "https://www.gutenberg.org/cache/epub/44276/pg44276.txt"
 sha256 = "b342970f57eaa6314d5e1c19cbbd8e872e8dce4bc060f093ef8071c9d347e227"
 title = "The Toilet of Flora"
 author = "Pierre-Joseph Buc'hoz"
+ingested_sha256 = "e5aa5ec739746e48675a274f46b44893a194f3e638d45f29d88b36abd6f5b35c"
 
 [[sources]]
 slug = "technology-pg44502"
@@ -3142,6 +3533,7 @@ url = "https://www.gutenberg.org/cache/epub/44502/pg44502.txt"
 sha256 = "72eece707e71118dcac28ddf025123086db0581006030e614dddb8622d19056b"
 title = "Every-day Science: Volume 6. The Conquest of Nature"
 author = "Henry Smith Williams"
+ingested_sha256 = "d62dd3c1c32e106aa0dd5c6588b90e7accb64fd0f0c99d744531033ebc19cce1"
 
 [[sources]]
 slug = "technology-pg44848"
@@ -3150,6 +3542,7 @@ url = "https://www.gutenberg.org/cache/epub/44848/pg44848.txt"
 sha256 = "3e1f9a36db5493bc16e19ace4fa5ccfa9c43b48d1594506212daffb5e1395bfb"
 title = "A Little Preserving Book for a Little Girl"
 author = "Mrs. Amy Harlow Waterman"
+ingested_sha256 = "8e7dc0a7d473cc01eec074a18fd94013ba303ae58582eba38dcb0992eae0b397"
 
 [[sources]]
 slug = "technology-pg45572"
@@ -3158,6 +3551,7 @@ url = "https://www.gutenberg.org/cache/epub/45572/pg45572.txt"
 sha256 = "45e14404c05a2dbb9edf6ff74ac500f69fe32190f2d6c55de831c34b1a9545fa"
 title = "The National Cook Book, 9th ed."
 author = "Hannah Mary Peterson"
+ingested_sha256 = "1129551385498c751d383de07b9e036c43d26335784e82e246b951212cb5e1c4"
 
 [[sources]]
 slug = "technology-pg48826"
@@ -3166,6 +3560,7 @@ url = "https://www.gutenberg.org/cache/epub/48826/pg48826.txt"
 sha256 = "61991ef29e2746466f45f69b60ddc2454ab7b893740123d5e76f5b6af419ec6c"
 title = "The Art of Home Candy Making, with Illustrations"
 author = "Home Candy Makers"
+ingested_sha256 = "3e788b7fc0ca353836dad8223f7abe763914e86d9201562e487769ab9417b46b"
 
 [[sources]]
 slug = "technology-pg49275"
@@ -3174,6 +3569,7 @@ url = "https://www.gutenberg.org/cache/epub/49275/pg49275.txt"
 sha256 = "8bc5e4ce6b30a9cbdc655844cf3e184dcbf21589a5c39b7ffca0695f6c0bdeb9"
 title = "Metal Spinning"
 author = "C. Tuells"
+ingested_sha256 = "26eac6af3747752a2971f11fb304ce180ccb57a5e8b416c8132c626476c7ba75"
 
 [[sources]]
 slug = "technology-pg49797"
@@ -3182,6 +3578,7 @@ url = "https://www.gutenberg.org/cache/epub/49797/pg49797.txt"
 sha256 = "76af34757759655e85f1673632b525b1122aaf61ec95db2654c9b8ec98726f0f"
 title = "Book of American Baking"
 author = "Various"
+ingested_sha256 = "c4a58b6b90eb75d3205369a3c5d742803a51642b6fbdfd81f8f01546dc1870fe"
 
 [[sources]]
 slug = "technology-pg50068"
@@ -3190,6 +3587,7 @@ url = "https://www.gutenberg.org/cache/epub/50068/pg50068.txt"
 sha256 = "e63ff8aadc1a14c914d9162b5b2d7d72dcfb7467f0a56d2a3d3753f87938412b"
 title = "Hawkins Electrical Guide v. 08 (of 10)"
 author = "N. Hawkins"
+ingested_sha256 = "96c00a98705b16387f846fa51a673f04d1160322cb41d089b22f23d1e6573ea6"
 
 [[sources]]
 slug = "technology-pg50451"
@@ -3198,6 +3596,7 @@ url = "https://www.gutenberg.org/cache/epub/50451/pg50451.txt"
 sha256 = "e27c48627149d30093675987970cd7b6c1b5b56e3407f535fc487746073bacee"
 title = "A Boy's Workshop: With plans and designs for in-door and out-door work"
 author = "Harry Craigin"
+ingested_sha256 = "252a7b0c59212f4608af65865b83eece05a24ea129359eccfdaaa84073c1ccb2"
 
 [[sources]]
 slug = "technology-pg50575"
@@ -3206,6 +3605,7 @@ url = "https://www.gutenberg.org/cache/epub/50575/pg50575.txt"
 sha256 = "f6b8bad52781b70ff81ed66cbe3a27b0713f4a1abf2d7aba3138c1f204633bf6"
 title = "Firemen and Their Exploits"
 author = "F. M. Holmes"
+ingested_sha256 = "8950d4c60a10a8b911a1079af9737e51272a5c7ac163155cea7d52497b6d8fed"
 
 [[sources]]
 slug = "technology-pg51780"
@@ -3214,6 +3614,7 @@ url = "https://www.gutenberg.org/cache/epub/51780/pg51780.txt"
 sha256 = "b6a2c65eb55ad0423856c496d9de9352c5776dfdbb374f5077b885a60c40d515"
 title = "The Olive"
 author = "K. G. Bitting"
+ingested_sha256 = "8c0b3619aa791206dcb618dbc7964c8f8a0f6c554b35cb282373d236e7577fb8"
 
 [[sources]]
 slug = "technology-pg52931"
@@ -3222,6 +3623,7 @@ url = "https://www.gutenberg.org/cache/epub/52931/pg52931.txt"
 sha256 = "e1eca8d82cb56bb05c12649c5410a33226edf7ac2e13e876e273dd65d4118d3c"
 title = "Pulp and Paper Magazine, Vol. XIII, No. 20, October 15, 1916"
 author = "Various"
+ingested_sha256 = "61381a41047cd1c839d25ee065b73bdfdced5bf386ca3d29df8819db1975e072"
 
 [[sources]]
 slug = "technology-pg53040"
@@ -3230,6 +3632,7 @@ url = "https://www.gutenberg.org/cache/epub/53040/pg53040.txt"
 sha256 = "e8ff6de660337938425ceaab97d86e0d380beeef92789a7c471c15ba905b3862"
 title = "The Art of Living"
 author = "Robert Grant"
+ingested_sha256 = "eaeb13647a3f99c3b9f32094cd889ecf3cee3e5b66e869bf98aba5f6595eced1"
 
 [[sources]]
 slug = "technology-pg53797"
@@ -3238,6 +3641,7 @@ url = "https://www.gutenberg.org/cache/epub/53797/pg53797.txt"
 sha256 = "d6033285144d7b24a85f07f721b5b921fad2a7d8ff860e9794aa7284e5ab3ee9"
 title = "The Dyer's Guide"
 author = "Thomas Packer"
+ingested_sha256 = "264142f5a1fbcf135594ae2946192035dd0661367ad86a1beb1a9059b5cb94bc"
 
 [[sources]]
 slug = "technology-pg54193"
@@ -3246,6 +3650,7 @@ url = "https://www.gutenberg.org/cache/epub/54193/pg54193.txt"
 sha256 = "b2d39ff2486d2018f09d89c436653ae69c24467bdc3165210a9eadddae8c457c"
 title = "The Jacquard Machine Analyzed and Explained"
 author = "E. A. Posselt"
+ingested_sha256 = "2ede2cbc4ae1dd4f255faae5d62d0d5b1ffacc9863ffc7ab2961a3157141549e"
 
 [[sources]]
 slug = "technology-pg54399"
@@ -3254,6 +3659,7 @@ url = "https://www.gutenberg.org/cache/epub/54399/pg54399.txt"
 sha256 = "ba73736c48080c7f870ac39873206b73a9065480f6cb2d66b147a83576cbba90"
 title = "Gasoline and Oil Stoves, \"New Process\" and \"Standard.\" 1901"
 author = "Standard Lighting Company"
+ingested_sha256 = "d77005dcd08c48f29b1182cf6c0fd309685107b207aa644d8cbc6e9660547aea"
 
 [[sources]]
 slug = "technology-pg55584"
@@ -3262,6 +3668,7 @@ url = "https://www.gutenberg.org/cache/epub/55584/pg55584.txt"
 sha256 = "2e6493a4d596bcf01055834332d39b6682e2827afc15059988877a49f4affde4"
 title = "The Manufacture of Chocolate and other Cacao Preparations"
 author = "Paul Zipperer"
+ingested_sha256 = "cfb36422829f3ed42775830e1dd0c0a51252f38d9b867d46cfd00d88a164f7e2"
 
 [[sources]]
 slug = "technology-pg56103"
@@ -3270,6 +3677,7 @@ url = "https://www.gutenberg.org/cache/epub/56103/pg56103.txt"
 sha256 = "c398a2f948d429eddc7940e1bb3cb0dcdb94d48241b46f5767e99d4531e981cc"
 title = "Lloyd's Treatise on Hats, with Twenty-Four Engravings"
 author = "Robert Lloyd"
+ingested_sha256 = "569a45e1eaae5c34a02c88554fa4e17361ca3a9efdb791e66c9e785cbaedc7b5"
 
 [[sources]]
 slug = "technology-pg57290"
@@ -3278,6 +3686,7 @@ url = "https://www.gutenberg.org/cache/epub/57290/pg57290.txt"
 sha256 = "dcb961f99b8a9963403b116b0f65dcc5c489be5177b58e9c9ad29392c11e5ff1"
 title = "The Draughtsman's Handbook of Plan and Map Drawing"
 author = "George G. Andr\u00e9"
+ingested_sha256 = "f42eb0b53d99008f696f937fc79e8a125b30dd601d61d0ab240dd0882c617637"
 
 [[sources]]
 slug = "technology-pg5883"
@@ -3286,6 +3695,7 @@ url = "https://www.gutenberg.org/cache/epub/5883/pg5883.txt"
 sha256 = "5aa994c1a2acc2b5dd24e3c036f32c56763357c13d2456191dca6b675b602c0b"
 title = "The Flying Saucers are Real"
 author = "Donald E. Keyhoe"
+ingested_sha256 = "fa1fcddef1b7ba444f4c41174f2b6d4db43162aeef6760455d6a9984b05601ee"
 
 [[sources]]
 slug = "technology-pg60621"
@@ -3294,6 +3704,7 @@ url = "https://www.gutenberg.org/cache/epub/60621/pg60621.txt"
 sha256 = "5da53740f51958fcf47ccedbe4ad677ea0fc0239e34233c92cd406d513d46f0f"
 title = "Boys' Make-at-Home Things"
 author = "Carolyn Sherwin Bailey"
+ingested_sha256 = "de87873ea9373cb2db144be913d36a545bafba62d92e5c38ffb0cc4abc5bfbd0"
 
 [[sources]]
 slug = "technology-pg61096"
@@ -3302,6 +3713,7 @@ url = "https://www.gutenberg.org/cache/epub/61096/pg61096.txt"
 sha256 = "d5da744b824a09a0634a911b47cc9885b6b7b4527347adf5f198ee7bb3669f0b"
 title = "Diamonds"
 author = "William Crookes"
+ingested_sha256 = "3b92dc972a821ed6ec773fd3d2a4d56984b3d11d5999d9933a661fe3708e448a"
 
 [[sources]]
 slug = "technology-pg61123"
@@ -3310,6 +3722,7 @@ url = "https://www.gutenberg.org/cache/epub/61123/pg61123.txt"
 sha256 = "613085b9ec7ad3c77a875f1c712ba6e90e1a609614dcd99ebe7cf024a7ffd1a6"
 title = "Shafting, Pulleys, Belting and Rope Transmission"
 author = "Hubert E. Collins"
+ingested_sha256 = "02b2e74227994e8ef9ab127c3a2b5792ae4ab7b16d073db6f598d2fc70bd00c0"
 
 [[sources]]
 slug = "technology-pg63004"
@@ -3318,6 +3731,7 @@ url = "https://www.gutenberg.org/cache/epub/63004/pg63004.txt"
 sha256 = "a5a82ea10f44e4fdd50f074ceadc9131d20cec33abdc82ad61b5074714d15820"
 title = "10 Cakes Husbands Like Best: From Spry's Recipe Round-up"
 author = "Lever Brothers Company"
+ingested_sha256 = "8aa72c71dc6076415e684b700e73a75dcbda69704aaf20f9ec1db3409c0b6e09"
 
 [[sources]]
 slug = "technology-pg63457"
@@ -3326,6 +3740,7 @@ url = "https://www.gutenberg.org/cache/epub/63457/pg63457.txt"
 sha256 = "8818a848b0362a333632bae1069f55451ff7c56e092566053d1503829a04704f"
 title = "To Your Kitchen From Mine"
 author = "Betty Newton"
+ingested_sha256 = "2e658b4c77dae6edf3a3ef212385745e28677e6db39613b859530c71d4eba870"
 
 [[sources]]
 slug = "technology-pg64281"
@@ -3334,6 +3749,7 @@ url = "https://www.gutenberg.org/cache/epub/64281/pg64281.txt"
 sha256 = "2f2e28bda3f934b09e7f2d5d144624c18b20e715a4edf0df48d4ab0211e75971"
 title = "How to make pottery"
 author = "Mary White"
+ingested_sha256 = "4ac6824d1a35676a3232ccc586dcd9cd46dec61b2f803fa9e3c09d75257d78f3"
 
 [[sources]]
 slug = "technology-pg65327"
@@ -3342,6 +3758,7 @@ url = "https://www.gutenberg.org/cache/epub/65327/pg65327.txt"
 sha256 = "1e41f3162b689e5edae930d86af4ac881ef985b774095a1b134876c865c72422"
 title = "Cottage Cheese Recipe Book"
 author = "Milk Industry Foundation (U.S.)"
+ingested_sha256 = "c4e3f7b4190a2a5831c641db6ad10394f78392c736c3219eaeb27ca552fd4b2c"
 
 [[sources]]
 slug = "technology-pg65547"
@@ -3350,6 +3767,7 @@ url = "https://www.gutenberg.org/cache/epub/65547/pg65547.txt"
 sha256 = "7682fc1699b5058e9224ab77f9b7ba08d625fb721c9517d2843f86ffb025026b"
 title = "Pioneer Auto Museum and Antique Town, Murdo, South Dakota"
 author = "Pioneer Auto Museum (Murdo, S.D.)"
+ingested_sha256 = "d51d504309186e9c0bce431c1a16eabbd6b910d106f38e76f7f105b8c2f27276"
 
 [[sources]]
 slug = "technology-pg65563"
@@ -3358,6 +3776,7 @@ url = "https://www.gutenberg.org/cache/epub/65563/pg65563.txt"
 sha256 = "13101d9f70c1b698efb15600b13cad8e0052c78f3bd2e6bb3f92a6a4bf62d73f"
 title = "Nuts in Family Meals: A Guide for Consumers"
 author = "United States. Agricultural Research Service. Consumer and Food Economics Research Division"
+ingested_sha256 = "a19ddcbed28e23474ed6bb723e80750827c60a8fbe7aaa845ae5921e80e95ad1"
 
 [[sources]]
 slug = "technology-pg66998"
@@ -3366,6 +3785,7 @@ url = "https://www.gutenberg.org/cache/epub/66998/pg66998.txt"
 sha256 = "4ff23496bc907826e0fd9217357fbd49ca2dce685be54bb8ab5b302b1853f2f7"
 title = "Rubber Hand Stamps and the Manipulation of Rubber"
 author = "T. O'Conor Sloane"
+ingested_sha256 = "d63310487d883ff00bdade51c12118d8552a626c7b70670fa3e0fd9360e6fde2"
 
 [[sources]]
 slug = "technology-pg6935"
@@ -3374,6 +3794,7 @@ url = "https://www.gutenberg.org/cache/epub/6935/pg6935.txt"
 sha256 = "825aa84014ca3c8afda3974832de82db6ced59ca3bc51dc8c8532a7545751c71"
 title = "The Radio Amateur's Hand Book"
 author = "A. Frederick Collins"
+ingested_sha256 = "3187a411e95d0cadbd4f24a896f6f656a3053173e12b9e1d0a63945a093c42b4"
 
 [[sources]]
 slug = "technology-pg69974"
@@ -3382,6 +3803,7 @@ url = "https://www.gutenberg.org/cache/epub/69974/pg69974.txt"
 sha256 = "e7466fbf773cbd416d80a7a0522fe081d9a591046cca016819f04864024fb01f"
 title = "Fashion parade"
 author = "American Thread Company"
+ingested_sha256 = "1f841c3cb1aee8abf8f55d87ae687a93bbb825f7f34c77e2942930da262e1290"
 
 [[sources]]
 slug = "technology-pg71395"
@@ -3390,6 +3812,7 @@ url = "https://www.gutenberg.org/cache/epub/71395/pg71395.txt"
 sha256 = "e0850c1d4589b8e03a7832258f911c447fb3dc0d9e706403822a7477c8615993"
 title = "A guide to modern cookery"
 author = "A. Escoffier"
+ingested_sha256 = "0c87c183f92b101509882235acf7601944d8cdf5d1cb87573725dc1a4b79404d"
 
 [[sources]]
 slug = "technology-pg73744"
@@ -3398,6 +3821,7 @@ url = "https://www.gutenberg.org/cache/epub/73744/pg73744.txt"
 sha256 = "3c4c1164fbaf19129035983d74f6fd5c768dd6ca243a131c7c4c54af4224dea9"
 title = "The royal baker and pastry cook"
 author = "Royal Baking Powder Company"
+ingested_sha256 = "2d96dbcba4cf108a7f8cd083cdbd68d1b92fd0010994fea142022509e004747c"
 
 [[sources]]
 slug = "technology-pg74057"
@@ -3406,6 +3830,7 @@ url = "https://www.gutenberg.org/cache/epub/74057/pg74057.txt"
 sha256 = "087f010cb6580a19e02f9de8ba161b28df67ca65cc9057c31cc71c2e9b95bd9d"
 title = "A book of bridges"
 author = "Walter Shaw Sparrow"
+ingested_sha256 = "98ed33155f10b55ba36f79760d8a970b8bf4f80a138edfd4704567c82596745c"
 
 [[sources]]
 slug = "technology-pg78121"
@@ -3414,6 +3839,7 @@ url = "https://www.gutenberg.org/cache/epub/78121/pg78121.txt"
 sha256 = "18fa5fc30193aa5028d2942346e95a15d5c1f3fa4bf71fd7787db9e75cb7c874"
 title = "The servant's behaviour book"
 author = "Emily A. Patmore"
+ingested_sha256 = "f101e71cd2fbe4e22d09e87b8ecd56c97f47f93178e5cd9f89e59808dcb67e95"
 
 [[sources]]
 slug = "technology-pg78973"
@@ -3422,6 +3848,7 @@ url = "https://www.gutenberg.org/cache/epub/78973/pg78973.txt"
 sha256 = "d619116cc5e313e4f0505f9798f0fc55855ee5e1ccfd4b8a76224f770cc18ae3"
 title = "The children's kraft shop"
 author = "Adelia B. Beard"
+ingested_sha256 = "70435f2c12238b97337af1ad86088d3dd8778d2b0d40e5e04b5b888de9a80e49"
 
 [[sources]]
 slug = "technology-pg8542"
@@ -3430,6 +3857,7 @@ url = "https://www.gutenberg.org/cache/epub/8542/pg8542.txt"
 sha256 = "a3f6393df4a3f8d6ebe9f291f9f05f59125a08e8198c0ca1af3099d32f29e1f1"
 title = "Things Mother Used to Make"
 author = "Lydia Maria Gurney"
+ingested_sha256 = "d9be0263e9e304d3c4792e600a4e6181698f4f8f48edc8d15c59393eff4faacf"
 
 [[sources]]
 slug = "technology-pg8559"
@@ -3438,6 +3866,7 @@ url = "https://www.gutenberg.org/cache/epub/8559/pg8559.txt"
 sha256 = "b14485cca332817b987e291d6eb2b2c6723200fb1296269ec09903deec05a602"
 title = "Scientific American Supplement, No. 360, November 25, 1882"
 author = "Various"
+ingested_sha256 = "afe3a8c67dbee0d0a9c1eec4cccdcb957e6acf8af6ca993e646d76a4bba015a9"
 
 [[sources]]
 slug = "technology-pg9954"
@@ -3446,3 +3875,4 @@ url = "https://www.gutenberg.org/cache/epub/9954/pg9954.txt"
 sha256 = "65158273fffb2c167fdab3ea959d6e437ffc2361bf4dc8219b6aa1af23190fc6"
 title = "The story of the invention of steel pens"
 author = "Henry Bore"
+ingested_sha256 = "ba0372989fbeaffc06895136532f2716c56ad3180a44042fda146f1788d0db91"
