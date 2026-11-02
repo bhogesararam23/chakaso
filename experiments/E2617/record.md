@@ -51,7 +51,7 @@ From the committed [`E2614/results.json`](../E2614/results.json), `per_run["7"].
 
 Let Δ be the new run's value minus the reference, per metric. The thresholds are not new: 0.0005 is E2606's declared reproduction
 tolerance (`REPRODUCTION_TOLERANCES`, a reporting rule, not an empirical bound), and the tie margins are E2614's 2.77·*s* per metric
-(prose 0.00625, science 0.00933, technology 0.00291, medicine 0.01036, mathematics 0.035, whole pack 0.00934, O1 0.0062).
+(prose 0.00625, science 0.00933, technology 0.00291, medicine 0.01036, mathematics 0.035, whole pack 0.00933, O1 0.0062).
 
 * **X-a — reproduced.** |Δ| ≤ 0.0005 on **every** metric above. The two machines agree at the project's reporting resolution; the
   cross-machine readings in E2615/E2616/E2613 carry no machine effect larger than that, for this configuration.
