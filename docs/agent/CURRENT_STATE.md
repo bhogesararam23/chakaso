@@ -1,7 +1,25 @@
 # Current state
 
-Last updated: 2026-11-01, after E2612, the 2026-11-01 research campaign, the byte-pair merge-loop fix and the same day's measurement-defect closures. The
-2026-10-29 state below is retained as the context E2612 was run against.
+Last updated: 2026-11-02 (third session), after E2615–E2622, the checkpoint/tokenizer/corpus format additions of ADR-0046–0048 and the first capability instrument. The
+blocks below are dated and kept as the context each result was read in; this first block is the newest.
+
+**Update, 2026-11-02 (third session) — what exists now that did not.** Nothing here is a capability claim.
+
+* **Checkpoint format, additive only** ([ADR-0046](../decisions/ADR-0046-checkpoint-records-the-tokenizer-frequency-floor-as-an-optional-field.md),
+  [ADR-0048](../decisions/ADR-0048-the-pre-tokenizer-is-a-named-part-of-a-vocabulary-s-identity.md)): an optional `tokenizer_min_frequency` and an optional
+  `tokenizer_pre_tokenizer`, each written only when known / non-default, no schema bump. Old artifacts, `chakaso-base@0.1.0` included, verify and re-save byte for byte and report the floor as *unrecorded*.
+* **Tokenizer**: a vocabulary names its pre-tokenizer from a small registry; a **space-prefixed** rule exists (opt-in, used by nothing yet) so H17 can be tested. 34–39 % of the committed vocabulary's identifiers are whitespace (measured,
+  `scripts/measure_token_classes.py`).
+* **Corpus catalogue** ([ADR-0047](../decisions/ADR-0047-a-pinned-corpus-declares-the-digest-of-the-text-it-ingests.md)): a source may declare `ingested_sha256`; `ingest` refuses text that differs; `verify_raw` still refuses every raw mismatch and now says
+  whether the ingested text is identical. The multiregister catalogue declares all 430. **Where raw bytes are archived is undecided** (K-031).
+* **Experiment plan**: `tokenizer_pre_tokenizer` and `evaluation_selection_tokenizer_file` (the held-out documents chosen by counting with one reference vocabulary, so two tokenizers are scored on the same text — found because identifier-capped
+  packs differ across tokenizers). Neither changes a default report or protocol digest.
+* **Training engine**: the per-update batch plan no longer shuffles the whole example range each step (28 ms → 590 ms per update at 78k → 780k windows, now 1.7 µs; same batches).
+* **First capability instrument** ([E2621](../../experiments/E2621/record.md), [E2622](../../experiments/E2622/record.md)): `chakaso.training.minimal_pairs`, `sequence_log_probabilities`, an 800-pair self-written probe in two versions
+  (`configs/probes/`), `scripts/evaluate_minimal_pairs.py`. Version 2 is identifier-balanced; across seven untrained initialisations its per-phenomenon floor is within 0.44–0.54 on **three of eight** phenomena, which are the only ones read.
+  On those 300 pairs the trained decoders score 0.86–0.95 and the 1,200-update model 0.65 (untrained 0.47–0.51; one seed each). The trained decoder is **at chance on plain subject–verb agreement**. Preference for grammatical sentences, not generation; K-001 stands.
+* **Measured this session**: E2617 (cross-machine repeat of E2614 seed 7: **X-b**, differences ≤ 0.0025 bits per character, all inside seed noise; the same-host repeat that separates host nondeterminism from a machine effect is running), E2621, E2622. Preregistered and
+  queued or running: E2618 (seeds on the E2615 0/25/50 % arms), E2619 (passes vs updates), E2620 (H17). CI was red on the core and train tiers for six runs after a test lacked an `importorskip`; fixed and read back green.
 
 **Update, later on 2026-11-01 — the campaign's measurement defects are closed, the identity regression they caused is
 found and fixed, and the next two experiments are preregistered.** Nothing in this block is a model result.
@@ -180,7 +198,7 @@ A private planning note is never evidence that something is implemented.
 | Repository conventions | `.gitignore`, `.gitattributes`, `.editorconfig` | Private docx pack excluded by `.gitignore` and guarded by a test |
 | License | `LICENSE` | Apache-2.0; rationale in ADR-0004 |
 | Public documentation | `README.md`, `docs/*.md`, `docs/research/` | Specifications with mandatory status labels |
-| Decision records | `docs/decisions/` | ADR-0001 to ADR-0041 (0037: the reference model is sized by measured throughput, with a token-matched comparison arm; 0038: the local serving adapter is standard-library HTTP, bound to loopback, and serves only a trained model; 0039: a model release is gated at three levels — artifact contract, reproducible integration, useful behaviour — and the level is awarded on evidence in the model card, where Levels 1 and 2 are met for `chakaso-base@0.1.0` and Level 3 is withheld; 0040: document-boundary attention masking is opt-in and off by default; 0041: the next target is a general base with a technical mixture, and the next unit is data, not architecture) |
+| Decision records | `docs/decisions/` | ADR-0001 to ADR-0048 (0037: the reference model is sized by measured throughput, with a token-matched comparison arm; 0038: the local serving adapter is standard-library HTTP, bound to loopback, and serves only a trained model; 0039: a model release is gated at three levels — artifact contract, reproducible integration, useful behaviour — and the level is awarded on evidence in the model card, where Levels 1 and 2 are met for `chakaso-base@0.1.0` and Level 3 is withheld; 0040: document-boundary attention masking is opt-in and off by default; 0041: the next target is a general base with a technical mixture, and the next unit is data, not architecture; 0042: held out means held-out works; 0043: training stages are separated by what changes and entered by gates; 0044: a vocabulary a record cites is committed beside it; 0045: training composition is declared as a share of the token budget; 0046: a checkpoint records the tokenizer's frequency floor as an optional field; 0047: a pinned corpus declares the digest of the text it ingests; 0048: the pre-tokenizer is a named part of a vocabulary's identity) |
 | Contribution guide | `CONTRIBUTING.md` | |
 | Agent contract | `AGENTS.md`, `docs/agent/` | |
 | Python package | `src/chakaso/` | Installs; typed; `py.typed` ships |
