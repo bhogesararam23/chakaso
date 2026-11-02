@@ -57,7 +57,11 @@ def classify(delta_o1: float, delta_whole: float) -> str:
 
 
 def _problems(
-    treatment: Mapping[str, Any], control: Mapping[str, Any], *, equal_text: bool = False
+    treatment: Mapping[str, Any],
+    control: Mapping[str, Any],
+    *,
+    equal_text: bool = False,
+    same_documents: bool = False,
 ) -> list[str]:
     problems: list[str] = []
     for label, left, right in (
@@ -84,23 +88,24 @@ def _problems(
     ):
         if left != right:
             problems.append(f"{label}: treatment {left!r}, control {right!r}")
+    documents = (
+        "training documents packed",
+        treatment["corpus"]["training_documents_packed"],
+        control["corpus"]["training_documents_packed"],
+    )
+    updates = (
+        "updates",
+        treatment["transformer"]["budget"]["max_steps"],
+        control["transformer"]["budget"]["max_steps"],
+    )
     if equal_text:
         # Equal text: the updates differ by design; what must be equal is the training documents the two arms read.
-        checks = (
-            (
-                "training documents packed",
-                treatment["corpus"]["training_documents_packed"],
-                control["corpus"]["training_documents_packed"],
-            ),
-        )
+        checks = (documents,)
+    elif same_documents:
+        # Equal updates and equal documents (E2625): both must match.
+        checks = (updates, documents)
     else:
-        checks = (
-            (
-                "updates",
-                treatment["transformer"]["budget"]["max_steps"],
-                control["transformer"]["budget"]["max_steps"],
-            ),
-        )
+        checks = (updates,)
     for label, left, right in checks:
         if left != right:
             problems.append(f"{label}: treatment {left!r}, control {right!r}")
@@ -135,13 +140,23 @@ def _problems(
 
 
 def read(
-    treatment: Mapping[str, Any], control: Mapping[str, Any], *, equal_text: bool = False
+    treatment: Mapping[str, Any],
+    control: Mapping[str, Any],
+    *,
+    equal_text: bool = False,
+    same_documents: bool = False,
 ) -> dict[str, Any]:
     """The record's reading of one treatment against its control."""
     delta_o1 = _o1(control) - _o1(treatment)
     delta_whole = _whole(control) - _whole(treatment)
     return {
-        "mode": "equal-text" if equal_text else "equal-positions",
+        "mode": (
+            "equal-text"
+            if equal_text
+            else "equal-updates-and-documents"
+            if same_documents
+            else "equal-positions"
+        ),
         "outcome": classify(delta_o1, delta_whole),
         "delta_o1": delta_o1,
         "delta_whole_pack": delta_whole,
@@ -185,18 +200,29 @@ def main(argv: Sequence[str] | None = None) -> int:
         action="store_true",
         help="the arms read the same training documents for different numbers of updates (E2624); the update-count guard becomes a training-documents guard",
     )
+    parser.add_argument(
+        "--same-documents",
+        action="store_true",
+        help="the arms make the same updates over the same training documents (E2625); both guards apply",
+    )
     parser.add_argument("--out", type=Path)
     args = parser.parse_args(argv)
+    if args.equal_text and args.same_documents:
+        parser.error("--equal-text and --same-documents describe different designs; give one")
     try:
         treatment = json.loads(args.treatment.read_text(encoding="utf-8"))
         control = json.loads(args.control.read_text(encoding="utf-8"))
-        problems = _problems(treatment, control, equal_text=args.equal_text)
+        problems = _problems(
+            treatment, control, equal_text=args.equal_text, same_documents=args.same_documents
+        )
         if problems:
             print("error: this is not a tokenizer-only comparison:", file=sys.stderr)
             for problem in problems:
                 print(f"  {problem}", file=sys.stderr)
             return 2
-        result = read(treatment, control, equal_text=args.equal_text)
+        result = read(
+            treatment, control, equal_text=args.equal_text, same_documents=args.same_documents
+        )
     except (OSError, KeyError, ValueError) as error:
         print(f"error: {error}", file=sys.stderr)
         return 1

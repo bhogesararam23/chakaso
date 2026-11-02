@@ -1,0 +1,49 @@
+# E2625 protocol - H17 at equal updates AND equal documents: E2620's space-prefixed vocabulary (a committed input, ADR-0044) trained for the
+# control's 2,400 updates over exactly the control's 2,756 training documents (about 1.4 passes over them).
+#
+# Read by `chakaso experiment study --protocol` with `--seeds 7`. Declared before any run (experiments/E2625/record.md).
+# It is E2624's protocol with the control's own schedule restored (2,400 updates, warmup 200, evaluation every 400) and nothing else changed, so the
+# only differences from E2620 are the committed vocabulary and the 14,033,424-identifier pool cap. A test holds the file to those differences.
+
+[plan]
+model_family = "decoder"
+
+# Architecture and optimisation (E2608 arm A, the reference configuration).
+vocab_size = 4096
+context_length = 256
+d_model = 256
+num_layers = 4
+num_heads = 8
+feedforward_dim = 640
+batch_size = 32
+grad_accum_steps = 1
+learning_rate = 0.0006
+weight_decay = 0.01
+warmup_steps = 200
+schedule = "cosine"
+decay_to = 0.1
+max_steps = 2400
+eval_every = 400
+patience = 99
+
+# Data: the pinned multi-register corpus, held out by whole work, all five registers in training.
+split_seed = 7
+expected_corpus_fingerprint = "312571f9fa8351a8"
+whole_work_splits = true
+shuffle_training_units = true
+max_training_tokens = 14033424
+max_validation_tokens = 250000
+max_test_tokens = 250000
+test_partitions = ["prose-", "science-", "technology-", "medicine-", "mathematics-"]
+character_baseline = false
+
+# Tokenizer: the vocabulary E2612 trained with, as a committed input (ADR-0044), checked by fingerprint.
+tokenizer_min_frequency = 3
+tokenizer_sample_characters = 12000000
+tokenizer_pre_tokenizer = "space-prefixed-word|space-prefixed-symbol|whitespace-run"
+tokenizer_file = "experiments/E2620/vocabulary-4a47f0281c81a9e5.json"
+expected_tokenizer_fingerprint = "4a47f0281c81a9e5"
+evaluation_selection_tokenizer_file = "experiments/E2612/vocabulary-434debe82f949347.json"
+
+# Generation: continuations of held-out openings, never the repository's own headings (K-026).
+sample_prompts = "held_out"

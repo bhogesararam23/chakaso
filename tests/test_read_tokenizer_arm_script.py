@@ -212,3 +212,42 @@ def test_an_equal_text_arm_that_trained_on_other_documents_is_refused(tmp_path: 
     assert (
         _script().main([f"--treatment={treatment}", f"--control={control}", "--equal-text"]) == 2  # type: ignore[attr-defined]
     )
+
+
+def test_a_same_documents_arm_needs_both_the_updates_and_the_documents_to_match(
+    tmp_path: Path,
+) -> None:
+    control = _report(tmp_path / "c.json", partition=1.90, whole=2.05, treatment=False)
+    good = _report(tmp_path / "t.json", partition=1.88, whole=2.03, treatment=True)
+    fewer_updates = _report(
+        tmp_path / "u.json", partition=1.88, whole=2.03, treatment=True, steps=1684
+    )
+    other_documents = _report(
+        tmp_path / "d.json", partition=1.88, whole=2.03, treatment=True, training_documents=3100
+    )
+    out = tmp_path / "out.json"
+
+    ok = _script().main(  # type: ignore[attr-defined]
+        [f"--treatment={good}", f"--control={control}", "--same-documents", f"--out={out}"]
+    )
+    wrong_updates = _script().main(  # type: ignore[attr-defined]
+        [f"--treatment={fewer_updates}", f"--control={control}", "--same-documents"]
+    )
+    wrong_documents = _script().main(  # type: ignore[attr-defined]
+        [f"--treatment={other_documents}", f"--control={control}", "--same-documents"]
+    )
+
+    assert (ok, wrong_updates, wrong_documents) == (0, 2, 2)
+    assert json.loads(out.read_text(encoding="utf-8"))["mode"] == "equal-updates-and-documents"
+
+
+def test_the_two_mode_flags_cannot_be_combined(tmp_path: Path) -> None:
+    control = _report(tmp_path / "c.json", partition=1.90, whole=2.05, treatment=False)
+    treatment = _report(tmp_path / "t.json", partition=1.88, whole=2.03, treatment=True)
+
+    with pytest.raises(SystemExit) as refused:
+        _script().main(  # type: ignore[attr-defined]
+            [f"--treatment={treatment}", f"--control={control}", "--equal-text", "--same-documents"]
+        )
+
+    assert refused.value.code == 2

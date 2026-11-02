@@ -146,3 +146,31 @@ def test_the_equal_text_arm_differs_from_the_equal_positions_arm_only_in_the_dec
         equal_text["expected_tokenizer_fingerprint"] + ".json"
     )
     assert equal_text["tokenizer_pre_tokenizer"] == equal_positions["tokenizer_pre_tokenizer"]
+
+
+def test_the_equal_updates_and_documents_arm_is_e2620_with_only_the_vocabulary_input_and_the_pool_cap_changed() -> (
+    None
+):
+    directory = Path(__file__).resolve().parent.parent / "configs" / "experiments"
+    e2620 = tomllib.loads((directory / "E2620-space-prefixed.toml").read_text("utf-8"))["plan"]
+    arm = tomllib.loads(
+        (directory / "E2625-space-prefixed-equal-updates-and-documents.toml").read_text("utf-8")
+    )["plan"]
+    equal_text = tomllib.loads(
+        (directory / "E2624-space-prefixed-equal-text.toml").read_text("utf-8")
+    )["plan"]
+
+    changed = {key for key in {*e2620, *arm} if e2620.get(key) != arm.get(key)}
+
+    assert changed == {
+        "max_training_tokens",
+        "tokenizer_file",
+        "expected_tokenizer_fingerprint",
+    }
+    # The pool is the control's documents (E2624's cap) and the schedule is the control's own.
+    assert arm["max_training_tokens"] == equal_text["max_training_tokens"] == 14_033_424
+    assert (arm["max_steps"], arm["warmup_steps"], arm["eval_every"]) == (2400, 200, 400)
+    positions = arm["max_steps"] * arm["batch_size"] * arm["context_length"]
+    assert (
+        round(positions / arm["max_training_tokens"], 2) == 1.40
+    )  # about 1.4 passes over the pool
