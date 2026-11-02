@@ -1007,3 +1007,20 @@ apply at 0 % prose is assumed. The 100 % endpoint comes from that machine and fr
 fields. Nothing in this entry measures the cross-machine effect directly; the nearest bound (the nested 50 % arm tying the
 natural mixture's five-seed mean) is the sum of that effect and the document-selection effect. The corpus raw bytes differ
 from the pin in one source whose ingested text is identical (K-031). Nothing here is a statement about capability.
+
+## 2026-11-02 — A third of every token stream is whitespace
+
+**Type:** observation (no experiment; a count over the committed vocabulary and the pinned corpus).
+
+**Observation.** `scripts/measure_token_classes.py` decodes every identifier the committed vocabulary `434debe82f949347` produces for the
+first 1.5M characters of each register of `gutenberg-multiregister-v1` and puts it in one class. Whitespace-only identifiers are
+37.7 % of prose, 37.7 % of science, 39.4 % of technology, 38.5 % of medicine and 34.1 % of mathematics; single spaces alone are 32.9, 33.7,
+35.6, 34.6 and 30.2 %. Punctuation and symbols are 6.5–8.4 %. Characters per identifier are 2.098, 2.209, 2.129, 2.313 and 1.994.
+
+**Interpretation.** The pre-tokenizer cuts every whitespace run into its own piece and merges never cross a piece, so each word gap costs
+one identifier. A space-prefixed convention would fold the single space into the next word. If it did, the arithmetic says the same
+positions would cover about 43–55 % more text. That is a derived figure for a vocabulary that has not been fitted, not a result; it
+is filed as H17 with what would falsify it.
+
+**Limitations.** One vocabulary, the first 1.5M characters of each register, no model involved. The count says where identifiers go, not
+what the model loses by it. Bits per character is the unit that would answer that, and nothing here measures it.

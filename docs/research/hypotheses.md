@@ -259,3 +259,22 @@ whole-pack bits per character is within 2.77·s of the AdamW arm's, where s is E
 being built:* the noise floor now exists (E2614) and that reason is gone; the others stand: a new optimiser is an interface change that needs a decision
 record, and the repository's rule is to implement only what its evidence justifies; the sources read are two orders of
 magnitude above this scale. *Cost if pursued:* ~40 lines of PyTorch plus one ~90-minute arm.
+
+**H17 — A space-prefixed pre-tokenizer lowers held-out bits per character at equal positions, because a third of the committed
+vocabulary's identifiers are whitespace.** *Statement:* a vocabulary fitted on the same sample at the same 4,096 identifiers with a
+pre-tokenizer in which a word piece carries its single preceding space (the convention of GPT-2's byte-level BPE, Radford et al. 2019)
+reaches lower held-out bits per character than the committed vocabulary, at the same positions per step, the same parameters and the
+same updates, by more than E2614's seed noise. *Why it is live (measured, 2026-11-02):* with the committed vocabulary
+(`434debe82f949347`), 34.1–39.4 % of the identifiers in a 1.5M-character sample of each register decode to whitespace only, and
+30.2–35.6 % are a single space, because the pre-tokenizer `\w+|\s+|[^\w\s]` makes every whitespace run its own piece and merges never
+cross a piece. Characters per identifier are 1.99–2.31. *Arithmetic, not a measurement:* if each single space were folded into the
+word after it, 30–36 % of identifiers would disappear and characters per identifier would rise by roughly 43–55 %, so the same 19.7M
+positions would read that much more text and a 256-position window would span that many more characters. Whether that lowers bits per
+character is the question: a single space is cheap to predict but not free (it is the word-boundary decision), and a larger share of
+distinct word forms would compete for the same 4,096 identifiers. *Falsified by:* an arm within 2.77·s of the control on the whole
+pack (0.0093; 0.0268 at the interval's upper end) or worse. *Controls it needs:* the same 12.7M-character fitting sample and
+`min_frequency` 3; bits per character as the unit (so the tokenizer change does not move the metric); an arm at equal *characters* as
+well as at equal positions, because the two readings answer different questions; the committed vocabulary's merge loop is the one
+fixed by K-024. *Cost if pursued:* a new vocabulary schema (the loader already refuses a foreign pre-tokenizer, so this is a new
+named pre-tokenizer and a decision record), one exact fit (35 minutes), and one or two ~50-minute arms. *Measured by:*
+`scripts/measure_token_classes.py` (the sole measurement above; it needs no training).
