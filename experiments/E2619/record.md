@@ -116,5 +116,5 @@ Two more configurations with a machine effect on prose below the 0.0005 reportin
 
 ### Limits that stand
 
-One seed per arm (the margin is E2614's natural-mixture spread, assumed for a prose-only arm; E2618's pooled spread of 0.004 on O1 suggests it is not smaller, so the 0.011 indeterminate gap is about 1.5–2 pair-standard-errors wide at best). The pool is nested and drawn by one seeded shuffle: a different shuffle could change the 5M pack's
+One seed per arm (the margin is E2614's natural-mixture spread, assumed for a prose-only arm; the prose spread measured twice at mixtures, 0.0023 in E2614 and 0.0023 pooled in E2618, would make the standard error of a single-seed difference about 0.0032, so the 0.011 gap is about 3.5 of them and 0.015 about 4.6 — if a prose-only arm has that spread, which is assumed and not measured). The pool is nested and drawn by one seeded shuffle: a different shuffle could change the 5M pack's
 content. Prose only. Truncated budget, archaic English, a held-out prose partition of 35 works. Epochs, updates and tokens are three quantities here; this design varies the pool at fixed positions and updates and cannot separate a pool-size effect from a repetition effect inside an arm. Nothing here is capability (K-001).
