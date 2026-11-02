@@ -23,6 +23,9 @@ capability is implemented or still planned.
 
 **Changed**
 
+- **A vocabulary can name its pre-tokenizer, and a checkpoint records a non-default one** (ADR-0048, H17). A space-prefixed rule (a word carries its single
+  preceding space) exists to be fitted and measured; it is not used by anything yet. The default rule, the committed vocabulary's fingerprint and every
+  existing checkpoint are unchanged.
 - **A new checkpoint records `tokenizer_min_frequency`; an old one reports it as unrecorded instead of 2** (ADR-0046, K-030 item 6).
   The key is written only when known and no schema version changes, so every existing artifact — `chakaso-base@0.1.0` included —
   still verifies, and loading then re-saving one reproduces its metadata document and checksum byte for byte. `describe()` reports the

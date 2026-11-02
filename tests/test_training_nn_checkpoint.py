@@ -675,3 +675,89 @@ def test_a_stored_floor_that_is_not_a_positive_integer_is_a_corrupt_artifact(
 
     with pytest.raises(IncompatibleCheckpointError, match="tokenizer_min_frequency"):
         load_artifact(target)
+
+
+# ------------------------------------------------ the tokenizer's pre-tokenizer (ADR-0048)
+
+
+def _with_rule(rule: str) -> ModelArtifact:
+    base = _artifact()
+    vocabulary = train_subword_vocabulary(
+        ["the quick red fox ran over the dry sand and slept"] * 3,
+        target_size=260,
+        min_frequency=2,
+        pre_tokenizer=rule,
+    )
+    return ModelArtifact(
+        config=base.config,
+        state=base.state,
+        vocabulary=vocabulary,
+        corpus_fingerprint=base.corpus_fingerprint,
+        run_metadata=base.run_metadata,
+        step=base.step,
+        environment=base.environment,
+    )
+
+
+def test_a_non_default_pre_tokenizer_is_recorded_and_survives_a_round_trip(tmp_path: Path) -> None:
+    from chakaso.training.subword import SPACE_PREFIXED_PRE_TOKENIZER
+
+    artifact = _with_rule(SPACE_PREFIXED_PRE_TOKENIZER)
+    target = tmp_path / "artifact.pt"
+    save_artifact(artifact, target)
+
+    loaded = load_artifact(target)
+
+    assert json.loads(artifact.metadata_document())["tokenizer_pre_tokenizer"] == (
+        SPACE_PREFIXED_PRE_TOKENIZER
+    )
+    assert loaded.vocabulary.pre_tokenizer == SPACE_PREFIXED_PRE_TOKENIZER
+    assert loaded.vocabulary.fingerprint == artifact.vocabulary.fingerprint
+    assert loaded.vocabulary.encode("the quick fox") == artifact.vocabulary.encode("the quick fox")
+
+
+def test_the_default_pre_tokenizer_writes_no_key() -> None:
+    from chakaso.training.subword import DEFAULT_PRE_TOKENIZER
+
+    document = json.loads(_with_rule(DEFAULT_PRE_TOKENIZER).metadata_document())
+
+    assert "tokenizer_pre_tokenizer" not in document
+
+
+def test_a_reader_that_does_not_know_the_key_refuses_the_file_instead_of_mis_encoding() -> None:
+    from chakaso.training.subword import SPACE_PREFIXED_PRE_TOKENIZER, SubwordVocabulary
+
+    artifact = _with_rule(SPACE_PREFIXED_PRE_TOKENIZER)
+    recorded = json.loads(artifact.metadata_document())
+
+    # What a reader built before the key existed does: rebuild the vocabulary from the merge table alone.
+    as_the_old_reader_sees_it = SubwordVocabulary(
+        merges=tuple((int(a), int(b)) for a, b in recorded["tokenizer_merges"])
+    )
+
+    assert as_the_old_reader_sees_it.fingerprint != recorded["tokenizer_fingerprint"]
+
+
+def test_a_stored_pre_tokenizer_this_code_does_not_implement_is_refused(tmp_path: Path) -> None:
+    from chakaso.training.subword import SPACE_PREFIXED_PRE_TOKENIZER
+
+    target = tmp_path / "artifact.pt"
+    save_artifact(_with_rule(SPACE_PREFIXED_PRE_TOKENIZER), target)
+    payload = _raw(target)
+    document = json.loads(str(payload["metadata"]))
+    document["tokenizer_pre_tokenizer"] = "made-up"
+    metadata = json.dumps(document, sort_keys=True, separators=(",", ":"))
+    payload["metadata"] = metadata
+    tensors: dict[str, torch.Tensor] = payload["tensors"]  # type: ignore[assignment]
+    digest = hashlib.sha256(metadata.encode("utf-8"))
+    for name in sorted(tensors):
+        tensor = tensors[name].detach().cpu().contiguous()
+        digest.update(name.encode("utf-8"))
+        digest.update(str(tuple(tensor.shape)).encode("utf-8"))
+        digest.update(str(tensor.dtype).encode("utf-8"))
+        digest.update(tensor.view(torch.uint8).numpy().tobytes())
+    payload["checksum"] = digest.hexdigest()
+    _write_raw(target, payload)
+
+    with pytest.raises(IncompatibleCheckpointError, match="tokenizer_pre_tokenizer"):
+        load_artifact(target)

@@ -17,6 +17,9 @@
 - Amended in part by: [ADR-0046](ADR-0046-checkpoint-records-the-tokenizer-frequency-floor-as-an-optional-field.md), which on
   2026-11-02 added one optional metadata key, `tokenizer_min_frequency`, written only when known. No schema version changed: an
   artifact without the key verifies and re-saves byte for byte as before, and a reader that ignores the key still opens one that has it.
+- Amended in part by: [ADR-0048](ADR-0048-the-pre-tokenizer-is-a-named-part-of-a-vocabulary-s-identity.md), which on 2026-11-02 added a second
+  optional metadata key, `tokenizer_pre_tokenizer`, written only when the vocabulary's rule is not the default. An older reader fails on the
+  tokenizer fingerprint rather than mis-encoding.
 - Follows up on: ADR-0034's Consequences, which deferred exactly this decision to a record of its own.
 
 ## Context

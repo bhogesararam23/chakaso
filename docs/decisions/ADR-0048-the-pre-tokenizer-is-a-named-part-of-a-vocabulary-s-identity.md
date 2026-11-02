@@ -14,7 +14,7 @@ register with the committed vocabulary `434debe82f949347`, 34–39 % of the iden
 that a vocabulary can be fitted under, and that a checkpoint, a report and a cache key can tell apart from the first.
 
 The constraint is the same as ADR-0046's: nothing already on disk or already cited may change. The fingerprint of the committed vocabulary
-(`434debe82f949347`) is cited by six experiment records; every checkpoint embeds a merge table under it.
+(`434debe82f949347`) is cited by eight experiment records (E2612-E2619); every checkpoint embeds a merge table under it.
 
 ## Decision
 

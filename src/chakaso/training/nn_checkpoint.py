@@ -42,7 +42,7 @@ from chakaso.training.errors import (
     CorruptedCheckpointError,
     IncompatibleCheckpointError,
 )
-from chakaso.training.subword import SubwordVocabulary
+from chakaso.training.subword import DEFAULT_PRE_TOKENIZER, SubwordVocabulary
 from chakaso.training.transformer import CausalTransformer, TransformerConfig
 
 __all__ = [
@@ -170,6 +170,11 @@ class ModelArtifact:
         }
         if self.tokenizer_min_frequency is not None:
             document["tokenizer_min_frequency"] = self.tokenizer_min_frequency
+        if self.vocabulary.pre_tokenizer != DEFAULT_PRE_TOKENIZER:
+            # Written only for a non-default rule (ADR-0048), so every artifact made under the default one serialises
+            # exactly as before. A reader that does not know the key rebuilds a default-rule vocabulary, whose
+            # fingerprint then differs from the recorded one, and refuses the file instead of mis-encoding with it.
+            document["tokenizer_pre_tokenizer"] = self.vocabulary.pre_tokenizer
         return json.dumps(document, sort_keys=True, separators=(",", ":"))
 
     def to_model(self) -> TrainedModel:
@@ -354,6 +359,16 @@ def load_artifact(path: Path) -> ModelArtifact:
         )
         raise IncompatibleCheckpointError(message)
 
+    rule = recorded.get("tokenizer_pre_tokenizer", DEFAULT_PRE_TOKENIZER)
+    try:
+        SubwordVocabulary(merges=(), pre_tokenizer=rule)
+    except (TypeError, ValueError) as exc:
+        message = (
+            f"checkpoint at {str(path)!r} records tokenizer_pre_tokenizer {rule!r}, which this code does not "
+            f"implement: {exc}"
+        )
+        raise IncompatibleCheckpointError(message) from exc
+
     try:
         config_class: type[Architecture] = (
             DecoderConfig if family == "decoder" else TransformerConfig
@@ -362,11 +377,10 @@ def load_artifact(path: Path) -> ModelArtifact:
         merges = tuple((int(pair[0]), int(pair[1])) for pair in recorded["tokenizer_merges"])
         # Only a recorded floor is used to rebuild the vocabulary. When none was recorded the vocabulary keeps
         # the dataclass default, and the artifact's own ``tokenizer_min_frequency`` (None) is what to trust.
-        vocabulary = (
-            SubwordVocabulary(merges=merges)
-            if floor is None
-            else SubwordVocabulary(merges=merges, min_frequency=floor)
-        )
+        rebuild: dict[str, Any] = {"pre_tokenizer": rule}
+        if floor is not None:
+            rebuild["min_frequency"] = floor
+        vocabulary = SubwordVocabulary(merges=merges, **rebuild)
     except (KeyError, TypeError, ValueError) as exc:
         message = (
             f"checkpoint at {str(path)!r} declares a configuration this code cannot build: {exc}"
