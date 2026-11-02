@@ -68,6 +68,8 @@ released model's loss is the best measured here and its samples are not text a r
 
 ## 2. Coherent continuation
 
+> **Update 2026-11-02.** A likelihood-based, generation-free reading of this item now exists and has been run: [E2623](../../experiments/E2623/record.md) (`continuation_items`, `scripts/evaluate_continuations.py`). It measures use of a passage by pointwise mutual information against held-out distractors, is valid against a seven-initialisation untrained floor, and is near ceiling for the trained decoders (0.96–0.99). It is **not** a judge of generated text; the two-route scoring below remains Planned. A grammatical minimal-pair probe ([E2621](../../experiments/E2621/record.md), [E2622](../../experiments/E2622/record.md)) is the first language-modelling-adjacent instrument.
+
 **What exists:** `chakaso.training.quality_eval` (E2610) measures word distinct-n, loops, periodic runs and
 replacement characters against a human reference on the same prompts. Its own `interpretation_limit` says
 these are surface statistics and a fluent-nonsense generator can pass. K-020 records the gap.
