@@ -206,3 +206,79 @@ def test_the_nested_half_arm_is_compared_with_the_natural_mixture_mean(tmp_path:
     assert effect["natural_mixture_runs"] == 5
     assert effect["differences"]["prose-"]["nested_half_minus_natural_mean"] == pytest.approx(0.0)
     assert effect["differences"]["prose-"]["reading"] == "tie"
+
+
+def _committed_summary(report: Any, *, tokens_scored: int = 500) -> dict[str, Any]:
+    """A report as a committed ``results.json`` keeps it: flat, partitions without a ``metrics`` wrapper or character counts."""
+    transformer = report["transformer"]
+    return {
+        "corpus": report["corpus"],
+        "tokenizer": report["tokenizer"],
+        "parameter_count": transformer["parameter_count"],
+        "architecture": transformer["architecture"],
+        # E2612's committed block predates these two fields; they are absent, not false.
+        "budget": {
+            key: value
+            for key, value in transformer["budget"].items()
+            if key not in ("shuffle_training_units", "document_masking")
+        },
+        "test": dict(transformer["test"]),
+        "test_partitions": {
+            prefix: {
+                "bits_per_character": block["metrics"]["bits_per_character"],
+                "tokens_scored": tokens_scored,
+                "documents": 3,
+            }
+            for prefix, block in transformer["test_partitions"].items()
+        },
+    }
+
+
+def _committed_endpoint_args(tmp_path: Path, *, tokens_scored: int = 500) -> list[str]:
+    spec = {0.0: _bits(2.40, 1.90), 0.5: _bits(1.90, 1.99)}
+    paths = _arms(tmp_path, spec)
+    endpoint = _report(None, _bits(1.80, 2.40), ["prose-"])
+    committed = {"arms": {"P": _committed_summary(endpoint, tokens_scored=tokens_scored)}}
+    paths.append(f"--arm=1.0={_write(tmp_path, 'results.json', committed)}#P")
+    return paths
+
+
+def test_an_endpoint_read_from_a_committed_summary_is_matched_and_labelled_as_borrowing(
+    tmp_path: Path,
+) -> None:
+    out = tmp_path / "out.json"
+    noise = _write(tmp_path, "noise.json", _study())
+
+    status = _script().main(  # type: ignore[attr-defined]
+        [*_committed_endpoint_args(tmp_path), f"--noise-study={noise}", f"--out={out}"]
+    )
+
+    assert status == 0
+    result = json.loads(out.read_text(encoding="utf-8"))
+    assert result["all_conditions_matched"] is True
+    assert result["arms"]["1"]["partitions"]["prose-"] == 1.80
+    borrowed = result["borrowed_from_a_full_report"]["1"]
+    assert borrowed["borrowed_from_a_full_report"] == [
+        "test_partitions[*].metrics.characters_scored"
+    ]
+    assert borrowed["checked_equal_first"] == ["tokens_scored"]
+    assert borrowed["not_recorded_in_committed_summary"] == [
+        "document_masking",
+        "shuffle_training_units",
+    ]
+    assert result[
+        "declared_differences"
+    ]  # the unrecorded fields surface as differences, never as matches
+
+
+def test_a_committed_endpoint_whose_held_out_pack_differs_is_refused(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    noise = _write(tmp_path, "noise.json", _study())
+
+    status = _script().main(  # type: ignore[attr-defined]
+        [*_committed_endpoint_args(tmp_path, tokens_scored=499), f"--noise-study={noise}"]
+    )
+
+    assert status == 1
+    assert "held-out packs differ" in capsys.readouterr().err

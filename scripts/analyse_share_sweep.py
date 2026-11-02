@@ -37,6 +37,10 @@ from chakaso.training.share_sweep import (
     margins_from_stdev,
 )
 
+#: Budget fields a comparison requires but that records written before they existed do not carry. Both are fields
+#: an arm is allowed to differ in, so an unrecorded value cannot mask a defect in a matched condition.
+_DECLARABLE_BUDGET_FIELDS = ("shuffle_training_units", "document_masking")
+
 PARTITIONS = ("prose-", "science-", "technology-", "medicine-", "mathematics-")
 TECHNICAL = PARTITIONS[1:]
 
@@ -210,10 +214,83 @@ def _selection_effect(
     return {"available": True, "natural_mixture_runs": runs, "differences": rows}
 
 
+def adapt_committed_arm(block: Mapping[str, Any], donor: Mapping[str, Any]) -> dict[str, Any]:
+    """Rebuild a report-shaped mapping from a committed ``results.json`` arm block.
+
+    A record's committed aggregate keeps an arm flat and without the per-partition character counts that the
+    scored-characters weighting (K-027) needs. The held-out packs are identical across arms that passed the
+    matched-conditions proof, so those counts are taken from ``donor``, a full report of an arm that did, but only
+    after the token count of every partition has been checked equal. What was borrowed is named in the returned
+    mapping under ``adapted_from_committed_summary``, so a reader sees that it was not measured on this arm.
+
+    Raises:
+        ArmComparisonError: a partition is missing from either side or its scored-token count differs.
+    """
+    donor_partitions = donor["transformer"]["test_partitions"]
+    partitions: dict[str, Any] = {}
+    checked = ["tokens_scored"]
+    for prefix, entry in block["test_partitions"].items():
+        if prefix not in donor_partitions:
+            message = (
+                f"the committed arm scores partition {prefix!r}, which the donor report does not"
+            )
+            raise ArmComparisonError(message)
+        reference = donor_partitions[prefix]
+        if entry["tokens_scored"] != reference["tokens_scored"]:
+            message = (
+                f"partition {prefix!r} scored {entry['tokens_scored']} tokens in the committed arm and "
+                f"{reference['tokens_scored']} in the donor: the held-out packs differ, so characters cannot "
+                "be borrowed"
+            )
+            raise ArmComparisonError(message)
+        if "documents" in entry and "documents" in reference:
+            if entry["documents"] != reference["documents"]:
+                message = (
+                    f"partition {prefix!r} holds a different number of documents than the donor's"
+                )
+                raise ArmComparisonError(message)
+            if "documents" not in checked:
+                checked.append("documents")
+        metrics = {
+            "bits_per_character": entry["bits_per_character"],
+            "characters_scored": reference["metrics"]["characters_scored"],
+        }
+        partitions[prefix] = {"tokens_scored": entry["tokens_scored"], "metrics": metrics}
+    budget = dict(block["budget"])
+    unrecorded = sorted(key for key in _DECLARABLE_BUDGET_FIELDS if key not in budget)
+    for key in unrecorded:
+        budget[key] = (
+            None  # "not recorded", never a guess: these fields are allowed to differ between arms
+        )
+    return {
+        "corpus": block["corpus"],
+        "tokenizer": block["tokenizer"],
+        "transformer": {
+            "parameter_count": block["parameter_count"],
+            "architecture": block["architecture"],
+            "budget": budget,
+            "test": block["test"],
+            "test_partitions": partitions,
+        },
+        "adapted_from_committed_summary": {
+            "borrowed_from_a_full_report": ["test_partitions[*].metrics.characters_scored"],
+            "checked_equal_first": sorted(checked),
+            "not_recorded_in_committed_summary": unrecorded,
+        },
+    }
+
+
+def _load_arm(path: Path) -> tuple[Path, str | None]:
+    """Split ``results.json#name`` into the file and the arm block name; a plain path has no name."""
+    text = str(path)
+    file_part, separator, name = text.partition("#")
+    return Path(file_part), (name if separator else None)
+
+
 def _pair(value: str) -> tuple[float, Path]:
     label, separator, path = value.partition("=")
     if not separator or not label or not path:
-        message = f"--arm expects SHARE=report.json, got {value!r}"
+        message = f"--arm expects SHARE=report.json or SHARE=results.json#arm, got {value!r}"
         raise argparse.ArgumentTypeError(message)
     try:
         return float(label), Path(path)
@@ -233,10 +310,23 @@ def main(argv: Sequence[str] | None = None) -> int:
     args = parser.parse_args(argv)
 
     try:
-        arms = {share: json.loads(path.read_text(encoding="utf-8")) for share, path in args.arm}
-        if len(arms) != len(args.arm):
+        arms: dict[float, Any] = {}
+        committed: dict[float, Any] = {}
+        for share, path in args.arm:
+            file_path, block_name = _load_arm(path)
+            document = json.loads(file_path.read_text(encoding="utf-8"))
+            if block_name is None:
+                arms[share] = document
+            else:
+                committed[share] = document["arms"][block_name]
+        if len(arms) + len(committed) != len(args.arm):
             message = "two arms carry the same share"
             raise ArmComparisonError(message)
+        if committed and not arms:
+            message = "a committed-summary arm needs at least one full report to take the held-out pack from"
+            raise ArmComparisonError(message)
+        for share, block in committed.items():
+            arms[share] = adapt_committed_arm(block, next(iter(arms.values())))
         noise = json.loads(args.noise_study.read_text(encoding="utf-8"))
         natural = (
             json.loads(args.natural_mixture_study.read_text(encoding="utf-8"))
@@ -248,6 +338,13 @@ def main(argv: Sequence[str] | None = None) -> int:
         print(f"error: {error}", file=sys.stderr)
         return 1
 
+    adapted = {
+        f"{share:g}": report["adapted_from_committed_summary"]
+        for share, report in arms.items()
+        if "adapted_from_committed_summary" in report
+    }
+    if adapted:
+        result["borrowed_from_a_full_report"] = adapted
     text = json.dumps(result, indent=2, sort_keys=True) + "\n"
     if args.out is not None:
         args.out.parent.mkdir(parents=True, exist_ok=True)
