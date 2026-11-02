@@ -81,3 +81,29 @@ def test_the_passes_arms_differ_from_e2614_only_in_the_prose_filter_and_the_cap(
     assert round(positions / caps["E2619-prose-5m"]) == 4
     assert round(positions / caps["E2619-prose-10m"]) == 2
     assert round(positions / caps["E2619-prose-20m"]) == 1
+
+
+def test_the_space_prefixed_arm_differs_from_e2614_only_in_how_the_tokenizer_is_obtained_and_the_eval_documents_chosen() -> (
+    None
+):
+    directory = Path(__file__).resolve().parent.parent / "configs" / "experiments"
+    reference = tomllib.loads((directory / "E2614-decoder-seed-spread.toml").read_text("utf-8"))[
+        "plan"
+    ]
+    arm = tomllib.loads((directory / "E2620-space-prefixed.toml").read_text("utf-8"))["plan"]
+
+    changed = {key for key in {*reference, *arm} if reference.get(key) != arm.get(key)}
+
+    assert changed == {
+        "tokenizer_file",
+        "expected_tokenizer_fingerprint",
+        "tokenizer_pre_tokenizer",
+        "evaluation_selection_tokenizer_file",
+    }
+    # Fitted by the run, so neither a file nor a fingerprint is declared; same sample, floor and size as the control's.
+    assert "tokenizer_file" not in arm and "expected_tokenizer_fingerprint" not in arm
+    for key in ("tokenizer_min_frequency", "tokenizer_sample_characters", "vocab_size"):
+        assert arm[key] == reference[key], key
+    # The documents scored are chosen with the control's own vocabulary.
+    assert arm["evaluation_selection_tokenizer_file"] == reference["tokenizer_file"]
+    assert arm["tokenizer_pre_tokenizer"].startswith("space-prefixed")
