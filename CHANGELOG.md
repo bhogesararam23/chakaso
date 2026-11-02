@@ -12,7 +12,15 @@ capability is implemented or still planned.
 
 ## Unreleased
 
-### 2026-11-02 (third session) — a checkpoint can say which frequency floor its tokenizer was fitted at; a drifted corpus source can be classified
+### 2026-11-02 (third session) — a checkpoint can say which frequency floor its tokenizer was fitted at; a drifted corpus source can be classified; a first capability probe
+
+**Measured**
+
+- **E2617: this host reproduces itself exactly, and differs from the Windows host by at most 0.0025 bits per character.** The same-host repeat is bit-identical (all 43 tensors); the cross-machine
+  differences (O1 −0.00067, mathematics −0.00245) are 17 % of their tie margins at most. No earlier cross-host finding is within reach of the effect.
+- **E2621/E2622: a grammatical minimal-pair probe** (800 self-written pairs, two versions). Version 1's untrained floor was above chance because a bad sentence tokenizes into more identifiers; version 2 balances them. Across seven untrained
+  initialisations three of eight phenomena have a floor within 0.44–0.54; on those 300 pairs the trained decoders score 0.86–0.95, the 1,200-update model 0.65 and untrained models 0.47–0.51. The trained decoder is at chance on plain subject–verb agreement. One seed each; preference, not generation.
+- **H17 filed:** 34–39 % of the committed vocabulary's identifiers are whitespace (a count, not a result).
 
 **Added**
 

@@ -802,6 +802,7 @@ as of that day.
    there**, so the cross-machine effect is unmeasured; E2615's nested 50 % arm tying E2614's five-seed mean (O1 −0.0012, prose
    +0.0014, both ties) bounds only the *sum* of that effect and the document-selection effect. A repeat of E2614 seed 7 on a new host
    (~50 min on this one) is the direct test and has not been run.
+   *Measured 2026-11-02 ([E2617](../../experiments/E2617/record.md)):* that repeat was run, and then run again on this host. This host reproduces itself bit for bit (all 43 tensors equal, every metric identical, with other jobs sharing the cores), and differs from E2614's Windows run by at most 0.0025 bits per character (O1 −0.00067, prose −0.00033; none above 17 % of its tie margin): a machine effect, outcome X-b, of a size no cross-host finding in E2613–E2616 comes near. It is the sum of operating system, torch, numpy, Python, threads and CPU; the bundle is not taken apart. Still true: the 0.0005 tolerance is a reporting rule, not a bound; nothing is pinned.
 5. **`seed_study._PROTOCOL_FIELDS` omits the schedule, `decay_to`, accumulation, masking, work-split and cap fields.**
    Two runs that differed only in those would still be aggregated as one study.
    *Closed 2026-11-01:* the study's protocol identity now also carries `protocol_digest(report, include_seed=False)`,
