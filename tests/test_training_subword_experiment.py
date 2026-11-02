@@ -1495,3 +1495,97 @@ def test_two_shares_of_one_protocol_have_different_protocol_digests(tmp_path: Pa
     high = run_experiment(_share_plan(root, tmp_path / "b", 0.75))
 
     assert protocol_digest(low) != protocol_digest(high)
+
+
+# ------------------------------------------------ the plan names a pre-tokenizer (ADR-0048, H17)
+
+
+def test_a_plan_fits_under_the_pre_tokenizer_it_names_and_the_default_is_the_default(
+    tmp_path: Path,
+) -> None:
+    from chakaso.training.subword import DEFAULT_PRE_TOKENIZER, SPACE_PREFIXED_PRE_TOKENIZER
+
+    root = _root(tmp_path)
+    default = prepare_corpus(_plan(root, tmp_path / "work-default"))
+    prefixed = prepare_corpus(
+        _plan(
+            root, tmp_path / "work-prefixed", tokenizer_pre_tokenizer=SPACE_PREFIXED_PRE_TOKENIZER
+        )
+    )
+
+    assert default.vocabulary.pre_tokenizer == DEFAULT_PRE_TOKENIZER
+    assert prefixed.vocabulary.pre_tokenizer == SPACE_PREFIXED_PRE_TOKENIZER
+    assert prefixed.vocabulary.fingerprint != default.vocabulary.fingerprint
+
+
+def test_a_plan_naming_an_unknown_pre_tokenizer_is_refused_on_construction(tmp_path: Path) -> None:
+    with pytest.raises(ValueError, match="pre-tokenizer"):
+        _plan(_root(tmp_path), tmp_path / "w", tokenizer_pre_tokenizer="made-up")
+
+
+def test_the_cached_tokenizer_is_keyed_by_the_rule_and_a_default_plan_keeps_its_key(
+    tmp_path: Path,
+) -> None:
+    from chakaso.training.subword import SPACE_PREFIXED_PRE_TOKENIZER
+
+    root = _root(tmp_path)
+    work = tmp_path / "work-keys"
+    prepare_corpus(_plan(root, work))
+    prepare_corpus(_plan(root, work, tokenizer_pre_tokenizer=SPACE_PREFIXED_PRE_TOKENIZER))
+
+    # Two files: the rule is part of the identity, so neither plan can read the other's tokenizer.
+    assert len(list(work.glob("*-tokenizer-*.json"))) == 2
+
+
+def test_the_identity_of_a_default_plans_tokenizer_is_what_it_was_before_the_option() -> None:
+    from chakaso.core.hashing import join_parts
+    from chakaso.training.subword_experiment import _tokenizer_identity
+
+    class _Fingerprinted:
+        fingerprint = "f" * 16
+
+    expected = sha256_hex(join_parts("f" * 16, "f" * 16, "4096", "3", "sample-12000000"))[:16]
+
+    assert (
+        _tokenizer_identity(
+            _Fingerprinted(),  # type: ignore[arg-type]
+            _Fingerprinted(),  # type: ignore[arg-type]
+            target_size=4096,
+            min_frequency=3,
+            sample_characters=12_000_000,
+        )
+        == expected
+    )
+
+
+def test_a_stored_tokenizer_under_another_rule_than_the_plans_is_refused(tmp_path: Path) -> None:
+    from chakaso.training.subword import SPACE_PREFIXED_PRE_TOKENIZER
+
+    root = _root(tmp_path)
+    supplied = tmp_path / "prefixed.json"
+    prepared = prepare_corpus(
+        _plan(root, tmp_path / "w1", tokenizer_pre_tokenizer=SPACE_PREFIXED_PRE_TOKENIZER)
+    )
+    prepared.vocabulary.save(supplied)
+
+    with pytest.raises(CorpusError, match="pre-tokenizer"):
+        prepare_corpus(_plan(root, tmp_path / "w2", tokenizer_file=supplied))
+
+
+def test_a_report_names_a_non_default_rule_and_a_default_report_is_unchanged(
+    tmp_path: Path,
+) -> None:
+    from chakaso.training.subword import SPACE_PREFIXED_PRE_TOKENIZER
+
+    root = _root(tmp_path)
+    default = run_experiment(_plan(root, tmp_path / "w-default"))
+    prefixed = run_experiment(
+        _plan(root, tmp_path / "w-prefixed", tokenizer_pre_tokenizer=SPACE_PREFIXED_PRE_TOKENIZER)
+    )
+
+    assert "pre_tokenizer" not in default["tokenizer"]
+    assert "tokenizer_pre_tokenizer" not in default["plan"]
+    assert prefixed["tokenizer"]["pre_tokenizer"] == SPACE_PREFIXED_PRE_TOKENIZER
+    assert prefixed["plan"]["tokenizer_pre_tokenizer"] == SPACE_PREFIXED_PRE_TOKENIZER
+    # A different rule is a different protocol, so the digests differ.
+    assert protocol_digest(default) != protocol_digest(prefixed)

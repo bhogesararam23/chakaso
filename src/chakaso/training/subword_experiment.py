@@ -76,7 +76,12 @@ from chakaso.training.nn_training import (
     verify_resume_compatibility,
 )
 from chakaso.training.packing import PackedBatch, pack_units
-from chakaso.training.subword import SubwordVocabulary, train_subword_vocabulary
+from chakaso.training.subword import (
+    DEFAULT_PRE_TOKENIZER,
+    SubwordVocabulary,
+    pre_tokenize,
+    train_subword_vocabulary,
+)
 from chakaso.training.tokenizer import UNK_ID, CharVocabulary
 from chakaso.training.transformer import TransformerConfig
 
@@ -196,6 +201,9 @@ class ExperimentPlan:
     #: because the tokenizer cache is keyed by it: a run that changed the floor while naming the same
     #: vocabulary size would otherwise be able to read a tokenizer fitted under different rules.
     tokenizer_min_frequency: int = 3
+    #: The named pre-tokenizer the vocabulary is fitted under (ADR-0048); ``None`` is the default rule every earlier
+    #: record used, and is left out of the report so a default plan's protocol digest is what it always was.
+    tokenizer_pre_tokenizer: str | None = None
     context_length: int = 128
     batch_size: int = 32
     d_model: int = 128
@@ -341,6 +349,8 @@ class ExperimentPlan:
         if isinstance(self.tokenizer_min_frequency, bool) or self.tokenizer_min_frequency < 1:
             message = f"tokenizer_min_frequency must be >= 1, got {self.tokenizer_min_frequency!r}"
             raise ValueError(message)
+        if self.tokenizer_pre_tokenizer is not None:
+            pre_tokenize("", self.tokenizer_pre_tokenizer)  # a ValueError naming the known rules
         if isinstance(self.grad_accum_steps, bool) or self.grad_accum_steps < 1:
             message = f"grad_accum_steps must be >= 1, got {self.grad_accum_steps!r}"
             raise ValueError(message)
@@ -677,6 +687,7 @@ def _tokenizer_identity(
     target_size: int,
     min_frequency: int,
     sample_characters: int | None = None,
+    pre_tokenizer: str | None = None,
 ) -> str:
     """The digest a fitted tokenizer is cached under: everything its rule sequence can depend on.
 
@@ -685,14 +696,18 @@ def _tokenizer_identity(
     reused file cannot be a tokenizer fitted on different data — which is the one mistake that would make two
     runs in one directory incomparable while both reports looked self-consistent.
     """
-    payload = join_parts(
+    parts = [
         manifest.fingerprint,
         split.fingerprint,
         str(target_size),
         str(min_frequency),
         "all-training-text" if sample_characters is None else f"sample-{sample_characters}",
-    )
-    return sha256_hex(payload)[:16]
+    ]
+    if pre_tokenizer is not None:
+        # A tokenizer fitted under another rule is another file. Left out for the default so every existing cache
+        # key, and the file a record's reproduction command would look for, stays what it was.
+        parts.append(f"pre-tokenizer-{pre_tokenizer}")
+    return sha256_hex(join_parts(*parts))[:16]
 
 
 def _tokenizer_sample(plan: ExperimentPlan, split: UnitSplit) -> tuple[str, ...]:
@@ -740,6 +755,7 @@ def _fit_or_reuse_vocabulary(
         target_size=plan.vocab_size,
         min_frequency=plan.tokenizer_min_frequency,
         sample_characters=plan.tokenizer_sample_characters,
+        pre_tokenizer=plan.tokenizer_pre_tokenizer,
     )
     cache = plan.tokenizer_cache_dir if plan.tokenizer_cache_dir is not None else work
     path = cache / f"{manifest.name}-tokenizer-{identity}.json"
@@ -754,6 +770,7 @@ def _fit_or_reuse_vocabulary(
         _tokenizer_sample(plan, split),
         target_size=plan.vocab_size,
         min_frequency=plan.tokenizer_min_frequency,
+        pre_tokenizer=plan.tokenizer_pre_tokenizer or DEFAULT_PRE_TOKENIZER,
     )
     if fitted.size != plan.vocab_size:
         # The merge search ends early when no pair reaches the frequency floor. A model is then built at the
@@ -789,6 +806,13 @@ def _check_vocabulary_matches_plan(
         message = (
             f"tokenizer {where!r} was fitted at min_frequency {vocabulary.min_frequency}, "
             f"this plan declares {plan.tokenizer_min_frequency}"
+        )
+        raise CorpusError(message)
+    declared_rule = plan.tokenizer_pre_tokenizer or DEFAULT_PRE_TOKENIZER
+    if vocabulary.pre_tokenizer != declared_rule:
+        message = (
+            f"tokenizer {where!r} was fitted under the pre-tokenizer {vocabulary.pre_tokenizer!r}, "
+            f"this plan declares {declared_rule!r}"
         )
         raise CorpusError(message)
 
@@ -1442,6 +1466,11 @@ def run_experiment(plan: ExperimentPlan, *, verbose: bool = False) -> dict[str, 
             "merges": prepared.vocabulary.merge_count,
             "fingerprint": prepared.vocabulary.fingerprint,
             "min_frequency": prepared.vocabulary.min_frequency,
+            **(
+                {}
+                if prepared.vocabulary.pre_tokenizer == DEFAULT_PRE_TOKENIZER
+                else {"pre_tokenizer": prepared.vocabulary.pre_tokenizer}
+            ),
             "sample_characters": plan.tokenizer_sample_characters,
             "sample_documents": len(_tokenizer_sample(plan, prepared.split))
             if plan.tokenizer_sample_characters is not None
