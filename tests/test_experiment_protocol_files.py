@@ -107,3 +107,42 @@ def test_the_space_prefixed_arm_differs_from_e2614_only_in_how_the_tokenizer_is_
     # The documents scored are chosen with the control's own vocabulary.
     assert arm["evaluation_selection_tokenizer_file"] == reference["tokenizer_file"]
     assert arm["tokenizer_pre_tokenizer"].startswith("space-prefixed")
+
+
+def test_the_equal_text_arm_differs_from_the_equal_positions_arm_only_in_the_declared_fields() -> (
+    None
+):
+    directory = Path(__file__).resolve().parent.parent / "configs" / "experiments"
+    equal_positions = tomllib.loads((directory / "E2620-space-prefixed.toml").read_text("utf-8"))[
+        "plan"
+    ]
+    equal_text = tomllib.loads(
+        (directory / "E2624-space-prefixed-equal-text.toml").read_text("utf-8")
+    )["plan"]
+
+    changed = {
+        key
+        for key in {*equal_positions, *equal_text}
+        if equal_positions.get(key) != equal_text.get(key)
+    }
+
+    assert changed == {
+        "max_training_tokens",
+        "max_steps",
+        "warmup_steps",
+        "eval_every",
+        "tokenizer_file",
+        "expected_tokenizer_fingerprint",
+    }
+    # The same fraction of the pool is read: updates x positions over the capped pool, to three decimals, as the control's 0.983.
+    positions = equal_text["max_steps"] * equal_text["batch_size"] * equal_text["context_length"]
+    assert round(positions / equal_text["max_training_tokens"], 3) == 0.983
+    # The schedule keeps its shape: warmup and evaluation interval are the same fractions of the updates.
+    assert round(equal_text["warmup_steps"] / equal_text["max_steps"], 3) == round(
+        equal_positions["warmup_steps"] / equal_positions["max_steps"], 3
+    )
+    # The vocabulary is the one E2620 fitted, as a committed file, under the same rule.
+    assert equal_text["tokenizer_file"].endswith(
+        equal_text["expected_tokenizer_fingerprint"] + ".json"
+    )
+    assert equal_text["tokenizer_pre_tokenizer"] == equal_positions["tokenizer_pre_tokenizer"]

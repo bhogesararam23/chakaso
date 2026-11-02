@@ -56,7 +56,9 @@ def classify(delta_o1: float, delta_whole: float) -> str:
     return "V-d"
 
 
-def _problems(treatment: Mapping[str, Any], control: Mapping[str, Any]) -> list[str]:
+def _problems(
+    treatment: Mapping[str, Any], control: Mapping[str, Any], *, equal_text: bool = False
+) -> list[str]:
     problems: list[str] = []
     for label, left, right in (
         (
@@ -75,16 +77,31 @@ def _problems(treatment: Mapping[str, Any], control: Mapping[str, Any]) -> list[
             control["transformer"]["parameter_count"],
         ),
         (
-            "updates",
-            treatment["transformer"]["budget"]["max_steps"],
-            control["transformer"]["budget"]["max_steps"],
-        ),
-        (
             "batch size",
             treatment["transformer"]["budget"]["batch_size"],
             control["transformer"]["budget"]["batch_size"],
         ),
     ):
+        if left != right:
+            problems.append(f"{label}: treatment {left!r}, control {right!r}")
+    if equal_text:
+        # Equal text: the updates differ by design; what must be equal is the training documents the two arms read.
+        checks = (
+            (
+                "training documents packed",
+                treatment["corpus"]["training_documents_packed"],
+                control["corpus"]["training_documents_packed"],
+            ),
+        )
+    else:
+        checks = (
+            (
+                "updates",
+                treatment["transformer"]["budget"]["max_steps"],
+                control["transformer"]["budget"]["max_steps"],
+            ),
+        )
+    for label, left, right in checks:
         if left != right:
             problems.append(f"{label}: treatment {left!r}, control {right!r}")
     rule = treatment["tokenizer"].get("pre_tokenizer")
@@ -117,11 +134,14 @@ def _problems(treatment: Mapping[str, Any], control: Mapping[str, Any]) -> list[
     return problems
 
 
-def read(treatment: Mapping[str, Any], control: Mapping[str, Any]) -> dict[str, Any]:
+def read(
+    treatment: Mapping[str, Any], control: Mapping[str, Any], *, equal_text: bool = False
+) -> dict[str, Any]:
     """The record's reading of one treatment against its control."""
     delta_o1 = _o1(control) - _o1(treatment)
     delta_whole = _whole(control) - _whole(treatment)
     return {
+        "mode": "equal-text" if equal_text else "equal-positions",
         "outcome": classify(delta_o1, delta_whole),
         "delta_o1": delta_o1,
         "delta_whole_pack": delta_whole,
@@ -160,18 +180,23 @@ def main(argv: Sequence[str] | None = None) -> int:
     )
     parser.add_argument("--treatment", type=Path, required=True)
     parser.add_argument("--control", type=Path, required=True)
+    parser.add_argument(
+        "--equal-text",
+        action="store_true",
+        help="the arms read the same training documents for different numbers of updates (E2624); the update-count guard becomes a training-documents guard",
+    )
     parser.add_argument("--out", type=Path)
     args = parser.parse_args(argv)
     try:
         treatment = json.loads(args.treatment.read_text(encoding="utf-8"))
         control = json.loads(args.control.read_text(encoding="utf-8"))
-        problems = _problems(treatment, control)
+        problems = _problems(treatment, control, equal_text=args.equal_text)
         if problems:
             print("error: this is not a tokenizer-only comparison:", file=sys.stderr)
             for problem in problems:
                 print(f"  {problem}", file=sys.stderr)
             return 2
-        result = read(treatment, control)
+        result = read(treatment, control, equal_text=args.equal_text)
     except (OSError, KeyError, ValueError) as error:
         print(f"error: {error}", file=sys.stderr)
         return 1

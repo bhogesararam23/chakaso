@@ -34,6 +34,8 @@ def _report(
     documents: int = 34,
     selection_fingerprint: str | None = None,
     corpus: str = "c" * 16,
+    steps: int = 2400,
+    training_documents: int = 2756,
     characters: int = 535_000,
     cpt: float = 2.1,
 ) -> str:
@@ -45,6 +47,7 @@ def _report(
         "fingerprint": corpus,
         "split_fingerprint": "s" * 16,
         "test_documents_packed": documents,
+        "training_documents_packed": training_documents,
     }
     if treatment:
         corpus_block["evaluation_selection"] = {
@@ -57,7 +60,7 @@ def _report(
         "tokenizer": tokenizer,
         "transformer": {
             "parameter_count": 3_413_760,
-            "budget": {"max_steps": 2400, "batch_size": 32},
+            "budget": {"max_steps": steps, "batch_size": 32},
             "test": {
                 "bits_per_character": whole,
                 "characters_scored": characters,
@@ -174,3 +177,38 @@ def test_a_treatment_that_still_uses_the_default_rule_is_refused(tmp_path: Path)
     treatment_path.write_text(json.dumps(document), encoding="utf-8")
 
     assert _script().main([f"--treatment={treatment_path}", f"--control={control}"]) == 2  # type: ignore[attr-defined]
+
+
+def test_an_equal_text_arm_may_run_fewer_updates_when_it_trained_on_the_same_documents(
+    tmp_path: Path,
+) -> None:
+    control = _report(tmp_path / "c.json", partition=1.90, whole=2.05, treatment=False)
+    treatment = _report(tmp_path / "t.json", partition=1.87, whole=2.00, treatment=True, steps=1684)
+    out = tmp_path / "out.json"
+
+    refused = _script().main([f"--treatment={treatment}", f"--control={control}"])  # type: ignore[attr-defined]
+    accepted = _script().main(  # type: ignore[attr-defined]
+        [f"--treatment={treatment}", f"--control={control}", "--equal-text", f"--out={out}"]
+    )
+
+    assert refused == 2  # equal positions is the default and 1,684 is not 2,400 updates
+    assert accepted == 0
+    result = json.loads(out.read_text(encoding="utf-8"))
+    assert result["mode"] == "equal-text"
+    assert result["outcome"] == "V-a"
+
+
+def test_an_equal_text_arm_that_trained_on_other_documents_is_refused(tmp_path: Path) -> None:
+    control = _report(tmp_path / "c.json", partition=1.90, whole=2.05, treatment=False)
+    treatment = _report(
+        tmp_path / "t.json",
+        partition=1.87,
+        whole=2.00,
+        treatment=True,
+        steps=1684,
+        training_documents=3100,
+    )
+
+    assert (
+        _script().main([f"--treatment={treatment}", f"--control={control}", "--equal-text"]) == 2  # type: ignore[attr-defined]
+    )
