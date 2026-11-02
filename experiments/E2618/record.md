@@ -145,7 +145,7 @@ Pooled within-arm standard deviation **0.00400** (E2614's was 0.00224, interval 
 | 0 % vs 50 % | -0.00482 | [-0.01185, +0.00222] | **UNRESOLVED** | 0 % |
 | 25 % vs 50 % | -0.01411 | [-0.02114, -0.00708] | **ORDERED** | 25 % |
 
-* **Outcome: H9-a′.** The lowest mean is the 25 % arm, and it is graded ORDERED, not negligible, against the 0 % arm (*d* = 0.0093, interval [0.0023, 0.0163], the lower end above zero though under the 0.0062 margin only in part of its width). It is also ORDERED against the 50 % arm
+* **Outcome: H9-a′.** The lowest mean is the 25 % arm, and it is graded ORDERED, not negligible, against the 0 % arm (*d* = 0.0093, interval [0.0023, 0.0163], the interval excludes zero and reaches beyond the 0.0062 margin, so it is not negligible). It is also ORDERED against the 50 % arm
   (*d* = 0.0141, interval [0.0071, 0.0211]). The 0 % and 50 % arms are UNRESOLVED from one another (*d* = 0.0048, interval [−0.0119, 0.0022]).
 * **What that says and no more.** On the equal-weight mean O1, an interior share (25 %) is better than none and better than 50 %. With E2615's 100 % endpoint separably worse than all three (+0.2088 against 25 %, one seed, not re-run) the curve has an interior minimum near a quarter of the budget.
   The size is small: 0.009 and 0.014 bits per character, under 1 % of O1.

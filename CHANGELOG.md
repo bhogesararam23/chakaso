@@ -16,6 +16,9 @@ capability is implemented or still planned.
 
 **Measured**
 
+- **E2618: an interior prose share beats none (H9-a′).** Five seeds on each of the 0, 25 and 50 % arms of the prose-share sweep: on the equal-weight register mean the 25 % arm is lowest (2.00928 against 2.01858 and 2.02339) and ordered against both, by 0.009 and 0.014 bits per character (under 1 %).
+  It is a candidate working mixture, not a changed default; the objective is a convention, and the whole-pack number would read differently.
+- **E2623: a held-out continuation probe is valid and near ceiling.** Trained decoders prefer the true next 24 identifiers to a same-register span from another work 0.96–0.99 of the time (pointwise mutual information with the passage); seven untrained initialisations score 0.45–0.52. It cannot rank the trained arms.
 - **E2617: this host reproduces itself exactly, and differs from the Windows host by at most 0.0025 bits per character.** The same-host repeat is bit-identical (all 43 tensors); the cross-machine
   differences (O1 −0.00067, mathematics −0.00245) are 17 % of their tie margins at most. No earlier cross-host finding is within reach of the effect.
 - **E2621/E2622: a grammatical minimal-pair probe** (800 self-written pairs, two versions). Version 1's untrained floor was above chance because a bad sentence tokenizes into more identifiers; version 2 balances them. Across seven untrained
