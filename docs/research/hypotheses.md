@@ -201,7 +201,7 @@ identifiers reaches. *Why:* every artifact so far completed `budget_ceiling` wit
 "train longer" looks free — and Muennighoff et al. (arXiv:2305.16264) report that up to 4 epochs of repeated data
 yields negligible change versus unique data, while Xue et al. (arXiv:2305.13230) make degradation depend on
 dataset size and parameter count. E2612's arms sat at **0.98 epochs**. *Falsified by:* an epoch-sweep whose held-out
-loss keeps falling at 4 epochs at the same rate it fell from 0 to 1.
+loss keeps falling at 4 epochs at the same rate it fell from 0 to 1. *Status 2026-11-02:* **first measured point** from [E2619](../../experiments/E2619/record.md) (prose only, one seed, fixed 2,400 updates): reading a 10M pool about twice scores the same on held-out prose as reading a 20M pool once (1.8057 against 1.8093, a tie), while reading a 5M pool about four times scores 0.011–0.015 bits per character worse (1.8205). Repetition up to two passes is free here and four is not; this is not the budget-extension experiment H10 names (that varies updates over a fixed pool) and does not answer it.
 
 **H11 — Context 256 is too long for a 20M-token budget.** *Statement:* at fixed parameters and tokens, a
 shorter context reaches lower held-out bits per character than 256. *Why:* Shi et al. (arXiv:2502.01481) ran a
