@@ -1,6 +1,6 @@
 # E2624 — H17 at equal text: does the space-prefixed tokenizer still lower held-out loss when it reads the same text for the same fraction of the pool?
 
-**Status:** preregistered, not yet run. Committed before the run starts; the Results section is added after the report is on disk.
+**Status:** measured — **W-b by the declared rule: at equal text and equal passes the space-prefixed arm is worse than the control, but it also made 30 % fewer updates, so this does not show the tokenizer is worse per character; with E2620 it shows the gain is in text per update, not in text.** Preregistered and committed (`da72cb0`) before the run; the Results section was added after the report was on disk. The design that separates the two confounds is [E2625](../E2625/record.md).
 **Type:** Research experiment, **preregistered**. It is the follow-up [E2620](../E2620/record.md) declared for a V-a result: E2620 held updates and positions fixed, and its treatment therefore read about 40 % more *characters* than its control. This record holds the
 **text read** fixed instead.
 **Protocol file:** [`configs/experiments/E2624-space-prefixed-equal-text.toml`](../../configs/experiments/E2624-space-prefixed-equal-text.toml), read by `chakaso experiment study --protocol … --seeds 7`. A test holds it to E2620's on every field except six.
@@ -68,3 +68,32 @@ chakaso experiment study --work-dir data/experiments --experiment E2624 --seeds 
 python scripts/read_tokenizer_arm.py --equal-text --treatment data/experiments/E2624/seed-7/report.json \
   --control experiments/E2617/E2617-report.json --out experiments/E2624/results.json
 ```
+
+## Results (added 2026-11-02)
+
+Produced by `scripts/read_tokenizer_arm.py --equal-text` from committed files: [`E2624-report.json`](E2624-report.json), [`../E2617/E2617-report.json`](../E2617/E2617-report.json) and [`results.json`](results.json) (mode `equal-text`). The guards passed: the arm trained on the control's 2,756 documents (14,033,424 identifiers under the committed
+vocabulary `4a47f0281c81a9e5`, loaded as an input), the same corpus, split and parameter count, the control's held-out documents. 1,684 updates to the ceiling on this host (1,903 s, 7,617 positions per second), none early-stopped, none diverged.
+
+| Partition | control (2,400 updates, default rule) | treatment (1,684 updates, space-prefixed) | Δ = control − treatment | relative | E2620's Δ (equal positions) |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| mathematics | 2.5753 | 2.6054 | -0.0300 | -1.17 % | +0.0223 |
+| medicine | 1.8379 | 1.8714 | -0.0335 | -1.82 % | +0.0277 |
+| prose | 1.8392 | 1.8774 | -0.0382 | -2.08 % | +0.0217 |
+| science | 1.9488 | 1.9850 | -0.0362 | -1.86 % | +0.0307 |
+| technology | 1.9022 | 1.9397 | -0.0374 | -1.97 % | +0.0297 |
+| **O1** | **2.0207** | **2.0558** | **-0.0351** | -1.74 % | +0.0264 |
+| **whole pack** | **2.0555** | **2.0874** | **-0.0319** | -1.55 % | +0.0320 |
+
+### The preregistered reading
+
+* **Outcome: W-b (worse).** Δ(O1) = −0.0351 is under −0.02 and Δ(whole pack) = −0.0319 is under −0.00933, with every partition worse by 0.030–0.038. Characters per identifier on the held-out text are 2.933, as in E2620 (P2 held).
+* **P1 held, and then some:** the gain did not merely shrink, it reversed (−0.0351 against +0.0264). **P3 did not hold as worded:** mathematics improves least in relative terms at equal positions (E2620) and is also the *least damaged* here (−1.17 % against −1.8 to −2.1 %), the same ordering seen from the other side.
+
+### What it does and does not show — read this before the headline
+
+* **The declared meaning of W-b is "the E2620 gain was more text, not a better tokenizer."** That sentence over-reaches, and the record's own limits say why: this arm made **1,684 updates against the control's 2,400** (13.8M positions against 19.7M). Reading the same text in 30 % fewer optimiser updates is a shorter schedule, and a shorter schedule is expensive at this scale: E2616's halved schedule cost prose
+  0.134 bits per character and E2619 showed that repetition is not the cause. So the 0.035 here **cannot be split** between "the space-prefixed tokenizer is worse per character of text" and "30 % fewer updates cost this much". Nothing in this experiment can.
+* **What the two records do show together.** At equal updates and positions (E2620) the tokenizer gains 0.026; at equal characters read, with 30 % fewer updates (E2624) it loses 0.035. The difference between them, 0.061, is the price of those fewer updates plus the value of the text not read, in this tokenizer's units. Per optimiser update the space-prefixed tokenizer is worth about as much text as it saves, and an update is worth more than text at this budget. The efficient reading of H17
+  is therefore in compute (positions): the space-prefixed rule lets the same compute read 40 % more text, and E2620 measured that this is worth 0.026. It does not lower loss at equal text.
+* **The design that separates the confounds** is equal updates *and* equal text: the treatment makes the control's 2,400 updates over the control's own documents (so about 1.4 passes over the pool, inside the range E2619 found free). That is [E2625](../E2625/record.md); until it is run the tokenizer remains a candidate, with a result that depends on which of text or updates is held fixed.
+* **Limits as declared:** one seed, margins from E2614's default-tokenizer spread, truncated budget, archaic English.
