@@ -1,0 +1,86 @@
+{
+  "beyond_tie_margin": [],
+  "beyond_tolerance": [
+    "technology-",
+    "mathematics-",
+    "O1"
+  ],
+  "environment": {
+    "new": {
+      "device": "cpu",
+      "numpy": "2.4.6",
+      "platform": "Linux-6.18.44-fc-v185-x86_64-with-glibc2.39",
+      "python": "3.13.18",
+      "torch": "2.15.0+cpu",
+      "torch_threads": "4"
+    },
+    "reference": {
+      "device": "cpu",
+      "numpy": "2.4.0",
+      "platform": "Windows-11-10.0.26200-SP0",
+      "python": "3.13.5",
+      "torch": "2.13.0+cpu",
+      "torch_threads": "14"
+    }
+  },
+  "metrics": {
+    "O1": {
+      "delta": -0.0006735254297760562,
+      "new": 2.020683742284862,
+      "reference": 2.021357267714638,
+      "tie_margin": 0.0062048,
+      "within_tie_margin": true,
+      "within_tolerance": false
+    },
+    "mathematics-": {
+      "delta": -0.002452451680500012,
+      "new": 2.5753170251063824,
+      "reference": 2.5777694767868824,
+      "tie_margin": 0.035,
+      "within_tie_margin": true,
+      "within_tolerance": false
+    },
+    "medicine-": {
+      "delta": -0.00023630667904295244,
+      "new": 1.837905065348003,
+      "reference": 1.8381413720270459,
+      "tie_margin": 0.010359799999999999,
+      "within_tie_margin": true,
+      "within_tolerance": true
+    },
+    "prose-": {
+      "delta": -0.0003321014551971313,
+      "new": 1.8391877150263278,
+      "reference": 1.839519816481525,
+      "tie_margin": 0.00624635,
+      "within_tie_margin": true,
+      "within_tolerance": true
+    },
+    "science-": {
+      "delta": 0.00016134815123414192,
+      "new": 1.9487852533420127,
+      "reference": 1.9486239051907785,
+      "tie_margin": 0.00932936,
+      "within_tie_margin": true,
+      "within_tolerance": true
+    },
+    "technology-": {
+      "delta": -0.0005081154853743275,
+      "new": 1.9022236526015852,
+      "reference": 1.9027317680869595,
+      "tie_margin": 0.00291404,
+      "within_tie_margin": true,
+      "within_tolerance": false
+    },
+    "whole_pack": {
+      "delta": 8.440795459474515e-05,
+      "new": 2.055531802497055,
+      "reference": 2.05544739454246,
+      "tie_margin": 0.0093349,
+      "within_tie_margin": true,
+      "within_tolerance": true
+    }
+  },
+  "outcome": "X-b",
+  "tolerance": 0.0005
+}
