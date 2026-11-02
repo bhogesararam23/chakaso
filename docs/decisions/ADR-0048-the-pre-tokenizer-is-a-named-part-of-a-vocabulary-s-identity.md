@@ -31,6 +31,15 @@ The constraint is the same as ADR-0046's: nothing already on disk or already cit
    established method and nothing here claims otherwise.
 4. **The default rule stays the default.** Nothing in the repository switches to the new rule; it exists to be measured (H17).
 
+5. **A tokenizer comparison scores the same text only if the held-out documents are chosen by one vocabulary.** The validation and test packs are capped in
+   *identifiers*, counted with the vocabulary being packed (`pack_units(max_tokens=...)`). A more economical tokenizer reaches the cap on fewer
+   characters, so the documents scored differ and bits per character are measured on different text; H17 and the vocabulary-size sweep (H12) would both
+   have carried this confound unseen. The plan gains `evaluation_selection_tokenizer_file`: the cap is counted with that vocabulary
+   (`select_units_by_token_cap`) and the chosen documents are packed uncapped with each arm's own, so every arm is scored on the same documents. With the
+   field unset nothing changes, which a test shows by selecting with the vocabulary being packed. The report states the selection vocabulary's
+   fingerprint and the documents it chose. A residual difference remains and is declared: a pack drops its final partial block, so the scored characters
+   differ by the tail, at most `context_length` identifiers per side.
+
 ## What this does not decide
 
 * Whether the new rule is better. That is H17's experiment, preregistered separately.

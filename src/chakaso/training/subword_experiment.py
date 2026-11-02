@@ -75,7 +75,7 @@ from chakaso.training.nn_training import (
     train_transformer,
     verify_resume_compatibility,
 )
-from chakaso.training.packing import PackedBatch, pack_units
+from chakaso.training.packing import PackedBatch, pack_units, select_units_by_token_cap
 from chakaso.training.subword import (
     DEFAULT_PRE_TOKENIZER,
     SubwordVocabulary,
@@ -326,6 +326,12 @@ class ExperimentPlan:
     #: cached one. This is how a record whose vocabulary current fitting code can no longer reproduce
     #: (K-024) stays re-trainable: the file is committed beside the record, and the cache is not load-bearing.
     tokenizer_file: Path | None = None
+    #: A vocabulary file used only to *choose* the held-out documents: the validation and test caps in identifiers
+    #: are counted with it instead of with the vocabulary the run trains with. A more economical tokenizer reaches an
+    #: identifier cap sooner, so two tokenizers capped by their own counts are scored on different text and their
+    #: bits per character are not comparable (H17). ``None`` keeps the cap counted with the run's own vocabulary,
+    #: which is what every earlier record did.
+    evaluation_selection_tokenizer_file: Path | None = None
     #: A resume point written by an earlier pass of *this* run. Verified against the plan's corpus,
     #: architecture, tokenizer and configuration before a single step is taken.
     resume_from: Path | None = None
@@ -544,6 +550,8 @@ class PreparedCorpus:
     #: What a share-composed run packed, so the report states the realised mixture and not the intended one.
     #: ``None`` for every other plan.
     training_composition: ShareSelection | None = None
+    #: The vocabulary that chose the held-out documents, when the plan named one; ``None`` otherwise.
+    selection_vocabulary: SubwordVocabulary | None = None
 
     @property
     def tokens(self) -> dict[str, int]:
@@ -958,6 +966,11 @@ def prepare_corpus(plan: ExperimentPlan) -> PreparedCorpus:
         split.validation, plan.max_validation_tokens, plan.effective_split_seed
     )
     test_units = _sampled_units(split.test, plan.max_test_tokens, plan.effective_split_seed)
+    selection_vocabulary = (
+        None
+        if plan.evaluation_selection_tokenizer_file is None
+        else SubwordVocabulary.load(plan.evaluation_selection_tokenizer_file)
+    )
 
     char_windows: dict[str, tuple[Any, Any]] = {}
     if plan.character_baseline:
@@ -984,19 +997,11 @@ def prepare_corpus(plan: ExperimentPlan) -> PreparedCorpus:
             # interleaved order would drop the last documents and move the share it just established.
             max_tokens=None if composition is not None else plan.max_training_tokens,
         ),
-        validation=pack_units(
-            validation_units,
-            vocabulary,
-            context_length=plan.context_length,
-            track_documents=plan.document_masking,
-            max_tokens=plan.max_validation_tokens,
+        validation=_pack_evaluation(
+            validation_units, vocabulary, plan, plan.max_validation_tokens, selection_vocabulary
         ),
-        test=pack_units(
-            test_units,
-            vocabulary,
-            context_length=plan.context_length,
-            track_documents=plan.document_masking,
-            max_tokens=plan.max_test_tokens,
+        test=_pack_evaluation(
+            test_units, vocabulary, plan, plan.max_test_tokens, selection_vocabulary
         ),
         char_windows=char_windows,
         timings={"prepare_seconds": round(time.perf_counter() - started, 2)},
@@ -1004,6 +1009,36 @@ def prepare_corpus(plan: ExperimentPlan) -> PreparedCorpus:
         snapshot=snapshot,
         tokenizer_reused=tokenizer_reused,
         training_composition=composition,
+        selection_vocabulary=selection_vocabulary,
+    )
+
+
+def _pack_evaluation(
+    units: tuple[Any, ...],
+    vocabulary: SubwordVocabulary,
+    plan: ExperimentPlan,
+    cap: int | None,
+    selection_vocabulary: SubwordVocabulary | None,
+) -> PackedBatch:
+    """Pack a held-out side, choosing its documents with the selection vocabulary when the plan named one.
+
+    With none, the cap is counted with ``vocabulary`` inside :func:`pack_units`, exactly as before. With one, the
+    documents are the ones a pack capped under *that* vocabulary would hold, and they are packed uncapped, so every
+    tokenizer given the same selection vocabulary is scored on the same text.
+    """
+    if selection_vocabulary is None or cap is None:
+        return pack_units(
+            units,
+            vocabulary,
+            context_length=plan.context_length,
+            track_documents=plan.document_masking,
+            max_tokens=cap,
+        )
+    return pack_units(
+        select_units_by_token_cap(units, selection_vocabulary, cap),
+        vocabulary,
+        context_length=plan.context_length,
+        track_documents=plan.document_masking,
     )
 
 
@@ -1227,12 +1262,8 @@ def _test_partition_metrics(
         if not units:
             produced[prefix] = {"works": 0, "reason": "no test work matched this prefix"}
             continue
-        batch = pack_units(
-            units,
-            prepared.vocabulary,
-            context_length=plan.context_length,
-            track_documents=plan.document_masking,
-            max_tokens=plan.max_test_tokens,
+        batch = _pack_evaluation(
+            units, prepared.vocabulary, plan, plan.max_test_tokens, prepared.selection_vocabulary
         )
         metrics = score_transformer(model, batch, prepared.vocabulary, plan=plan)
         targets = [token for example in batch.examples for token in example.targets]
@@ -1446,6 +1477,17 @@ def run_experiment(plan: ExperimentPlan, *, verbose: bool = False) -> dict[str, 
             "shuffle_training_units": plan.shuffle_training_units,
             "training_documents_packed": prepared.train.document_count,
             "training_tokens_packed": prepared.train.tokens_available,
+            **(
+                {}
+                if prepared.selection_vocabulary is None
+                else {
+                    "evaluation_selection": {
+                        "tokenizer_fingerprint": prepared.selection_vocabulary.fingerprint,
+                        "validation_documents": prepared.validation.document_count,
+                        "test_documents": prepared.test.document_count,
+                    }
+                }
+            ),
             **_composition_block(plan, prepared),
             "groups_per_side": groups_per_side(prepared.split),
             "works_on_multiple_sides": works_on_multiple_sides(prepared.split),
@@ -1634,6 +1676,7 @@ _MACHINE_LOCAL_PLAN_FIELDS = frozenset(
         "corpus_snapshot",
         "tokenizer_cache_dir",
         "tokenizer_file",
+        "evaluation_selection_tokenizer_file",
         "overwrite_artifacts",
     }
 )

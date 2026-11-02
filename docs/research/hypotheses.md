@@ -212,7 +212,7 @@ and it points the opposite way to the roadmap's assumption that context should g
 
 **H12 — Vocabulary 4,096 is not the binding constraint at 3.4M.** *Statement:* sweeping the fitted vocabulary
 over {2k, 4k, 8k, 16k} **with total parameters held fixed** (narrowing the feedforward to pay for a larger table)
-moves held-out bits per character by less than 0.02. *Why:* the published optimum grows with model size
+moves held-out bits per character by less than 0.02. *Control it needs (found 2026-11-02):* the held-out packs are capped in identifiers counted with each arm's own vocabulary, so a sweep over vocabulary sizes would score each arm on different documents; set `evaluation_selection_tokenizer_file` (ADR-0048) so every arm is scored on the same text. *Why:* the published optimum grows with model size
 (γ ≈ 0.83, arXiv:2407.13623) and would put 33M near 37K+, but 4,096 identifiers already consume 1,048,576
 parameters — 30.7 % of this model — so the published direction and this budget collide, and no source resolves it
 below 10M. *Falsified by:* any arm outside the band.

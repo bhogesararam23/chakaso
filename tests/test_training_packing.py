@@ -243,3 +243,50 @@ def test_the_cap_is_validated() -> None:
         pack_units(units, _VOCABULARY, context_length=4, max_tokens=0)
     with pytest.raises(CorpusError, match="max_tokens"):
         pack_units(units, _VOCABULARY, context_length=4, max_tokens=True)  # type: ignore[arg-type]
+
+
+# ------------------------------------------------ selecting evaluation documents with another vocabulary (ADR-0048)
+
+
+def test_selecting_by_a_reference_vocabulary_picks_the_documents_a_capped_pack_would_have() -> None:
+    from chakaso.training.packing import select_units_by_token_cap
+
+    vocabulary = train_subword_vocabulary(
+        ["the quick red fox ran over the dry sand"] * 4, target_size=280, min_frequency=2
+    )
+    units = tuple(
+        TextUnit(identifier=f"u{i}", text="the quick red fox ran. " * (i + 2)) for i in range(8)
+    )
+
+    for cap in (1, 30, 80, 200, 10_000):
+        chosen = select_units_by_token_cap(units, vocabulary, cap)
+        try:
+            capped = pack_units(units, vocabulary, context_length=8, max_tokens=cap)
+        except CorpusError:
+            continue  # too small to fill a block; the selection still returns a prefix
+        selected = pack_units(chosen, vocabulary, context_length=8)
+        assert selected.examples == capped.examples
+        assert selected.document_count == capped.document_count == len(chosen)
+
+
+def test_the_documents_selected_depend_on_the_vocabulary_that_counts() -> None:
+    from chakaso.training.packing import select_units_by_token_cap
+
+    text = "the cat sat on the mat and the dog sat on the log. " * 6
+    coarse = train_subword_vocabulary([text], target_size=300, min_frequency=2)
+    fine = train_subword_vocabulary([text], target_size=258, min_frequency=2)
+    units = tuple(TextUnit(identifier=f"u{i}", text=text) for i in range(10))
+
+    # A vocabulary that spends more identifiers per document reaches the cap in fewer documents.
+    assert len(select_units_by_token_cap(units, fine, 400)) < len(
+        select_units_by_token_cap(units, coarse, 400)
+    )
+
+
+def test_a_cap_that_is_not_a_positive_integer_is_refused() -> None:
+    from chakaso.training.packing import select_units_by_token_cap
+
+    vocabulary = train_subword_vocabulary(["a b a b a b"], target_size=260, min_frequency=2)
+
+    with pytest.raises(CorpusError, match="max_tokens"):
+        select_units_by_token_cap((TextUnit(identifier="u", text="a b"),), vocabulary, 0)

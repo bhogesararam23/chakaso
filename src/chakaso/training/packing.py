@@ -36,7 +36,13 @@ from chakaso.training.data import TextUnit
 from chakaso.training.errors import CorpusError
 from chakaso.training.subword import DOCUMENT_END, SubwordVocabulary
 
-__all__ = ["PackedBatch", "PackedExample", "count_tokens", "pack_units"]
+__all__ = [
+    "PackedBatch",
+    "PackedExample",
+    "count_tokens",
+    "pack_units",
+    "select_units_by_token_cap",
+]
 
 
 @dataclass(frozen=True, slots=True)
@@ -118,6 +124,37 @@ def token_stream(
         if separate_documents:
             produced.append(DOCUMENT_END)
     return tuple(produced)
+
+
+def select_units_by_token_cap(
+    units: Sequence[TextUnit],
+    vocabulary: SubwordVocabulary,
+    max_tokens: int,
+    *,
+    separate_documents: bool = True,
+) -> tuple[TextUnit, ...]:
+    """The whole units :func:`pack_units` would use under ``max_tokens``, chosen by counting with ``vocabulary``.
+
+    Packing under a cap counts identifiers with the vocabulary being packed, so two tokenizers cut the same
+    ordered documents at different places and a model is then scored on different text. Selecting with one
+    reference vocabulary and packing the chosen units, uncapped, with each tokenizer gives them the same
+    documents - which is what a bits-per-character comparison across tokenizers needs (H17). The rule is
+    :func:`pack_units`'s own: keep taking whole units while the stream is still under the cap.
+
+    Raises:
+        CorpusError: ``max_tokens`` is not a positive integer.
+    """
+    if isinstance(max_tokens, bool) or not isinstance(max_tokens, int) or max_tokens < 1:
+        message = f"max_tokens must be an integer >= 1, got {max_tokens!r}"
+        raise CorpusError(message)
+    chosen: list[TextUnit] = []
+    length = 0
+    for unit in units:
+        if length >= max_tokens:
+            break
+        length += len(vocabulary.encode(unit.text)) + (1 if separate_documents else 0)
+        chosen.append(unit)
+    return tuple(chosen)
 
 
 def pack_units(

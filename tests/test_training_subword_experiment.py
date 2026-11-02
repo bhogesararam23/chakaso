@@ -1589,3 +1589,71 @@ def test_a_report_names_a_non_default_rule_and_a_default_report_is_unchanged(
     assert prefixed["plan"]["tokenizer_pre_tokenizer"] == SPACE_PREFIXED_PRE_TOKENIZER
     # A different rule is a different protocol, so the digests differ.
     assert protocol_digest(default) != protocol_digest(prefixed)
+
+
+# ------------------------------------------------ held-out documents chosen by a reference vocabulary (H17 control)
+
+
+def _selection_plans(tmp_path: Path):  # type: ignore[no-untyped-def]
+    from chakaso.training.subword import SPACE_PREFIXED_PRE_TOKENIZER
+
+    root = _register_root(tmp_path)
+    caps = {"max_validation_tokens": 150, "max_test_tokens": 150}
+    default = prepare_corpus(_register_plan(root, tmp_path / "w-default", **caps))
+    reference = tmp_path / "reference-vocabulary.json"
+    default.vocabulary.save(reference)
+    return root, caps, default, reference, SPACE_PREFIXED_PRE_TOKENIZER
+
+
+def test_a_reference_vocabulary_gives_two_tokenizers_the_same_heldout_documents(
+    tmp_path: Path,
+) -> None:
+    root, caps, default, reference, rule = _selection_plans(tmp_path)
+
+    without = prepare_corpus(
+        _register_plan(root, tmp_path / "w-free", tokenizer_pre_tokenizer=rule, **caps)
+    )
+    with_reference = prepare_corpus(
+        _register_plan(
+            root,
+            tmp_path / "w-ref",
+            tokenizer_pre_tokenizer=rule,
+            evaluation_selection_tokenizer_file=reference,
+            **caps,
+        )
+    )
+
+    assert with_reference.test.document_count == default.test.document_count
+    assert with_reference.validation.document_count == default.validation.document_count
+    # That a tokenizer's own count would have chosen different documents is shown at the unit level, where the
+    # fixture can make the two counts differ (test_the_documents_selected_depend_on_the_vocabulary_that_counts).
+    assert without.test.document_count >= 1
+
+
+def test_selecting_with_the_vocabulary_being_packed_changes_nothing(tmp_path: Path) -> None:
+    root, caps, default, reference, _ = _selection_plans(tmp_path)
+
+    again = prepare_corpus(
+        _register_plan(
+            root, tmp_path / "w-same", evaluation_selection_tokenizer_file=reference, **caps
+        )
+    )
+
+    assert again.test.examples == default.test.examples
+    assert again.validation.examples == default.validation.examples
+
+
+def test_the_report_states_the_selection_vocabulary_only_when_one_was_used(tmp_path: Path) -> None:
+    root, caps, _, reference, _ = _selection_plans(tmp_path)
+
+    plain = run_experiment(_register_plan(root, tmp_path / "w-plain", **caps))
+    selected = run_experiment(
+        _register_plan(
+            root, tmp_path / "w-sel", evaluation_selection_tokenizer_file=reference, **caps
+        )
+    )
+
+    assert "evaluation_selection" not in plain["corpus"]
+    block = selected["corpus"]["evaluation_selection"]
+    assert block["tokenizer_fingerprint"] == plain["tokenizer"]["fingerprint"]
+    assert set(block) >= {"tokenizer_fingerprint", "test_documents", "validation_documents"}
