@@ -139,3 +139,4 @@ creates.
 | [ADR-0044](ADR-0044-a-vocabulary-a-record-cites-is-committed-beside-it.md) | A vocabulary that a measured record cites and that no command can refit is committed beside the record, as an input rather than a cache | Accepted |
 | [ADR-0045](ADR-0045-training-composition-is-declared-as-a-share-of-the-token-budget.md) | A training mixture is declared as a share of the token budget, drawn as nested prefixes of seeded shuffles, and reported as realised | Accepted |
 | [ADR-0046](ADR-0046-checkpoint-records-the-tokenizer-frequency-floor-as-an-optional-field.md) | A checkpoint records the tokenizer's frequency floor as an optional field, and says "unrecorded" when it is not | Accepted |
+| [ADR-0047](ADR-0047-a-pinned-corpus-declares-the-digest-of-the-text-it-ingests.md) | A pinned corpus declares the digest of the text it ingests, and where its raw bytes live is left to the owner | Accepted in part |

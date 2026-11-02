@@ -58,6 +58,12 @@ __all__ = [
 CATALOG_SCHEMA_VERSION = "chakaso-dataset-catalog/1"
 
 _DIGEST = re.compile(r"^[0-9a-f]{64}$")
+_DRIFT_PHRASES = {
+    "ingested-text-identical": "the ingested text is identical: the change lies outside what training reads",
+    "ingested-text-differs": "the ingested text differs: the training text would change",
+    "unreadable-as-a-gutenberg-text": "no longer readable as a Project Gutenberg text",
+    "unclassified-no-ingested-digest-declared": "cannot be classified: no ingested digest is declared",
+}
 _ISO_DATE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
 _SLUG = re.compile(r"^[a-z0-9][a-z0-9._-]*$")
 
@@ -73,6 +79,10 @@ class CatalogSource:
         sha256: Digest of the downloaded bytes, before any decoding or normalization.
         title/author: Human-readable identity, recorded for the data card and never used to select data.
         licence: Overrides the catalogue-wide licence when one source is not under the same terms.
+        ingested_sha256: Optional. Digest of the documents this source contributes under the catalogue's
+            chunking bound (``IngestedSource.documents_digest``). When declared, ingestion refuses text that
+            differs, and a raw-digest mismatch is classified as outside or inside the ingested text before
+            anything trains. Absent in catalogues written before it existed; those behave exactly as before.
     """
 
     slug: str
@@ -82,6 +92,7 @@ class CatalogSource:
     title: str = ""
     author: str = ""
     licence: str | None = None
+    ingested_sha256: str | None = None
 
     def __post_init__(self) -> None:
         if not _SLUG.match(self.slug):
@@ -101,6 +112,9 @@ class CatalogSource:
         if self.licence is not None and not self.licence.strip():
             message = f"source {self.slug!r} declares an empty licence; omit the field to inherit"
             raise CorpusError(message)
+        if self.ingested_sha256 is not None and not _DIGEST.match(self.ingested_sha256):
+            message = f"source {self.slug!r} declares an ingested digest that is not 64 lowercase hex characters"
+            raise CorpusError(message)
 
     def as_dict(self) -> dict[str, object]:
         """The declaration as plain data, in a stable key order."""
@@ -114,6 +128,8 @@ class CatalogSource:
         }
         if self.licence is not None:
             values["licence"] = self.licence
+        if self.ingested_sha256 is not None:
+            values["ingested_sha256"] = self.ingested_sha256
         return values
 
 
@@ -260,13 +276,20 @@ class DatasetCatalog:
             )
             raise CorpusAcquisitionError(message)
         observed: dict[str, str] = {}
-        mismatched: list[str] = []
+        changed: list[tuple[CatalogSource, str]] = []
         for item in self.sources:
             digest = sha256_hex(self.raw_path(item, raw_dir).read_bytes())
             if digest != item.sha256:
-                mismatched.append(f"{item.slug}: declared {item.sha256}, read {digest}")
+                changed.append((item, digest))
             observed[item.slug] = digest
-        if mismatched:
+        if changed:
+            # The refusal is unconditional. The classification only tells the operator what kind of drift it
+            # was, so that "the pin moved" is not mistaken for "the training text moved" or the reverse.
+            mismatched = [
+                f"{item.slug}: declared {item.sha256}, read {digest} "
+                f"({_DRIFT_PHRASES[self._classify_one(item, raw_dir)]})"
+                for item, digest in changed
+            ]
             message = (
                 f"{len(mismatched)} source file(s) under {str(raw_dir)!r} do not match the digest the "
                 f"catalog {self.name!r} declares — the bytes are a different edition or were altered after "
@@ -274,6 +297,36 @@ class DatasetCatalog:
             )
             raise CorpusAcquisitionError(message)
         return observed
+
+    def classify_drift(self, raw_dir: Path) -> dict[str, str]:
+        """For every source whose bytes differ from the declared digest, what kind of difference it is.
+
+        Returns slug → one of ``ingested-text-identical`` (the raw bytes moved but ingestion produces the
+        declared documents), ``ingested-text-differs``, ``unreadable-as-a-gutenberg-text``, or
+        ``unclassified-no-ingested-digest-declared``. Sources whose bytes match are not listed. Nothing is
+        accepted by this method: it reports, and :meth:`verify_raw` still refuses.
+        """
+        result: dict[str, str] = {}
+        for item in self.sources:
+            path = self.raw_path(item, raw_dir)
+            if path.is_file() and sha256_hex(path.read_bytes()) != item.sha256:
+                result[item.slug] = self._classify_one(item, raw_dir)
+        return result
+
+    def _classify_one(self, item: CatalogSource, raw_dir: Path) -> str:
+        if item.ingested_sha256 is None:
+            return "unclassified-no-ingested-digest-declared"
+        try:
+            observed = ingest_project_gutenberg(
+                self.raw_path(item, raw_dir).read_bytes().decode("utf-8-sig"),
+                slug=item.slug,
+                ebook_number=item.ebook_number,
+            )
+        except (CorpusError, UnicodeDecodeError):
+            return "unreadable-as-a-gutenberg-text"
+        if observed.documents_digest(self.max_characters_per_document) == item.ingested_sha256:
+            return "ingested-text-identical"
+        return "ingested-text-differs"
 
     def ingest(self, raw_dir: Path, cache_dir: Path) -> tuple[IngestedSource, ...]:
         """Ingest every declared source, reusing cached documents whose bytes have not moved.
@@ -295,6 +348,7 @@ class DatasetCatalog:
             digest = verified[item.slug]
             cached = self._read_cache(item, cache_dir, digest)
             if cached is not None:
+                self._assert_ingested_digest(item, cached)
                 produced.append(cached)
                 continue
             raw_bytes = self.raw_path(item, raw_dir).read_bytes()
@@ -305,9 +359,22 @@ class DatasetCatalog:
                 source_digest=digest,
             )
             _assert_declaration_matches_file(item, ingested)
+            self._assert_ingested_digest(item, ingested)
             self._write_cache(item, cache_dir, ingested)
             produced.append(ingested)
         return tuple(produced)
+
+    def _assert_ingested_digest(self, item: CatalogSource, ingested: IngestedSource) -> None:
+        if item.ingested_sha256 is None:
+            return
+        observed = ingested.documents_digest(self.max_characters_per_document)
+        if observed != item.ingested_sha256:
+            message = (
+                f"source {item.slug!r} ingests to documents with digest {observed}, but the catalog "
+                f"{self.name!r} declares {item.ingested_sha256}: the training text is not the one that was "
+                "pinned, whatever the raw digest says"
+            )
+            raise CorpusAcquisitionError(message)
 
     def _read_cache(
         self, item: CatalogSource, cache_dir: Path, digest: str
@@ -540,6 +607,7 @@ def declare_gutenberg_directory(
                 sha256=ingested.source_digest,
                 title=ingested.title,
                 author=ingested.author,
+                ingested_sha256=ingested.documents_digest(max_characters_per_document),
             )
         )
     return DatasetCatalog(

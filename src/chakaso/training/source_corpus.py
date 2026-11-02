@@ -105,6 +105,19 @@ class IngestedSource:
             )
         )
 
+    def documents_digest(self, max_characters: int) -> str:
+        """SHA-256 over what ingestion hands to the corpus: each document's path and digest, in reading order.
+
+        This is the identity of the *ingested* text, not of the downloaded bytes. The same documents result
+        from bytes that differ in a header, a licence preamble or a trailer the ingestion discards, so a source
+        whose raw digest moved can be told apart from one whose training text moved (K-031). It depends on the
+        chunking bound, because the bound decides the documents.
+        """
+        digest = hashlib.sha256()
+        for document in self.documents(max_characters):
+            digest.update(f"{document.path}\t{document.sha256}\n".encode())
+        return digest.hexdigest()
+
 
 def _header_field(header: str, label: str) -> str:
     match = re.search(rf"^{label}:(.*)$", header, re.M)

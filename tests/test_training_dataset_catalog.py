@@ -13,6 +13,7 @@ from chakaso.training.dataset_catalog import (
     CATALOG_SCHEMA_VERSION,
     CatalogSource,
     DatasetCatalog,
+    declare_gutenberg_directory,
     gutenberg_url,
     load_catalog,
     pin_catalog,
@@ -20,6 +21,7 @@ from chakaso.training.dataset_catalog import (
 )
 from chakaso.training.errors import CorpusAcquisitionError, CorpusError
 from chakaso.training.manifest import read_snapshot
+from chakaso.training.source_corpus import ingest_project_gutenberg
 
 _BODY = (
     """First paragraph of the book, with enough words in it to chunk.\n\n"""
@@ -395,3 +397,169 @@ def test_a_per_source_licence_override_reaches_the_manifest(tmp_path: Path) -> N
     )
 
     assert manifest.licence == f"{base.licence}; exceptions: CC0"
+
+
+# ------------------------------------------ the ingested-text digest and drift classification (K-031, T15)
+
+
+def _with_ingested_digests(catalog: DatasetCatalog, raw_dir: Path) -> DatasetCatalog:
+    bound = catalog.max_characters_per_document
+    sources = tuple(
+        CatalogSource(
+            **{
+                **item.as_dict(),
+                "ingested_sha256": ingest_project_gutenberg(
+                    catalog.raw_path(item, raw_dir).read_text(encoding="utf-8"),
+                    slug=item.slug,
+                    ebook_number=item.ebook_number,
+                    source_digest=item.sha256,
+                ).documents_digest(bound),
+            }
+        )
+        for item in catalog.sources
+    )
+    return DatasetCatalog(
+        name=catalog.name,
+        version=catalog.version,
+        licence=catalog.licence,
+        source=catalog.source,
+        retrieved=catalog.retrieved,
+        sources=sources,
+        max_characters_per_document=bound,
+    )
+
+
+def test_a_source_declaration_refuses_an_ingested_digest_that_is_not_a_digest() -> None:
+    with pytest.raises(CorpusError, match="ingested"):
+        CatalogSource(
+            slug="pg1", ebook_number=1, url="https://x/y", sha256="0" * 64, ingested_sha256="abc"
+        )
+
+
+def test_a_catalog_without_ingested_digests_serialises_exactly_as_before(tmp_path: Path) -> None:
+    catalog = _catalog(tmp_path / "raw")
+
+    assert all("ingested_sha256" not in item.as_dict() for item in catalog.sources)
+    path = tmp_path / "catalog.toml"
+    write_catalog(catalog, path)
+    assert "ingested_sha256" not in path.read_text(encoding="utf-8")
+
+
+def test_ingested_digests_round_trip_through_toml(tmp_path: Path) -> None:
+    raw = tmp_path / "raw"
+    catalog = _with_ingested_digests(_catalog(raw), raw)
+    path = tmp_path / "catalog.toml"
+    write_catalog(catalog, path)
+
+    assert load_catalog(path) == catalog
+    assert all(item.ingested_sha256 for item in load_catalog(path).sources)
+
+
+def test_the_documents_digest_depends_on_the_chunking_bound(tmp_path: Path) -> None:
+    raw = tmp_path / "raw"
+    item = _catalog(raw).sources[0]
+    ingested = ingest_project_gutenberg(
+        (raw / "pg1.txt").read_text(encoding="utf-8"), slug="pg1", ebook_number=1
+    )
+
+    assert ingested.documents_digest(48) == ingested.documents_digest(48)
+    assert ingested.documents_digest(48) != ingested.documents_digest(4096)
+    assert item.ingested_sha256 is None
+
+
+def test_ingestion_refuses_text_that_is_not_the_ingested_digest_declared(tmp_path: Path) -> None:
+    raw = tmp_path / "raw"
+    catalog = _with_ingested_digests(_catalog(raw), raw)
+    wrong = CatalogSource(**{**catalog.sources[0].as_dict(), "ingested_sha256": "0" * 64})
+    broken = DatasetCatalog(
+        name=catalog.name,
+        version=catalog.version,
+        licence=catalog.licence,
+        source=catalog.source,
+        retrieved=catalog.retrieved,
+        sources=(wrong, catalog.sources[1]),
+        max_characters_per_document=catalog.max_characters_per_document,
+    )
+
+    with pytest.raises(CorpusAcquisitionError, match=r"pg1.*ingest"):
+        broken.ingest(raw, tmp_path / "cache")
+
+
+def test_a_change_outside_the_ingested_text_is_named_as_such_and_still_refused(
+    tmp_path: Path,
+) -> None:
+    raw = tmp_path / "raw"
+    catalog = _with_ingested_digests(_catalog(raw), raw)
+    path = raw / "pg1.txt"
+    # A line in the file's header, before the start marker: the bytes move, the ingested documents do not.
+    path.write_text(
+        path.read_text(encoding="utf-8").replace(
+            "Author: A Person", "Author: A Person\nUpdated: today"
+        ),
+        encoding="utf-8",
+    )
+
+    assert catalog.classify_drift(raw) == {"pg1": "ingested-text-identical"}
+    with pytest.raises(CorpusAcquisitionError, match=r"pg1.*ingested text is identical"):
+        catalog.verify_raw(raw)
+
+
+def test_a_change_inside_the_ingested_text_is_named_as_such_and_still_refused(
+    tmp_path: Path,
+) -> None:
+    raw = tmp_path / "raw"
+    catalog = _with_ingested_digests(_catalog(raw), raw)
+    path = raw / "pg1.txt"
+    path.write_text(
+        path.read_text(encoding="utf-8").replace("First paragraph", "First, altered, paragraph"),
+        encoding="utf-8",
+    )
+
+    assert catalog.classify_drift(raw) == {"pg1": "ingested-text-differs"}
+    with pytest.raises(CorpusAcquisitionError, match=r"pg1.*ingested text differs"):
+        catalog.verify_raw(raw)
+
+
+def test_drift_cannot_be_classified_when_no_ingested_digest_was_declared(tmp_path: Path) -> None:
+    raw = tmp_path / "raw"
+    catalog = _catalog(raw)
+    path = raw / "pg1.txt"
+    path.write_text(path.read_text(encoding="utf-8") + "\nextra\n", encoding="utf-8")
+
+    assert catalog.classify_drift(raw) == {"pg1": "unclassified-no-ingested-digest-declared"}
+    with pytest.raises(CorpusAcquisitionError, match=r"pg1.*cannot be classified"):
+        catalog.verify_raw(raw)
+
+
+def test_drift_in_a_file_that_is_no_longer_a_gutenberg_text_is_named_unreadable(
+    tmp_path: Path,
+) -> None:
+    raw = tmp_path / "raw"
+    catalog = _with_ingested_digests(_catalog(raw), raw)
+    (raw / "pg1.txt").write_text("this is not a Project Gutenberg text\n", encoding="utf-8")
+
+    assert catalog.classify_drift(raw) == {"pg1": "unreadable-as-a-gutenberg-text"}
+
+
+def test_an_unchanged_catalog_classifies_nothing(tmp_path: Path) -> None:
+    raw = tmp_path / "raw"
+
+    assert _with_ingested_digests(_catalog(raw), raw).classify_drift(raw) == {}
+
+
+def test_declaring_a_directory_records_the_ingested_digest_of_every_source(tmp_path: Path) -> None:
+    raw = tmp_path / "raw"
+    _catalog(raw)
+
+    declared = declare_gutenberg_directory(
+        raw,
+        name="declared",
+        version="1.0.0",
+        licence="Public domain in the United States",
+        source="Project Gutenberg",
+        retrieved="2026-01-05",
+        max_characters_per_document=48,
+    )
+
+    assert all(item.ingested_sha256 for item in declared.sources)
+    declared.ingest(raw, tmp_path / "cache")  # and what it declares is what ingestion produces

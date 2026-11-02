@@ -12,7 +12,14 @@ capability is implemented or still planned.
 
 ## Unreleased
 
-### 2026-11-02 (third session) — a checkpoint can say which frequency floor its tokenizer was fitted at
+### 2026-11-02 (third session) — a checkpoint can say which frequency floor its tokenizer was fitted at; a drifted corpus source can be classified
+
+**Added**
+
+- **A catalogue source may declare the digest of the text it ingests** (`ingested_sha256`, ADR-0047, K-031). The raw-bytes check
+  is unchanged and still refuses; it now also says whether a changed source's ingested text is identical, differs or cannot be
+  read, so "the pin moved" is no longer confused with "the training text moved". The committed multiregister catalogue declares all
+  430. Where the raw bytes are archived is not decided.
 
 **Changed**
 
