@@ -1,0 +1,381 @@
+{
+  "aggregate": {
+    "partition_mathematics-_bits_per_character": {
+      "max": 2.626730570957583,
+      "mean": 2.611599,
+      "median": 2.609676,
+      "min": 2.600653247328639,
+      "range": 0.026077,
+      "runs": 5,
+      "sample_stdev": 0.010286,
+      "stdev_95_interval": [
+        0.006163,
+        0.029559
+      ]
+    },
+    "partition_medicine-_bits_per_character": {
+      "max": 1.8260350184758607,
+      "mean": 1.824191,
+      "median": 1.82394,
+      "min": 1.822087911688966,
+      "range": 0.003947,
+      "runs": 5,
+      "sample_stdev": 0.001549,
+      "stdev_95_interval": [
+        0.000928,
+        0.004452
+      ]
+    },
+    "partition_prose-_bits_per_character": {
+      "max": 1.8412138760294636,
+      "mean": 1.840084,
+      "median": 1.839656,
+      "min": 1.8394555436708446,
+      "range": 0.001758,
+      "runs": 5,
+      "sample_stdev": 0.000777,
+      "stdev_95_interval": [
+        0.000465,
+        0.002232
+      ]
+    },
+    "partition_science-_bits_per_character": {
+      "max": 1.945827567239999,
+      "mean": 1.94354,
+      "median": 1.943039,
+      "min": 1.9413981630934873,
+      "range": 0.004429,
+      "runs": 5,
+      "sample_stdev": 0.001706,
+      "stdev_95_interval": [
+        0.001022,
+        0.004902
+      ]
+    },
+    "partition_technology-_bits_per_character": {
+      "max": 1.8989176014215385,
+      "mean": 1.897546,
+      "median": 1.898059,
+      "min": 1.8944939851408824,
+      "range": 0.004424,
+      "runs": 5,
+      "sample_stdev": 0.001787,
+      "stdev_95_interval": [
+        0.001071,
+        0.005134
+      ]
+    },
+    "transformer_best_step": {
+      "max": 2400.0,
+      "mean": 2400.0,
+      "median": 2400.0,
+      "min": 2400.0,
+      "range": 0.0,
+      "runs": 5,
+      "sample_stdev": 0.0,
+      "stdev_95_interval": [
+        0.0,
+        0.0
+      ]
+    },
+    "transformer_bits_per_character": {
+      "max": 2.062216010361924,
+      "mean": 2.060024,
+      "median": 2.060374,
+      "min": 2.056474488804757,
+      "range": 0.005742,
+      "runs": 5,
+      "sample_stdev": 0.002156,
+      "stdev_95_interval": [
+        0.001291,
+        0.006194
+      ]
+    },
+    "transformer_nats_per_token": {
+      "max": 3.0008407666886243,
+      "mean": 2.99765,
+      "median": 2.99816,
+      "min": 2.992485971718069,
+      "range": 0.008355,
+      "runs": 5,
+      "sample_stdev": 0.003137,
+      "stdev_95_interval": [
+        0.001879,
+        0.009013
+      ]
+    },
+    "transformer_parameter_count": {
+      "max": 3413760.0,
+      "mean": 3413760.0,
+      "median": 3413760.0,
+      "min": 3413760.0,
+      "range": 0.0,
+      "runs": 5,
+      "sample_stdev": 0.0,
+      "stdev_95_interval": [
+        0.0,
+        0.0
+      ]
+    },
+    "transformer_perplexity": {
+      "max": 20.10243127466459,
+      "mean": 20.038479,
+      "median": 20.048619,
+      "min": 19.93517923409324,
+      "range": 0.167252,
+      "runs": 5,
+      "sample_stdev": 0.062771,
+      "stdev_95_interval": [
+        0.037608,
+        0.180376
+      ]
+    },
+    "transformer_token_accuracy": {
+      "max": 0.4466694904618474,
+      "mean": 0.445022,
+      "median": 0.445034,
+      "min": 0.44339467243975905,
+      "range": 0.003275,
+      "runs": 5,
+      "sample_stdev": 0.00145,
+      "stdev_95_interval": [
+        0.000869,
+        0.004168
+      ]
+    },
+    "transformer_wall_clock_s": {
+      "max": 3426.26,
+      "mean": 3206.874,
+      "median": 3120.03,
+      "min": 3089.85,
+      "range": 336.41,
+      "runs": 5,
+      "sample_stdev": 146.338759,
+      "stdev_95_interval": [
+        87.6764,
+        420.512565
+      ]
+    },
+    "uniform_bits_per_character": {
+      "max": 5.716074891365673,
+      "mean": 5.716075,
+      "median": 5.716075,
+      "min": 5.716074891365673,
+      "range": 0.0,
+      "runs": 5,
+      "sample_stdev": 0.0,
+      "stdev_95_interval": [
+        0.0,
+        0.0
+      ]
+    },
+    "unigram_bits_per_character": {
+      "max": 3.5039561017436087,
+      "mean": 3.503956,
+      "median": 3.503956,
+      "min": 3.5039561017436087,
+      "range": 0.0,
+      "runs": 5,
+      "sample_stdev": 0.0,
+      "stdev_95_interval": [
+        0.0,
+        0.0
+      ]
+    }
+  },
+  "completed_seeds": [
+    7,
+    11,
+    13,
+    17,
+    19
+  ],
+  "declared_seeds": [
+    7,
+    11,
+    13,
+    17,
+    19
+  ],
+  "failed_seeds": [],
+  "missing_seeds": [],
+  "per_run": {
+    "11": {
+      "artifact_checksum": "8130f0b35128e6a1520e63eec290d18889d346c85d17da3b3f1f4520509c5e8b",
+      "corpus_origin": "declared snapshot",
+      "environment": {
+        "device": "cpu",
+        "numpy": "2.4.6",
+        "platform": "Linux-6.18.44-fc-v185-x86_64-with-glibc2.39",
+        "python": "3.13.18",
+        "torch": "2.15.0+cpu",
+        "torch_threads": "4"
+      },
+      "metrics": {
+        "partition_mathematics-_bits_per_character": 2.604627066548318,
+        "partition_medicine-_bits_per_character": 1.822087911688966,
+        "partition_prose-_bits_per_character": 1.8396560681439404,
+        "partition_science-_bits_per_character": 1.9413981630934873,
+        "partition_technology-_bits_per_character": 1.8944939851408824,
+        "transformer_best_step": 2400,
+        "transformer_bits_per_character": 2.061052494546689,
+        "transformer_nats_per_token": 2.999147672622095,
+        "transformer_parameter_count": 3413760,
+        "transformer_perplexity": 20.06842476378504,
+        "transformer_token_accuracy": 0.4466694904618474,
+        "transformer_wall_clock_s": 3426.26,
+        "uniform_bits_per_character": 5.716074891365673,
+        "unigram_bits_per_character": 3.5039561017436087
+      }
+    },
+    "13": {
+      "artifact_checksum": "c8bedc0fddec1463762ce8b3710244317d558c38d08888653914c90ac062084a",
+      "corpus_origin": "declared snapshot",
+      "environment": {
+        "device": "cpu",
+        "numpy": "2.4.6",
+        "platform": "Linux-6.18.44-fc-v185-x86_64-with-glibc2.39",
+        "python": "3.13.18",
+        "torch": "2.15.0+cpu",
+        "torch_threads": "4"
+      },
+      "metrics": {
+        "partition_mathematics-_bits_per_character": 2.609676464142733,
+        "partition_medicine-_bits_per_character": 1.8235549294504374,
+        "partition_prose-_bits_per_character": 1.8394555436708446,
+        "partition_science-_bits_per_character": 1.945827567239999,
+        "partition_technology-_bits_per_character": 1.8986907525130505,
+        "transformer_best_step": 2400,
+        "transformer_bits_per_character": 2.060000991415707,
+        "transformer_nats_per_token": 2.997617574200835,
+        "transformer_parameter_count": 3413760,
+        "transformer_perplexity": 20.03774157886948,
+        "transformer_token_accuracy": 0.44377117846385544,
+        "transformer_wall_clock_s": 3120.03,
+        "uniform_bits_per_character": 5.716074891365673,
+        "unigram_bits_per_character": 3.5039561017436087
+      }
+    },
+    "17": {
+      "artifact_checksum": "ebde65fa9971ee173e0fb22d8d544512c5c58b439a9c1c99000261317c3a9370",
+      "corpus_origin": "declared snapshot",
+      "environment": {
+        "device": "cpu",
+        "numpy": "2.4.6",
+        "platform": "Linux-6.18.44-fc-v185-x86_64-with-glibc2.39",
+        "python": "3.13.18",
+        "torch": "2.15.0+cpu",
+        "torch_threads": "4"
+      },
+      "metrics": {
+        "partition_mathematics-_bits_per_character": 2.616307405660118,
+        "partition_medicine-_bits_per_character": 1.8260350184758607,
+        "partition_prose-_bits_per_character": 1.8405750825621308,
+        "partition_science-_bits_per_character": 1.9445853042843868,
+        "partition_technology-_bits_per_character": 1.8989176014215385,
+        "transformer_best_step": 2400,
+        "transformer_bits_per_character": 2.056474488804757,
+        "transformer_nats_per_token": 2.992485971718069,
+        "transformer_parameter_count": 3413760,
+        "transformer_perplexity": 19.93517923409324,
+        "transformer_token_accuracy": 0.44624199924698793,
+        "transformer_wall_clock_s": 3289.04,
+        "uniform_bits_per_character": 5.716074891365673,
+        "unigram_bits_per_character": 3.5039561017436087
+      }
+    },
+    "19": {
+      "artifact_checksum": "0021a8a8116a945dc333421943f09efe57c0aae73767dced9f4d68734f943252",
+      "corpus_origin": "declared snapshot",
+      "environment": {
+        "device": "cpu",
+        "numpy": "2.4.6",
+        "platform": "Linux-6.18.44-fc-v185-x86_64-with-glibc2.39",
+        "python": "3.13.18",
+        "torch": "2.15.0+cpu",
+        "torch_threads": "4"
+      },
+      "metrics": {
+        "partition_mathematics-_bits_per_character": 2.626730570957583,
+        "partition_medicine-_bits_per_character": 1.823940236750859,
+        "partition_prose-_bits_per_character": 1.839521079502768,
+        "partition_science-_bits_per_character": 1.9430394664708837,
+        "partition_technology-_bits_per_character": 1.8975704501296369,
+        "transformer_best_step": 2400,
+        "transformer_bits_per_character": 2.062216010361924,
+        "transformer_nats_per_token": 3.0008407666886243,
+        "transformer_parameter_count": 3413760,
+        "transformer_perplexity": 20.10243127466459,
+        "transformer_token_accuracy": 0.44339467243975905,
+        "transformer_wall_clock_s": 3109.19,
+        "uniform_bits_per_character": 5.716074891365673,
+        "unigram_bits_per_character": 3.5039561017436087
+      }
+    },
+    "7": {
+      "artifact_checksum": "32fe43ea8660c0d879a2672a71fa8e722fee04860561f762658f6ed0e8b8239b",
+      "corpus_origin": "declared snapshot",
+      "environment": {
+        "device": "cpu",
+        "numpy": "2.4.6",
+        "platform": "Linux-6.18.44-fc-v185-x86_64-with-glibc2.39",
+        "python": "3.13.18",
+        "torch": "2.15.0+cpu",
+        "torch_threads": "4"
+      },
+      "metrics": {
+        "partition_mathematics-_bits_per_character": 2.600653247328639,
+        "partition_medicine-_bits_per_character": 1.8253348907971463,
+        "partition_prose-_bits_per_character": 1.8412138760294636,
+        "partition_science-_bits_per_character": 1.9428499967771276,
+        "partition_technology-_bits_per_character": 1.898058686857026,
+        "transformer_best_step": 2400,
+        "transformer_bits_per_character": 2.0603739404063917,
+        "transformer_nats_per_token": 2.9981602722157468,
+        "transformer_parameter_count": 3413760,
+        "transformer_perplexity": 20.048618972750717,
+        "transformer_token_accuracy": 0.4450340424196787,
+        "transformer_wall_clock_s": 3089.85,
+        "uniform_bits_per_character": 5.716074891365673,
+        "unigram_bits_per_character": 3.5039561017436087
+      }
+    }
+  },
+  "protocol": {
+    "architecture": {
+      "context_length": 256,
+      "d_model": 256,
+      "dropout": 0.0,
+      "feedforward_dim": 640,
+      "initialization_std": 0.02,
+      "num_heads": 8,
+      "num_layers": 4,
+      "rope_theta": 10000.0,
+      "tie_embeddings": true,
+      "vocab_size": 4096
+    },
+    "batch_size": 32,
+    "character_steps": null,
+    "corpus_fingerprint": "312571f9fa8351a8",
+    "eval_every": 400,
+    "experiment": "E2615-s50",
+    "gradient_clip_norm": 1.0,
+    "learning_rate": 0.0006,
+    "max_steps": 2400,
+    "min_delta": 0.001,
+    "parameter_count": 3413760,
+    "patience": 99,
+    "protocol_digest": "4cf5abf4ed50f1f244d7c9f3f0b2f9767eb63906492f36c829aa7691d79fc9ae",
+    "split_fingerprint": "adf650435c3a9068",
+    "split_seed": 7,
+    "test_characters": 535282,
+    "test_positions": 254976,
+    "tokenizer_fingerprint": "434debe82f949347",
+    "tokenizer_size": 4096,
+    "warmup_steps": 200,
+    "weight_decay": 0.01
+  },
+  "reproduction": null,
+  "runs": [],
+  "study": "E2615-s50"
+}

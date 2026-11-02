@@ -1,0 +1,727 @@
+{
+ "baselines_subword": {
+  "uniform": {
+   "bits_per_character": 5.716074891365673,
+   "characters_scored": 535282,
+   "loss_nats_per_token": 8.317766166719343,
+   "perplexity": 4095.999999999997,
+   "positions_scored": 254976,
+   "separator_targets": 33,
+   "token_accuracy": 0.0,
+   "vocabulary_size": 4096
+  },
+  "unigram": {
+   "bits_per_character": 3.514452800907421,
+   "characters_scored": 535282,
+   "loss_nats_per_token": 5.114068159966958,
+   "perplexity": 166.345701156083,
+   "positions_scored": 254976,
+   "separator_targets": 33,
+   "smoothing_alpha": 1.0,
+   "token_accuracy": 0.3209674636044177
+  }
+ },
+ "character_baseline": {
+  "reason": "the character baseline materializes one window per character position; on a corpus of 149,000,499 characters that exceeds the memory this project's machine has, and the run states that instead of silently dropping the comparison",
+  "skipped": true
+ },
+ "corpus": {
+  "characters": 149000499,
+  "documents": 9388,
+  "documents_per_side": {
+   "dropped_duplicates": 3,
+   "test": 1443,
+   "train": 6512,
+   "validation": 1430
+  },
+  "duplicate_groups": [
+   [
+    "mathematics-pg633/part-0002.md",
+    "mathematics-pg634/part-0011.md"
+   ],
+   [
+    "mathematics-pg633/part-0006.md",
+    "mathematics-pg634/part-0009.md"
+   ],
+   [
+    "mathematics-pg633/part-0004.md",
+    "mathematics-pg634/part-0003.md"
+   ]
+  ],
+  "exact_paths": [],
+  "extensions": [
+   ".md"
+  ],
+  "fingerprint": "312571f9fa8351a8",
+  "groups_per_side": {
+   "canonical_json_sha256": "2894e399860955174948b5522599be88d712f071ae7c7507378e94a7cc007f44",
+   "json_bytes": 7589,
+   "omitted_from_extract": true
+  },
+  "identifiers_per_side": {
+   "canonical_json_sha256": "aefca8ec4bfd7c7ea00dbda0603508cf3babf58d268baf84bd2a47cab2186795",
+   "json_bytes": 407527,
+   "omitted_from_extract": true
+  },
+  "include": {
+   "canonical_json_sha256": "3f99477aae9c984a5ae412509bb2176c2315cff2b673fc39e2fa000ccd71d6c6",
+   "json_bytes": 7985,
+   "omitted_from_extract": true
+  },
+  "licence": "Public domain in the United States; distributed by Project Gutenberg under the Project Gutenberg License, which permits copying, giving away and re-use; users outside the United States must check local law before use",
+  "max_test_tokens": 250000,
+  "max_training_tokens": 20000000,
+  "max_validation_tokens": 250000,
+  "model_seed": 19,
+  "name": "gutenberg-multiregister-v1",
+  "prepared_from": "declared snapshot",
+  "shuffle_training_units": true,
+  "snapshot": {
+   "canonical_json_sha256": "9a3c4d4778ff7ffe2aa2ef57523385283571bae742b36b626bfbf52f537bceb4",
+   "json_bytes": 86355,
+   "omitted_from_extract": true
+  },
+  "source": "Project Gutenberg (cache/epub text files, selection rule in scripts/acquire_gutenberg_corpus.py) (retrieved 2026-10-30)",
+  "split_fingerprint": "adf650435c3a9068",
+  "split_seed": 7,
+  "test_documents_packed": 34,
+  "training_composition": {
+   "declared_share": 0.25,
+   "identifiers_by_register": {
+    "mathematics-": 3010437,
+    "medicine-": 2103030,
+    "prose-": 5005218,
+    "science-": 6766887,
+    "technology-": 3121574
+   },
+   "identifiers_matched": 5005218,
+   "identifiers_other": 15001928,
+   "realised_share": 0.250172,
+   "share_group_prefix": "prose-",
+   "works_packed": 289
+  },
+  "training_documents_packed": 2709,
+  "training_group_prefixes": null,
+  "training_groups": {
+   "canonical_json_sha256": "fd8f41e6c9f98a02196f672572178391887196d928a1fc281699e899a37b4bf2",
+   "json_bytes": 5138,
+   "omitted_from_extract": true
+  },
+  "training_tokens_packed": 20007146,
+  "validation_documents_packed": 34,
+  "version": "1.0.0",
+  "whole_work_splits": true,
+  "works_on_multiple_sides": 0
+ },
+ "environment": {
+  "device": "cpu",
+  "numpy": "2.4.6",
+  "platform": "Linux-6.18.44-fc-v185-x86_64-with-glibc2.39",
+  "python": "3.13.18",
+  "torch": "2.15.0+cpu",
+  "torch_threads": "4"
+ },
+ "experiment": "E2615-s25",
+ "extract": {
+  "checkpoint_file_sha256": "62badad74c25ffab769cf880db89564c7959f3f89ac941c14179e73cf74e1eff",
+  "note": "compact extract of the run's report.json; bulky corpus lists replaced by digest stubs",
+  "report_file_sha256": "573826f258eff558cac1e6c0d0259d845fa2ad6bd2dfe7655c6753ecccb47feb"
+ },
+ "generation": {
+  "automated_summary": {
+   "bound_reached": [
+    "document-heading",
+    "status-section",
+    "because-clause",
+    "list-continuation",
+    "table-row"
+   ],
+   "empty_outputs": [],
+   "looping_fraction": 0.6,
+   "looping_samples": [
+    "document-heading",
+    "list-continuation",
+    "table-row"
+   ],
+   "mean_bigram_repetition": 0.711756,
+   "periodic_run_samples": [
+    "document-heading",
+    "list-continuation",
+    "table-row"
+   ],
+   "samples_crashed": 0,
+   "samples_generated": 5,
+   "samples_refused": 1
+  },
+  "edge_probes": [
+   "empty-prompt",
+   "single-character",
+   "non-ascii",
+   "oversized-prompt"
+  ],
+  "edge_samples": [
+   {
+    "error": "ModelError: prompt formatting received no message with content; a model must be given something to continue",
+    "label": "empty-prompt",
+    "prompt": "",
+    "requested_max_new_tokens": 8,
+    "status": "refused",
+    "temperature": 0.0,
+    "why": "nothing to continue must produce a named refusal, not a crash and not an invented prompt"
+   },
+   {
+    "bigram_repetition": 0.0,
+    "characters": 12,
+    "empty_output": false,
+    "finish_reason": "length",
+    "label": "single-character",
+    "longest_periodic_run": "",
+    "longest_periodic_run_repeats": 1,
+    "longest_repeated_block": " ",
+    "longest_repeated_block_count": 3,
+    "loop": {
+     "block": "",
+     "looping": false,
+     "period": 0,
+     "repeats": 0
+    },
+    "model_id": "subword_transformer",
+    "prompt": "#",
+    "reached_token_bound": true,
+    "requested_max_new_tokens": 8,
+    "status": "generated",
+    "temperature": 0.0,
+    "text": " the _ratio ",
+    "trigram_repetition": 0.0,
+    "why": "a context shorter than the window"
+   },
+   {
+    "bigram_repetition": 0.0,
+    "characters": 16,
+    "empty_output": false,
+    "finish_reason": "length",
+    "label": "non-ascii",
+    "longest_periodic_run": " ",
+    "longest_periodic_run_repeats": 2,
+    "longest_repeated_block": " ",
+    "longest_repeated_block_count": 4,
+    "loop": {
+     "block": "",
+     "looping": false,
+     "period": 0,
+     "repeats": 0
+    },
+    "model_id": "subword_transformer",
+    "prompt": "-notes: \u4f60\u597d\u4e16\u754c \ud83d\ude00\n",
+    "reached_token_bound": true,
+    "requested_max_new_tokens": 8,
+    "status": "generated",
+    "temperature": 0.0,
+    "text": "  Science of the",
+    "trigram_repetition": 0.0,
+    "why": "characters outside any corpus alphabet must encode, not crash the tokenizer"
+   },
+   {
+    "bigram_repetition": null,
+    "characters": 2,
+    "empty_output": false,
+    "finish_reason": "context",
+    "label": "oversized-prompt",
+    "longest_periodic_run": "",
+    "longest_periodic_run_repeats": 1,
+    "longest_repeated_block": "",
+    "longest_repeated_block_count": 0,
+    "loop": {
+     "block": "",
+     "looping": false,
+     "period": 0,
+     "repeats": 0
+    },
+    "model_id": "subword_transformer",
+    "prompt": "repeated context repeated context repeated context repeated context repeated context repeated context repeated context repeated context repeated context repeated context repeated context repeated context repeated context repeated context repeated context repeated context repeated context repeated context repeated context repeated context repeated context repeated context repeated context repeated context repeated context repeated context repeated context repeated context repeated context repeated context repeated context repeated context repeated context repeated context repeated context repeated context repeated context repeated context repeated context repeated context repeated context repeated context repeated context repeated context repeated context repeated context repeated context repeated context repeated context repeated context repeated context repeated context repeated context repeated context repeated context repeated context repeated context repeated context repeated context repeated context repeated context repeated context repeated context repeated context repeated context repeated context repeated context repeated context repeated context repeated context repeated context repeated context repeated context repeated context repeated context repeated context repeated context repeated context repeated context repeated context repeated context repeated context repeated context repeated context repeated context repeated context repeated context repeated context repeated context repeated context repeated context repeated context repeated context repeated context repeated context repeated context repeated context repeated context repeated context repeated context repeated context repeated context repeated context repeated context repeated context repeated context repeated context repeated context repeated context repeated context repeated context repeated context repeated context repeated context repeated context repeated context repeated context repeated context repeated context repeated context repeated context repeated context repeated context repeated context repeated context repeated context repeated context repeated context repeated context repeated context repeated context repeated context repeated context repeated context repeated context repeated context repeated context repeated context repeated context repeated context repeated context repeated context repeated context repeated context repeated context repeated context repeated context repeated context repeated context repeated context repeated context repeated context repeated context repeated context repeated context repeated context repeated context repeated context repeated context repeated context repeated context repeated context repeated context repeated context repeated context repeated context repeated context repeated context repeated context repeated context repeated context repeated context repeated context repeated context repeated context repeated context repeated context repeated context repeated context repeated context repeated context repeated context repeated context repeated context repeated context repeated context repeated context repeated context repeated context repeated context repeated context repeated context repeated context repeated context repeated context repeated context repeated context repeated context repeated context repeated context ",
+    "reached_token_bound": false,
+    "requested_max_new_tokens": 8,
+    "status": "generated",
+    "temperature": 0.0,
+    "text": "to",
+    "trigram_repetition": null,
+    "why": "a prompt longer than the model's window: the boundary decides, the model must not raise"
+   }
+  ],
+  "interpretation_limit": "surface statistics only: repetition, length, termination and refusal behaviour computed from emitted characters. No semantic quality, usefulness or groundedness is measured here, and none may be inferred from these numbers. Judging whether the text means anything is a separate, human act.",
+  "model_id": "subword_transformer",
+  "probes": [
+   "document-heading",
+   "status-section",
+   "because-clause",
+   "list-continuation",
+   "table-row"
+  ],
+  "samples": [
+   {
+    "bigram_repetition": 0.676471,
+    "characters": 103,
+    "empty_output": false,
+    "finish_reason": "length",
+    "label": "document-heading",
+    "longest_periodic_run": "as the same ",
+    "longest_periodic_run_repeats": 3,
+    "longest_repeated_block": "as the same as the same as the same",
+    "longest_repeated_block_count": 2,
+    "loop": {
+     "block": " as the same",
+     "looping": true,
+     "period": 12,
+     "repeats": 3
+    },
+    "model_id": "subword_transformer",
+    "prompt": "# Chakaso\n\nChakaso is a",
+    "reached_token_bound": true,
+    "requested_max_new_tokens": 48,
+    "status": "generated",
+    "temperature": 0.0,
+    "text": " very common in the same manner as the same as the same\nas the same as the same as the same as the same",
+    "trigram_repetition": 0.623762,
+    "why": "the corpus's dominant shape: a markdown heading followed by prose about the project"
+   },
+   {
+    "bigram_repetition": 0.644444,
+    "characters": 91,
+    "empty_output": false,
+    "finish_reason": "length",
+    "label": "status-section",
+    "longest_periodic_run": "of the Calculation ",
+    "longest_periodic_run_repeats": 2,
+    "longest_repeated_block": "of the Calculation of",
+    "longest_repeated_block_count": 2,
+    "loop": {
+     "block": "",
+     "looping": false,
+     "period": 0,
+     "repeats": 0
+    },
+    "model_id": "subword_transformer",
+    "prompt": "## Status\n\nThe retrieval layer",
+    "reached_token_bound": true,
+    "requested_max_new_tokens": 48,
+    "status": "generated",
+    "temperature": 0.0,
+    "text": " of the _Diam of the Calamation_ of the Calculator\nof the Calculation of the Calculation of",
+    "trigram_repetition": 0.573034,
+    "why": "a status paragraph, which is where the corpus's own claims about itself live"
+   },
+   {
+    "bigram_repetition": 0.516667,
+    "characters": 121,
+    "empty_output": false,
+    "finish_reason": "length",
+    "label": "because-clause",
+    "longest_periodic_run": "",
+    "longest_periodic_run_repeats": 1,
+    "longest_repeated_block": " the body ",
+    "longest_repeated_block_count": 2,
+    "loop": {
+     "block": "",
+     "looping": false,
+     "period": 0,
+     "repeats": 0
+    },
+    "model_id": "subword_transformer",
+    "prompt": "The tokenizer is trained by the project because",
+    "reached_token_bound": true,
+    "requested_max_new_tokens": 64,
+    "status": "generated",
+    "temperature": 0.0,
+    "text": " the task is not\nunable to be made by the use of the future of the tide of the body of\nthe body and the body is the same ",
+    "trigram_repetition": 0.378151,
+    "why": "a causal clause \u2014 the shape a model must complete to say anything with structure"
+   },
+   {
+    "bigram_repetition": 0.785714,
+    "characters": 71,
+    "empty_output": false,
+    "finish_reason": "length",
+    "label": "list-continuation",
+    "longest_periodic_run": " de la",
+    "longest_periodic_run_repeats": 7,
+    "longest_repeated_block": " de la de la de la de la de la de la",
+    "longest_repeated_block_count": 2,
+    "loop": {
+     "block": "la de ",
+     "looping": true,
+     "period": 6,
+     "repeats": 3
+    },
+    "model_id": "subword_transformer",
+    "prompt": "Commands:\n\n```bash\npython -m pytest",
+    "reached_token_bound": true,
+    "requested_max_new_tokens": 48,
+    "status": "generated",
+    "temperature": 0.0,
+    "text": " micros de la de la de la de la de la de la de la\nde la de la de la de ",
+    "trigram_repetition": 0.768116,
+    "why": "a fenced code block, which has a closing shape the corpus contains many times"
+   },
+   {
+    "bigram_repetition": 0.935484,
+    "characters": 32,
+    "empty_output": false,
+    "finish_reason": "length",
+    "label": "table-row",
+    "longest_periodic_run": " |",
+    "longest_periodic_run_repeats": 16,
+    "longest_repeated_block": " | | | | | | | | | | | | | | |",
+    "longest_repeated_block_count": 2,
+    "loop": {
+     "block": " |",
+     "looping": true,
+     "period": 2,
+     "repeats": 16
+    },
+    "model_id": "subword_transformer",
+    "prompt": "| Gate | Result |\n| --- | --- |\n| `pytest` |",
+    "reached_token_bound": true,
+    "requested_max_new_tokens": 32,
+    "status": "generated",
+    "temperature": 0.0,
+    "text": " | | | | | | | | | | | | | | | |",
+    "trigram_repetition": 0.933333,
+    "why": "table markup: the most pattern-bound prose in the corpus, so the easiest case"
+   }
+  ]
+ },
+ "latency": {
+  "characters": 420,
+  "characters_per_second": 119.15,
+  "measurement": "greedy generation through chakaso.models.load_model, warm process, no batching",
+  "samples": 3,
+  "seconds": 3.525
+ },
+ "model_family": "decoder",
+ "plan": {
+  "batch_size": 32,
+  "character_baseline": false,
+  "character_batch_windows": 256,
+  "character_context": 16,
+  "character_embed_dim": 32,
+  "character_eval_every": 200,
+  "character_hidden_dim": 64,
+  "character_learning_rate": 0.02,
+  "character_steps": 4000,
+  "checkpoint_every": 0,
+  "context_length": 256,
+  "corpus_snapshot": "data/corpora/gutenberg-multiregister-v1/gutenberg-multiregister-v1-snapshot.json",
+  "d_model": 256,
+  "decay_to": 0.1,
+  "document_masking": false,
+  "eval_every": 400,
+  "expected_corpus_fingerprint": "312571f9fa8351a8",
+  "expected_tokenizer_fingerprint": "434debe82f949347",
+  "experiment_id": "E2615-s25",
+  "feedforward_dim": 640,
+  "grad_accum_steps": 1,
+  "gradient_clip_norm": 1.0,
+  "learning_rate": 0.0006,
+  "max_steps": 2400,
+  "max_test_tokens": 250000,
+  "max_training_tokens": 20000000,
+  "max_validation_tokens": 250000,
+  "min_delta": 0.001,
+  "model_family": "decoder",
+  "num_heads": 8,
+  "num_layers": 4,
+  "overwrite_artifacts": true,
+  "patience": 99,
+  "root": ".",
+  "rope_theta": 10000.0,
+  "sample_prompts": "held_out",
+  "samples_per_prompt": 96,
+  "schedule": "cosine",
+  "seed": 19,
+  "share_group_prefix": "prose-",
+  "share_of_tokens": 0.25,
+  "shuffle_training_units": true,
+  "split_seed": 7,
+  "tokenizer_cache_dir": "data/experiments",
+  "tokenizer_file": "experiments/E2612/vocabulary-434debe82f949347.json",
+  "tokenizer_min_frequency": 3,
+  "tokenizer_sample_characters": 12000000,
+  "vocab_size": 4096,
+  "warmup_steps": 200,
+  "weight_decay": 0.01,
+  "whole_work_splits": true,
+  "work_dir": "data/experiments/E2615-s25/seed-19"
+ },
+ "resources": {
+  "peak_resident_bytes": 2914467840,
+  "peak_resident_megabytes": 2779.5,
+  "resident_bytes": 1991831552,
+  "source": "linux:/proc/self/status"
+ },
+ "samples": [
+  {
+   "finish_reason": "length",
+   "model_id": "subword_transformer",
+   "prompt": "[Transcriber\u2019s Note: This e-text includes characters that will o",
+   "prompt_source": "mathematics-pg22062/part-0001.md@b3ac00ad06e7",
+   "text": "bey\nthe _Diagram_ of the _E_ and _D_ and _D_ (_x_) is the _D_ _r_ _x_ _x_ _x_ _x_ _x_ _x_ _x_ _x_ _x_ _x_ _x_ _x_"
+  },
+  {
+   "finish_reason": "length",
+   "model_id": "subword_transformer",
+   "prompt": "And _Magnitude_ we may define to be that thing _Mathematicall_, ",
+   "prompt_source": "mathematics-pg22062/part-0002.md@c1f5ca92f26b",
+   "text": "and\n_the _Egyptian of the _Egypt_ of the _Egypt_, _E_, _B_, _B_, _B_, _B_, _B_, _B_, _B_, _B_, _B_, _B_, _B_, _B_,"
+  },
+  {
+   "finish_reason": "length",
+   "model_id": "subword_transformer",
+   "prompt": "The Mintmaster, and Goldsmith, in their Mixture of Metals, eithe",
+   "prompt_source": "mathematics-pg22062/part-0003.md@4801acca2bfd",
+   "text": "t, and the\nMagazine of the Scotland, and the Calculation of the Scotland and the\nScotland of the Scotland, and the Calculation of the Scotland and the\nScotland of the Scotland, and the Scotland"
+  }
+ ],
+ "timings": {
+  "prepare_seconds": 143.61,
+  "transformer_wall_clock_s": 3251.54
+ },
+ "tokenizer": {
+  "characters_per_token_test": 2.0993,
+  "fingerprint": "434debe82f949347",
+  "kind": "byte-pair subword trained by chakaso.training.subword",
+  "merges": 3839,
+  "min_frequency": 3,
+  "reused_from_cache": true,
+  "sample_actual_characters": 12000454,
+  "sample_characters": 12000000,
+  "sample_documents": 747,
+  "size": 4096,
+  "supplied_file": true,
+  "test_characters_decoded": 535282,
+  "tokens_per_side": {
+   "test": 256125,
+   "train": 20007146,
+   "validation": 251088
+  }
+ },
+ "transformer": {
+  "architecture": {
+   "context_length": 256,
+   "d_model": 256,
+   "dropout": 0.0,
+   "feedforward_dim": 640,
+   "initialization_std": 0.02,
+   "num_heads": 8,
+   "num_layers": 4,
+   "rope_theta": 10000.0,
+   "tie_embeddings": true,
+   "vocab_size": 4096
+  },
+  "artifact": {
+   "checksum": "b2388b6be32aafadade82761d54a42b0aed19d8a863f6f84864e71a145d595fc",
+   "path": "E2615-s25-decoder.pt",
+   "schema": "chakaso-decoder-checkpoint/1"
+  },
+  "budget": {
+   "batch_size": 32,
+   "best_step": 2400,
+   "budget_extended_from": null,
+   "completion": "budget_ceiling",
+   "decay_to": 0.1,
+   "document_masking": false,
+   "effective_batch_size": 32,
+   "eval_every": 400,
+   "grad_accum_steps": 1,
+   "gradient_clip_norm": 1.0,
+   "learning_rate": 0.0006,
+   "max_steps": 2400,
+   "max_training_tokens": 20000000,
+   "min_delta": 0.001,
+   "optimizer": {
+    "amsgrad": false,
+    "betas": [
+     0.9,
+     0.999
+    ],
+    "decay_applied_to": "every parameter, norm scales included",
+    "eps": 1e-08,
+    "name": "AdamW",
+    "weight_decay": 0.01
+   },
+   "patience": 99,
+   "positions_per_second": 6340.0,
+   "records": 7,
+   "resumed_from_step": null,
+   "schedule": "cosine",
+   "seed": 19,
+   "share_group_prefix": "prose-",
+   "share_of_tokens": 0.25,
+   "shuffle_training_units": true,
+   "steps_per_epoch_estimate": 2433,
+   "stopped_early": false,
+   "training_group_prefixes": null,
+   "wall_clock_s": 3251.54,
+   "warmup_steps": 200,
+   "weight_decay": 0.01,
+   "whole_work_splits": true
+  },
+  "curve": [
+   {
+    "gradient_norm": 0.0,
+    "learning_rate": 0.0,
+    "step": 0,
+    "train_loss": 8.396531,
+    "validation_loss": 8.408721298467917
+   },
+   {
+    "gradient_norm": 0.6919,
+    "learning_rate": 0.0005890631028759143,
+    "step": 400,
+    "train_loss": 3.373897,
+    "validation_loss": 3.525720631489988
+   },
+   {
+    "gradient_norm": 0.7728,
+    "learning_rate": 0.000506812398165227,
+    "step": 800,
+    "train_loss": 3.338062,
+    "validation_loss": 3.2023804891304892
+   },
+   {
+    "gradient_norm": 0.604,
+    "learning_rate": 0.00036842500633378703,
+    "step": 1200,
+    "train_loss": 3.122899,
+    "validation_loss": 3.0595248019109005
+   },
+   {
+    "gradient_norm": 0.7418,
+    "learning_rate": 0.00021783794648949067,
+    "step": 1600,
+    "train_loss": 2.901097,
+    "validation_loss": 2.98486514951362
+   },
+   {
+    "gradient_norm": 0.7146,
+    "learning_rate": 0.00010286154613558106,
+    "step": 2000,
+    "train_loss": 2.785207,
+    "validation_loss": 2.93239917911467
+   },
+   {
+    "gradient_norm": 0.6986,
+    "learning_rate": 5.9999999999999995e-05,
+    "step": 2400,
+    "train_loss": 2.780684,
+    "validation_loss": 2.909601008305784
+   }
+  ],
+  "parameter_count": 3413760,
+  "parameters_by_configuration": 3413760,
+  "test": {
+   "bits_per_character": 2.0584937043332485,
+   "characters_scored": 535282,
+   "loss_nats_per_token": 2.9954242401847004,
+   "perplexity": 19.99384028136234,
+   "positions_scored": 254976,
+   "separator_targets": 33,
+   "token_accuracy": 0.4474225025100402
+  },
+  "test_partitions": {
+   "mathematics-": {
+    "documents_packed": 34,
+    "metrics": {
+     "bits_per_character": 2.539001604665831,
+     "characters_scored": 510290,
+     "loss_nats_per_token": 3.5832972557130924,
+     "perplexity": 35.9920203057643,
+     "positions_scored": 250624,
+     "separator_targets": 33,
+     "token_accuracy": 0.37028776174668027
+    },
+    "population_characters": 1125529,
+    "tokens_scored": 250624,
+    "uniform_nats": 8.317766,
+    "unigram_nats": 5.381215,
+    "works": 5
+   },
+   "medicine-": {
+    "documents_packed": 7,
+    "metrics": {
+     "bits_per_character": 1.8049169456509464,
+     "characters_scored": 101008,
+     "loss_nats_per_token": 2.7122336641277722,
+     "perplexity": 15.062883388837436,
+     "positions_scored": 46592,
+     "separator_targets": 6,
+     "token_accuracy": 0.4873583447802198
+    },
+    "population_characters": 101923,
+    "tokens_scored": 46592,
+    "uniform_nats": 8.317766,
+    "unigram_nats": 4.956872,
+    "works": 1
+   },
+   "prose-": {
+    "documents_packed": 34,
+    "metrics": {
+     "bits_per_character": 1.8802289410712547,
+     "characters_scored": 539534,
+     "loss_nats_per_token": 2.7829018802890193,
+     "perplexity": 16.165864351297227,
+     "positions_scored": 252672,
+     "separator_targets": 32,
+     "token_accuracy": 0.472818515704154
+    },
+    "population_characters": 12414225,
+    "tokens_scored": 252672,
+    "uniform_nats": 8.317766,
+    "unigram_nats": 4.930053,
+    "works": 35
+   },
+   "science-": {
+    "documents_packed": 35,
+    "metrics": {
+     "bits_per_character": 1.9341302455156146,
+     "characters_scored": 538564,
+     "loss_nats_per_token": 2.8720833824924847,
+     "perplexity": 17.67380115795533,
+     "positions_scored": 251392,
+     "separator_targets": 33,
+     "token_accuracy": 0.46950976960285135
+    },
+    "population_characters": 6753155,
+    "tokens_scored": 251392,
+    "uniform_nats": 8.317766,
+    "unigram_nats": 5.029755,
+    "works": 12
+   },
+   "technology-": {
+    "documents_packed": 36,
+    "metrics": {
+     "bits_per_character": 1.8628193456408506,
+     "characters_scored": 547586,
+     "loss_nats_per_token": 2.792622801877899,
+     "perplexity": 16.323777739386877,
+     "positions_scored": 253184,
+     "separator_targets": 35,
+     "token_accuracy": 0.47091048407482305
+    },
+    "population_characters": 2107576,
+    "tokens_scored": 253184,
+    "uniform_nats": 8.317766,
+    "unigram_nats": 5.117553,
+    "works": 9
+   }
+  },
+  "validation": {
+   "bits_per_character": 1.9711700865887136,
+   "characters_scored": 532076,
+   "loss_nats_per_token": 2.909601071057551,
+   "perplexity": 18.34947696927455,
+   "positions_scored": 249856,
+   "separator_targets": 33,
+   "token_accuracy": 0.45708728227459017
+  }
+ }
+}

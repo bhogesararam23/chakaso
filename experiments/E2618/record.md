@@ -1,6 +1,6 @@
 # E2618 — seeds on the unresolved arms of the prose-share sweep: can 0 %, 25 % and 50 % prose be ordered?
 
-**Status:** preregistered, not yet run. Committed before any new seed starts; the Results section is added after the reports are on disk.
+**Status:** measured — **H9-a′: an interior prose share beats none, on the equal-weight register mean; the 25 % arm is lowest and ordered against both others.** Preregistered and committed (`f29bd00`) before any new seed ran; the Results section was added after all fifteen reports were on disk.
 **Type:** Research experiment, **preregistered**. It is task T11 of the active ledger and rule 3 of [E2615](../E2615/record.md),
 which found H9 unresolved with three arms — `s00`, `s25` and `s50` — that one seed each could not tell apart.
 **Protocol files:** E2615's, unchanged — [`E2615-s00.toml`](../../configs/experiments/E2615-s00.toml),
@@ -120,3 +120,58 @@ python scripts/analyse_arm_replication.py --arm 0.0=data/experiments/E2615-s00/s
   --arm 0.25=data/experiments/E2615-s25/study-5-seeds.json --arm 0.5=data/experiments/E2615-s50/study-5-seeds.json \
   --noise-study experiments/E2614/results.json --out experiments/E2618/results.json
 ```
+
+## Results (added 2026-11-02)
+
+Produced by `scripts/analyse_arm_replication.py` from files that are committed: the three arm aggregates [`E2618-s00-study.json`](E2618-s00-study.json), [`E2618-s25-study.json`](E2618-s25-study.json), [`E2618-s50-study.json`](E2618-s50-study.json) (each rebuilt by
+`chakaso experiment study … --collect-only` from the five reports on disk), E2614's `results.json` as the noise study, and [`results.json`](results.json). Compact extracts of the twelve new reports are in [`reports/`](reports/) (seed 7 is E2615's, in [`../E2615/reports/`](../E2615/reports/)),
+each with the SHA-256 of the full report and checkpoint. All fifteen runs: this host (4 threads, torch 2.15.0+cpu), the 2,400-update ceiling, none early-stopped, none diverged, none re-run except as disclosed below. *n* = 5, df = 12, *t* = 2.7795 at the Bonferroni level, δ = 0.0062.
+
+### The equal-weight register mean O1, by seed
+
+| Prose share | seed 7 | 11 | 13 | 17 | 19 | mean | sample sd |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| 0.0 | 2.01892 | 2.02053 | 2.01427 | 2.01915 | 2.02001 | **2.01858** | 0.00249 |
+| 0.25 | 2.00981 | 2.00224 | 2.01597 | 2.01417 | 2.00422 | **2.00928** | 0.00600 |
+| 0.5 | 2.02162 | 2.02045 | 2.02344 | 2.02528 | 2.02616 | **2.02339** | 0.00240 |
+
+Pooled within-arm standard deviation **0.00400** (E2614's was 0.00224, interval 0.00134–0.00644): inside it, so E2615's margins are not restated. The 25 % arm is the noisiest (sd 0.0060, near the interval's upper end).
+
+### The preregistered reading
+
+| Pair (difference of means) | *d* | interval (Bonferroni, 95 % family) | grade | lower O1 |
+| --- | ---: | --- | --- | --- |
+| 0 % vs 25 % | +0.00930 | [+0.00227, +0.01633] | **ORDERED** | 25 % |
+| 0 % vs 50 % | -0.00482 | [-0.01185, +0.00222] | **UNRESOLVED** | 0 % |
+| 25 % vs 50 % | -0.01411 | [-0.02114, -0.00708] | **ORDERED** | 25 % |
+
+* **Outcome: H9-a′.** The lowest mean is the 25 % arm, and it is graded ORDERED, not negligible, against the 0 % arm (*d* = 0.0093, interval [0.0023, 0.0163], the lower end above zero though under the 0.0062 margin only in part of its width). It is also ORDERED against the 50 % arm
+  (*d* = 0.0141, interval [0.0071, 0.0211]). The 0 % and 50 % arms are UNRESOLVED from one another (*d* = 0.0048, interval [−0.0119, 0.0022]).
+* **What that says and no more.** On the equal-weight mean O1, an interior share (25 %) is better than none and better than 50 %. With E2615's 100 % endpoint separably worse than all three (+0.2088 against 25 %, one seed, not re-run) the curve has an interior minimum near a quarter of the budget.
+  The size is small: 0.009 and 0.014 bits per character, under 1 % of O1.
+* **Rule 1 applies.** The 25 % arm becomes the **candidate** working mixture for the next experiments. It does not replace the natural mixture (ADR-0041) by this record: that is a decision with its own record, because O1 is a convention (equal weight to five registers, four of them technical) and a prose-weighted objective names a different share.
+* **Predictions.** P1′ held (prose is lower at 50 % than 25 % than 0 %, both contrasts ORDERED). P2′ held (technology is higher at 50 % than 25 % than 0 %, both ORDERED). P3′ held (each arm's O1 standard deviation lies inside E2614's interval).
+
+### Per register and whole pack (descriptive, not decision-bearing)
+
+| Metric | 0 % | 25 % | 50 % | pairs (0–25, 0–50, 25–50) |
+| --- | ---: | ---: | ---: | --- |
+| prose | 1.9840 | 1.8790 | 1.8401 | 0–25 ordered, 0–50 ordered, 25–50 ordered |
+| science | 1.9375 | 1.9356 | 1.9435 | 0–25 unresolved, 0–50 ordered, 25–50 ordered |
+| technology | 1.8409 | 1.8639 | 1.8975 | 0–25 ordered, 0–50 ordered, 25–50 ordered |
+| medicine | 1.7882 | 1.8043 | 1.8242 | 0–25 ordered, 0–50 ordered, 25–50 ordered |
+| mathematics | 2.5423 | 2.5636 | 2.6116 | 0–25 unresolved, 0–50 ordered, 25–50 ordered |
+| whole pack | 2.1052 | 2.0622 | 2.0600 | 0–25 ordered, 0–50 ordered, 25–50 unresolved |
+
+Prose and the technical registers trade off monotonically and every pair is separated except science (0–25) and mathematics (0–25): prose falls with prose share, technology, medicine and mathematics rise, as E2615's single seeds showed. The **whole-pack** number, whose weights are an accident of one seeded sample, would have named
+the 50 % arm as tied with the 25 % arm and the 0 % arm as worse; the record fixed O1 for that reason, and the disagreement is the reason the answer depends on the weighting.
+
+### Deviations and disclosures
+
+* One launch (the 0 % arm, seed 11) was lost to a container restart and rerun from scratch, as the record declared; the lost attempt wrote no checkpoint and no report, and its directory is kept aside (`seed-11.interrupted-0457Z`). Wall clock per run was 54–70 minutes depending on other work on the host and is not a result.
+* The spread is over initialisation and data order at one document selection and one split: **which documents were drawn is the same for every seed of an arm**, so selection noise is not in these intervals (E2615's P3 found the nested 50 % selection a tie with the natural mixture, which is the only check).
+* The Bonferroni correction covers the three pairs of this analysis, not the later comparisons that will use its result.
+
+### What this does not say
+
+It does not say 25 % is the best mixture for any other objective or corpus, that it will stay best at a longer budget or a larger model, or that a model trained on it is more capable: nothing here is capability (K-001). The held-out side has 1–35 works per register (medicine one); the mathematics and medicine partitions are a handful of works.
