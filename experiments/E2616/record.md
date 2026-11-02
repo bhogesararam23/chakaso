@@ -1,7 +1,7 @@
 # E2616 — the one-pass control: does a prose-only model reading the mixture's prose once score the mixture's prose?
 
-**Status:** preregistered — committed before the arm ran. No result exists; the Results section is added only after the
-report is on disk.
+**Status:** measured — **R-a, with the record's own short-schedule flag raised**. Preregistered and committed before the arm
+ran; the Results section was added after the report was on disk.
 **Type:** Research experiment, **preregistered**. It is the follow-up [E2613](../E2613/record.md) declared and did not
 run, and its result is read against numbers already on disk.
 **Protocol file:** [`configs/experiments/E2616-one-pass-prose.toml`](../../configs/experiments/E2616-one-pass-prose.toml),
@@ -96,3 +96,46 @@ python scripts/compare_arms.py --arm one_pass=data/experiments/E2616/seed-7/repo
   --arm H=data/experiments/E2613/half-prose-e2612-vocab/report.json --arm T=data/experiments/E2612/mixture/report.json \
   --reference H --aggregate technical=science-,technology-,medicine-,mathematics-
 ```
+
+## Results (added 2026-11-02, after the report was on disk)
+
+Produced by [`scripts/read_one_pass_control.py`](../../scripts/read_one_pass_control.py) from the committed extract
+[`E2616-report.json`](E2616-report.json) and E2613's committed `results.json` (the T, H and P values the record fixed),
+into [`results.json`](results.json). The arm ran 1,200 of 1,200 steps (`budget_ceiling`, no early stop, no divergence, no
+re-run) in 1,485 s. Its packed training text is **10,001,764 identifiers, equal to E2613-H's**, so the training text is the
+same; this is the determinism check the record asked for. It ran on the same host and library as the E2615 arms (see
+[E2615's execution notes](../E2615/record.md)); the references T, H and P come from the earlier machine.
+
+| | prose bits per character | against X |
+| --- | ---: | ---: |
+| **X, this arm (1,200 updates, one pass)** | **1.93944** | |
+| T, the mixture (2,400 updates) | 1.83952 | X − T = **+0.09992** |
+| H, prose only, two passes (2,400 updates) | 1.80621 | X − H = **+0.13323** |
+| P, 20M prose (2,400 updates) | 1.80926 | X − P = +0.13018 |
+
+**Outcome: R-a.** X is far above T − 0.00625, so a prose-only model reading the mixture's prose once does **not** score the
+mixture's prose: it scores about a tenth of a bit worse. R-b and R-c are excluded by the same numbers. X − T exceeds the
+separable margin (0.02) five times over, so the record's flag applies as written: **this arm is also evidence that 1,200
+updates are fewer than the budget needs.**
+
+### What this licenses, and what it does not
+
+* **It does not separate the two explanations the question set up.** The record declared that "equal prose positions" and
+  "equal updates" cannot both hold and chose the first; the result is that the arm with half the updates is much worse than
+  either reference. A gap of 0.0999 to T, three times the 0.0333 gap that E2613 set out to explain, is what a shortened
+  schedule is expected to produce, so the shortened schedule is a sufficient explanation of the whole difference and the
+  composition question is left where E2613 left it. R-a's formal reading ("the second pass was the difference") is true of
+  the outcome, but this design cannot tell a second pass from a second thousand updates, and the record said so beforehand.
+* **The other four partitions, not decision-bearing,** are also all worse than H's, including the technical registers neither
+  arm trained on: technology 2.3007 against H's 2.1900, medicine 2.1171 against 2.0006, science 2.1873 against 2.0593,
+  mathematics 3.1168 against 3.1086. The equal-weight mean is 2.3323 for X against 2.2329 (H), 2.2186 (P) and 2.0214 (T). That
+  the unseen registers worsen along with prose is what a general under-training would do, and is in line with the first point.
+* **Observation across records, not a result of this one.** E2615 held updates fixed at 2,400 and moved the prose share:
+  prose falls steadily with share, and `s50` (10M prose identifiers) ties the natural mixture T on prose, while `s100` (20M)
+  is within 0.004 of H (10M read twice). At a fixed number of updates, prose bits per character therefore tracks the number of
+  prose positions read more than their uniqueness. That is consistent with E2613's reading and is not a test of it, because
+  E2615's arms were not designed to hold passes and positions apart.
+* **A cleaner version of the question would hold updates fixed and vary the passes**, for example prose-only at 2,400 updates
+  over 5M identifiers (four passes) against 10M (two) and 20M (one). That is a new record; nothing here is changed by it.
+* **One seed.** A prose-only arm's spread at 1,200 steps is unmeasured, as declared. The gap is more than forty times
+  E2614's prose standard deviation (0.00226), so a different seed is not a plausible explanation of its size.

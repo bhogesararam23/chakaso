@@ -1,0 +1,215 @@
+{
+  "aggregate": {
+    "partition_mathematics-_bits_per_character": {
+      "max": 3.116809225731576,
+      "mean": 3.116809225731576,
+      "median": 3.116809225731576,
+      "min": 3.116809225731576,
+      "range": 0.0,
+      "runs": 1,
+      "sample_stdev": null
+    },
+    "partition_medicine-_bits_per_character": {
+      "max": 2.117098142578498,
+      "mean": 2.117098142578498,
+      "median": 2.117098142578498,
+      "min": 2.117098142578498,
+      "range": 0.0,
+      "runs": 1,
+      "sample_stdev": null
+    },
+    "partition_prose-_bits_per_character": {
+      "max": 1.939437736018851,
+      "mean": 1.939437736018851,
+      "median": 1.939437736018851,
+      "min": 1.939437736018851,
+      "range": 0.0,
+      "runs": 1,
+      "sample_stdev": null
+    },
+    "partition_science-_bits_per_character": {
+      "max": 2.18725432865333,
+      "mean": 2.18725432865333,
+      "median": 2.18725432865333,
+      "min": 2.18725432865333,
+      "range": 0.0,
+      "runs": 1,
+      "sample_stdev": null
+    },
+    "partition_technology-_bits_per_character": {
+      "max": 2.300671563584882,
+      "mean": 2.300671563584882,
+      "median": 2.300671563584882,
+      "min": 2.300671563584882,
+      "range": 0.0,
+      "runs": 1,
+      "sample_stdev": null
+    },
+    "transformer_best_step": {
+      "max": 1200.0,
+      "mean": 1200.0,
+      "median": 1200.0,
+      "min": 1200.0,
+      "range": 0.0,
+      "runs": 1,
+      "sample_stdev": null
+    },
+    "transformer_bits_per_character": {
+      "max": 2.2820929436565183,
+      "mean": 2.2820929436565183,
+      "median": 2.2820929436565183,
+      "min": 2.2820929436565183,
+      "range": 0.0,
+      "runs": 1,
+      "sample_stdev": null
+    },
+    "transformer_nats_per_token": {
+      "max": 3.3207954473668595,
+      "mean": 3.3207954473668595,
+      "median": 3.3207954473668595,
+      "min": 3.3207954473668595,
+      "range": 0.0,
+      "runs": 1,
+      "sample_stdev": null
+    },
+    "transformer_parameter_count": {
+      "max": 3413760.0,
+      "mean": 3413760.0,
+      "median": 3413760.0,
+      "min": 3413760.0,
+      "range": 0.0,
+      "runs": 1,
+      "sample_stdev": null
+    },
+    "transformer_perplexity": {
+      "max": 27.682361664712563,
+      "mean": 27.682361664712563,
+      "median": 27.682361664712563,
+      "min": 27.682361664712563,
+      "range": 0.0,
+      "runs": 1,
+      "sample_stdev": null
+    },
+    "transformer_token_accuracy": {
+      "max": 0.4158195281124498,
+      "mean": 0.4158195281124498,
+      "median": 0.4158195281124498,
+      "min": 0.4158195281124498,
+      "range": 0.0,
+      "runs": 1,
+      "sample_stdev": null
+    },
+    "transformer_wall_clock_s": {
+      "max": 1484.56,
+      "mean": 1484.56,
+      "median": 1484.56,
+      "min": 1484.56,
+      "range": 0.0,
+      "runs": 1,
+      "sample_stdev": null
+    },
+    "uniform_bits_per_character": {
+      "max": 5.716074891365673,
+      "mean": 5.716074891365673,
+      "median": 5.716074891365673,
+      "min": 5.716074891365673,
+      "range": 0.0,
+      "runs": 1,
+      "sample_stdev": null
+    },
+    "unigram_bits_per_character": {
+      "max": 3.565131287627683,
+      "mean": 3.565131287627683,
+      "median": 3.565131287627683,
+      "min": 3.565131287627683,
+      "range": 0.0,
+      "runs": 1,
+      "sample_stdev": null
+    }
+  },
+  "completed_seeds": [
+    7
+  ],
+  "declared_seeds": [
+    7
+  ],
+  "failed_seeds": [],
+  "missing_seeds": [],
+  "per_run": {
+    "7": {
+      "artifact_checksum": "433385d0582d07c379ba57a0fc7947f1965bbb68e0e43f1cfe52d9476302131a",
+      "corpus_origin": "declared snapshot",
+      "environment": {
+        "device": "cpu",
+        "numpy": "2.4.6",
+        "platform": "Linux-6.18.44-fc-v185-x86_64-with-glibc2.39",
+        "python": "3.13.18",
+        "torch": "2.15.0+cpu",
+        "torch_threads": "4"
+      },
+      "metrics": {
+        "partition_mathematics-_bits_per_character": 3.116809225731576,
+        "partition_medicine-_bits_per_character": 2.117098142578498,
+        "partition_prose-_bits_per_character": 1.939437736018851,
+        "partition_science-_bits_per_character": 2.18725432865333,
+        "partition_technology-_bits_per_character": 2.300671563584882,
+        "transformer_best_step": 1200,
+        "transformer_bits_per_character": 2.2820929436565183,
+        "transformer_nats_per_token": 3.3207954473668595,
+        "transformer_parameter_count": 3413760,
+        "transformer_perplexity": 27.682361664712563,
+        "transformer_token_accuracy": 0.4158195281124498,
+        "transformer_wall_clock_s": 1484.56,
+        "uniform_bits_per_character": 5.716074891365673,
+        "unigram_bits_per_character": 3.565131287627683
+      }
+    }
+  },
+  "protocol": {
+    "architecture": {
+      "context_length": 256,
+      "d_model": 256,
+      "dropout": 0.0,
+      "feedforward_dim": 640,
+      "initialization_std": 0.02,
+      "num_heads": 8,
+      "num_layers": 4,
+      "rope_theta": 10000.0,
+      "tie_embeddings": true,
+      "vocab_size": 4096
+    },
+    "batch_size": 32,
+    "character_steps": null,
+    "corpus_fingerprint": "312571f9fa8351a8",
+    "eval_every": 200,
+    "experiment": "E2616",
+    "gradient_clip_norm": 1.0,
+    "learning_rate": 0.0006,
+    "max_steps": 1200,
+    "min_delta": 0.001,
+    "parameter_count": 3413760,
+    "patience": 99,
+    "protocol_digest": "1fa824b168fcaa6139fc058417429a0b5b609e714450d8b312a09d694f9c157b",
+    "split_fingerprint": "adf650435c3a9068",
+    "split_seed": 7,
+    "test_characters": 535282,
+    "test_positions": 254976,
+    "tokenizer_fingerprint": "434debe82f949347",
+    "tokenizer_size": 4096,
+    "warmup_steps": 100,
+    "weight_decay": 0.01
+  },
+  "reproduction": null,
+  "runs": [
+    {
+      "error": null,
+      "report_digest": "bcef9904b0a207fc746118ebd14f1097a30b0d8f69c38e4212b2eebda8fbdd87",
+      "report_path": "E2616/seed-7/report.json",
+      "reused": false,
+      "seed": 7,
+      "status": "completed",
+      "wall_clock_s": 1602.7
+    }
+  ],
+  "study": "E2616"
+}
