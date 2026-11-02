@@ -635,3 +635,45 @@ def test_both_artifact_kinds_record_the_floor_of_the_vocabulary_the_run_was_give
 
     assert outcome.artifact().tokenizer_min_frequency == 5
     assert load_artifact(path).tokenizer_min_frequency == 5
+
+
+def _reference_plan_batch(
+    total: int, update_index: int, *, batch_size: int, seed: int
+) -> tuple[int, ...]:
+    """The plan as it was written before the epoch order was cached: shuffle the whole range on every call."""
+    import random
+
+    steps_per_epoch = -(-total // batch_size)
+    epoch, position = divmod(update_index, steps_per_epoch)
+    order = list(range(total))
+    random.Random(f"{seed}:{epoch}").shuffle(order)
+    return tuple(order[position * batch_size : position * batch_size + batch_size])
+
+
+@pytest.mark.parametrize("total", [1, 7, 32, 33, 100])
+def test_the_batch_plan_is_unchanged_by_caching_the_epoch_order(total: int) -> None:
+    steps_per_epoch = -(-total // 4)
+
+    for update in range(3 * steps_per_epoch + 2):  # three epochs, including each short final batch
+        assert plan_batch(total, update, batch_size=4, seed=11) == _reference_plan_batch(
+            total, update, batch_size=4, seed=11
+        )
+
+
+def test_the_epoch_order_is_computed_once_per_epoch_not_once_per_update() -> None:
+    from chakaso.training import nn_training
+
+    nn_training._epoch_order.cache_clear()  # type: ignore[attr-defined]
+    for update in range(10):  # one epoch of 10 batches
+        plan_batch(40, update, batch_size=4, seed=3)
+
+    info = nn_training._epoch_order.cache_info()  # type: ignore[attr-defined]
+    assert info.misses == 1
+    assert info.hits == 9
+
+
+def test_the_cached_order_cannot_be_changed_by_a_caller() -> None:
+    first = plan_batch(20, 0, batch_size=5, seed=1)
+    list(first).append(99)  # a caller mutating its own copy
+
+    assert plan_batch(20, 0, batch_size=5, seed=1) == first

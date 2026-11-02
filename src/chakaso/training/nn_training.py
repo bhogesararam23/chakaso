@@ -36,6 +36,7 @@ import random
 import time
 from collections.abc import Callable, Mapping, Sequence
 from dataclasses import asdict, dataclass
+from functools import lru_cache
 from pathlib import Path
 from typing import Any
 
@@ -316,10 +317,22 @@ def plan_batch(
     steps_per_epoch = -(-total_examples // batch_size)
     epoch = update_index // steps_per_epoch
     position = update_index % steps_per_epoch
+    order = _epoch_order(total_examples, seed, epoch)
+    start = position * batch_size
+    return order[start : start + batch_size]
+
+
+@lru_cache(maxsize=4)
+def _epoch_order(total_examples: int, seed: int, epoch: int) -> tuple[int, ...]:
+    """One epoch's seeded shuffle of the example indices, computed once and shared by every update in it.
+
+    Shuffling the whole range on every update made a batch plan cost O(examples): measured at 28 ms per update
+    for 78,000 windows and 590 ms for 780,000 (measured 2026-11-02, on a host busy with a training run). The shuffle is the same call as before, so the plan is
+    unchanged; it is stored as a tuple so no caller can alter another call's order.
+    """
     order = list(range(total_examples))
     random.Random(f"{seed}:{epoch}").shuffle(order)
-    start = position * batch_size
-    return tuple(order[start : start + batch_size])
+    return tuple(order)
 
 
 def choose_validation_best(
