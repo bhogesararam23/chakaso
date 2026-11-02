@@ -24,13 +24,11 @@ from typing import Any
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src"))
 
-import torch
 
 from chakaso.training.errors import TrainingError
 from chakaso.training.minimal_pairs import PairSet, contaminated_pairs, load_pair_set, score_pairs
 from chakaso.training.nn_checkpoint import ModelArtifact, load_artifact
-from chakaso.training.nn_evaluation import sequence_log_probabilities
-from chakaso.training.nn_training import build_model
+from chakaso.training.nn_evaluation import sequence_log_probabilities, untrained_model_like
 
 CONTROL_SEED = 7
 
@@ -56,10 +54,7 @@ def score_artifact(
 
 def untrained_control(artifact: ModelArtifact, seed: int = CONTROL_SEED) -> Any:
     """A randomly initialised model of the artifact's architecture, seeded so the control is reproducible."""
-    torch.manual_seed(seed)
-    model = build_model(artifact.config)
-    model.eval()
-    return model
+    return untrained_model_like(artifact, seed)
 
 
 def _snapshot_texts(path: Path) -> list[str]:

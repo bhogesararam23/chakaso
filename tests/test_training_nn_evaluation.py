@@ -433,3 +433,107 @@ def test_batching_keeps_the_order_of_the_texts_it_was_given() -> None:
     second = sequence_log_probabilities(model, _VOCABULARY, list(reversed(forward)))
 
     assert first == pytest.approx(list(reversed(second)), abs=1e-4)
+
+
+# ------------------------------------------------ the probability of a continuation given a passage (E2623)
+
+
+def test_a_continuations_log_probability_is_minus_the_loss_of_exactly_its_own_positions() -> None:
+    from chakaso.training.nn_evaluation import continuation_log_probabilities
+    from chakaso.training.packing import PackedExample
+
+    model = _wide_model()
+    prefix = tuple(_VOCABULARY.encode("the quick red fox"))
+    continuation = tuple(_VOCABULARY.encode(" ran over the dry sand"))
+    stream = (DOCUMENT_END, *prefix, *continuation)
+    row = PackedExample(input_ids=stream[:-1], targets=stream[1:])
+    nats, _, _ = score_model_on_examples(model, [row])
+
+    [observed] = continuation_log_probabilities(model, [(prefix, continuation)])
+
+    assert observed == pytest.approx(-sum(nats[-len(continuation) :]), abs=1e-4)
+
+
+def test_an_empty_prefix_scores_the_continuation_straight_after_the_separator() -> None:
+    from chakaso.training.nn_evaluation import (
+        continuation_log_probabilities,
+        sequence_log_probabilities,
+    )
+
+    model = _wide_model()
+    text = "the quiet owl slept"
+    identifiers = tuple(_VOCABULARY.encode(text))
+
+    [blind] = continuation_log_probabilities(model, [((), identifiers)])
+    [whole] = sequence_log_probabilities(model, _VOCABULARY, [text])
+
+    assert blind == pytest.approx(whole, abs=1e-4)
+
+
+def test_the_prefix_changes_the_probability_of_a_continuation() -> None:
+    from chakaso.training.nn_evaluation import continuation_log_probabilities
+
+    model = _wide_model()
+    continuation = tuple(_VOCABULARY.encode(" ran over the dry sand"))
+    prefix = tuple(_VOCABULARY.encode("the quick red fox"))
+
+    [with_prefix] = continuation_log_probabilities(model, [(prefix, continuation)])
+    [without] = continuation_log_probabilities(model, [((), continuation)])
+
+    assert with_prefix != pytest.approx(without, abs=1e-6)
+
+
+def test_mixed_lengths_are_batched_without_changing_any_value_or_the_order() -> None:
+    from chakaso.training.nn_evaluation import continuation_log_probabilities
+
+    model = _wide_model()
+    encode = _VOCABULARY.encode
+    requests = [
+        (tuple(encode("the quick red fox")), tuple(encode(" ran over"))),
+        ((), tuple(encode("the owl slept"))),
+        (tuple(encode("the quiet owl")), tuple(encode(" slept in the dry sand"))),
+        (tuple(encode("the quick red fox")), tuple(encode(" ran over"))),
+    ]
+
+    together = continuation_log_probabilities(model, requests)
+    alone = [continuation_log_probabilities(model, [request])[0] for request in requests]
+
+    assert together == pytest.approx(alone, abs=1e-4)
+
+
+def test_a_passage_that_does_not_fit_the_context_or_an_empty_continuation_is_refused() -> None:
+    from chakaso.training.nn_evaluation import continuation_log_probabilities
+
+    model = _wide_model()
+    long = tuple([5] * 80)
+
+    with pytest.raises(TrainingError, match="context"):
+        continuation_log_probabilities(model, [(long, (6, 7))])
+    with pytest.raises(TrainingError, match="empty"):
+        continuation_log_probabilities(model, [((5, 6), ())])
+
+
+def test_building_an_untrained_control_does_not_move_the_callers_random_stream() -> None:
+    from chakaso.training.nn_checkpoint import ModelArtifact
+    from chakaso.training.nn_evaluation import untrained_model_like
+
+    model = _wide_model()
+    artifact = ModelArtifact(
+        config=_WIDE,
+        state={name: tensor.detach().clone() for name, tensor in model.state_dict().items()},
+        vocabulary=_VOCABULARY,
+        corpus_fingerprint="control-fixture",
+    )
+    torch.manual_seed(123)
+    expected = torch.rand(3)
+    torch.manual_seed(123)
+
+    first = untrained_model_like(artifact, 7)
+    second = untrained_model_like(artifact, 7)
+    observed = torch.rand(3)
+
+    assert torch.equal(observed, expected)
+    assert all(
+        torch.equal(a, b)
+        for a, b in zip(first.state_dict().values(), second.state_dict().values(), strict=True)
+    )

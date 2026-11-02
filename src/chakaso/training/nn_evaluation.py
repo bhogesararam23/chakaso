@@ -20,15 +20,17 @@ import torch
 from chakaso.training.errors import TrainingError, TrainingScheduleError
 from chakaso.training.model_metrics import ModelMetrics, metrics_from_scores
 from chakaso.training.nn_checkpoint import ModelArtifact, TrainedModel
-from chakaso.training.nn_training import _segment_tensor
+from chakaso.training.nn_training import _segment_tensor, build_model
 from chakaso.training.packing import PackedExample
 from chakaso.training.subword import DOCUMENT_END, SubwordVocabulary
 
 __all__ = [
+    "continuation_log_probabilities",
     "evaluate_artifact",
     "evaluate_model",
     "score_model_on_examples",
     "sequence_log_probabilities",
+    "untrained_model_like",
 ]
 
 
@@ -196,3 +198,70 @@ def sequence_log_probabilities(
                 for row, index in enumerate(chunk):
                     totals[index] = float(selected[row].sum())
     return totals
+
+
+def continuation_log_probabilities(
+    model: TrainedModel,
+    requests: Sequence[tuple[Sequence[int], Sequence[int]]],
+    *,
+    batch_size: int = 64,
+) -> list[float]:
+    """The natural-log probability of each ``continuation`` given its ``prefix``, both already in identifiers.
+
+    A request ``(prefix, continuation)`` is scored as ``log p(continuation | <doc-end> prefix)``: only the continuation's own positions are
+    summed, so the prefix conditions the model and contributes nothing to the value. An empty prefix asks for the continuation straight after the
+    separator, which is the prefix-blind probability the pointwise-mutual-information reading subtracts. Requests of equal total length share a forward
+    pass (no padding, so the values are what scoring them one at a time gives, to 1e-4 nats), and the result is in the order of ``requests``.
+
+    Raises:
+        TrainingError: a continuation is empty, or a passage and its continuation do not fit the model's context together.
+    """
+    context = int(model.config.context_length)
+    sequences: list[tuple[int, ...]] = []
+    lengths: list[int] = []
+    for prefix, continuation in requests:
+        if not continuation:
+            message = (
+                "cannot score an empty continuation: it has no identifiers to give a probability to"
+            )
+            raise TrainingError(message)
+        sequence = (DOCUMENT_END, *prefix, *continuation)
+        if len(sequence) - 1 > context:
+            message = (
+                f"a passage of {len(prefix)} identifiers and a continuation of {len(continuation)} do not fit "
+                f"the model's context of {context} with the separator; nothing is truncated"
+            )
+            raise TrainingError(message)
+        sequences.append(sequence)
+        lengths.append(len(continuation))
+    by_length: dict[tuple[int, int], list[int]] = {}
+    for index, sequence in enumerate(sequences):
+        by_length.setdefault((len(sequence), lengths[index]), []).append(index)
+    totals = [0.0] * len(sequences)
+    model.eval()
+    with torch.no_grad():
+        for (_, own), members in by_length.items():
+            for start in range(0, len(members), batch_size):
+                chunk = members[start : start + batch_size]
+                inputs = torch.tensor([list(sequences[i][:-1]) for i in chunk], dtype=torch.int64)
+                wanted = torch.tensor([list(sequences[i][1:]) for i in chunk], dtype=torch.int64)
+                logits, _ = model(inputs)
+                selected = (
+                    torch.log_softmax(logits, dim=-1).gather(-1, wanted.unsqueeze(-1)).squeeze(-1)
+                )
+                for row, index in enumerate(chunk):
+                    totals[index] = float(selected[row, -own:].sum())
+    return totals
+
+
+def untrained_model_like(artifact: ModelArtifact, seed: int) -> TrainedModel:
+    """A randomly initialised model of the artifact's architecture, seeded so the control is reproducible.
+
+    The floor of any likelihood probe: whatever an untrained model scores is what the probe measures without learning. The global random
+    state is restored afterwards, so building a control does not move any stream a caller is drawing from.
+    """
+    with torch.random.fork_rng(devices=[]):
+        torch.manual_seed(seed)
+        model: TrainedModel = build_model(artifact.config)
+    model.eval()
+    return model
