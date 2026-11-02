@@ -125,9 +125,9 @@ raw `data/` report gives an identical reading. Both runs: 4 threads, torch 2.15.
 
 ### Consequences for readings that subtract numbers from the two hosts
 
-* The observed machine effect on O1 is **0.00067**, on prose **0.00033**, on mathematics **0.00245** (the largest). Every cross-host comparison in E2613, E2615 and E2616 that was read as a finding is larger than that by at least an order of magnitude: E2615's 0.75 → 1.0 step on O1 is +0.1656, E2616's prose gap to T is 0.0999, the 0 → 0.25 prose step 0.1013.
+* The observed machine effect on O1 is **0.00067**, on prose **0.00033**, on mathematics **0.00245** (the largest). Every cross-host comparison in E2613, E2615 and E2616 that was read as a finding is larger than that by at least an order of magnitude: E2615's 0.75 → 1.0 step on O1 is +0.1656 and E2616's prose gap to T is 0.0999. (E2615's steps among its four new arms are within one host and are not exposed to the effect at all.)
 * The readings that are **within** the effect are the ones that were already read as ties: E2615's P3 contrast (the nested 50 % arm against the natural mixture's five-seed mean: O1 −0.0012, prose +0.0014) is the same size as this effect (O1 −0.0007, prose −0.0003). P3's "document selection does not measurably matter at this resolution" therefore stands, and
-  the two possible explanations it could not separate (selection and machine) are now bounded: the machine accounts for at most about half of the O1 difference observed there.
+  the two possible explanations it could not separate (selection and machine) are now bounded in size: a machine effect of the size measured here (one seed, one pair of hosts) could account for roughly half of the O1 difference observed there, and not for more than that.
 * E2613's H (10M prose, 1.80621) against P (20M prose, 1.80926) differ by 0.00305 on one host pair; that is larger than the machine effect on prose, so it is not explained by it, and it is read as the tie the margin already made it.
 * No threshold, margin or outcome of any earlier record changes.
 
