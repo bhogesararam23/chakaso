@@ -290,3 +290,114 @@ def test_masked_scoring_refuses_examples_that_carry_no_document_boundary() -> No
 
     with pytest.raises(TrainingScheduleError, match="segment identifiers"):
         score_model_on_examples(model, untracked, document_masking=True)
+
+
+# ------------------------------------------------ the log-probability of a whole sentence (minimal-pair probe)
+
+
+_WIDE = TransformerConfig(
+    vocab_size=_VOCABULARY.size,
+    context_length=64,
+    d_model=8,
+    num_layers=1,
+    num_heads=2,
+    feedforward_dim=16,
+)
+
+
+def _wide_model(seed: int = 4) -> CausalTransformer:
+    torch.manual_seed(seed)
+    model = CausalTransformer(_WIDE)
+    model.eval()
+    return model
+
+
+def test_a_sentences_log_probability_is_minus_the_summed_loss_of_its_tokens_after_a_document_start() -> (
+    None
+):
+    from chakaso.training.nn_evaluation import sequence_log_probabilities
+    from chakaso.training.packing import PackedExample
+
+    model = _wide_model()
+    text = "the quiet owl"
+    identifiers = (DOCUMENT_END, *_VOCABULARY.encode(text))
+    row = PackedExample(input_ids=identifiers[:-1], targets=identifiers[1:])
+    nats, _, _ = score_model_on_examples(model, [row])
+
+    [observed] = sequence_log_probabilities(model, _VOCABULARY, [text])
+
+    assert observed == pytest.approx(-sum(nats), abs=1e-4)
+    assert observed < 0
+
+
+def test_the_log_probability_of_a_sentence_does_not_depend_on_what_it_is_scored_beside() -> None:
+    from chakaso.training.nn_evaluation import sequence_log_probabilities
+
+    model = _wide_model()
+    alone = sequence_log_probabilities(model, _VOCABULARY, ["the quick red fox"])
+    together = sequence_log_probabilities(
+        model, _VOCABULARY, ["the owl slept", "the quick red fox", "sand"]
+    )
+
+    assert together[1] == pytest.approx(alone[0], abs=1e-9)
+
+
+def test_a_sentence_longer_than_the_context_is_refused_rather_than_truncated() -> None:
+    from chakaso.training.nn_evaluation import sequence_log_probabilities
+
+    with pytest.raises(TrainingError, match="context"):
+        sequence_log_probabilities(
+            _model(), _VOCABULARY, ["the quick red fox ran over the dry sand " * 4]
+        )
+
+
+def test_an_empty_sentence_is_refused() -> None:
+    from chakaso.training.nn_evaluation import sequence_log_probabilities
+
+    with pytest.raises(TrainingError, match="empty"):
+        sequence_log_probabilities(_wide_model(), _VOCABULARY, [""])
+
+
+def test_a_model_fitted_to_a_sentence_prefers_it_to_a_scrambled_copy() -> None:
+    """The instrument's sensitivity in miniature: a model that has seen the order scores the order higher."""
+    from chakaso.training.nn_evaluation import sequence_log_probabilities
+    from chakaso.training.nn_training import TransformerTrainingConfig, train_transformer
+
+    text = "the quick red fox ran over the dry sand"
+    # Forty separate documents of the sentence, so every one starts after a separator, which is how it is scored.
+    examples = pack_units(
+        tuple(TextUnit(identifier=f"u{i}", text=text) for i in range(40)),
+        _VOCABULARY,
+        context_length=16,
+    ).examples
+    config = TransformerTrainingConfig(
+        batch_size=4,
+        max_steps=200,
+        learning_rate=1e-2,
+        weight_decay=0.0,
+        warmup_steps=2,
+        gradient_clip_norm=1.0,
+        seed=3,
+        eval_every=200,
+        patience=99,
+        min_delta=0.0,
+        architecture=_WIDE,
+    )
+    outcome = train_transformer(
+        train_examples=examples,
+        validation_examples=examples,
+        vocabulary=_VOCABULARY,
+        config=config,
+        corpus_fingerprint="sensitivity",
+    )
+    model = CausalTransformer(_WIDE)
+    model.load_state_dict(outcome.state)
+    model.eval()
+    untrained = _wide_model(seed=9)
+    scrambled = "sand dry the over ran fox red quick the"
+
+    trained_gap = sequence_log_probabilities(model, _VOCABULARY, [text, scrambled])
+    untrained_gap = sequence_log_probabilities(untrained, _VOCABULARY, [text, scrambled])
+
+    assert trained_gap[0] - trained_gap[1] > 20.0
+    assert abs(untrained_gap[0] - untrained_gap[1]) < trained_gap[0] - trained_gap[1]

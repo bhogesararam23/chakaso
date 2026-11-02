@@ -22,9 +22,14 @@ from chakaso.training.model_metrics import ModelMetrics, metrics_from_scores
 from chakaso.training.nn_checkpoint import ModelArtifact, TrainedModel
 from chakaso.training.nn_training import _segment_tensor
 from chakaso.training.packing import PackedExample
-from chakaso.training.subword import SubwordVocabulary
+from chakaso.training.subword import DOCUMENT_END, SubwordVocabulary
 
-__all__ = ["evaluate_artifact", "evaluate_model", "score_model_on_examples"]
+__all__ = [
+    "evaluate_artifact",
+    "evaluate_model",
+    "score_model_on_examples",
+    "sequence_log_probabilities",
+]
 
 
 def score_model_on_examples(
@@ -134,3 +139,46 @@ def evaluate_artifact(
     tokenizer they were not trained with is the error this artifact format exists to refuse.
     """
     return evaluate_model(artifact.to_model(), examples, artifact.vocabulary, batch_size=batch_size)
+
+
+def sequence_log_probabilities(
+    model: TrainedModel, vocabulary: SubwordVocabulary, texts: Sequence[str]
+) -> list[float]:
+    """The natural-log probability the model gives each text, as a document that begins after a separator.
+
+    Training streams separate documents with ``DOCUMENT_END``, so a text is scored as the continuation of one:
+    ``log p(t1 | <doc-end>) + log p(t2 | <doc-end>, t1) + ...`` over its identifiers, with no end-of-text term. Each text
+    is scored on its own, so the value does not depend on what it is scored beside. The sum, not the mean, is returned:
+    a minimal-pair comparison is between whole sentences (see :mod:`chakaso.training.minimal_pairs`, which also reports
+    a length-only reading because a sum rewards short sentences).
+
+    Raises:
+        TrainingError: a text is empty, or has more identifiers than the model's context holds - it is refused
+            rather than truncated, since a truncated sentence is a different sentence.
+    """
+    context = int(model.config.context_length)
+    model.eval()
+    totals: list[float] = []
+    with torch.no_grad():
+        for text in texts:
+            identifiers = vocabulary.encode(text)
+            if not identifiers:
+                message = (
+                    "cannot score an empty text: it has no identifiers to give a probability to"
+                )
+                raise TrainingError(message)
+            sequence = (DOCUMENT_END, *identifiers)
+            if len(sequence) - 1 > context:
+                message = (
+                    f"a text of {len(identifiers)} identifiers does not fit the model's context of {context} "
+                    "once the document-start separator is added; it is not truncated"
+                )
+                raise TrainingError(message)
+            inputs = torch.tensor([list(sequence[:-1])], dtype=torch.int64)
+            wanted = torch.tensor([list(sequence[1:])], dtype=torch.int64)
+            logits, _ = model(inputs)
+            selected = (
+                torch.log_softmax(logits, dim=-1).gather(-1, wanted.unsqueeze(-1)).squeeze(-1)
+            )
+            totals.append(float(selected.sum()))
+    return totals
