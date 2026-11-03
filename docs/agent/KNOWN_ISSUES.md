@@ -792,6 +792,14 @@ as of that day.
    the claim cannot drift from the code. Reports written before this date lack it and the values they ran under are
    the library defaults of the pinned `torch 2.13.0+cpu`. Whether norms *should* be excluded from decay remains an
    unrun arm.
+   *Closed for the declaration half 2026-11-03 ([ADR-0049](../decisions/ADR-0049-a-runs-optimizer-settings-are-declared-not-inherited.md)):*
+   `ADAM_BETAS`, `ADAM_EPSILON` and `ADAM_AMSGRAD` are now this project's named constants and `build_optimizer` passes
+   them, at the values the library used for every committed record, so a torch default change can no longer retarget a
+   measured recipe. Two tests hold the two halves: one compares the constants with the installed library's own defaults
+   (the drift becomes a named failure), the other perturbs the constants and asserts the built optimizer follows them.
+   The exemption itself is now expressible — `weight_decay_excludes_vectors`, split by parameter *shape*, off by default,
+   recorded in the same `decay_applied_to` string so no protocol digest moves — and **the arm that would decide it is
+   still unrun**, which is the only half of this item that stays open.
 4. **No thread or determinism pinning.** Reproduction is by tolerance (0.0005 bits per character), which E2614's
    seed-7 repeat of E2612 arm T measured on this machine: the difference was exactly 0.0 on every metric, so the protocol was deterministic here. Thread count (14 in the reports) and kernel selection are still not pinned, so that says nothing about another machine.
    *Reviewed 2026-11-02 (second session):* the tolerance is documented where it is declared (`REPRODUCTION_TOLERANCES`: half the last
