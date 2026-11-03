@@ -1,12 +1,15 @@
 # E2628 — H17 at a second seed, on the other host: does the space-prefixed tokenizer's gain survive a different initialisation?
 
-**Status:** preregistered — this record is committed **before** the arm runs. The Results section will be added after the report is on disk, and the margins, outcomes and predictions below will not change.
+**Status:** measured — **Y-a: the space-prefixed tokenizer's gain survives a second, independent initialisation, and grows.** Δ(O1) = +0.0294 against the 0.02 separable margin and Δ(whole pack) = +0.0349 against the 0.00933 tie margin, on the control's own 2,400 updates and 2,756 training documents, both arms on this host. Preregistered and committed (`ef639f0`) before the run; the Results section was added after `results.json` was written from the two committed report extracts.
 **Type:** Research experiment, **preregistered**. It is the second seed of the cell [E2625](../E2625/record.md) measured, run on the
 machine that has not carried a space-prefixed arm yet.
 **Protocol file:** [`configs/experiments/E2625-space-prefixed-equal-updates-and-documents.toml`](../../configs/experiments/E2625-space-prefixed-equal-updates-and-documents.toml),
 read by `chakaso experiment study --protocol … --seeds 11`. **No new protocol file**: the point is that nothing moves but the seed and
 the host, exactly as [E2617](../E2617/record.md) reused E2614's file for the same reason. The `--seeds 11` argument is the only difference
-from E2625's own command, and the study's protocol digest checks that claim rather than the record asserting it.
+from E2625's own command. That is checked by the two commands naming one file rather than by a digest comparison across hosts: this arm's
+study carries protocol digest `e0068c3065410d37`, and E2625's committed extract records `Linux-6.18.44` in its environment block while this
+run's records `Windows-11`, so the two study aggregates live on different machines and their digests are not diffable here. What the shared
+file guarantees is that there is no second protocol document that could drift.
 
 ## Question
 
@@ -114,4 +117,85 @@ repository rather than from numbers typed into prose, and `results.json` is rebu
 
 ## Results
 
-_Not yet. The arm had not been launched when this record was committed._
+**Outcome: Y-a — the gain survives a second draw, and by more than the first seed showed.** Δ(O1) =
+**+0.029403831273292935** against the 0.02 separable margin, Δ(whole pack) = **+0.03494998016595874** against the
+0.00933 tie margin. Preregistered as `10ff9c0`'s predecessor commit and run after it; the numbers below come from
+[`results.json`](results.json), which [`scripts/read_tokenizer_arm.py`](../../scripts/read_tokenizer_arm.py)
+`--same-documents` wrote from [`E2628-report.json`](E2628-report.json) and
+[`E2614-seed-11-control-report.json`](E2614-seed-11-control-report.json).
+
+**The comparison is tokenizer-only, and the reader enforced it.** Same corpus (`312571f9fa8351a8`), same whole-work
+split (`adf650435c3a9068`), same 3,413,760 parameters, same 2,400 updates, same 2,756 training documents holding the
+same 14,033,424 identifiers, same held-out documents (selected by counting with `434debe82f949347`, the control's own
+vocabulary), this host for both arms. What differs is the vocabulary — `4a47f0281c81a9e5` against `434debe82f949347` —
+and the characters per identifier that follows from it: **2.0993 → 2.9332 (+39.7 %)**, the same expansion E2620
+measured, so the treatment read 1.40 passes of the control's documents where the control read 0.98.
+
+| Partition | control (E2614 seed 11) | treatment (E2628 seed 11) | Δ |
+| --- | ---: | ---: | ---: |
+| mathematics | 2.5999215 | 2.5507830 | +0.0491 |
+| medicine | 1.8289869 | 1.8091196 | +0.0199 |
+| prose | 1.8399637 | 1.8188589 | +0.0211 |
+| science | 1.9467647 | 1.9199873 | +0.0268 |
+| technology | 1.9021481 | 1.8720169 | +0.0301 |
+| **O1** | **2.0235569** | **1.9941531** | **+0.02940** |
+| **whole pack** | **2.0587330** | **2.0237831** | **+0.03495** |
+
+### The two seeds of this design, side by side
+
+| | control O1 | treatment O1 | Δ(O1) | Δ(whole pack) | host |
+| --- | ---: | ---: | ---: | ---: | :--- |
+| E2625, seed 7 | 2.0206837 | 1.9977764 | **+0.02291** | +0.02859 | Linux container |
+| **E2628, seed 11** | 2.0235569 | 1.9941531 | **+0.02940** | +0.03495 | this Windows host |
+
+Two independent draws of the same design, both material by the same band, in the same direction, with the second
+28 % larger than the first. The mean of the two Δs is +0.0262 and their spread 0.0065 — which is not a measurement of
+the treatment's seed spread, because each pair is also a different host: see the confound below.
+
+*The treatment's own two O1 values, 1.99778 and 1.99415, differ by 0.0036 — a useful sanity number, since the
+control's five-seed spread on O1 is 0.00226 and a tokenizer that changes which identifiers carry information could
+have changed the variability of training with it. Nothing here establishes that spread; two points cannot.*
+
+### The predictions
+
+* **P1 failed at the upper edge.** Δ(O1) was predicted to lie between E2625's +0.0229 and E2624's −0.0351; it is
+  **+0.0294**, above the bracket. The bracket was arithmetic about what the two neighbouring designs could differ by,
+  and the second seed came out better than the first rather than between them.
+* **P2 held, and is the most interesting number here.** The treatment's seed-11 O1 (1.99415) sits 0.0036 from its
+  seed-7 O1 (1.99778), inside the 0.01 that the prediction named as the surprise threshold, so the tokenizer's gain
+  does not appear to depend on which initialisation drew it.
+* **P3 held.** Every one of the five partitions improved, as in E2620 and E2625 — the smallest gain on medicine
+  (+0.0199), the largest on mathematics (+0.0491), which is the reverse of E2620's ordering where mathematics gained
+  least. One register's rank across two seeds is not a mechanism; both readings are recorded.
+* **P4 failed as worded, and the wording was the error.** It predicted the treatment's whole-pack number would be
+  *worse* than E2626's 2.05544739454246 by less than the band. The hypothesis of the whole experiment is that the
+  treatment is better, so a prediction that its loss would be worse is incoherent as written; it is recorded as a
+  mis-prediction rather than reinterpreted. The comparison that means something: control seed 11 is 2.0587330 and the
+  treatment at the same seed is 2.0237831, and E2626's 2.0554474 is the control at seed 7 on this host — inside the
+  control's own seed spread, which is the consistency check that was actually wanted.
+
+### What this changes, and what it does not
+
+1. **H17's gain is now measured on two independent initialisations of the cleanest design in the series**, at equal
+   updates and equal training documents, and both exceed the separable margin on both decision-bearing measures. The
+   space-prefixed pre-tokenizer is the candidate default on two seeds rather than one.
+2. **The remaining step is a decision record, not another arm.** What adopting it requires is stated in
+   [ADR-0048](../../docs/decisions/ADR-0048-the-pre-tokenizer-is-a-named-part-of-a-vocabulary-s-identity.md)'s own
+   "does not decide" clause: the rule becomes the default for *new* fits, committed vocabularies keep their
+   fingerprints, and the consequence for every measured comparison since E2612 is that its numbers describe the old
+   rule. Two further seeds would strengthen the estimate; they are not what stands between the measurement and a
+   decision.
+3. **The seed-and-host confound is unchanged and was declared before the run.** Δ₁₁ and Δ₇ differ by 0.0065, which is
+   the seed effect plus the machine effect, and E2617 bounded the machine bundle at 0.0025 bits per character — so at
+   most about a third of that difference is attributable to the host. Nothing in the outcome depends on the split.
+4. **Still one vocabulary, one fitting sample, one corpus, one truncated budget, archaic English.** Every arm in the
+   series completed at the step ceiling with validation falling, so all four absolute levels here are floors. The
+   generation block of this run reports `looping_fraction` 0.4 with all five generated samples reaching the token
+   bound and one probe refused: **a tokenizer gain is not usable text**, and
+   [K-001](../../docs/agent/KNOWN_ISSUES.md) is exactly where it was.
+
+### Cost, measured
+
+58.01 s of preparation against E2626's 42 s at the same corpus, and 7,633.55 s of training at 2,719 positions/s
+against 5,757 s at 3,766 for E2626 — the machine was shared with the E2627 scoring for part of the run, so the wall
+clock is a property of this session, not of the arm. Peak resident 2,501.5 MB.
