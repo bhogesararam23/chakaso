@@ -1,7 +1,6 @@
 # E2626 — can either capability probe detect an improvement this project would call real? A training curve is the ordering criterion
 
-**Status:** preregistered — the record and [`configs/experiments/E2626-curve-ladder.toml`](../../configs/experiments/E2626-curve-ladder.toml)
-are committed **before** the run, and the decision rules, the materiality convention and the predictions below are fixed now.
+**Status:** measured — **neither instrument earns S-a. The minimal-pair probe tracks the curve (ρ 0.951) and separates 63 of the 74 materially-different rung pairs, down to a 0.0218-bit gap, but it contradicts the loss on one pair; the continuation probe tracks it (ρ 0.918) and separates 23, and after update 400 it resolves nothing.** Preregistered and committed (`cafbb8a`) before the run, with this record and [`configs/experiments/E2626-curve-ladder.toml`](../../configs/experiments/E2626-curve-ladder.toml) as one declaration; the Results section was added after the report and the two probe outputs were on disk.
 **Type:** Research experiment, **preregistered**. One arm. It is an instrument measurement, not a model-quality measurement: nothing about the
 mixture, the tokenizer or the budget changes, and the model it trains is E2614's at E2612 arm T's configuration.
 **Protocol file:** [`configs/experiments/E2626-curve-ladder.toml`](../../configs/experiments/E2626-curve-ladder.toml), read by
@@ -154,3 +153,111 @@ python scripts/analyse_probe_sensitivity.py --report data/experiments/E2626/seed
 * Twelve evaluations of one run are autocorrelated by construction; no interval across rungs is computed, only separations.
 * Everything this record touches is archaic English from one corpus family (K-023's within-work caveat does not apply: the split is whole-work), and
   nothing here is a statement about capability (K-001).
+
+---
+
+## Results (added 2026-11-03)
+
+Produced by [`scripts/analyse_probe_sensitivity.py`](../../scripts/analyse_probe_sensitivity.py) from files committed beside this record:
+[`E2626-report.json`](E2626-report.json) (the run, compacted by `scripts/extract_report.py`, rung list and artifact digests intact),
+[`minimal-pairs.json`](minimal-pairs.json) and [`continuations.json`](continuations.json) (the two probes' per-model tables; each model's per-item
+outcome array is replaced by the SHA-256 of its canonical JSON, because the raw files are 1.4 MB and 1.5 MB against a 1 MiB tracked-file limit, and
+the bytes those stubs digest are in `data/experiments/E2626/`), and [`results.json`](results.json) — the comparison itself: every pair, its loss gap,
+its discordant counts, its p-value, whether Holm rejected, and which way the direction fell.
+
+### P4 first, because everything else depends on it
+
+The endpoint guard passed. Rung 2400 scores **2.05544739454246** bits per character with the same `positions_scored` and `characters_scored` as the
+run's own reported test block, and its `test_partitions` block equals the report's field for field. Beyond the report, the weights were compared
+directly: **all 43 tensors of [E2614](../E2614/record.md)'s seed-7 artifact on this host are bit-identical to E2626's final artifact, and rung 2400's
+tensors are bit-identical to both.** The validation curve agrees at every point E2614 recorded — 3.489956081890669, 3.190452286454498,
+3.0628919796865492, 2.9782929967661373, 2.923530496534754, 2.9031519811661517 at steps 400 through 2400, to the last digit — and the ladder adds the
+six intermediate evaluations E2614 never had. Writing twelve usable artifacts and evaluating twice as often did not perturb the curve being recorded:
+ADR-0050's central claim holds at full scale on a real run, not only in the in-process test. Wall clock rose from 4,991 s to 5,757 s (+15 %) for the
+six extra evaluations and twelve writes; throughput fell from 4,164 to 3,766 positions/s on a busier machine, which is a property of the host and not
+of the mechanism.
+
+### The curve
+
+Whole-pack test bits per character, the equal-weight register mean, and the two probes' decision-bearing readings:
+
+| Rung | whole pack | O1 | minimal pairs, 300 usable | all 800 | continuation PMI, easy | hard |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| 0 (untrained) | 5.7533 | 5.6797 | 0.4967 | 0.4725 | 0.4930 | 0.4930 |
+| 200 | 2.7365 | 2.6818 | 0.4500 | 0.5350 | 0.8093 | 0.7814 |
+| 400 | 2.4424 | 2.3966 | 0.5300 | 0.6325 | 0.9395 | 0.9209 |
+| 600 | 2.3187 | 2.2736 | 0.6133 | 0.7188 | 0.9581 | 0.9395 |
+| 800 | 2.2421 | 2.2017 | 0.7333 | 0.7562 | 0.9488 | 0.9256 |
+| 1000 | 2.1939 | 2.1555 | 0.7233 | 0.7475 | 0.9721 | 0.9442 |
+| 1200 | 2.1569 | 2.1171 | 0.8167 | 0.7987 | 0.9674 | 0.9209 |
+| 1400 | 2.1343 | 2.0933 | 0.7633 | 0.7662 | 0.9860 | 0.9349 |
+| 1600 | 2.1092 | 2.0701 | 0.8800 | 0.8263 | 0.9767 | 0.9256 |
+| 1800 | 2.0859 | 2.0486 | 0.8067 | 0.7900 | 0.9814 | 0.9488 |
+| 2000 | 2.0692 | 2.0338 | 0.8667 | 0.8100 | 0.9860 | 0.9442 |
+| 2200 | 2.0640 | 2.0284 | 0.8867 | 0.8263 | 0.9814 | 0.9535 |
+| 2400 | 2.0554 | 2.0214 | 0.8900 | 0.8250 | 0.9860 | 0.9535 |
+
+78 pairs were tested per instrument; 74 of them are material by the declared rule (a loss gap above 0.02 bits per character).
+
+### The preregistered reading
+
+* **`minimal_pairs_usable` — S-c.** ρ = **+0.9505**, coverage **63 of 74 material pairs = 0.851**, and one separation **contradicts** the criterion:
+  rungs 1800 and 1600, where the loss says 1800 is better by **0.0233** bits per character and the probe says 1600 is better — 24 discordant items to 2,
+  p = 1.0 × 10⁻⁵. By the rule as written (any wrong-direction separation is S-c) that is the verdict, and the rule was written that way on purpose: an
+  instrument that can be confidently wrong about which of two models learned more is not one to corroborate a loss change with.
+* **`minimal_pairs_all_800` — S-c**, on the same pair; ρ = +0.9216, coverage 64/74.
+* **`continuation_pmi_easy` — S-b.** ρ = **+0.9184**, no contradiction anywhere, but coverage **23/74 = 0.311** and a **smallest separated gap of 0.2941
+  bits per character** — fifteen times the materiality band. Against the endpoint it separates only rungs 0 and 200; from rung 400 onward, **0.387 bits
+  per character of held-out improvement later**, it resolves no pair against the endpoint at all, and among the 36 pairs whose rungs both sit at or past
+  update 800 it separates **none** of the 32 that are material. E2623's ceiling was not an overlap of intervals; it is insensitivity over the last two
+  thirds of the curve, and the size of it is now measured.
+* **`continuation_pmi_hard` — S-c**: ρ = +0.8398, below the tracking threshold; coverage 23/74.
+* **No instrument earned S-a.** The honest headline: the repository now has **one instrument that demonstrably moves with what the model has learned
+  across most of a training curve**, resolving material gaps down to **0.0218 bits per character** — inside the band this project uses to call two arms
+  different — and **one that has a working range only over the first third of the curve**. It also has its first documented counter-example: at the top of
+  the curve, more training and a better held-out loss produced a significantly worse grammatical reading.
+
+### Sensitivity is not a threshold
+
+The minimal-pair probe separates pairs whose loss gaps run from **0.0166** (an *immaterial* gap — a rung pair the band calls a tie) up to 3.70, while
+failing to separate **3.31** and **3.02** — the untrained floor against rungs 400 and 200, where both models sit at chance on the instrument (0.4967
+against 0.5300 and 0.4500) — and failing on several top-of-curve pairs of 0.048 to 0.108 bits. Reported without the multiplicity correction the shape is
+unchanged and so are the verdicts: 65 of 74 material pairs at p < 0.05 for the minimal-pair probe with a minimum material gap of 0.0218, and 33 of 74 for
+the continuation probe with a minimum of 0.1077. The correction is therefore not what produced this answer — which is worth saying, because 78 comparisons
+drawn from one autocorrelated trajectory are not 78 independent tests and Holm treats them as nearer to that than they are. What a reader should take from
+the numbers is that **these are upper bounds on the fineness a probe resolves along a curve and lower bounds on how often it is right**: adjacent rungs
+share almost all their weights and almost all their item outcomes, and the discordant counts that carry the paired test are often single digits.
+
+### The predictions
+
+* **P1 held, more strongly than predicted.** Nothing among the last six rungs is separated by the continuation probe, and its smallest resolved gap is
+  0.294 — nearly three times the 0.10 the record expected.
+* **P2 held.** The minimal-pair probe resolves to 0.0218 on material pairs where the continuation probe needs 0.294, and its usable set is the same three
+  phenomena E2622 named.
+* **P3 held.** The probe is non-monotone against the loss in at least three places: 800 → 1000 (0.7333 → 0.7233 while the loss falls), 1600 → 1800
+  (0.8800 → 0.8067 while the loss falls, and significantly so), 2200 → 2400 (0.8867 → 0.8900 for 0.0086, a tie by any band).
+* **P4 held**, and it is stated first above because the rest depends on it.
+
+### What this changes, and what it does not
+
+1. **The campaign's sharpest open question now has a number attached.** Where
+   [`chakaso-research-campaign-2026-11.md`](../../docs/research/chakaso-research-campaign-2026-11.md) §7 said no instrument here is *known* to detect a
+   real improvement, it is now known that the minimal-pair probe detects held-out-loss improvements of about 0.022 bits per character and larger along a
+   training curve, and that the continuation probe does not detect them below 0.29. The first is usable as corroboration of a loss change; the second is
+   usable as a floor test and nothing more.
+2. **Neither is yet a ranker for the comparisons the project actually makes.** E2615/E2618's mixture differences are 0.009–0.014 bits per character on O1
+   and E2625's tokenizer gain is 0.0229. Resolving a 0.0218 gap *along one trajectory* is not resolving a 0.022 gap *between two independently trained
+   arms*: E2622 measured this probe's seed-to-seed spread at 0.015–0.048 on the same 300 pairs, which is the same size. That difference is exactly what
+   this record cannot close, because rungs are not arms — and it is the reason the verdict is S-c rather than "the probe works".
+3. **The 1600/1800 contradiction is a finding, not noise to average away.** It is E2612's pattern — loss and a text measure moving opposite ways —
+   reproduced inside one model, at one seed, with a paired test and a p-value. Any later claim that a loss improvement is "also" a capability improvement
+   has to survive it.
+4. **The ladder stays.** Twelve usable models from one run, bit-identical to the run that would have existed without them, is a permanent capability of
+   the experiment runner (ADR-0050), and it bought the six intermediate points on the curve for 15 % more wall clock.
+
+### What was not measured here
+
+No new item set, no new scoring rule, no per-register split of the verdict (the probe files carry it; it is not decision-bearing), no alternative family
+definition for the multiplicity correction, and no second seed. The ordering criterion is one trajectory, so this record cannot say whether the 1600/1800
+contradiction reproduces across initialisations — that would need the same ladder at another seed. [E2627](../E2627/record.md) is the next instrument
+measurement and is already preregistered.

@@ -1,0 +1,1033 @@
+{
+  "extract": {
+    "document_sha256": "bbd3c64d506e046847b1971c0b6c338aad4fbad46818290dd5a5f4eac7c0ff3f",
+    "note": "compact extract of the run's report.json; bulky blocks replaced by digest stubs",
+    "report_file_sha256": "b35b5ca607d7ae9d1a99d85cbfcb9257040b7c17e002080bae68f3814330681d",
+    "source_path": "data\\experiments\\E2626\\continuations.json"
+  },
+  "items": {
+    "continuation_length": 24,
+    "count": 215,
+    "digest": "9557a327bfe61e2d747a826777b748ebe285b2dd352ba6a769aca0262cfacdcd",
+    "hard_gap": 1024,
+    "max_per_work": 5,
+    "per_register": {
+      "mathematics-": 20,
+      "prose-": 100,
+      "science-": 55,
+      "technology-": 40
+    },
+    "prefix_length": 64,
+    "split_fingerprint": "adf650435c3a9068",
+    "test_documents": 1443,
+    "vocabulary_fingerprint": "434debe82f949347"
+  },
+  "models": {
+    "step1000": {
+      "checkpoint_checksum": "62e4f26b1b5f68040b60a798888f6dd300b223c2de7a2d5a061fab9836743285",
+      "environment": {
+        "device": "cpu",
+        "numpy": "2.4.0",
+        "platform": "Windows-11-10.0.26200-SP0",
+        "python": "3.13.5",
+        "torch": "2.13.0+cpu",
+        "torch_threads": "14"
+      },
+      "result": {
+        "blind_easy": {
+          "accuracy": 0.4883720930232558,
+          "interval_95": [
+            0.42234877691985506,
+            0.554803632748954
+          ],
+          "items": 215,
+          "ties": 0
+        },
+        "blind_hard": {
+          "accuracy": 0.5162790697674419,
+          "interval_95": [
+            0.4497827872868129,
+            0.5822038391768543
+          ],
+          "items": 215,
+          "ties": 0
+        },
+        "by_register": {
+          "canonical_json_sha256": "b6825c7b8836fe660b9e010644113d7e92721d4b9f11dfd8504f6be79c92fc90",
+          "json_bytes": 2684,
+          "omitted_from_extract": true
+        },
+        "conditional_easy": {
+          "accuracy": 0.7441860465116279,
+          "interval_95": [
+            0.6819332397384855,
+            0.7978661572165223
+          ],
+          "items": 215,
+          "ties": 0
+        },
+        "conditional_hard": {
+          "accuracy": 0.8093023255813954,
+          "interval_95": [
+            0.7515416607233856,
+            0.8562042420862912
+          ],
+          "items": 215,
+          "ties": 0
+        },
+        "items": 215,
+        "outcomes": {
+          "canonical_json_sha256": "2057884dcaa8b0d27afdd829dbc6b57e2ec66a19979ee09a37afb9f8aa616d84",
+          "json_bytes": 33639,
+          "omitted_from_extract": true
+        },
+        "pmi_easy": {
+          "accuracy": 0.9720930232558139,
+          "interval_95": [
+            0.9404636123669965,
+            0.9871485550793522
+          ],
+          "items": 215,
+          "ties": 0
+        },
+        "pmi_hard": {
+          "accuracy": 0.9441860465116279,
+          "interval_95": [
+            0.9049907582688945,
+            0.967787192382596
+          ],
+          "items": 215,
+          "ties": 0
+        }
+      }
+    },
+    "step1200": {
+      "checkpoint_checksum": "96d0f48809df5d8722f0b24b10cc51cb5c943f1140b73feab6d6ed64058200f3",
+      "environment": {
+        "device": "cpu",
+        "numpy": "2.4.0",
+        "platform": "Windows-11-10.0.26200-SP0",
+        "python": "3.13.5",
+        "torch": "2.13.0+cpu",
+        "torch_threads": "14"
+      },
+      "result": {
+        "blind_easy": {
+          "accuracy": 0.4744186046511628,
+          "interval_95": [
+            0.408707856507122,
+            0.5410274447642581
+          ],
+          "items": 215,
+          "ties": 0
+        },
+        "blind_hard": {
+          "accuracy": 0.5209302325581395,
+          "interval_95": [
+            0.4543748480264173,
+            0.5867508145697262
+          ],
+          "items": 215,
+          "ties": 0
+        },
+        "by_register": {
+          "canonical_json_sha256": "d041254ba33c2c973909c6ad2202ede83965eb080bc82d852abdc310d2e71c56",
+          "json_bytes": 2686,
+          "omitted_from_extract": true
+        },
+        "conditional_easy": {
+          "accuracy": 0.7395348837209302,
+          "interval_95": [
+            0.6770300058724267,
+            0.793630354950105
+          ],
+          "items": 215,
+          "ties": 0
+        },
+        "conditional_hard": {
+          "accuracy": 0.8093023255813954,
+          "interval_95": [
+            0.7515416607233856,
+            0.8562042420862912
+          ],
+          "items": 215,
+          "ties": 0
+        },
+        "items": 215,
+        "outcomes": {
+          "canonical_json_sha256": "85ad2dbbd539658b02a62ef0f31a2031a5f06d23034438dabc2c76f2172f69a9",
+          "json_bytes": 33639,
+          "omitted_from_extract": true
+        },
+        "pmi_easy": {
+          "accuracy": 0.9674418604651163,
+          "interval_95": [
+            0.9343320975480407,
+            0.9841410337658316
+          ],
+          "items": 215,
+          "ties": 0
+        },
+        "pmi_hard": {
+          "accuracy": 0.9209302325581395,
+          "interval_95": [
+            0.8770337188853701,
+            0.9500490511037389
+          ],
+          "items": 215,
+          "ties": 0
+        }
+      }
+    },
+    "step1400": {
+      "checkpoint_checksum": "45f596ac110e5b7016f4d0b8167e08899012c859928c7c17ccb6720c9471e216",
+      "environment": {
+        "device": "cpu",
+        "numpy": "2.4.0",
+        "platform": "Windows-11-10.0.26200-SP0",
+        "python": "3.13.5",
+        "torch": "2.13.0+cpu",
+        "torch_threads": "14"
+      },
+      "result": {
+        "blind_easy": {
+          "accuracy": 0.5023255813953489,
+          "interval_95": [
+            0.43604043346150934,
+            0.5685290846047288
+          ],
+          "items": 215,
+          "ties": 0
+        },
+        "blind_hard": {
+          "accuracy": 0.5116279069767442,
+          "interval_95": [
+            0.445196367251046,
+            0.5776512230801449
+          ],
+          "items": 215,
+          "ties": 0
+        },
+        "by_register": {
+          "canonical_json_sha256": "ebd5d6abc8d281a6d6d0af9037e4a5bfe31b47d1071be5b6efad5326a215a30f",
+          "json_bytes": 2650,
+          "omitted_from_extract": true
+        },
+        "conditional_easy": {
+          "accuracy": 0.7767441860465116,
+          "interval_95": [
+            0.7165002442286617,
+            0.8272724056536807
+          ],
+          "items": 215,
+          "ties": 0
+        },
+        "conditional_hard": {
+          "accuracy": 0.827906976744186,
+          "interval_95": [
+            0.7718110021701267,
+            0.8724910451694553
+          ],
+          "items": 215,
+          "ties": 0
+        },
+        "items": 215,
+        "outcomes": {
+          "canonical_json_sha256": "26b6dd43bfa523281ee453c149b1b227d4a02b37bed8856f08c157dcac142aa6",
+          "json_bytes": 33639,
+          "omitted_from_extract": true
+        },
+        "pmi_easy": {
+          "accuracy": 0.986046511627907,
+          "interval_95": [
+            0.9597858659346985,
+            0.9952434099090792
+          ],
+          "items": 215,
+          "ties": 0
+        },
+        "pmi_hard": {
+          "accuracy": 0.9348837209302325,
+          "interval_95": [
+            0.893681037561462,
+            0.9608188408250758
+          ],
+          "items": 215,
+          "ties": 0
+        }
+      }
+    },
+    "step1600": {
+      "checkpoint_checksum": "c603bcbf291a8b24f9335e3b80d58477376a71d7eb66fb34cec8d7dead3c60a4",
+      "environment": {
+        "device": "cpu",
+        "numpy": "2.4.0",
+        "platform": "Windows-11-10.0.26200-SP0",
+        "python": "3.13.5",
+        "torch": "2.13.0+cpu",
+        "torch_threads": "14"
+      },
+      "result": {
+        "blind_easy": {
+          "accuracy": 0.46511627906976744,
+          "interval_95": [
+            0.3996421684192752,
+            0.5318150605871521
+          ],
+          "items": 215,
+          "ties": 0
+        },
+        "blind_hard": {
+          "accuracy": 0.5162790697674419,
+          "interval_95": [
+            0.4497827872868129,
+            0.5822038391768543
+          ],
+          "items": 215,
+          "ties": 0
+        },
+        "by_register": {
+          "canonical_json_sha256": "9ae22ec5090d7aa8a6c9d1474c2440ab984dbc06ead80295d989bacbd67b1771",
+          "json_bytes": 2708,
+          "omitted_from_extract": true
+        },
+        "conditional_easy": {
+          "accuracy": 0.772093023255814,
+          "interval_95": [
+            0.7115347216878638,
+            0.8230988920620022
+          ],
+          "items": 215,
+          "ties": 0
+        },
+        "conditional_hard": {
+          "accuracy": 0.8186046511627907,
+          "interval_95": [
+            0.7616521473636887,
+            0.8643718277109408
+          ],
+          "items": 215,
+          "ties": 0
+        },
+        "items": 215,
+        "outcomes": {
+          "canonical_json_sha256": "7c06244dd2fb9429660860667980fcdcb6f36465bd70a0071e45681e0329d9c2",
+          "json_bytes": 33639,
+          "omitted_from_extract": true
+        },
+        "pmi_easy": {
+          "accuracy": 0.9767441860465116,
+          "interval_95": [
+            0.9467246606515748,
+            0.9900265429272502
+          ],
+          "items": 215,
+          "ties": 0
+        },
+        "pmi_hard": {
+          "accuracy": 0.9255813953488372,
+          "interval_95": [
+            0.8825453345592869,
+            0.9536764715622985
+          ],
+          "items": 215,
+          "ties": 0
+        }
+      }
+    },
+    "step1800": {
+      "checkpoint_checksum": "0edf95c0b14b10bdebc20c30d83dfdd30b7b0ced3e0f8101b05409c26ff657a4",
+      "environment": {
+        "device": "cpu",
+        "numpy": "2.4.0",
+        "platform": "Windows-11-10.0.26200-SP0",
+        "python": "3.13.5",
+        "torch": "2.13.0+cpu",
+        "torch_threads": "14"
+      },
+      "result": {
+        "blind_easy": {
+          "accuracy": 0.4790697674418605,
+          "interval_95": [
+            0.4132491854302737,
+            0.5456251519735826
+          ],
+          "items": 215,
+          "ties": 0
+        },
+        "blind_hard": {
+          "accuracy": 0.5302325581395348,
+          "interval_95": [
+            0.4635759161359667,
+            0.5958278187251294
+          ],
+          "items": 215,
+          "ties": 0
+        },
+        "by_register": {
+          "canonical_json_sha256": "3e5183e0ef887aa78cad49687584bad2cb08b7b41f0fb756cddd577aca5f7203",
+          "json_bytes": 2664,
+          "omitted_from_extract": true
+        },
+        "conditional_easy": {
+          "accuracy": 0.7953488372093023,
+          "interval_95": [
+            0.7364609147182561,
+            0.8438678796939914
+          ],
+          "items": 215,
+          "ties": 0
+        },
+        "conditional_hard": {
+          "accuracy": 0.8186046511627907,
+          "interval_95": [
+            0.7616521473636887,
+            0.8643718277109408
+          ],
+          "items": 215,
+          "ties": 0
+        },
+        "items": 215,
+        "outcomes": {
+          "canonical_json_sha256": "403d5826f8d45dcc4c1ddec4a8ecb9b4b61c83115149de8374f34feeebd02ec3",
+          "json_bytes": 33639,
+          "omitted_from_extract": true
+        },
+        "pmi_easy": {
+          "accuracy": 0.9813953488372092,
+          "interval_95": [
+            0.953148418584798,
+            0.9927418211265033
+          ],
+          "items": 215,
+          "ties": 0
+        },
+        "pmi_hard": {
+          "accuracy": 0.9488372093023256,
+          "interval_95": [
+            0.9107224678262712,
+            0.9711945189576959
+          ],
+          "items": 215,
+          "ties": 0
+        }
+      }
+    },
+    "step200": {
+      "checkpoint_checksum": "00f12cfb73a20407765b4b6f6c2af177395f57386817fdb76d935e15a315fc9d",
+      "environment": {
+        "device": "cpu",
+        "numpy": "2.4.0",
+        "platform": "Windows-11-10.0.26200-SP0",
+        "python": "3.13.5",
+        "torch": "2.13.0+cpu",
+        "torch_threads": "14"
+      },
+      "result": {
+        "blind_easy": {
+          "accuracy": 0.4697674418604651,
+          "interval_95": [
+            0.40417218127487053,
+            0.5364240838640331
+          ],
+          "items": 215,
+          "ties": 0
+        },
+        "blind_hard": {
+          "accuracy": 0.4511627906976744,
+          "interval_95": [
+            0.38608621318740727,
+            0.5179539074215911
+          ],
+          "items": 215,
+          "ties": 0
+        },
+        "by_register": {
+          "canonical_json_sha256": "a2c62ca84a8a96f366c4e8607ab2583b12fb80ddf4d2739fdc28669f4fdbda9f",
+          "json_bytes": 2685,
+          "omitted_from_extract": true
+        },
+        "conditional_easy": {
+          "accuracy": 0.5488372093023256,
+          "interval_95": [
+            0.48204609257840897,
+            0.6139137868125928
+          ],
+          "items": 215,
+          "ties": 0
+        },
+        "conditional_hard": {
+          "accuracy": 0.5488372093023256,
+          "interval_95": [
+            0.48204609257840897,
+            0.6139137868125928
+          ],
+          "items": 215,
+          "ties": 0
+        },
+        "items": 215,
+        "outcomes": {
+          "canonical_json_sha256": "367dd07eab70881ba3d7f155ff00c006a90f9fa94b949e952e99a916a2228160",
+          "json_bytes": 33639,
+          "omitted_from_extract": true
+        },
+        "pmi_easy": {
+          "accuracy": 0.8093023255813954,
+          "interval_95": [
+            0.7515416607233856,
+            0.8562042420862912
+          ],
+          "items": 215,
+          "ties": 0
+        },
+        "pmi_hard": {
+          "accuracy": 0.7813953488372093,
+          "interval_95": [
+            0.721475403836001,
+            0.8314362821788177
+          ],
+          "items": 215,
+          "ties": 0
+        }
+      }
+    },
+    "step2000": {
+      "checkpoint_checksum": "5ff56b67bebf9bc222a8e016c1f5c58ff483bc205c8c625203290f094865b14e",
+      "environment": {
+        "device": "cpu",
+        "numpy": "2.4.0",
+        "platform": "Windows-11-10.0.26200-SP0",
+        "python": "3.13.5",
+        "torch": "2.13.0+cpu",
+        "torch_threads": "14"
+      },
+      "result": {
+        "blind_easy": {
+          "accuracy": 0.49767441860465117,
+          "interval_95": [
+            0.4314709153952711,
+            0.5639595665384906
+          ],
+          "items": 215,
+          "ties": 0
+        },
+        "blind_hard": {
+          "accuracy": 0.5348837209302325,
+          "interval_95": [
+            0.4681849394128477,
+            0.6003578315807246
+          ],
+          "items": 215,
+          "ties": 0
+        },
+        "by_register": {
+          "canonical_json_sha256": "ff27bc4247f423992af6209ade78d78350b79053455fbc6302ab070f53d72ca9",
+          "json_bytes": 2667,
+          "omitted_from_extract": true
+        },
+        "conditional_easy": {
+          "accuracy": 0.8,
+          "interval_95": [
+            0.7414768953616915,
+            0.8479909351830326
+          ],
+          "items": 215,
+          "ties": 0
+        },
+        "conditional_hard": {
+          "accuracy": 0.8418604651162791,
+          "interval_95": [
+            0.7871466588241228,
+            0.8845724969128884
+          ],
+          "items": 215,
+          "ties": 0
+        },
+        "items": 215,
+        "outcomes": {
+          "canonical_json_sha256": "5a576c666d61f611c78d6a74a010eb99f2be41f16cf2f1d0c37c6fd82b15a7ef",
+          "json_bytes": 33639,
+          "omitted_from_extract": true
+        },
+        "pmi_easy": {
+          "accuracy": 0.986046511627907,
+          "interval_95": [
+            0.9597858659346985,
+            0.9952434099090792
+          ],
+          "items": 215,
+          "ties": 0
+        },
+        "pmi_hard": {
+          "accuracy": 0.9441860465116279,
+          "interval_95": [
+            0.9049907582688945,
+            0.967787192382596
+          ],
+          "items": 215,
+          "ties": 0
+        }
+      }
+    },
+    "step2200": {
+      "checkpoint_checksum": "7ed9ac61717b9760679fc7e0ede67f530766af3a2abbe83029f986e23b4b7a0a",
+      "environment": {
+        "device": "cpu",
+        "numpy": "2.4.0",
+        "platform": "Windows-11-10.0.26200-SP0",
+        "python": "3.13.5",
+        "torch": "2.13.0+cpu",
+        "torch_threads": "14"
+      },
+      "result": {
+        "blind_easy": {
+          "accuracy": 0.4883720930232558,
+          "interval_95": [
+            0.42234877691985506,
+            0.554803632748954
+          ],
+          "items": 215,
+          "ties": 0
+        },
+        "blind_hard": {
+          "accuracy": 0.5348837209302325,
+          "interval_95": [
+            0.4681849394128477,
+            0.6003578315807246
+          ],
+          "items": 215,
+          "ties": 0
+        },
+        "by_register": {
+          "canonical_json_sha256": "b6774f6f1516c7d55a8fc4d41661174dca12b71821a2b5fc393039327bed5071",
+          "json_bytes": 2680,
+          "omitted_from_extract": true
+        },
+        "conditional_easy": {
+          "accuracy": 0.8046511627906977,
+          "interval_95": [
+            0.7465037159708001,
+            0.8521031507064003
+          ],
+          "items": 215,
+          "ties": 0
+        },
+        "conditional_hard": {
+          "accuracy": 0.8511627906976744,
+          "interval_95": [
+            0.7974405282228281,
+            0.8925566997791357
+          ],
+          "items": 215,
+          "ties": 0
+        },
+        "items": 215,
+        "outcomes": {
+          "canonical_json_sha256": "501062f5d7e9a2afa226599dc5d5323f36b105a76a6505e03fef6baff412b586",
+          "json_bytes": 33639,
+          "omitted_from_extract": true
+        },
+        "pmi_easy": {
+          "accuracy": 0.9813953488372092,
+          "interval_95": [
+            0.953148418584798,
+            0.9927418211265033
+          ],
+          "items": 215,
+          "ties": 0
+        },
+        "pmi_hard": {
+          "accuracy": 0.9534883720930233,
+          "interval_95": [
+            0.9165135272204338,
+            0.9745424956960097
+          ],
+          "items": 215,
+          "ties": 0
+        }
+      }
+    },
+    "step2400": {
+      "checkpoint_checksum": "053c343ffdf5f36501a433fc364613d9ded4c47109c2f2d34cb61a0da538109e",
+      "environment": {
+        "device": "cpu",
+        "numpy": "2.4.0",
+        "platform": "Windows-11-10.0.26200-SP0",
+        "python": "3.13.5",
+        "torch": "2.13.0+cpu",
+        "torch_threads": "14"
+      },
+      "result": {
+        "blind_easy": {
+          "accuracy": 0.49767441860465117,
+          "interval_95": [
+            0.4314709153952711,
+            0.5639595665384906
+          ],
+          "items": 215,
+          "ties": 0
+        },
+        "blind_hard": {
+          "accuracy": 0.5302325581395348,
+          "interval_95": [
+            0.4635759161359667,
+            0.5958278187251294
+          ],
+          "items": 215,
+          "ties": 0
+        },
+        "by_register": {
+          "canonical_json_sha256": "7e2af15504c497a8ec015bc7745171d8a4c56bd515e7f55548a15489e451747d",
+          "json_bytes": 2669,
+          "omitted_from_extract": true
+        },
+        "conditional_easy": {
+          "accuracy": 0.7906976744186046,
+          "interval_95": [
+            0.7314555058631569,
+            0.8397342524166145
+          ],
+          "items": 215,
+          "ties": 0
+        },
+        "conditional_hard": {
+          "accuracy": 0.8465116279069768,
+          "interval_95": [
+            0.7922862555594934,
+            0.8885719363099942
+          ],
+          "items": 215,
+          "ties": 0
+        },
+        "items": 215,
+        "outcomes": {
+          "canonical_json_sha256": "f5be99e333c33c4ef5a4adc4d568b6b0f8331efe566bbbd7ecec8d425bd2cf1c",
+          "json_bytes": 33639,
+          "omitted_from_extract": true
+        },
+        "pmi_easy": {
+          "accuracy": 0.986046511627907,
+          "interval_95": [
+            0.9597858659346985,
+            0.9952434099090792
+          ],
+          "items": 215,
+          "ties": 0
+        },
+        "pmi_hard": {
+          "accuracy": 0.9534883720930233,
+          "interval_95": [
+            0.9165135272204338,
+            0.9745424956960097
+          ],
+          "items": 215,
+          "ties": 0
+        }
+      }
+    },
+    "step400": {
+      "checkpoint_checksum": "347e2615a02f65b06dd76e1ec9b0e210415dc34861cfed8dfb1a4250e9515b64",
+      "environment": {
+        "device": "cpu",
+        "numpy": "2.4.0",
+        "platform": "Windows-11-10.0.26200-SP0",
+        "python": "3.13.5",
+        "torch": "2.13.0+cpu",
+        "torch_threads": "14"
+      },
+      "result": {
+        "blind_easy": {
+          "accuracy": 0.4511627906976744,
+          "interval_95": [
+            0.38608621318740727,
+            0.5179539074215911
+          ],
+          "items": 215,
+          "ties": 0
+        },
+        "blind_hard": {
+          "accuracy": 0.5162790697674419,
+          "interval_95": [
+            0.4497827872868129,
+            0.5822038391768543
+          ],
+          "items": 215,
+          "ties": 0
+        },
+        "by_register": {
+          "canonical_json_sha256": "01c91489c8685c42b20e65c3cee111367a7f48ee67592138dc5ace2822ee3b8a",
+          "json_bytes": 2680,
+          "omitted_from_extract": true
+        },
+        "conditional_easy": {
+          "accuracy": 0.6697674418604651,
+          "interval_95": [
+            0.604406546578296,
+            0.7291682722570905
+          ],
+          "items": 215,
+          "ties": 0
+        },
+        "conditional_hard": {
+          "accuracy": 0.6976744186046512,
+          "interval_95": [
+            0.6332575447155374,
+            0.7551514909147071
+          ],
+          "items": 215,
+          "ties": 0
+        },
+        "items": 215,
+        "outcomes": {
+          "canonical_json_sha256": "8607cc8c08cb83fee4f5706d1da028a82b78680da673794602aba784965aee58",
+          "json_bytes": 33639,
+          "omitted_from_extract": true
+        },
+        "pmi_easy": {
+          "accuracy": 0.9395348837209302,
+          "interval_95": [
+            0.8993120323753218,
+            0.9643268821436924
+          ],
+          "items": 215,
+          "ties": 0
+        },
+        "pmi_hard": {
+          "accuracy": 0.9209302325581395,
+          "interval_95": [
+            0.8770337188853701,
+            0.9500490511037389
+          ],
+          "items": 215,
+          "ties": 0
+        }
+      }
+    },
+    "step600": {
+      "checkpoint_checksum": "a94954efa6828f8f22dcef8edc076ee8dc261fd410487f0adf4ae8dcf7549cec",
+      "environment": {
+        "device": "cpu",
+        "numpy": "2.4.0",
+        "platform": "Windows-11-10.0.26200-SP0",
+        "python": "3.13.5",
+        "torch": "2.13.0+cpu",
+        "torch_threads": "14"
+      },
+      "result": {
+        "blind_easy": {
+          "accuracy": 0.4511627906976744,
+          "interval_95": [
+            0.38608621318740727,
+            0.5179539074215911
+          ],
+          "items": 215,
+          "ties": 0
+        },
+        "blind_hard": {
+          "accuracy": 0.5441860465116279,
+          "interval_95": [
+            0.4774200152316001,
+            0.6094008280269252
+          ],
+          "items": 215,
+          "ties": 0
+        },
+        "by_register": {
+          "canonical_json_sha256": "d51e759cf9b4bfc25adac277d7860e1a29aa5138d2cdb2d6790bfa49db9d0be0",
+          "json_bytes": 2694,
+          "omitted_from_extract": true
+        },
+        "conditional_easy": {
+          "accuracy": 0.7116279069767442,
+          "interval_95": [
+            0.6477795440071099,
+            0.7680466000205637
+          ],
+          "items": 215,
+          "ties": 0
+        },
+        "conditional_hard": {
+          "accuracy": 0.7209302325581395,
+          "interval_95": [
+            0.657498360485417,
+            0.7766058558072091
+          ],
+          "items": 215,
+          "ties": 0
+        },
+        "items": 215,
+        "outcomes": {
+          "canonical_json_sha256": "f21d8ee7fe315f2923edc9896310253bbccffca3420a5cf471b8202e395017e8",
+          "json_bytes": 33639,
+          "omitted_from_extract": true
+        },
+        "pmi_easy": {
+          "accuracy": 0.958139534883721,
+          "interval_95": [
+            0.9223717798488889,
+            0.9778232792000308
+          ],
+          "items": 215,
+          "ties": 0
+        },
+        "pmi_hard": {
+          "accuracy": 0.9395348837209302,
+          "interval_95": [
+            0.8993120323753218,
+            0.9643268821436924
+          ],
+          "items": 215,
+          "ties": 0
+        }
+      }
+    },
+    "step800": {
+      "checkpoint_checksum": "44aa0d397ea9921221e8f014f153831056755b9cc7bb0dcd5e2448c631491ced",
+      "environment": {
+        "device": "cpu",
+        "numpy": "2.4.0",
+        "platform": "Windows-11-10.0.26200-SP0",
+        "python": "3.13.5",
+        "torch": "2.13.0+cpu",
+        "torch_threads": "14"
+      },
+      "result": {
+        "blind_easy": {
+          "accuracy": 0.4883720930232558,
+          "interval_95": [
+            0.42234877691985506,
+            0.554803632748954
+          ],
+          "items": 215,
+          "ties": 0
+        },
+        "blind_hard": {
+          "accuracy": 0.5302325581395348,
+          "interval_95": [
+            0.4635759161359667,
+            0.5958278187251294
+          ],
+          "items": 215,
+          "ties": 0
+        },
+        "by_register": {
+          "canonical_json_sha256": "7e48cee44f441a66c52c0443f65d0f864deca891ef712040b3c0de58d47536f8",
+          "json_bytes": 2686,
+          "omitted_from_extract": true
+        },
+        "conditional_easy": {
+          "accuracy": 0.7162790697674418,
+          "interval_95": [
+            0.6526351331371087,
+            0.772330047023041
+          ],
+          "items": 215,
+          "ties": 0
+        },
+        "conditional_hard": {
+          "accuracy": 0.7674418604651163,
+          "interval_95": [
+            0.7065786323813296,
+            0.8189159452360603
+          ],
+          "items": 215,
+          "ties": 0
+        },
+        "items": 215,
+        "outcomes": {
+          "canonical_json_sha256": "e4bb317bc27ad83b25f6299cd7f85db54987a6ea480d9f62b4a6a34ea9787be0",
+          "json_bytes": 33639,
+          "omitted_from_extract": true
+        },
+        "pmi_easy": {
+          "accuracy": 0.9488372093023256,
+          "interval_95": [
+            0.9107224678262712,
+            0.9711945189576959
+          ],
+          "items": 215,
+          "ties": 0
+        },
+        "pmi_hard": {
+          "accuracy": 0.9255813953488372,
+          "interval_95": [
+            0.8825453345592869,
+            0.9536764715622985
+          ],
+          "items": 215,
+          "ties": 0
+        }
+      }
+    },
+    "untrained-control": {
+      "result": {
+        "blind_easy": {
+          "accuracy": 0.4744186046511628,
+          "interval_95": [
+            0.408707856507122,
+            0.5410274447642581
+          ],
+          "items": 215,
+          "ties": 0
+        },
+        "blind_hard": {
+          "accuracy": 0.4558139534883721,
+          "interval_95": [
+            0.39059917197307475,
+            0.5225799847683998
+          ],
+          "items": 215,
+          "ties": 0
+        },
+        "by_register": {
+          "canonical_json_sha256": "bb1aff5931a8977f13b1187c6f0f727a3c6c786f253e2be09ec04db4c280e86d",
+          "json_bytes": 2708,
+          "omitted_from_extract": true
+        },
+        "conditional_easy": {
+          "accuracy": 0.4697674418604651,
+          "interval_95": [
+            0.40417218127487053,
+            0.5364240838640331
+          ],
+          "items": 215,
+          "ties": 0
+        },
+        "conditional_hard": {
+          "accuracy": 0.4232558139534884,
+          "interval_95": [
+            0.3591290356149751,
+            0.4900768681991652
+          ],
+          "items": 215,
+          "ties": 0
+        },
+        "items": 215,
+        "outcomes": {
+          "canonical_json_sha256": "4a52ca0bfccd4a14c5adc3bf6bffa80751d13a3cb5d7a3606f28c4abfd84d50f",
+          "json_bytes": 33639,
+          "omitted_from_extract": true
+        },
+        "pmi_easy": {
+          "accuracy": 0.4930232558139535,
+          "interval_95": [
+            0.426907029402427,
+            0.5593844163988585
+          ],
+          "items": 215,
+          "ties": 0
+        },
+        "pmi_hard": {
+          "accuracy": 0.4930232558139535,
+          "interval_95": [
+            0.426907029402427,
+            0.5593844163988585
+          ],
+          "items": 215,
+          "ties": 0
+        }
+      },
+      "seed": 7
+    }
+  }
+}
