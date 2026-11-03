@@ -16,6 +16,7 @@ capability is implemented or still planned.
 
 **Measured**
 
+- **E2624 and E2625 separate E2620's confounds.** At the control's text read in 30 % fewer updates the space-prefixed arm is worse by 0.035 (the updates, not the tokenizer); at the control's 2,400 updates over the control's own documents it gains 0.0229 on the equal-weight mean and 0.0286 on the whole pack. 30 % fewer updates cost 0.058 bits per character at this scale. One seed; no default changes.
 - **E2620: a space-prefixed tokenizer lowers held-out loss at equal updates and positions (H17, V-a; one seed).** The fitted vocabulary spends 5.8–8.6 % of identifiers on whitespace instead of 34–39 % and gets 2.93 characters per identifier instead of 2.10; with the model, parameters, updates and positions unchanged, the equal-weight register mean falls 0.0264 and the whole pack 0.0321 bits per character on identical held-out documents.
   It reads 40 % more text per update, so it is a candidate, not a replacement; the equal-text arm (E2624) follows.
 - **E2619: repeating the same prose four times costs held-out prose; twice does not.** At 2,400 updates, a 5M-identifier pool (about four passes) scores 0.011–0.015 bits per character worse than a 20M pool (about one); 10M (about two) ties 20M. E2616's large gap was the halved schedule, not the pass count.

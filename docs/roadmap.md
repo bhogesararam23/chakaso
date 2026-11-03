@@ -368,3 +368,17 @@ built before the model is scaled.
 - Every correction-behaviour change has regression results.
 - Limitations are published rather than omitted.
 - Prototype benchmark performance is not presented as general capability.
+
+## Next stage, 2026-11-03 (after E2617–E2625)
+
+Priorities, in order, each with its evidence and cost on the present 4-core CPU host. None is started; each needs a preregistered record first.
+
+1. **Seeds for the space-prefixed tokenizer** (H17, replacement decision): four more seeds on the treatment of [E2625](../experiments/E2625/record.md) beside E2617's five-seed default control (E2618's runs are the same configuration only for the mixture arms; E2614 has five default-tokenizer seeds on the Windows host): about 4.5 h. Then a refit-sensitivity check (a second fitting sample) and an ADR for adopting the rule. Gate: the gain's interval excludes zero over five seeds.
+2. **A harder continuation probe** (E2623's ceiling): distractors from the same passage region, so topic and style are held fixed and the probe can rank models. Seconds of CPU per model; one record.
+3. **Minimal-pair probe v3**: a wider lexicon so a phenomenon does not rest on ten word forms, and the plain subject–verb construction diagnosed (the trained decoder is at chance on it). Seconds to build and score.
+4. **The prose share as a decision**: whether 25 % replaces the natural mixture is an ADR with an objective declared in advance (E2618 gives the measurement, not the objective). No compute.
+5. **Raw-bytes archive for the pinned corpus** (K-031, ADR-0047 part 2): an owner decision on hosting; 156 MB raw, about 59.5 MB compressed.
+6. **Scale, only after 1–3:** the capacity step (about 9.84M parameters) that E2612's rule 2 forbade is still gated on a data weighting that is now measured (25 %) and a tokenizer that is cheaper per character; it costs roughly 3× an arm (about 3 h each at this host's rate) and should not start before the probes can rank models.
+
+Not started and not justified by anything measured: mid-training, SFT, preference optimisation, reinforcement learning, MoE, MLA, quantisation and speculative decoding (the 2026-11-01 campaign's rejections stand; nothing here changes them).
+

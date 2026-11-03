@@ -1024,3 +1024,17 @@ is filed as H17 with what would falsify it.
 
 **Limitations.** One vocabulary, the first 1.5M characters of each register, no model involved. The count says where identifiers go, not
 what the model loses by it. Bits per character is the unit that would answer that, and nothing here measures it.
+
+## 2026-11-03 — The cross-machine effect is small, an interior prose share wins, repeats beyond two passes cost, a space-prefixed tokenizer helps, and two probes see context use
+
+**Type:** results + interpretation, each from a preregistered record ([E2617](../../experiments/E2617/record.md)–[E2625](../../experiments/E2625/record.md)); one seed unless stated; all on one CPU host.
+
+**Results.** (1) E2617: the host reproduces itself bit for bit (E2617b, 43 of 43 tensors); against the Windows host the equal-weight register mean differs by 0.00067 and no metric by more than 17 % of its tie margin (X-b). (2) E2618, five seeds on each of three arms: O1 means 2.01858 (0 % prose), **2.00928 (25 %)**, 2.02339 (50 %);
+25 % is ordered against both (0.0093 and 0.0141), H9-a′. (3) E2619, fixed 2,400 updates: prose 1.82055 / 1.80570 / 1.80928 at 5M / 10M / 20M identifiers (about 3.9 / 2.0 / 1.0 passes): Q-a, four passes cost 0.011–0.015, one and two tie; prose-only reruns here agree with the other host to 0.0005. (4) E2620 / E2624 / E2625: the space-prefixed vocabulary spends 5.8–8.6 % of identifiers on whitespace (from 34–39 %); O1 changes by +0.0264 (equal updates), −0.0351
+(equal text, 30 % fewer updates) and +0.0229 (equal updates and documents). (5) E2621–E2623: a grammatical minimal-pair probe (floor 0.47–0.51 on three of eight phenomena across seven untrained initialisations; trained 0.86–0.95 with seed sd 0.015–0.048) and a held-out continuation probe (trained 0.96–0.99, untrained 0.45–0.52, seed sd 0.005–0.014, near ceiling).
+
+**Interpretation.** The machine effect is too small to explain any finding of E2613–E2616. A quarter of the prose in the budget is better than none or half on a convention-weighted objective, by under 1 %. Repetition is free to about two passes at this scale. The space-prefixed rule is worth about 1.1 % of O1 at fixed compute and fixed distinct text; the apparent reversal at equal text was the number of updates. The probes can detect
+that a trained decoder uses its context and knows some agreement constructions; they cannot rank mixtures (continuation ceiling, minimal-pair seed spread). The trained decoder is at chance on plain subject–verb agreement.
+
+**Limitations.** One seed per treatment of every tokenizer and composition-free comparison; margins measured with the default tokenizer; templated pairs from a small lexicon; archaic English; a corpus the models trained on; likelihood preference, not generation. Two earlier statements were corrected in place and are recorded as such (E2621's below-chance attractor finding was a pair-subset artefact; E2624's "harmful at equal text" over-read a design that cut the updates).
+
