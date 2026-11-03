@@ -34,14 +34,14 @@ WHOLE_TIE = 0.00933
 _EPSILON = 1e-12
 
 
-def _o1(report: Mapping[str, Any]) -> float:
+def o1(report: Mapping[str, Any]) -> float:
     partitions = report["transformer"]["test_partitions"]
     return sum(
         float(partitions[prefix]["metrics"]["bits_per_character"]) for prefix in PARTITIONS
     ) / len(PARTITIONS)
 
 
-def _whole(report: Mapping[str, Any]) -> float:
+def whole_pack(report: Mapping[str, Any]) -> float:
     return float(report["transformer"]["test"]["bits_per_character"])
 
 
@@ -56,7 +56,7 @@ def classify(delta_o1: float, delta_whole: float) -> str:
     return "V-d"
 
 
-def _problems(
+def matchedness_problems(
     treatment: Mapping[str, Any],
     control: Mapping[str, Any],
     *,
@@ -147,8 +147,8 @@ def read(
     same_documents: bool = False,
 ) -> dict[str, Any]:
     """The record's reading of one treatment against its control."""
-    delta_o1 = _o1(control) - _o1(treatment)
-    delta_whole = _whole(control) - _whole(treatment)
+    delta_o1 = o1(control) - o1(treatment)
+    delta_whole = whole_pack(control) - whole_pack(treatment)
     return {
         "mode": (
             "equal-text"
@@ -160,8 +160,8 @@ def read(
         "outcome": classify(delta_o1, delta_whole),
         "delta_o1": delta_o1,
         "delta_whole_pack": delta_whole,
-        "o1": {"control": _o1(control), "treatment": _o1(treatment)},
-        "whole_pack": {"control": _whole(control), "treatment": _whole(treatment)},
+        "o1": {"control": o1(control), "treatment": o1(treatment)},
+        "whole_pack": {"control": whole_pack(control), "treatment": whole_pack(treatment)},
         "margins": {"o1_tie": O1_TIE, "o1_separable": O1_SEPARABLE, "whole_tie": WHOLE_TIE},
         "characters_per_identifier": {
             "control": control["tokenizer"].get("characters_per_token_test"),
@@ -212,7 +212,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     try:
         treatment = json.loads(args.treatment.read_text(encoding="utf-8"))
         control = json.loads(args.control.read_text(encoding="utf-8"))
-        problems = _problems(
+        problems = matchedness_problems(
             treatment, control, equal_text=args.equal_text, same_documents=args.same_documents
         )
         if problems:
