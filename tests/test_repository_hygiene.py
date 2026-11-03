@@ -799,3 +799,82 @@ def test_the_ci_document_describes_the_shipped_workflow() -> None:
         f"the CI document still claims delivery is blocked: {blocked and blocked.group(0)!r} — "
         "update it with what the runners actually did"
     )
+
+
+#: A count is checked in the documents that own it (K-013's fix: name an owner per count, and let every other
+#: document link rather than restate). Documents outside this table are not checked, because the register, the
+#: changelog and the research log carry *dated* statements that K-013 itself says must not be rewritten when the
+#: world moves — a historical sentence about "seven experiment records" was true on the day it was written.
+CENSUS_OWNERS: tuple[tuple[re.Pattern[str], str, tuple[str, ...]], ...] = (
+    (
+        re.compile(r"\b(\d[\d,]*) experiment records\b"),
+        "records",
+        ("docs/agent/CURRENT_STATE.md", "README.md"),
+    ),
+    (re.compile(r"\b(\d[\d,]*) commands\b"), "commands", ("README.md",)),
+)
+
+
+def _prose_lines(path: Path) -> list[str]:
+    """A markdown file's lines, with fenced blocks removed: a command example is not a claim about a count."""
+    lines: list[str] = []
+    in_fence = False
+    for line in path.read_text(encoding="utf-8").splitlines():
+        if FENCE.match(line):
+            in_fence = not in_fence
+            continue
+        if not in_fence:
+            lines.append(line)
+    return lines
+
+
+def test_each_census_owner_states_the_count_its_thing_actually_has(
+    tracked_files: list[Path],
+) -> None:
+    """A count in prose is checked against the thing counted, in the same test run.
+
+    Records are the directories holding a committed `record.md`, preregistrations included: the number counts
+    records, not results, so writing a record before its run and filling in its results later moves the census
+    once rather than twice. Commands are the choices the parser itself offers, so a command added without its
+    owner document is caught by the owner document rather than by a reviewer who happens to notice. Counts
+    written as words are outside the pattern on purpose: the rule being enforced is that a *numeric* census
+    cannot go stale, which is the failure K-013 recorded four times.
+    """
+    records = sorted(
+        path.parent.name
+        for path in tracked_files
+        if path.match("experiments/*/record.md") and (REPO_ROOT / path).is_file()
+    )
+    from chakaso.cli import build_parser
+
+    commands = sorted(
+        next(
+            action.choices  # the parser's own action list is the command surface
+            for action in build_parser()._actions
+            if action.dest == "command" and action.choices
+        )
+    )
+    counts = {"records": len(records), "commands": len(commands)}
+    examples = {"records": f"{records[0]} … {records[-1]}", "commands": ", ".join(commands)}
+
+    stale: list[str] = []
+    for pattern, kind, owners in CENSUS_OWNERS:
+        for owner in owners:
+            path = REPO_ROOT / owner
+            if not path.is_file():
+                stale.append(f"{owner}: the declared owner of the {kind} count is missing")
+                continue
+            found = [
+                (number, match)
+                for number, line in enumerate(_prose_lines(path), start=1)
+                for match in pattern.finditer(line)
+            ]
+            if not found:
+                stale.append(f"{owner}: states no {kind} count, though it owns it")
+            for number, match in found:
+                stated = int(match.group(1).replace(",", ""))
+                if stated != counts[kind]:
+                    stale.append(
+                        f"{owner}:{number} says {stated} {kind}; counted {counts[kind]} ({examples[kind]})"
+                    )
+    assert not stale, "a census count in documentation has gone stale:\n  " + "\n  ".join(stale)

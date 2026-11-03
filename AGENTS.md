@@ -193,7 +193,11 @@ docs/agent/         this directory's context: current state, conventions, active
 docs/internal/      engineering notes that are not for external readers
 ```
 
-Experiment records live at `experiments/<experiment-id>/record.md`; twenty-eight measured records are committed (E2601–E2608 and E2610–E2629) and are the project's only measured results, and a record is written before its run.
+Experiment records live at `experiments/<experiment-id>/record.md` and are the project's only measured results.
+[`docs/agent/CURRENT_STATE.md`](docs/agent/CURRENT_STATE.md) carries the census — how many records are committed
+and how many of them carry a measured result — and a repository-hygiene test fails if any numeric count in that
+document or in `README.md` drifts from the directories on disk, so this file deliberately links instead of
+restating a number that goes stale. A record is written before its run.
 The format is defined in
 [`docs/internal/experiments/README.md`](docs/internal/experiments/README.md), which requires the record to
 be written **before** the run. Generated artifacts — corpora, checkpoints, logs — belong in `data/` and are
