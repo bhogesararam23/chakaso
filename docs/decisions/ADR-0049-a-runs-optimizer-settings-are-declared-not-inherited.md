@@ -46,12 +46,12 @@ protocol digest may move.
    make a faithful re-run of E2612 or E2614 stop aggregating with the study it belongs to. A test pins the key
    set for that reason.
 4. **A new configuration field appears in the checkpoint metadata only when it carries information.**
-   `TransformerTrainingConfig.as_dict()` elides `weight_decay_excludes_vectors` and (see
-   [ADR-0050](ADR-0050-a-run-can-write-usable-models-at-declared-points-on-its-own-curve.md))
-   `curve_artifact_steps` at their default, because that dictionary is inside the metadata document a
-   checksum covers. This is ADR-0046's route, and it keeps a re-run of a committed protocol reproducing its
-   artifact checksum. An artifact whose metadata lacks the key reads as the default, not as unknown, and
-   `verify_resume_compatibility` therefore still refuses a resume that would change the recipe.
+   `TransformerTrainingConfig.as_dict()` elides `weight_decay_excludes_vectors` and
+   [`curve_artifact_steps`](ADR-0050-a-run-can-write-usable-models-at-declared-points-on-its-curve.md) at their
+   default, because that dictionary is inside the metadata document a checksum covers. This is ADR-0046's
+   route, and it keeps a re-run of a committed protocol reproducing its artifact checksum. An artifact whose
+   metadata lacks the key reads as the default, not as unknown, and `verify_resume_compatibility` therefore
+   still refuses a resume that would change the recipe.
 
 ## What this does not decide
 
