@@ -88,7 +88,8 @@ def _pair_row(
     row: dict[str, Any] = {
         "first": first,
         "second": second,
-        # Positive when `first` is the better model by the criterion (a lower loss).
+        # Negative when `first` is the better model, because the criterion is a loss and lower is better. The
+        # direction below is read off this sign, so the convention is what a reader of a pair row needs.
         "criterion_gap": delta,
         "material": abs(delta) > materiality,
     }
