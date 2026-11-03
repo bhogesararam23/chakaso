@@ -239,6 +239,32 @@ draw. [E2602](../experiments/E2602/record.md) established the format for the cha
   on disk, which is also how anyone else re-checks the summary. A run is retried only for an infrastructure
   cause at the same seed and configuration, and a completed run with a bad score is never dropped.
 
+### An instrument has to be shown to move before it can be believed
+
+A capability probe that has only been compared at one endpoint — a trained arm against a random initialisation — has been shown to *detect that training
+happened*, which is not the claim anyone wants to make about a difference between two arms. E2626 fixed that by giving the probes an ordering the harness
+already measures: one training run, published as thirteen measurable models (its initialisation and twelve evaluation points, ADR-0050), each with its own
+held-out bits per character. The curve is bit-identical to the run that would have happened without the mechanism, so the ordering is about the model and
+not about the instrument.
+
+Two rules came out of that and are worth stating for any later measurement of this kind.
+
+* **Compare the models pairwise, not by putting two intervals beside each other.** Both probes ask the same items of every model, so the information is in
+  the items where two models disagree. `chakaso.training.paired_stats` gives McNemar's exact test (two-sided, summed binomial tails, no normal
+  approximation), Spearman's rank correlation with average ranks over ties, and Holm's step-down over the family of comparisons — and
+  `chakaso.training.probe_sensitivity` turns a table of per-item outcomes plus one quality number per model into a verdict: the rank correlation, the share
+  of materially-different pairs the instrument separates, the smallest gap it resolves and the largest it misses. This needs the per-item record, which is
+  why `score_pairs` and `score_items` now return it.
+* **Materiality is a unit, and it belongs to the criterion, not to the probe.** E2626 judged a pair "materially different" at the project's own band —
+  0.02 bits per character of held-out loss, calibrated against E2614's measured seed spread — and then asked what the probe could see at that scale. The
+  answer was 0.0218 for the minimal-pair probe and 0.294 for the continuation probe. A sensitivity figure quoted without that anchor is a number about
+  nothing.
+
+The limits of that design are in the record and are not small: rungs of one trajectory are not arms, so the figures are upper bounds on what a probe will
+resolve between two independently trained models; the criterion is loss, and E2612 already saw loss and a text measure move opposite ways, which E2626 then
+reproduced inside a single model (rungs 1600 and 1800 disagreed with the loss at p = 1.0 × 10⁻⁵); and 78 pairs drawn from one autocorrelated curve are not
+78 independent tests, however the family is corrected.
+
 ### Generation is evaluated separately from loss
 
 Held-out loss measures next-token prediction. It does not measure what the model produces when asked to

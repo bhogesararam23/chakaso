@@ -381,4 +381,29 @@ Priorities, in order, each with its evidence and cost on the present 4-core CPU 
 6. **Scale, only after 1–3:** the capacity step (about 9.84M parameters) that E2612's rule 2 forbade is still gated on a data weighting that is now measured (25 %) and a tokenizer that is cheaper per character; it costs roughly 3× an arm (about 3 h each at this host's rate) and should not start before the probes can rank models.
 
 Not started and not justified by anything measured: mid-training, SFT, preference optimisation, reinforcement learning, MoE, MLA, quantisation and speculative decoding (the 2026-11-01 campaign's rejections stand; nothing here changes them).
+## Next stage, 2026-11-03 (after E2626, later the same day)
 
+The list above was written before [E2626](../experiments/E2626/record.md) ran. Two of its items moved and one question changed shape, so the list is
+re-stated here rather than left to drift. Costs are this host's measured rates: an arm at the reference configuration is 4,991–5,757 s (E2614 seed 7,
+E2626) and a probe scoring pass over twenty models is tens of minutes, not hours.
+
+1. **The instrument question now has a measured answer with a number in it** — see the research-log entry of 2026-11-03 and the open-questions entry it
+   closes. The minimal-pair probe tracks held-out loss along a training curve and resolves a 0.0218-bit gap; the continuation probe resolves nothing below
+   0.294 and nothing past update 800; and the first contradicted the loss at one pair of rungs. What remains open is not "can a probe see a real
+   improvement" but **can a probe rank two independently trained arms**, which no ladder can answer: rungs share an initialisation, a data order and almost
+   all their weights, so a rung pair is the easiest comparison available and an arm pair is the one that matters. The route to that is item 2 plus an arm
+   pair whose loss gap is known — E2625's 0.0229 bits per character is the candidate.
+2. **A harder continuation probe** (item 2 above): the construction is built, tested and committed, the item set is fixed by digest, and
+   [E2627](../experiments/E2627/record.md) is preregistered with its floor, headroom and ranking rules declared. It is scored after the arm below finishes,
+   because this machine has 1.9 GB of free memory and a 3.4M-parameter run uses 2.5 GB of it.
+3. **Seeds for the space-prefixed tokenizer** (item 1 above, unchanged in substance): [E2628](../experiments/E2628/record.md) is running the second seed of
+   E2625's design on the Windows host, paired with E2614's seed-11 control on the same host. Three more seeds would meet the five-seed gate the earlier
+   list set; one is what this session can afford, and its record says so. The refit-sensitivity check and the adoption ADR are still ahead of any default
+   change.
+4. **A ladder at a second seed.** E2626's contradiction (1600 vs 1800 updates) is one pair at one seed. Running the same twelve-rung protocol at seed 11 costs
+   one arm and would say whether the disagreement reproduces or was this trajectory's accident. Not scheduled: it competes with item 3 for the same hours.
+5. **The prose share as a decision, the raw-bytes archive, the minimal-pair v3, and scale** — items 3–6 above, unchanged in order and in cost. The probe
+   finding does not unlock the capacity step; E2612's rule 2 still gates it on a data weighting, which is measured (25 %) and still not an objective.
+
+Nothing above is started by writing it here, and none of it is a capability claim. [K-001](agent/KNOWN_ISSUES.md) is unchanged by E2626: the record measures
+instruments, not models, and the model it trained to get the curve is bit-identical to one it had already trained.
