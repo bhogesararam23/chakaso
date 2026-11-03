@@ -149,38 +149,37 @@ recorded the question instead of improvising a citation, per the project's rule 
 
 ## Commits
 
-**34 commits**, `a77ea4e` (07:02 IST) through `35c2504` (14:15 IST), all on `main`; this report's own commit is the
-35th and the phase's last. All were authored and committed by the configured
+**36 commits**, `a77ea4e` (07:02 IST) onward, all on `main`; the 34 that did the work run through `35c2504` (14:15 IST)
+and the last two carry this report. All were authored and committed by the configured
 identity (`bhogesararam23`); **no commit carries a co-author trailer, a generated-by notice, or any added attribution**,
-and no `docs/*.docx` private material is tracked (`git ls-files | grep -c docx` returns 0). Of the 34: 11 `feat:`, 9
-`research:`, 7 `docs:`, 4 `fix:`, 2 `test:`, 1 `perf:`. Sixty files changed, 100,349 insertions and 27 deletions — the
-insertions are dominated by the committed probe results and report extracts, which are the point: each of E2626, E2627,
-E2628 and E2629 commits its machine-readable evidence beside its record.
+and no `docs/*.docx` private material is tracked (`git ls-files | grep -c docx` returns 0). Of the 34 that did the work:
+11 `feat:`, 9 `research:`, 7 `docs:`, 4 `fix:`, 2 `test:`, 1 `perf:`. Sixty files changed, 100,349 insertions and 27
+deletions — the insertions are dominated by the committed probe results and report extracts, which are the point: each
+of E2626, E2627, E2628 and E2629 commits its machine-readable evidence beside its record.
 
 **The brief's 50-commit minimum was not met, and the history was not padded to reach it.** The honest reason is that
 this phase's work was four experiments and three of them were gated by machine time: E2626's ladder arm ran 5,757 s,
 E2628's arm 7,633 s, and E2629's four scoring passes over 215-item and 800-pair instruments took a further ~30
 minutes. The repository's own rule — one commit is one coherent change, and a single change is not split into several
 commits — means the remaining units were either real experiments or noise. Measured against the stretch target this is a
-miss; measured against what a reader can verify from `git log`, each of the 35 is a unit that stands alone, and every
-one of the four records was committed before the run or scoring it describes. For context, `main` carries **174 commits since 2026-11-01**
-at the time of writing, of which these 35 are the last.
+miss; measured against what a reader can verify from `git log`, each of the 36 is a unit that stands alone, and every
+one of the four records was committed before the run or scoring it describes. For context, `main` carried **175 commits since 2026-11-01**
+as measured at `d690e1b`, of which these 36 are the last; the count is pinned to that commit rather than to a date so
+this report's own commits cannot make it wrong.
 
 Push verification: every batch was pushed as it landed and each push was confirmed — `775974c` and `35c2504` were read
-back as green from the runner with all eight jobs, and the report's own commit was pushed on top of them. Final state at
-the time of writing, after that push:
+back as green from the runner with all eight jobs, and this report's commits went up on top of them. The end state of
+the phase, checked with:
 
 ```text
 $ git status --short --branch
 ## main...origin/main
 $ git rev-list --left-right --count origin/main...main
 0	0
-$ git log -1 --format='%h %s'
-docs: close the 2026-11-03 phase with its campaign report, counts, blockers and next order
 ```
 
-A clean tree, nothing ahead of or behind the remote, and no force-push, history rewrite or destructive operation at any
-point in the phase.
+— a clean tree with nothing ahead of or behind the remote. No force-push, history rewrite or destructive operation
+happened at any point in the phase.
 
 ---
 
