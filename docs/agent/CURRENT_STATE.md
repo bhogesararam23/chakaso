@@ -125,7 +125,9 @@ reviews (eleven frontier mechanisms, five small-model families, the scaling and 
 candidate corpus with its licence read at the source), 70 numbered annotations across the research documents, and
 a 33-row verification ledger. Index, decision matrix and roadmap:
 [`chakaso-research-campaign-2026-11.md`](../research/chakaso-research-campaign-2026-11.md); closing report:
-[`research-campaign-report-2026-11-01.md`](../internal/engineering/research-campaign-report-2026-11-01.md).
+[`research-campaign-report-2026-11-01.md`](../internal/engineering/research-campaign-report-2026-11-01.md); the 2026-11-03
+phase — ADR-0049 and ADR-0050, rung artifacts, the paired statistics, and E2626 through E2629 — closes in
+[`research-campaign-report-2026-11-03.md`](../internal/engineering/research-campaign-report-2026-11-03.md).
 The verdict on frontier architecture at this scale is **0 adopt, 1 adapt, 2 test, 8 reject**, on measured grounds:
 Llama 2's own Table 1 puts GQA at 70B, Meta states multi-token models "are worse than the baseline for small
 model sizes", Gemma 3 dropped Gemma 2's soft-capping a generation later, and Mistral's 4,096-token sliding window
