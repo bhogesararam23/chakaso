@@ -35,6 +35,18 @@ Enforced by `.gitignore`:
 The rule of thumb: if it can be regenerated from something committed plus a
 recorded environment, it is not committed.
 
+## Decided 2026-11-04: what a record's machine-readable evidence has to contain
+
+A record's committed evidence must let a reader recompute the tests its verdicts are, not only re-read the numbers it
+prints. That settled [K-032](../../agent/KNOWN_ISSUES.md), where a probe extract kept a run's tables and replaced its
+per-item outcome arrays with digest stubs, so a published McNemar count could be checked for plausibility and could not
+be recomputed — and a new pair test on models an old run had already scored was impossible from the repository at any
+price. The size bound was never the obstacle; the rows were bulky because each repeated the item's identity, so
+`scripts/extract_report.py` now compacts them (one bit per item, one shared item listing per item set, the digest of the
+array it replaced) and E2626's 1.45 MB pair result and E2627's 2.28 MB same-region result commit at 127 KB and 240 KB
+with every pair intact. Nothing in this section authorises committing a checkpoint, a corpus snapshot or a tokenizer:
+those stay out of Git, and a record cites them by fingerprint and by the command that rebuilds them.
+
 ## Not yet decided
 
 These are genuinely open. Recording them is better than guessing, because a guess

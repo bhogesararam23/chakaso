@@ -162,5 +162,11 @@ The next experiment, or the decision this settles.
 - Abandoned experiments stay in the repository. An approach that failed is a result
   and saves the next person from repeating it.
 - A result is never reported in documentation without a record to point at.
+- Evidence a number was *paired* from stays in the repository, in the form `scripts/extract_report.py` writes:
+  bulky blocks become digest stubs, except per-item outcome arrays, which are compacted by
+  [`chakaso.training.outcome_vectors`](../../../src/chakaso/training/outcome_vectors.py) to one bit per item plus one
+  shared item listing, with the digest of the array they replaced so a reader can prove the rebuild. A stub is a
+  record of what was thrown away, not evidence: K-032 was filed when a committed extract made a published McNemar
+  test unrecomputable, and a record whose verdict is a paired test is not finished until the pairs are in the tree.
 - If a hypothesis is not being tested, the experiment is exploration. That is
   allowed; it should say so in `Motivation`.

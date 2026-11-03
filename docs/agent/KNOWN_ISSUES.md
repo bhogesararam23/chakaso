@@ -3,7 +3,10 @@
 Real problems with the current state, including the ones that are only
 inconvenient. An empty file here would mean nobody has looked.
 
-Last reviewed: 2026-11-03 (K-032 filed by E2629's deviation; K-030's declaration half closed by ADR-0049 with its deciding arm still unrun, K-031 left
+Last reviewed: 2026-11-04 (**K-032 closed** — a committed probe extract keeps its per-item outcome arrays in a compact,
+digest-checked form, demonstrated by re-running E2629's refused reading from E2627's bytes and getting all eight
+instrument rows identical; K-001 unchanged, K-030's deciding arm and K-031's raw-byte archive still open); before that
+2026-11-03 (K-032 filed by E2629's deviation; K-030's declaration half closed by ADR-0049 with its deciding arm still unrun, K-031 left
 open; K-001 unchanged by E2626, E2627, E2628 and E2629, which measure instruments and a tokenizer at a lower loss, not
 capability); before that 2026-11-01 (K-024 through K-029 added by the research campaign; K-024 is closed for the
 pre-E2612 records by `cfdcd1a` and left open for its residue); before that 2026-10-30
@@ -859,32 +862,40 @@ ingested text is identical, and the committed multiregister catalogue declares a
 `science-pg3489: ingested-text-identical`. *Second half open:* the raw bytes (156 MB, ~59.5 MB gzipped) still exist only on this host's
 `data/`; where an archive lives is the owner's decision (ADR-0047 part 2), and the original `pg3489` bytes are not recoverable.
 
-### K-032 — A committed probe extract cannot be re-paired: the extractor keeps the tables a record prints and drops the per-item array a McNemar test is computed from
+### K-032 — Closed: a committed probe extract keeps its per-item arrays, in a compact form a reader can rebuild
 
-**Impact:** Medium for the capability records, and E2629 found it by being refused. `scripts/extract_report.py` compacts a run
-report or a probe result so a record's evidence fits in the repository, and its documented design is to keep every key
-`ALWAYS_KEEP` names whole while stubbing bulky leaves — which is what lets E2626's `minimal-pairs.json` sit at 38 KB instead
-of the 1.45 MB the same scoring run wrote (its continuation file is 1.55 MB whole against 30 KB committed). The leaf it stubs is
-`outcomes`, the per-item record: 800 rows of `(identifier, phenomenon, 1.0-or-0.0)` per model. The
-S-a…S-d verdicts and the discordant counts live on in each record's `results.json`, so a reader can check the arithmetic that was
-*reported*; what no reader can do from the committed files is recompute the paired test, or run a new pair test on models an old
-run already scored. E2629 tried exactly that — read E2627's committed same-region result at no cost — and `analyse_arm_pairs.py`
-named the missing reading and refused, which is the behaviour the check was written for.
+**Impact was:** Medium for the capability records, and E2629 found it by being refused. `scripts/extract_report.py` compacts a run
+report or a probe result so a record's evidence fits in the repository, and its documented design was to keep every key
+`ALWAYS_KEEP` names whole while stubbing bulky leaves — which is what let E2626's `minimal-pairs.json` sit at 38 KB instead
+of the 1.45 MB the same scoring run wrote. The leaf it stubbed is `outcomes`, the per-item record: 800 rows of
+`(identifier, phenomenon, 1.0-or-0.0)` per model. The S-a…S-d verdicts and the discordant counts lived on in each record's
+`results.json`, so a reader could check the arithmetic that was *reported*; what no reader could do from the committed files
+was recompute the paired test, or run a new pair test on models an old run already scored.
 
-**Two constraints pull against each other and neither is wrong.** `tests/test_repository_hygiene.py` refuses tracked files above
-1 MiB, and the full multi-model probe results this campaign produced are 1.45 MB, 1.55 MB and 2.28 MB (E2626's pair file, its
-continuation file, and E2627's same-region file). The extractor's own test asserts the current design: a probe
-result keeps its tables and stubs its per-item arrays. Keeping `outcomes` for every model would put those three
-committed files over the bound and change the bytes of artifacts two measured records already cite.
+**Two constraints pulled against each other and neither was wrong.** `tests/test_repository_hygiene.py` refuses tracked files
+above 1 MiB, and a full multi-model probe result is 1.45 MB, 1.55 MB or 2.28 MB (E2626's pair file, its continuation file,
+E2627's same-region file). The bulk, though, was never the information: each row is one item's identity plus one bit.
 
-**Open.** The decision is which of three shapes to take, and it is a policy decision, not a bug fix: (a) keep `outcomes` and let
-the extractor trim the *model* list to the ones a named record compares, (b) write per-item outcomes as a separate companion file
-with its own digest cited by the extract, or (c) accept that a probe result's re-pairable life ends with its `results.json` and say
-so in the experiment README rather than in an issue. E2629 itself sidestepped the question by scoring only four models, so all
-three of its probe files fit whole in the bound and its own Z-verdict is recomputable from the repository; that is the pattern (a)
-would generalise.
+**Closed 2026-11-04 by the second shape, generalised.** Of the three shapes this entry listed, (a) — trim the model list to
+the ones a named record compares — was E2629's own accident and would have had to be re-accidented every record; (c) —
+accept that a probe result's re-pairable life ends with its `results.json` — is the state this entry called a defect; (b) —
+companion evidence with its own digest — is what was built, with the companions *inside* the same file rather than beside it,
+because a reader who does not know to look for a second file is in the same position as the one who was refused.
+`chakaso.training.outcome_vectors` writes each outcome array as one bit per item plus one shared item listing for the models
+that were asked the same items in the same order, and records the SHA-256 of the canonical JSON of the array it replaced;
+`decode_outcomes` recomputes that digest and refuses a block it cannot rebuild, so "the compact file is the run's array" is
+a checked property, not a claim. `scripts/extract_report.py` compacts by default and `--no-compact-outcomes` still writes the
+old shape, because two measured records cite extracts written in it.
 
-**Status:** open, filed 2026-11-03 by E2629's deviation.
+**Measured, not asserted.** The three campaign probe files re-extract to 127 KB, 87 KB and 240 KB — from 1.45 MB, 1.55 MB and
+2.28 MB — each under the tracked-file bound and each restoring its source document exactly (`restore_probe_result` compares
+equal to the whole file for all three, and the extractor's tests pin the property). E2627's new extract was then handed back
+to `scripts/analyse_arm_pairs.py`, the script that refused it: all eight instrument rows came out byte-identical to
+`experiments/E2629/results.json`, which had to re-score the models to get them. That file is committed beside E2629's record
+as the closing demonstration, and E2626, E2627 and E2629 each carry a dated addendum naming the new evidence.
+
+**Status:** closed 2026-11-04. The rule now belongs to `docs/internal/experiments/README.md` and
+[`artifact-policy.md`](../internal/engineering/artifact-policy.md), not to an issue register.
 
 ## Resolved
 

@@ -12,10 +12,24 @@ capability is implemented or still planned.
 
 ## Unreleased
 
-### 2026-11-04 (this session) — the campaign continues: paired statistics a handful of draws can carry
+### 2026-11-04 (this session) — the campaign continues: paired statistics, and evidence a reader can re-pair
 
 **Implemented**
 
+- **K-032 is closed: a committed probe extract now keeps the per-item arrays a paired test is computed from.**
+  `scripts/extract_report.py` replaced an outcome array with the digest of its canonical JSON — 1.45 MB, 1.55 MB and
+  2.28 MB of rows would not fit the 1 MiB tracked-file bound — which left every McNemar count in E2626's and E2627's
+  records re-readable and none of them recomputable, and cost E2629 a re-scoring pass it had not planned. The bulk was
+  the item identity repeated per model, so `chakaso.training.outcome_vectors` now stores one bit per item plus one
+  shared item listing per item set, with the digest of the array it replaced: a reader rebuilds it and the digest says
+  whether the rebuild is the run's own bytes. Measured on the campaign's three probe results: 1.45 MB → 127 KB,
+  1.55 MB → 87 KB, 2.28 MB → 240 KB, each restoring its source document exactly.
+- **The closure is demonstrated rather than argued.** E2627's re-extracted file was handed back to
+  `scripts/analyse_arm_pairs.py`, the script that refused it. All eight instrument rows of
+  [`experiments/E2629/context-from-E2627-extract.json`](experiments/E2629/context-from-E2627-extract.json) come out
+  byte-identical to the published `results.json`, whose four same-region rows had to be scored afresh to be obtained —
+  so the encoding preserves the paired test exactly, and E2627's scoring of the same three checkpoints on the same 215
+  items reproduces E2629's item for item.
 - `chakaso.training.paired_stats` gained `student_t_quantile`, `mean_confidence_interval` and `sign_test_p_value`, dependency-free
   like the rest of the module (bisection on the regularised incomplete beta, the same route `seed_study` already takes for its chi-square
   quantiles). They exist because the campaign's comparisons are between **arms**, and an arm pair gives one difference per seed: E2614 measured
