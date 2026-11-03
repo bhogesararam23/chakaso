@@ -1,0 +1,505 @@
+{
+  "arms": {
+    "E2612-P": {
+      "experiment": "E2612-P",
+      "max_steps": 2400,
+      "o1_equal_weight_mean": 2.218646,
+      "seed": 7,
+      "split_fingerprint": "adf650435c3a9068",
+      "vocabulary": "434debe82f949347",
+      "whole_pack_bits_per_character": 2.163693122795988
+    },
+    "E2612-T": {
+      "experiment": "E2612-T",
+      "max_steps": 2400,
+      "o1_equal_weight_mean": 2.021357,
+      "seed": 7,
+      "split_fingerprint": "adf650435c3a9068",
+      "vocabulary": "434debe82f949347",
+      "whole_pack_bits_per_character": 2.05544739454246
+    },
+    "E2613-H": {
+      "experiment": "E2613-H",
+      "max_steps": 2400,
+      "o1_equal_weight_mean": 2.232937,
+      "seed": 7,
+      "split_fingerprint": "adf650435c3a9068",
+      "vocabulary": "434debe82f949347",
+      "whole_pack_bits_per_character": 2.1682177974655765
+    }
+  },
+  "decision_bearing": [
+    "minimal_pairs_usable",
+    "continuation_pmi_easy",
+    "continuation_pmi_hard"
+  ],
+  "instruments": {
+    "context_pmi_next_span": {
+      "alpha": 0.05,
+      "contradicted_pairs": [],
+      "largest_unseparated_material_gap": 0.11277040292311646,
+      "material_coverage": 0.0,
+      "material_pairs": 2,
+      "material_pairs_separated": 0,
+      "pairs": 3,
+      "rho": 0.9999999999999998,
+      "smallest_separated_gap": null,
+      "tracks_the_criterion": true,
+      "verdict": "S-b"
+    },
+    "context_pmi_permuted": {
+      "alpha": 0.05,
+      "contradicted_pairs": [],
+      "largest_unseparated_material_gap": 0.11277040292311646,
+      "material_coverage": 0.0,
+      "material_pairs": 2,
+      "material_pairs_separated": 0,
+      "pairs": 3,
+      "rho": 0.9999999999999998,
+      "smallest_separated_gap": null,
+      "tracks_the_criterion": true,
+      "verdict": "S-b"
+    },
+    "context_pmi_prior_span": {
+      "alpha": 0.05,
+      "contradicted_pairs": [],
+      "largest_unseparated_material_gap": 0.11277040292311646,
+      "material_coverage": 0.0,
+      "material_pairs": 2,
+      "material_pairs_separated": 0,
+      "pairs": 3,
+      "rho": 0.4999999999999999,
+      "smallest_separated_gap": null,
+      "tracks_the_criterion": false,
+      "verdict": "S-c"
+    },
+    "context_pmi_reversed": {
+      "alpha": 0.05,
+      "contradicted_pairs": [],
+      "largest_unseparated_material_gap": 0.11277040292311646,
+      "material_coverage": 0.0,
+      "material_pairs": 2,
+      "material_pairs_separated": 0,
+      "pairs": 3,
+      "rho": 0.9999999999999998,
+      "smallest_separated_gap": null,
+      "tracks_the_criterion": true,
+      "verdict": "S-b"
+    },
+    "continuation_pmi_easy": {
+      "alpha": 0.05,
+      "contradicted_pairs": [],
+      "largest_unseparated_material_gap": 0.11277040292311646,
+      "material_coverage": 0.0,
+      "material_pairs": 2,
+      "material_pairs_separated": 0,
+      "pairs": 3,
+      "rho": 0.9999999999999998,
+      "smallest_separated_gap": null,
+      "tracks_the_criterion": true,
+      "verdict": "S-b"
+    },
+    "continuation_pmi_hard": {
+      "alpha": 0.05,
+      "contradicted_pairs": [],
+      "largest_unseparated_material_gap": 0.11277040292311646,
+      "material_coverage": 0.0,
+      "material_pairs": 2,
+      "material_pairs_separated": 0,
+      "pairs": 3,
+      "rho": 0.4999999999999999,
+      "smallest_separated_gap": null,
+      "tracks_the_criterion": false,
+      "verdict": "S-c"
+    },
+    "minimal_pairs_all_800": {
+      "alpha": 0.05,
+      "contradicted_pairs": [],
+      "largest_unseparated_material_gap": 0.11277040292311646,
+      "material_coverage": 0.0,
+      "material_pairs": 2,
+      "material_pairs_separated": 0,
+      "pairs": 3,
+      "rho": -0.9999999999999998,
+      "smallest_separated_gap": null,
+      "tracks_the_criterion": false,
+      "verdict": "S-c"
+    },
+    "minimal_pairs_usable": {
+      "alpha": 0.05,
+      "contradicted_pairs": [],
+      "largest_unseparated_material_gap": 0.11277040292311646,
+      "material_coverage": 0.0,
+      "material_pairs": 2,
+      "material_pairs_separated": 0,
+      "pairs": 3,
+      "rho": -0.8660254037844387,
+      "smallest_separated_gap": null,
+      "tracks_the_criterion": false,
+      "verdict": "S-c"
+    }
+  },
+  "matchedness": {
+    "max_training_tokens": {
+      "equal": false,
+      "field": "max_training_tokens",
+      "values": {
+        "E2612-P": 20000000,
+        "E2612-T": 20000000,
+        "E2613-H": 10000000
+      }
+    },
+    "training_group_prefixes": {
+      "equal": false,
+      "field": "training_group_prefixes",
+      "values": {
+        "E2612-P": [
+          "prose-"
+        ],
+        "E2612-T": null,
+        "E2613-H": [
+          "prose-"
+        ]
+      }
+    },
+    "training_tokens_packed": {
+      "equal": false,
+      "field": "training_tokens_packed",
+      "values": {
+        "E2612-P": 20000402,
+        "E2612-T": 20000103,
+        "E2613-H": 10001764
+      }
+    }
+  },
+  "materiality": 0.02,
+  "models": [
+    "E2612-T",
+    "E2612-P",
+    "E2613-H"
+  ],
+  "models_scored_but_not_analysed": [
+    "E2614-s11",
+    "E2614-s13",
+    "E2614-s17",
+    "E2614-s19",
+    "E2615-s25",
+    "step1000",
+    "step1200",
+    "step1400",
+    "step1600",
+    "step1800",
+    "step200",
+    "step2000",
+    "step2200",
+    "step2400",
+    "step400",
+    "step600",
+    "step800",
+    "untrained-control",
+    "untrained-control-seed-11",
+    "untrained-control-seed-13",
+    "untrained-control-seed-17",
+    "untrained-control-seed-19",
+    "untrained-control-seed-23",
+    "untrained-control-seed-29"
+  ],
+  "outcome": {
+    "inside_band_pairs": 1,
+    "letter": "Z-d",
+    "material_pairs": 2,
+    "per_instrument": {
+      "continuation_pmi_easy": {
+        "contradicted_pairs": [],
+        "inside_band_pairs_separated": [],
+        "material_pairs": 2,
+        "material_pairs_ranked_correctly": 0,
+        "ranks_every_material_pair": false,
+        "verdict": "S-b"
+      },
+      "continuation_pmi_hard": {
+        "contradicted_pairs": [],
+        "inside_band_pairs_separated": [],
+        "material_pairs": 2,
+        "material_pairs_ranked_correctly": 0,
+        "ranks_every_material_pair": false,
+        "verdict": "S-c"
+      },
+      "minimal_pairs_usable": {
+        "contradicted_pairs": [],
+        "inside_band_pairs_separated": [],
+        "material_pairs": 2,
+        "material_pairs_ranked_correctly": 0,
+        "ranks_every_material_pair": false,
+        "verdict": "S-c"
+      }
+    },
+    "reading": "no decision-bearing instrument separated a material pair"
+  },
+  "pairs": [
+    {
+      "context_pmi_next_span": {
+        "direction": "agrees",
+        "discordant": [
+          9,
+          4
+        ],
+        "n": 13,
+        "p_value": 0.266845703125,
+        "separated": false
+      },
+      "context_pmi_permuted": {
+        "direction": "agrees",
+        "discordant": [
+          10,
+          4
+        ],
+        "n": 14,
+        "p_value": 0.1795654296875,
+        "separated": false
+      },
+      "context_pmi_prior_span": {
+        "direction": "agrees",
+        "discordant": [
+          8,
+          4
+        ],
+        "n": 12,
+        "p_value": 0.3876953125,
+        "separated": false
+      },
+      "context_pmi_reversed": {
+        "direction": "agrees",
+        "discordant": [
+          13,
+          5
+        ],
+        "n": 18,
+        "p_value": 0.09625244140625,
+        "separated": false
+      },
+      "continuation_pmi_easy": {
+        "direction": "agrees",
+        "discordant": [
+          5,
+          0
+        ],
+        "n": 5,
+        "p_value": 0.0625,
+        "separated": false
+      },
+      "continuation_pmi_hard": {
+        "direction": "agrees",
+        "discordant": [
+          13,
+          4
+        ],
+        "n": 17,
+        "p_value": 0.049041748046875,
+        "separated": false
+      },
+      "criterion_gap": -0.10824572825352785,
+      "first": "E2612-T",
+      "material": true,
+      "minimal_pairs_all_800": {
+        "direction": "contradicts",
+        "discordant": [
+          13,
+          20
+        ],
+        "n": 33,
+        "p_value": 0.296206368599087,
+        "separated": false
+      },
+      "minimal_pairs_usable": {
+        "direction": "none",
+        "discordant": [
+          13,
+          13
+        ],
+        "n": 26,
+        "p_value": 1.0,
+        "separated": false
+      },
+      "second": "E2612-P"
+    },
+    {
+      "context_pmi_next_span": {
+        "direction": "agrees",
+        "discordant": [
+          9,
+          3
+        ],
+        "n": 12,
+        "p_value": 0.14599609375,
+        "separated": false
+      },
+      "context_pmi_permuted": {
+        "direction": "agrees",
+        "discordant": [
+          10,
+          3
+        ],
+        "n": 13,
+        "p_value": 0.09228515625,
+        "separated": false
+      },
+      "context_pmi_prior_span": {
+        "direction": "agrees",
+        "discordant": [
+          10,
+          7
+        ],
+        "n": 17,
+        "p_value": 0.629058837890625,
+        "separated": false
+      },
+      "context_pmi_reversed": {
+        "direction": "agrees",
+        "discordant": [
+          13,
+          4
+        ],
+        "n": 17,
+        "p_value": 0.049041748046875,
+        "separated": false
+      },
+      "continuation_pmi_easy": {
+        "direction": "agrees",
+        "discordant": [
+          6,
+          0
+        ],
+        "n": 6,
+        "p_value": 0.03125,
+        "separated": false
+      },
+      "continuation_pmi_hard": {
+        "direction": "agrees",
+        "discordant": [
+          11,
+          5
+        ],
+        "n": 16,
+        "p_value": 0.210113525390625,
+        "separated": false
+      },
+      "criterion_gap": -0.11277040292311646,
+      "first": "E2612-T",
+      "material": true,
+      "minimal_pairs_all_800": {
+        "direction": "contradicts",
+        "discordant": [
+          4,
+          14
+        ],
+        "n": 18,
+        "p_value": 0.0308837890625,
+        "separated": false
+      },
+      "minimal_pairs_usable": {
+        "direction": "contradicts",
+        "discordant": [
+          4,
+          7
+        ],
+        "n": 11,
+        "p_value": 0.548828125,
+        "separated": false
+      },
+      "second": "E2613-H"
+    },
+    {
+      "context_pmi_next_span": {
+        "direction": "agrees",
+        "discordant": [
+          8,
+          7
+        ],
+        "n": 15,
+        "p_value": 1.0,
+        "separated": false
+      },
+      "context_pmi_permuted": {
+        "direction": "agrees",
+        "discordant": [
+          9,
+          8
+        ],
+        "n": 17,
+        "p_value": 1.0,
+        "separated": false
+      },
+      "context_pmi_prior_span": {
+        "direction": "contradicts",
+        "discordant": [
+          7,
+          8
+        ],
+        "n": 15,
+        "p_value": 1.0,
+        "separated": false
+      },
+      "context_pmi_reversed": {
+        "direction": "agrees",
+        "discordant": [
+          9,
+          8
+        ],
+        "n": 17,
+        "p_value": 1.0,
+        "separated": false
+      },
+      "continuation_pmi_easy": {
+        "direction": "agrees",
+        "discordant": [
+          3,
+          2
+        ],
+        "n": 5,
+        "p_value": 1.0,
+        "separated": false
+      },
+      "continuation_pmi_hard": {
+        "direction": "contradicts",
+        "discordant": [
+          6,
+          9
+        ],
+        "n": 15,
+        "p_value": 0.60723876953125,
+        "separated": false
+      },
+      "criterion_gap": -0.004524674669588613,
+      "first": "E2612-P",
+      "material": false,
+      "minimal_pairs_all_800": {
+        "direction": "contradicts",
+        "discordant": [
+          10,
+          13
+        ],
+        "n": 23,
+        "p_value": 0.6776394844055176,
+        "separated": false
+      },
+      "minimal_pairs_usable": {
+        "direction": "contradicts",
+        "discordant": [
+          9,
+          12
+        ],
+        "n": 21,
+        "p_value": 0.6636238098144531,
+        "separated": false
+      },
+      "second": "E2613-H"
+    }
+  ],
+  "reference_arm": "E2612-T",
+  "usable_phenomena": [
+    "auxiliary_agreement",
+    "determiner_noun_agreement",
+    "reflexive_pronoun_agreement"
+  ]
+}

@@ -176,6 +176,16 @@ outcome array is replaced by the SHA-256 of its canonical JSON, because the raw 
 the bytes those stubs digest are in `data/experiments/E2626/`), and [`results.json`](results.json) — the comparison itself: every pair, its loss gap,
 its discordant counts, its p-value, whether Holm rejected, and which way the direction fell.
 
+### What the per-item arrays look like now (added 2026-11-04)
+
+[`minimal-pairs-with-outcomes.json`](minimal-pairs-with-outcomes.json) and
+[`continuations-with-outcomes.json`](continuations-with-outcomes.json) are new extracts of the *same two runs*, written
+by the same `scripts/extract_report.py` after K-032 was fixed, and they carry every per-item outcome array the stubbed
+files above left out — 127 KB and 87 KB against the 1.45 MB and 1.55 MB the scoring wrote. Their `report_file_sha256`
+equals the digest the extracts committed on 2026-11-03 recorded, so both files describe the same bytes on disk, and
+nothing in this record's numbers is restated by the new pair: they exist so a reader can recompute the tests rather
+than check the arithmetic that was reported.
+
 ### P4 first, because everything else depends on it
 
 The endpoint guard passed. Rung 2400 scores **2.05544739454246** bits per character with the same `positions_scored` and `characters_scored` as the

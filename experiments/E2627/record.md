@@ -182,6 +182,14 @@ declared in this record exactly** — `f49c128e7b302827c4c5d790b1f685ed94dbfa029
 anything was run. The analysis population is the 13 curve members; the eight further arms and the six additional
 controls are listed in `models_scored_but_not_analysed` rather than dropped silently.
 
+### What the per-item arrays look like now (added 2026-11-04)
+
+[`context-with-outcomes.json`](context-with-outcomes.json) is a new extract of the same scoring run — its
+`report_file_sha256` is the digest the file above records, so it is the same bytes on disk — and unlike the file above
+it keeps all 27 models' per-item outcome arrays, in the compact form K-032 asked for: 240 KB against the 2.28 MB the
+scoring wrote. E2629's refused reading of this record's result is what prompted it; the reading now runs, and
+[`../E2629/context-from-E2627-extract.json`](../E2629/context-from-E2627-extract.json) is its output.
+
 ### Floor, headroom and ranking, per kind
 
 | Kind | untrained mean of 7 (range) | floor rule | endpoint accuracy | headroom (< 0.95) | ρ vs loss | material pairs separated | smallest gap resolved | verdict |

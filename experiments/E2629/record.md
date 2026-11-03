@@ -294,6 +294,17 @@ defeated by the family correction rather than by the data.
 2. **The criterion is read from git-ignored reports**, so all three are committed beside this record as compact
    extracts; the partition numbers E2629 quotes are in them.
 
+### What the refused reading became (added 2026-11-04)
+
+K-032 is closed, and this record is the demonstration. [`context-from-E2627-extract.json`](context-from-E2627-extract.json)
+is `scripts/analyse_arm_pairs.py` run with `--context experiments/E2627/context-with-outcomes.json` — the same-region
+instrument taken from **E2627's** committed bytes instead of re-scored here, which is the reading that was refused and
+deviation 1 worked around. Every one of its eight instrument rows is byte-identical to the row in
+[`results.json`](results.json) above, including the four `context_pmi_*` rows, whose discordant counts and p-values now
+come from a scoring run this record did not perform. Two things follow and neither changes a verdict: the compact
+encoding preserves the paired test exactly, and E2627's scoring of these three checkpoints reproduces E2629's fresh
+re-scoring of the same 215 items on the same item digest, item for item.
+
 ### What this changes, and what it does not
 
 1. **E2626's caveat is now a measurement, not a caveat.** It published its sensitivity figures as *upper bounds* on
