@@ -154,3 +154,60 @@ python scripts/analyse_tokenizer_seed_spread.py \
 The command names every arm the record declared. An arm that does not complete is dropped from both the command and the
 spread and the drop is stated in the Results section with its reason; the outcome letters and the critical values above
 are not changed to fit whichever arms finish.
+
+## Results (added 2026-11-04)
+
+**Outcome: Y2-a — adoption-grade.** All four declared arms completed, so n = 5 counting [E2628](../E2628/record.md)'s
+seed-11 pair, which joined without being rerun because both of its files were already committed. Every number below is
+in [`results.json`](results.json), produced by
+[`scripts/analyse_tokenizer_seed_spread.py`](../../scripts/analyse_tokenizer_seed_spread.py) from the ten report extracts
+committed beside this record.
+
+| Seed | Control O1 | Treatment O1 | Δ(O1) | Δ(whole pack) |
+| --- | --- | --- | --- | --- |
+| 7 | 2.021357 | 1.997776 | +0.023581 | +0.028506 |
+| 11 | 2.023557 | 1.994153 | +0.029404 | +0.034950 |
+| 13 | 2.019795 | 1.995973 | +0.023822 | +0.025068 |
+| 17 | 2.025591 | 1.998038 | +0.027553 | +0.027560 |
+| 19 | 2.023580 | 1.995786 | +0.027794 | +0.034737 |
+
+* **O1:** mean **+0.026431**, 95 % Student-*t* interval **[+0.023212, +0.029650]** at 4 degrees of freedom
+  (critical value 3.182 → 2.776, the table fixed above), which **clears zero**; 5 of 5 draws positive, exact sign-test
+  p = **0.03125**.
+* **Whole pack:** mean **+0.030164**, interval **[+0.024635, +0.035693]**, clears zero.
+* **The treatment's own seed spread, which no earlier record in this series could state: σ(O1) = 0.001595 against the
+  control's 0.002240.** The space-prefixed vocabulary is *less* variable across initialisations than the default one, not
+  more, so none of the gain is the luck of a favourable draw — P2's stated surprise did not occur.
+
+Every draw is paired with a control that trained on this host, so unlike E2628 none of these five moves seed and
+machine together; the only cross-host comparison in the series is E2625's seed 7, which E2617 bounds at 0.0025 and no
+outcome here rests on.
+
+### The predictions
+
+* **P1 — held, narrowly missed at the edge.** The new Δ(O1)s are +0.0236 to +0.0278 against the bracketing pair
+  +0.0229 (E2625) and −0.0351 (E2624): inside, and the *lower* end of E2628's +0.0294 is below every new draw's
+  upper side, so the interval across five seeds is tighter than any single previous reading suggested.
+* **P2 — held.** Treatment σ(O1) 0.001595 against the control's measured 0.002240: smaller, not larger, and nowhere
+  near the factor of two that would have signalled a favourable draw.
+* **P3 — held, exactly.** All 25 register-by-seed differences are positive: the smallest is prose at seed 19 (+0.0133)
+  and the largest mathematics at the same seed (+0.0571). Mathematics is the only register whose gain is larger than the
+  whole-pack gain, which is what a tokenizer that spends its identifiers on words rather than on word gaps predicts.
+* **P4 — held.** All four arms completed at the 2,400-update ceiling with validation still falling. Across the four new
+  seeds the controls span 0.008338 bits per character and the treatments 0.004950, so the treatment is the tighter of
+  the two on the whole pack as it is on O1 — P2's finding read a second way, from an absolute range rather than a
+  standard deviation. E2612 arm T's published 2.055447 sits 0.005052 from the most extreme of these controls, inside
+  the spread E2614 measured for that configuration.
+
+### What this changes, and what it does not
+
+Y2-a's declared consequence is that [ADR-0048](../../docs/decisions/ADR-0048-the-pre-tokenizer-is-a-named-part-of-a-vocabulary-s-identity.md)'s
+"does not decide" clause can be answered, and the record that answers it also has to carry the **refit-sensitivity**
+check the roadmap named as the other thing the adoption decision turns on: five seeds of *one* vocabulary say nothing
+about whether a second fit of that vocabulary, on a different 12.7M-character sample, would have gained the same. Until
+that is measured, the space-prefixed rule is a well-supported candidate and the default is unchanged — which is what
+this record's status line and every document it touches continue to say.
+
+Still not measured, and not claimed: any capability. E2629's Z-d stands — no probe in this repository ranks two
+independently trained arms, and what this record adds is a loss difference with an interval on it, not a model that
+answers anything (K-001).
