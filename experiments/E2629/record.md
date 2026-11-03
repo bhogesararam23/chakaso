@@ -1,10 +1,12 @@
 # E2629 — can either instrument rank two independently trained arms? The prose-share pair is the test and the half-prose arm is the null
 
-**Status:** preregistered — the analysis landed as code and tests in `d03b69c`, the three checkpoints are already on
-this machine, and the same-region probe has already scored them (its result is committed as
-[E2627](../E2627/record.md)'s `context.json`). **No model has been scored for this record**: neither the pair probe
-nor the version-1 continuation probe has ever been run on these three arms, and the decision rules and predictions
-below are fixed before that happens.
+**Status:** measured — **Z-d: neither instrument ranks two independently trained arms.** No decision-bearing
+instrument separated either material pair at a 0.108246-bit gap (≈32 of E2614's measured seed standard deviations);
+the grammatical probe on its usable phenomena put the better model *last* (ρ = −0.866, and −1.000 across all 800
+pairs), the two continuation readings ordered the arms correctly and reached no separation (closest p = 0.049 against
+Holm's 0.016667 step over three pairs), and the pair inside the band was left alone by all eight instruments.
+Preregistered and committed (`9277702`) before any model was scored for this record; the Results section was added
+after `results.json` was written, with one deviation named there.
 **Type:** Research experiment, **preregistered**. Nothing is trained. It is the question E2626 could not ask, answered
 with artifacts that already exist.
 
@@ -158,6 +160,15 @@ ARMS=(--checkpoint "E2612-T=data/experiments/E2612/mixture/E2612-T-decoder.pt"
   --registers prose-:100,science-:55,technology-:40,mathematics-:20 --max-per-work 5 \
   --control "${ARMS[@]}" --out experiments/E2629/continuations.json
 
+"$QPYTHON" scripts/evaluate_context_continuations.py \
+  --snapshot data/corpora/gutenberg-multiregister-v1/gutenberg-multiregister-v1-snapshot.json \
+  --vocabulary experiments/E2612/vocabulary-434debe82f949347.json \
+  --expected-split-fingerprint adf650435c3a9068 \
+  --registers prose-:100,science-:55,technology-:40,mathematics-:20 --max-per-work 5 \
+  --control "${ARMS[@]}" --out experiments/E2629/context.json
+
+# The same-region instrument was re-scored here rather than read from E2627's committed file; see Deviation 1. The
+# item digest came back f49c128e7b302827c4c5d790b1f685ed94dbfa02971fda17ca1c687e73e5bcc1, the one E2627 fixed.
 "$QPYTHON" scripts/analyse_arm_pairs.py \
   --arm "E2612-T=data/experiments/E2612/mixture/report.json" \
   --arm "E2612-P=data/experiments/E2612/prose/report.json" \
@@ -165,9 +176,16 @@ ARMS=(--checkpoint "E2612-T=data/experiments/E2612/mixture/E2612-T-decoder.pt"
   --reference E2612-T \
   --pairs experiments/E2629/minimal-pairs.json \
   --continuations experiments/E2629/continuations.json \
-  --context experiments/E2627/context.json \
+  --context experiments/E2629/context.json \
   --usable-phenomena auxiliary_agreement,determiner_noun_agreement,reflexive_pronoun_agreement \
   --materiality 0.02 --out experiments/E2629/results.json
+
+for arm in "E2612-T=data/experiments/E2612/mixture/report.json" \
+           "E2612-P=data/experiments/E2612/prose/report.json" \
+           "E2613-H=data/experiments/E2613/half-prose-e2612-vocab/report.json"; do
+  "$QPYTHON" scripts/extract_report.py --report "${arm#*=}" \
+    --out "experiments/E2629/${arm%%=*}-report.json"
+done
 ```
 
 The three arm reports are the criterion, and they are git-ignored artifacts, so each is committed beside this record
@@ -192,3 +210,108 @@ instruments be read without re-scoring them, and the script refuses any instrume
 * **Z-d is a result.** If no instrument separates a 0.108-bit gap between two independently trained arms, the honest
   conclusion is that this project has no capability instrument that has ever ranked two models which differ, and
   that changes what the next instrument may claim.
+
+## Results (added 2026-11-03)
+
+**Outcome: Z-d — no decision-bearing instrument separated a material pair, and the gap was 0.108246 bits per
+character, about 32 of E2614's measured seed standard deviations.** Two independently trained arms, one item set, a
+paired test, and neither probe can rank them. The null pair was left alone, which is the one part of the design that
+went as planned.
+
+### The readings
+
+Whole-pack bits per character is the criterion; the accuracy columns are this record's own scoring runs.
+
+| Arm | Whole pack | O1 | Pairs, usable 300 | Pairs, all 800 | v1 easy | v1 hard | prior | next | permuted | reversed |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| `E2612-T` | 2.055447 | 2.021357 | 0.89000 | 0.82500 | 0.98605 | 0.95349 | 0.9395 | 0.9674 | 0.9581 | 0.9581 |
+| `E2612-P` | 2.163693 | 2.218646 | 0.89000 | 0.83375 | 0.96279 | 0.91163 | 0.9209 | 0.9442 | 0.9302 | 0.9209 |
+| `E2613-H` | 2.168218 | 2.232937 | 0.90000 | 0.83750 | 0.95814 | 0.92558 | 0.9256 | 0.9395 | 0.9256 | 0.9163 |
+| untrained | — | — | 0.49667 | 0.47250 | 0.49302 | 0.49302 | 0.4512 | 0.4791 | 0.3628 | 0.4326 |
+
+**The grammatical probe puts the better model last.** On its three usable phenomena the mixture arm and the
+prose-only arm tie exactly (0.89000 each) and the half-prose arm — the worst model by held-out loss — is the best of
+the three (0.90000). Rank correlation against the criterion is **ρ = −0.866** for the usable subset and **ρ = −1.000**
+across all 800 pairs: over three independently trained arms the instrument orders them the opposite way to the loss.
+
+**The continuation probes order them correctly and cannot resolve a thing.** Both v1 readings rank the arms in the
+criterion's order exactly (ρ = +1.000 for easy, +0.500 for hard), and every material pair points the right way — but
+the smallest p anywhere in the whole analysis that agreed with the criterion was 0.03125, and Holm's first step over
+three pairs is 0.05/3 = 0.016667. Nothing was rejected.
+
+### The pair tests, exactly
+
+Holm's step-down inside each instrument over the three pairs; a cell is `separated` only when Holm rejects it.
+
+| Pair | Gap | usable 300 | all 800 | v1 easy | v1 hard | prior | next | permuted | reversed |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| T vs P | 0.108246 | 13:13 p 1.0 | 13:20 p 0.296 | 5:0 p 0.063 | 13:4 p 0.049 | 8:4 p 0.388 | 9:4 p 0.267 | 10:4 p 0.180 | 13:5 p 0.096 |
+| T vs H | 0.112770 | 4:7 p 0.549 | 4:14 p 0.031 | 6:0 p 0.031 | 11:5 p 0.210 | 10:7 p 0.629 | 9:3 p 0.146 | 10:3 p 0.092 | 13:4 p 0.049 |
+| P vs H | 0.004525 | 9:12 p 0.664 | 10:13 p 0.678 | 3:2 p 1.0 | 6:9 p 0.607 | 7:8 p 1.0 | 8:7 p 1.0 | 9:8 p 1.0 | 9:8 p 1.0 |
+
+Every cell in the third row is a non-separation: **the null pair was never close**, which is what P3 asked for. The
+closest anything came to a separation was `v1 hard` and `v1 easy` on T against P/H, both pointing the right way, both
+defeated by the family correction rather than by the data.
+
+### Predictions, accounted for
+
+* **P1 failed, and it failed flatly.** `minimal_pairs_usable` did not separate `E2612-T` from `E2612-P`: it found
+  thirteen items one way and thirteen the other. E2626's ability to resolve a 0.0218-bit gap along a curve did not
+  transfer across a 0.108-bit gap between arms, because along a curve the two models being compared are almost the
+  same weights and here they are not.
+* **P2 held, with the closest miss of the record.** Neither continuation reading separated anything, so E2627's
+  reading — the ceiling is the span construction, not the population — survives an arm pair. But `continuation_pmi_hard`
+  reached p = 0.049 on the 0.108 pair, which is under 0.05 and over the 0.016667 Holm step. **Had this record declared
+  one pair instead of three, that would have been called a separation.** The correction is what stopped it, and the
+  record says so rather than reporting the 0.049 as a near-win.
+* **P3 held.** No instrument, decision-bearing or not, separated the inside-the-band pair.
+* **P4 did not fire, and its direction was wrong.** No instrument contradicted the criterion *after* the correction,
+  so the conditional was never reached; but the uncorrected tendency contradicts, and it contradicts in the
+  **grammatical** probe, not the continuation one — 13:20 and 4:14 against the loss across all 800 pairs, ρ = −1.0.
+  The prose/technical reversal I named as the likely source of contradiction did show up, but in the instrument whose
+  items "carry no register at all" according to this record's own reasoning. That reasoning was the error: an
+  800-pair set of self-written sentences still samples constructions a prose-only model has seen more of, and the
+  prediction treated "not drawn from the corpus" as "not drawn from the same distribution".
+
+### Two consistency checks the record did not plan for
+
+* `E2612-T` scores 0.82500 across all 800 pairs and 0.89000 on the usable subset — **equal to E2626's `step2400` rung
+  to every digit** (0.825 there), the model E2614's seed 7 reproduced. Two records, a month of code changes between
+  them, and the same trained distribution reads the same probe identically.
+* The same-region items were **re-scored**, not read from E2627's committed file, and the item digest came back
+  `f49c128e…`, the one E2627 fixed before it scored anything, with `E2612-T`'s four kind accuracies equal to the
+  endpoint values that record prints. That is E2627's deviation, recorded below, and an unplanned reproduction.
+
+### Deviations from the preregistered plan
+
+1. **The same-region instrument was re-scored rather than reused.** The plan was to read `experiments/E2627/context.json`
+   at no cost. That committed file is a compact extract, and the extractor stubs per-item arrays by design, so
+   `outcomes` — the raw material a paired test is computed from — is not in it. `scripts/analyse_arm_pairs.py` refused
+   the file rather than working around it, and the three arms were scored again here. The re-scoring is a check on
+   E2627 as much as on this record: the items and the accuracies came back identical. Filed as
+   [K-032](../../docs/agent/KNOWN_ISSUES.md): E2626's and E2627's committed probe extracts cannot be re-paired from
+   the repository, because the 1 MiB tracked-file bound and the extractor's design pull in opposite directions.
+2. **The criterion is read from git-ignored reports**, so all three are committed beside this record as compact
+   extracts; the partition numbers E2629 quotes are in them.
+
+### What this changes, and what it does not
+
+1. **E2626's caveat is now a measurement, not a caveat.** It published its sensitivity figures as *upper bounds* on
+   what a probe would resolve between two independently trained models, because rungs share an initialisation, a data
+   order and nearly all their weights. The bound is now known to be loose to the point of inversion: the same
+   instrument that resolved 63 of 74 material rung pairs, down to 0.0218 bits, resolves none of the two material arm
+   pairs at 0.108 — and orders three arms the wrong way while doing so.
+2. **No capability claim in this repository is corroborated at arm level by anything but loss.** E2621–E2623 showed
+   trained models beat random initialisations on both probes, and that stands: the untrained rows above sit at
+   0.36–0.50 against the arms' 0.83–0.99. It is a floor-versus-ceiling statement, not a ranking. From E2612 onward,
+   every sentence of the form "this arm is better than that one" rests on held-out bits per character and on nothing
+   else measured here.
+3. **A ranking instrument at this scale has to beat 0.016667, not 0.05.** Two of the eight instruments came within a
+   factor of two of that on the right side of the gap; a fourth scoring pass over the same arms with more items is the
+   obvious next lever, and it is cheap — the item sets are what limit the p-value here, not the models.
+4. **The prose/technical reversal is now visible in the grammatical probe too**, uncorrected (13:20, 4:14). That is
+   E2612's finding reproduced in an instrument E2612 never touched, and it says the register of the *evaluation items*
+   matters even when the items are this project's own sentences.
+5. **Nothing about the models moved.** The mixture is still the better arm by the criterion the project uses, E2612's
+   trade-off stands as recorded, every arm is still truncated at the step ceiling, and no sample from any of them is
+   usable text. [K-001](../../docs/agent/KNOWN_ISSUES.md) is untouched by this record.
