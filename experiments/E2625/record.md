@@ -95,7 +95,8 @@ The three treatment arms differ from the control as follows and no other way: E2
 
 * **Most of E2620's gain is the tokenizer, not the extra text.** E2625 keeps 87 % of E2620's O1 gain (0.0229 of 0.0264) and 89 % of its whole-pack gain, with 25 % less distinct text. The remaining 0.0035 is the value, at this budget, of 15M more distinct characters (58M against 43M), consistent with E2619's finding that repetition up to two passes is nearly free.
 * **E2624's loss was the updates.** E2625 and E2624 differ in the number of updates (2,400 against 1,684) and the passes (1.40 against 0.98), over the same text and the same tokenizer: O1 +0.0229 against −0.0351, a difference of **0.058 bits per character for 30 % fewer updates** at this scale. The W-b of E2624 is therefore not a statement about the tokenizer, as that record said it could not be.
-* **The tokenizer's gain is robust to which of text or updates is held fixed** (it is +0.023 or +0.026 whenever the updates are the control's) and **is bought by compute, not by text:** at the control's compute the arm with fewer identifiers per character wins by about 1.1 % of O1.
+* **The tokenizer's gain does not depend on how much distinct text is available** (it is +0.023 or +0.026 whenever the updates are the control's, with 25 % less distinct text in the first). It is obtained at the control's compute: at equal updates the arm with fewer identifiers per character wins by about 1.1 % of O1. What this still cannot separate is the tokenization itself from the 1.40× characters
+  read per update (the same documents, re-read) that comes with it; a design that holds characters read fixed *and* updates fixed is not possible for two tokenizers with different characters per identifier, so the claim is stated at fixed compute, not fixed characters.
 
 ### What it does and does not establish
 
