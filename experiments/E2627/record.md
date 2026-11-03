@@ -1,7 +1,10 @@
 # E2627 — the same-region continuation probe: is its floor at chance on real text, and does it have anywhere to go?
 
-**Status:** preregistered — this record and the item set it names are committed **before** any checkpoint is scored on
-version 2 of the continuation probe. The Results section will be added after, and nothing declared here will be changed.
+**Status:** measured — **T-a on one kind, and the ceiling survives the harder task.** `prior_span` — the same document's own text from
+before the passage — has a floor at chance across seven untrained initialisations (mean 0.4638), an endpoint at 0.9395 (the only kind under the
+0.95 headroom line) and a ranking verdict of S-b against the training curve. `next_span` reaches 0.9674 and resolves no loss gap below 0.294 bits
+per character, **the same floor as E2623's easier distractor**; `permuted` fails its floor at 0.4425; no kind separates any of the ten pairs among
+five independently trained seeds. Preregistered and committed (`1cadc1a`) before any model was scored, with its P4 prediction corrected (`10ff9c0`) after E2626 showed the artifact it named was not the same weights; no item, kind, model, criterion or outcome was touched by that correction.
 **Type:** Measurement of existing and soon-to-exist checkpoints with a **new instrument**. Nothing new is trained by this
 record: it scores rungs [E2626](../E2626/record.md) already writes and artifacts already on disk.
 **Prerequisite:** the construction and its runner — [`chakaso/training/context_continuations.py`](../../src/chakaso/training/context_continuations.py),
@@ -165,6 +168,94 @@ output too, which is a free consistency check on the analysis rather than a seco
 `context.json` and are named in the result's `models_scored_but_not_analysed` list — they carry no rung loss number here, so
 they are not part of the ranking decision and are not silently dropped from the record either.
 
-## Results
+## Results (added 2026-11-03)
 
-_Not yet. No model has been scored on this instrument at the time this record was committed._
+**Outcome: T-a, on one kind — and the negative half of the result is the larger one.** The construction does give an
+instrument with headroom where E2623 had none, and it does not give one that can see an improvement the size this
+project measures.
+
+[`context.json`](context.json) holds the 215 items and all 27 scored models; the per-item outcome arrays are replaced
+by the SHA-256 of their canonical JSON (the raw file is 2.28 MB against a 1 MiB tracked-file limit, and the bytes are
+in `data/experiments/E2627/`). [`results.json`](results.json) is the comparison. **The item set reproduced the digest
+declared in this record exactly** — `f49c128e7b302827c4c5d790b1f685ed94dbfa02971fda17ca1c687e73e5bcc1`, 215 items,
+2,756 held-out documents, split fingerprint `adf650435c3a9068` — so the set scored is the set the record fixed before
+anything was run. The analysis population is the 13 curve members; the eight further arms and the six additional
+controls are listed in `models_scored_but_not_analysed` rather than dropped silently.
+
+### Floor, headroom and ranking, per kind
+
+| Kind | untrained mean of 7 (range) | floor rule | endpoint accuracy | headroom (< 0.95) | ρ vs loss | material pairs separated | smallest gap resolved | verdict |
+| --- | ---: | :---: | ---: | :---: | ---: | ---: | ---: | :---: |
+| prior_span | 0.4638 (0.442–0.488) | **clears** | 0.9395 | **clears** | +0.927 | 25 / 74 | 0.2941 | **S-b** |
+| next_span | 0.4684 (0.447–0.493) | clears | 0.9674 | fails | +0.961 | 23 / 74 | 0.2941 | S-b |
+| permuted | 0.4425 (0.363–0.502) | **fails** | 0.9581 | fails | +0.858 | 34 / 74 | 0.0852 | S-c |
+| reversed | 0.4678 (0.428–0.512) | clears | 0.9581 | fails | +0.841 | 28 / 74 | 0.2547 | S-c |
+| *v1 easy (E2623, for comparison)* | 0.484 (0.451–0.516) | clears | 0.9860 | fails | +0.918 | 23 / 74 | 0.2941 | S-b |
+
+* **T-a is met** by `prior_span`: its seven-initialisation floor is centred at 0.4638 with every control's Wilson
+  interval covering chance and the highest control (0.488) far below the trained endpoint's lower bound (0.8993); the
+  endpoint sits at 0.9395, below the 0.95 headroom line, so the kind is not saturated; and it tracks the curve
+  (ρ = 0.927) while separating 25 of the 74 materially-different rung pairs. By the rule declared before scoring, that
+  makes the same-region construction usable for the *next* arm comparison and nothing retro-fitted onto past ones.
+* **The ceiling was not the topic cue.** `next_span` is the same document's own text, contiguous, in the same hand,
+  and it lands at 0.9674 — indistinguishable in kind from E2623's cross-work distractor at 0.9860 — and **neither
+  resolves any loss gap below 0.294 bits per character, the same floor as v1**. Holding topic and style fixed bought
+  0.05 of headroom at the endpoint and nothing at all in sensitivity. The reading E2623 offered for its own ceiling —
+  that the distractor was too easy — is therefore not the whole explanation, and the alternative is the uncomfortable
+  one: a 24-identifier span after a 64-identifier passage is simply not a task a 3.4M-parameter model at 20M tokens
+  finds hard once it has learned anything at all.
+* **`permuted` fails its floor, and the failure is informative.** Seven untrained initialisations average 0.4425 on
+  it, outside [0.45, 0.55], and one reaches 0.502 while another falls to 0.363. An untrained network is not neutral
+  between a span and a permutation of itself under pointwise mutual information, because the subtraction compares two
+  *conditional* differences and a random initialisation has opinions about identifier order. That kind's numbers are
+  tabulated and not read; the bias is named rather than averaged away.
+* **The construction's counter-case works on real weights, and only barely.** The raw-conditional reading of `permuted`
+  gives an untrained model 0.078 and the trained endpoint **1.0000**: ordered-against-scrambled is nearly all of what
+  that kind measures, and a probe without the subtraction would have reported a perfect demonstration of context use
+  from a model with none. PMI moves those two numbers to 0.4425 and 0.9581 — which is the design working, and also the
+  reason the kind is not a coherence instrument.
+
+### The arms question, measured directly rather than inferred
+
+P3 predicted that no kind would separate a pair of E2614's five seeds. It held, and the strength of it is worth the
+number: across the ten pairs of {step 2400 = seed 7, 11, 13, 17, 19} — five independently trained models of one
+configuration, all scored on these items — **no kind separates a single pair** (smallest p over the 40 tests: 0.065).
+The ladder result in E2626 said an instrument that tracks a curve need not rank arms; this is that statement
+measured rather than argued, and it bounds what T-a can be used for: `prior_span` has headroom against *more
+training*, and nothing yet in this repository resolves the difference between *two trained models* whose loss gap is
+0.02 bits per character — the size of every verdict the mixture and tokenizer records have actually returned.
+
+### The predictions
+
+* **P1 failed, in the interesting direction.** It was the two form kinds that were predicted to have headroom; both
+  saturate (0.9581), and the kind predicted hardest — `prior_span`, contiguous prose from the wrong end of the same
+  document — is the only one with headroom (0.9395) and the only one to earn T-a.
+* **P2 held** as a statement about difficulty: `prior_span` is the lowest-scoring kind at every rung.
+* **P3 held**, at 0 of 10 pairs per kind, as above.
+* **P4 held** (as amended above): re-scoring the endpoint's *v1* items reproduces E2626's number to the last digit,
+  0.986046511627907, with an identical item digest — the scoring path is the one the earlier records used.
+
+### What this changes, and what it does not
+
+1. The repository has a second capability instrument whose endpoint is not at ceiling, and it is preregistered,
+   floor-tested on seven initialisations, and curve-validated. That is the artifact E2623 asked for.
+2. It does not become a ranker of arms. T-a's own consequence clause limits it to the next comparison, and the 0-of-10
+   seed result says what "next comparison" has to be: a pair whose loss gap is *large* relative to 0.294 bits per
+   character, or an instrument finer than anything here.
+3. The candidate that would exercise it exists and is named: E2625's space-prefixed arm differs from its control by
+   0.0229 bits per character — which, on this instrument's measured floor, **will not be resolvable**. Stating that
+   before the run is the point of measuring a floor at all: it tells an experimenter which comparisons their
+   instrument cannot witness, instead of producing a null that reads as a fact about the model.
+4. E2623's status is unchanged as a measurement and corrected as an interpretation: its ceiling was real, and its
+   suggested explanation — that the distractor's topic cue made the task too easy — accounts for about a third of the
+   gap it left at the endpoint and none of its insensitivity.
+
+### Limits that stand
+
+One curve supplies the ordering, so every ranking figure here is about sensitivity *along a trajectory*; the eight
+further arms were scored but not ranked, because a criterion number exists for them only in other records and mixing
+protocols into one family would make the family meaningless. The pairs within a kind are 78 autocorrelated
+comparisons, not 78 independent tests. Items repeat across five to a work and the intervals treat them as independent.
+A 24-identifier span after a 64-identifier passage is short-range context use; `permuted` and `reversed` measure
+sequence, not discourse. Archaic English, one corpus, truncated budgets, preference rather than generation, and no
+statement about capability (K-001).
