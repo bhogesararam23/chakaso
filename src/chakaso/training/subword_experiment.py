@@ -1275,10 +1275,26 @@ def _test_partition_metrics(
     """
     if plan.test_partitions is None:
         return {}
+    packs, uniform_value, baseline = partition_packs(prepared, plan)
+    return _partition_metrics(model, prepared, plan, packs, uniform_value, baseline)
+
+
+def partition_packs(
+    prepared: PreparedCorpus, plan: ExperimentPlan
+) -> tuple[dict[str, Any], float, UnigramBaseline]:
+    """Pack every declared test-side partition, and fit the unigram baseline, once.
+
+    This is the half of the partition measurement that does not depend on which model is being scored. A run
+    pays it once at its end; an analysis that scores several models of one protocol over the same pack would
+    otherwise pay it per model, and the part that hurts is the baseline: it is fitted over every training
+    target of the run, which is 19,660,800 identifiers at the reference configuration.
+    """
     train_targets = [token for example in prepared.train.examples for token in example.targets]
     baseline = UnigramBaseline.fit(train_targets, prepared.vocabulary.size)
     uniform_value = log(prepared.vocabulary.size)
-    produced: dict[str, Any] = {}
+    packs: dict[str, Any] = {}
+    if plan.test_partitions is None:
+        return packs, uniform_value, baseline
     for prefix in plan.test_partitions:
         units = _sampled_units(
             tuple(unit for unit in prepared.split.test if unit.group.startswith(prefix)),
@@ -1286,11 +1302,40 @@ def _test_partition_metrics(
             plan.effective_split_seed,
         )
         if not units:
+            packs[prefix] = None
+            continue
+        packs[prefix] = (
+            units,
+            _pack_evaluation(
+                units,
+                prepared.vocabulary,
+                plan,
+                plan.max_test_tokens,
+                prepared.selection_vocabulary,
+            ),
+        )
+    return packs, uniform_value, baseline
+
+
+def _partition_metrics(
+    model: TrainedModel,
+    prepared: PreparedCorpus,
+    plan: ExperimentPlan,
+    packs: Mapping[str, Any],
+    uniform_value: float,
+    baseline: UnigramBaseline,
+) -> dict[str, Any]:
+    """Score each already-packed partition with ``model``. Numbers are unchanged by the split; see
+    :func:`partition_packs` for why the packing and the baseline are not recomputed here."""
+    if plan.test_partitions is None:
+        return {}
+    produced: dict[str, Any] = {}
+    for prefix in plan.test_partitions:
+        entry = packs[prefix]
+        if entry is None:
             produced[prefix] = {"works": 0, "reason": "no test work matched this prefix"}
             continue
-        batch = _pack_evaluation(
-            units, prepared.vocabulary, plan, plan.max_test_tokens, prepared.selection_vocabulary
-        )
+        units, batch = entry
         metrics = score_transformer(model, batch, prepared.vocabulary, plan=plan)
         targets = [token for example in batch.examples for token in example.targets]
         produced[prefix] = {
@@ -1326,6 +1371,7 @@ def score_artifacts(
             prepares. A rung from another pack would be scored on text its own run never split.
     """
     prepared = prepare_corpus(plan)
+    packs, uniform_value, baseline = partition_packs(prepared, plan)
     scored: dict[str, dict[str, Any]] = {}
     for name, path in artifacts.items():
         artifact = load_artifact(path)
@@ -1349,7 +1395,9 @@ def score_artifacts(
             "test": score_transformer(
                 model, prepared.test, prepared.vocabulary, plan=plan
             ).as_dict(),
-            "test_partitions": _test_partition_metrics(model, prepared, plan),
+            "test_partitions": _partition_metrics(
+                model, prepared, plan, packs, uniform_value, baseline
+            ),
         }
     return scored
 

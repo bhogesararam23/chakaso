@@ -1787,3 +1787,43 @@ def test_score_artifacts_refuses_a_model_from_another_corpus(tmp_path: Path) -> 
 
     with pytest.raises(CorpusError, match="was trained on corpus"):
         score_artifacts(other, {"mine": artifact})
+
+
+# ------------------------------------------------------------------ one pack, several models
+
+
+def test_partition_packs_reuse_scores_the_same_metrics_the_piggybacked_call_produced(
+    tmp_path: Path,
+) -> None:
+    """The hoist has to be a refactoring, not a re-measurement.
+
+    `score_artifacts` now packs every declared partition and fits the unigram baseline once for the corpus
+    instead of once per model, because at the reference configuration that baseline is fitted over 19,660,800
+    training identifiers and an analysis of twelve rungs would pay it twelve times. A speedup that moved a
+    number would not be a speedup, so the two paths are compared on one model, key for key.
+    """
+    from chakaso.training.subword_experiment import (
+        _partition_metrics,
+        _test_partition_metrics,
+        partition_packs,
+    )
+
+    plan = _plan(
+        _root(tmp_path),
+        tmp_path / "w-hoist",
+        max_steps=4,
+        eval_every=4,
+        test_partitions=("prose-", "science-"),
+    )
+    run_experiment(plan)
+    prepared = prepare_corpus(plan)
+    model = load_artifact(
+        tmp_path / "w-hoist" / checkpoint_filename("E2605", "transformer")
+    ).to_model()
+
+    packs, uniform_value, baseline = partition_packs(prepared, plan)
+    hoisted = _partition_metrics(model, prepared, plan, packs, uniform_value, baseline)
+
+    assert hoisted == _test_partition_metrics(model, prepared, plan)
+    assert set(packs) == {"prose-", "science-"}
+    assert baseline is not None and uniform_value > 0.0
