@@ -100,8 +100,20 @@ broken distractor is a construction with one broken distractor.
   only in being the wrong end of it.
 * **P3.** No kind separates a pair of E2614's five seeds: their held-out losses differ by under the band and E2622 measured the
   probe's own seed spread at 0.015–0.048 on 300 pairs.
-* **P4.** The endpoint rung reproduces E2623's E2617 numbers on the *v1* items to the last digit (same weights, same items,
-  deterministic scorer) — a check that this record's scoring path is the one the earlier records used.
+* **P4.** The endpoint rung reproduces, to the last digit, the numbers **E2626** recorded for the same bytes on the *v1*
+  items — the deterministic scorer over the same committed item files is what makes that a check rather than a hope.
+  E2623's figures for `E2617` are **not** the reference: E2617 is the Linux host's repeat of seed 7, whose metrics agree
+  with E2614's seed 7 to within 0.0025 bits per character but whose weights are not the same tensors. E2626 measured the
+  consequence on this very instrument — all-800 minimal-pair accuracy 0.8250 for the endpoint here against 0.8350 for
+  E2617 in E2622 — a gap inside E2622's own seed spread for the probe. A cross-host figure is a comparison, not a
+  reproduction.
+
+  *Amended 2026-11-03, before any model was scored on this construction.* As first committed this prediction said the
+  endpoint must reproduce E2623's E2617 numbers "to the last digit (same weights, same items, deterministic scorer)".
+  The parenthetical was wrong: the weights are not the same. The amendment changes which artifact is the reference and
+  records the measured cross-host difference; it does not touch the item set and its digest, the four kinds, the floor
+  models, the criterion, the materiality or the outcomes, and it is written now rather than after a result because a
+  prediction adjusted to fit data has stopped being a prediction.
 
 **What may not change after scoring:** the item set and its digest, the four kinds, the floor models, the criterion and
 materiality, the outcomes and the predictions. A change is a further record.
