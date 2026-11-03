@@ -78,12 +78,13 @@ equal to E2626's `step2400` rung to every digit — and re-scoring the same-regi
 
 | Tier | Environment | Result at the final head |
 | --- | --- | --- |
-| Dependency-free matrix | `.venv` (`[dev]`) | **1,982 passed, 34 skipped**; `mypy src` clean on 125 files; `ruff check` clean; `ruff format --check` clean on 472 files |
+| Dependency-free matrix | `.venv` (`[dev]`) | **1,982 passed, 34 skipped**; `mypy src` clean on 125 files; `ruff check` clean; `ruff format --check` clean on 473 files |
 | `[train]` | `.venv-train` (numpy) | **2,061 passed, 24 skipped** |
 | `[train, nn]` | `.venv-nn` (numpy + torch) | **2,558 passed, 1 skipped** |
 | Model-path types | `.venv-nn` | `mypy --config-file configs/mypy-model-path.toml` clean on 168 files |
 
-Nine test files were added and five extended; the new ones are `test_training_paired_stats.py`,
+**Seven test files were added and six extended** (`git diff --name-status` over the phase's range); the new ones are
+`test_training_paired_stats.py`,
 `test_training_probe_sensitivity.py`, `test_analyse_probe_sensitivity_script.py`,
 `test_training_context_continuations.py`, `test_evaluate_context_continuations_script.py`,
 `test_extract_report_script.py` and `test_analyse_arm_pairs_script.py`.
@@ -153,14 +154,15 @@ recorded the question instead of improvising a citation, per the project's rule 
 and the last two carry this report. All were authored and committed by the configured
 identity (`bhogesararam23`); **no commit carries a co-author trailer, a generated-by notice, or any added attribution**,
 and no `docs/*.docx` private material is tracked (`git ls-files | grep -c docx` returns 0). Of the 34 that did the work:
-11 `feat:`, 9 `research:`, 7 `docs:`, 4 `fix:`, 2 `test:`, 1 `perf:`. Sixty files changed, 100,349 insertions and 27
+11 `feat:`, 9 `research:`, 7 `docs:`, 4 `fix:`, 2 `test:`, 1 `perf:`. Across `c498eb8..35c2504` that is
+sixty files changed, 100,349 insertions and 27
 deletions — the insertions are dominated by the committed probe results and report extracts, which are the point: each
 of E2626, E2627, E2628 and E2629 commits its machine-readable evidence beside its record.
 
 **The brief's 50-commit minimum was not met, and the history was not padded to reach it.** The honest reason is that
 this phase's work was four experiments and three of them were gated by machine time: E2626's ladder arm ran 5,757 s,
-E2628's arm 7,633 s, and E2629's four scoring passes over 215-item and 800-pair instruments took a further ~30
-minutes. The repository's own rule — one commit is one coherent change, and a single change is not split into several
+E2628's arm 7,633 s, and E2629's three scoring passes over 215-item and 800-pair instruments took about ten
+minutes in total. The repository's own rule — one commit is one coherent change, and a single change is not split into several
 commits — means the remaining units were either real experiments or noise. Measured against the stretch target this is a
 miss; measured against what a reader can verify from `git log`, each of the 36 is a unit that stands alone, and every
 one of the four records was committed before the run or scoring it describes. For context, `main` carried **175 commits since 2026-11-01**
