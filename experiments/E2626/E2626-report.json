@@ -3101,7 +3101,7 @@
   },
   "experiment": "E2626",
   "extract": {
-    "document_sha256": "bf1ec5c5f4a25381f9b9cb0626e1c6feb2e5c96ae20bfad43a5c70ecfd21e0e2",
+    "document_sha256": "59825983b76bc4fe0cb38ba802b5a8cbbcc140e7ddabb21843ddc33251fd1c42",
     "note": "compact extract of the run's report.json; bulky blocks replaced by digest stubs",
     "report_file_sha256": "0a3846bc3ee56d866418919432bcd3cfc5e57c6fa76352810d4bae0326c1806a",
     "source_path": "data\\experiments\\E2626\\seed-7\\report.json"
@@ -3463,29 +3463,89 @@
     },
     "test_partitions": {
       "mathematics-": {
-        "canonical_json_sha256": "191baf7716380b7f31ad1a7fabf39a966b2d6032a827f2c15f5493c01c0390e5",
-        "json_bytes": 371,
-        "omitted_from_extract": true
+        "documents_packed": 34,
+        "metrics": {
+          "bits_per_character": 2.5777694767868824,
+          "characters_scored": 510290,
+          "loss_nats_per_token": 3.638010419157305,
+          "perplexity": 38.01612527878385,
+          "positions_scored": 250624,
+          "separator_targets": 33,
+          "token_accuracy": 0.3510876851378958
+        },
+        "population_characters": 1125529,
+        "tokens_scored": 250624,
+        "uniform_nats": 8.317766,
+        "unigram_nats": 5.500621,
+        "works": 5
       },
       "medicine-": {
-        "canonical_json_sha256": "5ef4404eaa2931aa39d59351a182c6a227af98da82567eb1a55b91271733f2c9",
-        "json_bytes": 368,
-        "omitted_from_extract": true
+        "documents_packed": 7,
+        "metrics": {
+          "bits_per_character": 1.8381413720270459,
+          "characters_scored": 101008,
+          "loss_nats_per_token": 2.762159732973058,
+          "perplexity": 15.834003265348237,
+          "positions_scored": 46592,
+          "separator_targets": 6,
+          "token_accuracy": 0.47879464285714285
+        },
+        "population_characters": 101923,
+        "tokens_scored": 46592,
+        "uniform_nats": 8.317766,
+        "unigram_nats": 4.943587,
+        "works": 1
       },
       "prose-": {
-        "canonical_json_sha256": "3910a668e832baf62e9962d55ba14ee7b911610edbfb14ff670ddb751467f20b",
-        "json_bytes": 372,
-        "omitted_from_extract": true
+        "documents_packed": 34,
+        "metrics": {
+          "bits_per_character": 1.839519816481525,
+          "characters_scored": 539534,
+          "loss_nats_per_token": 2.722648845729764,
+          "perplexity": 15.220585879244672,
+          "positions_scored": 252672,
+          "separator_targets": 32,
+          "token_accuracy": 0.4790202317629179
+        },
+        "population_characters": 12414225,
+        "tokens_scored": 252672,
+        "uniform_nats": 8.317766,
+        "unigram_nats": 4.86384,
+        "works": 35
       },
       "science-": {
-        "canonical_json_sha256": "92f78c78c554b7dbc4a0e85a9358b15efd75d791ffba9ddc6457593e01600e3a",
-        "json_bytes": 373,
-        "omitted_from_extract": true
+        "documents_packed": 35,
+        "metrics": {
+          "bits_per_character": 1.9486239051907785,
+          "characters_scored": 538564,
+          "loss_nats_per_token": 2.893605717506403,
+          "perplexity": 18.058305500986275,
+          "positions_scored": 251392,
+          "separator_targets": 33,
+          "token_accuracy": 0.4661206402749491
+        },
+        "population_characters": 6753155,
+        "tokens_scored": 251392,
+        "uniform_nats": 8.317766,
+        "unigram_nats": 5.014076,
+        "works": 12
       },
       "technology-": {
-        "canonical_json_sha256": "75aaf78aa6f9ce99d518b67989cbe6d44e3bd6f8b46e2eced9dd706dc4dbe3ce",
-        "json_bytes": 371,
-        "omitted_from_extract": true
+        "documents_packed": 36,
+        "metrics": {
+          "bits_per_character": 1.9027317680869595,
+          "characters_scored": 547586,
+          "loss_nats_per_token": 2.852457021047897,
+          "perplexity": 17.33031050994397,
+          "positions_scored": 253184,
+          "separator_targets": 35,
+          "token_accuracy": 0.4625055295753286
+        },
+        "population_characters": 2107576,
+        "tokens_scored": 253184,
+        "uniform_nats": 8.317766,
+        "unigram_nats": 5.123341,
+        "works": 9
       }
     },
     "validation": {

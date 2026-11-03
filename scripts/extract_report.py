@@ -48,6 +48,7 @@ ALWAYS_KEEP = frozenset(
         "environment",
         "experiment",
         "items",
+        "metrics",
         "model_family",
         "models",
         "parameter_count",
