@@ -1879,3 +1879,34 @@ def test_work_losses_refuses_a_model_trained_on_another_corpus(tmp_path: Path) -
 
     with pytest.raises(CorpusError, match="was trained on corpus"):
         work_losses(other, {"mine": artifact})
+
+
+def test_the_tokenizer_sample_takes_whole_documents_and_moves_with_the_seed() -> None:
+    """E2632 draws several fitting samples through this one rule, so its shape is pinned here.
+
+    A sample is whole documents — a vocabulary fitted on half a chapter learns a cut, not a text — the cap is
+    *reached*, not merely approached, and removing the last document would fall short of it. Two seeds draw
+    different orders of the same split, so no sample is a property of one shuffle.
+    """
+    from chakaso.training.data import TextUnit
+    from chakaso.training.subword_experiment import tokenizer_sample
+
+    units = tuple(
+        TextUnit(identifier=f"u{index}", text=f"{word} " * 8)
+        for index, word in enumerate(
+            ("alpha", "beta", "gamma", "delta", "epsilon", "zeta", "eta", "theta", "iota", "kappa")
+        )
+    )
+    cap = 200
+    first = tokenizer_sample(units, cap=cap, seed=7)
+    again = tokenizer_sample(units, cap=cap, seed=7)
+    other = tokenizer_sample(units, cap=cap, seed=11)
+
+    assert first == again
+    assert all(any(text == unit.text for unit in units) for text in first)
+    total = sum(len(text) for text in first)
+    assert total >= cap
+    assert total - len(first[-1]) < cap
+    assert first != other
+    assert set(first) != set(other)
+    assert tokenizer_sample(units, cap=None, seed=7) == tuple(unit.text for unit in units)

@@ -26,7 +26,7 @@ from __future__ import annotations
 import json
 import random
 import time
-from collections.abc import Mapping
+from collections.abc import Mapping, Sequence
 from dataclasses import asdict, dataclass
 from math import e, fsum, inf, log, log2
 from pathlib import Path
@@ -102,7 +102,9 @@ __all__ = [
     "protocol_digest",
     "run_experiment",
     "score_artifacts",
+    "split_of_corpus",
     "summarise",
+    "tokenizer_sample",
     "work_losses",
     "write_report",
 ]
@@ -748,25 +750,33 @@ def _tokenizer_identity(
     return sha256_hex(join_parts(*parts))[:16]
 
 
-def _tokenizer_sample(plan: ExperimentPlan, split: UnitSplit) -> tuple[str, ...]:
-    """The texts the vocabulary is fitted on: the whole training side, or a seeded sample of it.
+def tokenizer_sample(units: Sequence[Any], *, cap: int | None, seed: int) -> tuple[str, ...]:
+    """The fitting texts: the whole training side, or a seeded sample of it taken in whole documents.
 
-    The shuffle matters: training documents arrive in catalogue order, which groups registers together, so
-    the first N characters of that order would fit a vocabulary on one register and encode the rest with it.
+    The shuffle matters: training documents arrive in catalogue order, which groups registers together, so the
+    first N characters of that order would fit a vocabulary on one register and encode the rest with it. Public
+    because E2632's refit-sensitivity measurement draws several such samples from one split, and a second copy of
+    the rule would let the two disagree about what a fit was shown.
     """
-    cap = plan.tokenizer_sample_characters
     if cap is None:
-        return tuple(unit.text for unit in split.train)
-    units = list(split.train)
-    random.Random(plan.effective_split_seed).shuffle(units)
-    chosen: list[str] = []
+        return tuple(unit.text for unit in units)
+    chosen = list(units)
+    random.Random(seed).shuffle(chosen)
+    texts: list[str] = []
     total = 0
-    for unit in units:
-        chosen.append(unit.text)
+    for unit in chosen:
+        texts.append(unit.text)
         total += len(unit.text)
         if total >= cap:
             break
-    return tuple(chosen)
+    return tuple(texts)
+
+
+def _tokenizer_sample(plan: ExperimentPlan, split: UnitSplit) -> tuple[str, ...]:
+    """The plan's own fitting sample: :func:`tokenizer_sample` at its cap and its effective split seed."""
+    return tokenizer_sample(
+        split.train, cap=plan.tokenizer_sample_characters, seed=plan.effective_split_seed
+    )
 
 
 def _fit_or_reuse_vocabulary(
@@ -918,6 +928,22 @@ def _require_share_classes(units: tuple[Any, ...], prefix: str, share: float) ->
         raise ValueError(message)
 
 
+def split_of_corpus(manifest: CorpusManifest, *, seed: int, whole_works: bool) -> UnitSplit:
+    """The one document split a run uses, from the manifest it pinned.
+
+    Public because a measurement that re-scores existing artifacts has to hold out exactly the documents the run
+    held out, and a second copy of the fractions is how two "held-out sides" come to differ while both records
+    say they are the same corpus.
+    """
+    return split_text_units(
+        manifest.text_units(),
+        validation_fraction=_VALIDATION_FRACTION,
+        test_fraction=_TEST_FRACTION,
+        seed=seed,
+        whole_works=whole_works,
+    )
+
+
 def pin_and_split(
     plan: ExperimentPlan,
 ) -> tuple[CorpusManifest, str, CorpusSnapshot | None, UnitSplit]:
@@ -958,12 +984,8 @@ def pin_and_split(
         )
         raise CorpusError(message)
 
-    split = split_text_units(
-        manifest.text_units(),
-        validation_fraction=_VALIDATION_FRACTION,
-        test_fraction=_TEST_FRACTION,
-        seed=plan.effective_split_seed,
-        whole_works=plan.whole_work_splits,
+    split = split_of_corpus(
+        manifest, seed=plan.effective_split_seed, whole_works=plan.whole_work_splits
     )
     # Deliberately stops here. The vocabulary is fitted on the whole training side whichever prefixes the run
     # trains on, and a plan whose share prefix no work carries must be refused before that happens — a refused
