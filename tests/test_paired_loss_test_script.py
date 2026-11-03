@@ -1,11 +1,10 @@
 """Tests for the paired held-out loss test's own machinery.
 
-The statistics are tested in :mod:`tests.test_training_paired_loss`; this file tests the parts that decide whether
-the numbers going *in* describe the same pack: the rebuild of the held-out side with document boundaries, the
-comparison against a committed report, and the pairing of works between two arms.
-
-Gated on ``[nn]`` because the script imports the checkpoint loader — a loss comparison that cannot load a model has
-nothing to say.
+The statistics are tested in :mod:`tests.test_training_paired_loss` and the pack split in
+``tests/test_training_subword_experiment.py``; this file tests the three decisions the script itself makes: that a
+committed report and a recomputed arm describe the same pack, that a pair is only formed between arms scored on the
+same works, and that the character weighting is applied where it is claimed to be. The script defers its checkpoint
+loader to inside ``main``, so these tests run in the dependency-free tier.
 """
 
 from __future__ import annotations
@@ -20,18 +19,7 @@ from typing import Any
 
 import pytest
 
-torch = pytest.importorskip("torch")
-
 _SCRIPTS = Path(__file__).resolve().parent.parent / "scripts"
-
-from chakaso.training.data import TextUnit  # noqa: E402
-from chakaso.training.subword import train_subword_vocabulary  # noqa: E402
-
-_VOCABULARY = train_subword_vocabulary(
-    ["the quick red fox ran over the dry sand and the quiet owl slept"],
-    target_size=280,
-    min_frequency=2,
-)
 
 
 def _script() -> ModuleType:
@@ -43,46 +31,6 @@ def _script() -> ModuleType:
     sys.modules[spec.name] = module
     spec.loader.exec_module(module)
     return module
-
-
-def _units() -> tuple[TextUnit, ...]:
-    return (
-        TextUnit(identifier="a", text="the quick red fox ran over the dry sand", group="book-one"),
-        TextUnit(identifier="b", text="the quiet owl slept peacefully", group="book-one"),
-        TextUnit(identifier="c", text="a loud dog chased the red fox", group="book-two"),
-    )
-
-
-def test_the_rebuilt_pack_carries_the_document_boundaries_the_test_pairs_on() -> None:
-    module = _script()
-    batch, packed = module.build_pack(
-        _units(), _VOCABULARY, context_length=8, max_tokens=None, selection_vocabulary=None
-    )
-    assert [unit.identifier for unit in packed] == ["a", "b", "c"]
-    assert batch.document_count == 3
-    assert all(example.segment_ids is not None for example in batch.examples)
-    assert {segment for example in batch.examples for segment in example.segment_ids or ()} == {
-        0,
-        1,
-        2,
-    }
-
-
-def test_a_selection_vocabulary_picks_the_documents_and_the_cap_moves_to_the_selection() -> None:
-    module = _script()
-    # Counting with a second vocabulary is how two arms with different tokenizers are scored on identical text
-    # (ADR-0048). The cap applies to the selection, not to the packing, so no document is half taken.
-    counts = [len(_VOCABULARY.encode(unit.text)) for unit in _units()]
-    cap = counts[0] + counts[1]  # the walk stops after the whole unit that reaches the cap
-    batch, packed = module.build_pack(
-        _units(),
-        _VOCABULARY,
-        context_length=8,
-        max_tokens=cap,
-        selection_vocabulary=_VOCABULARY,
-    )
-    assert [unit.identifier for unit in packed] == ["a", "b"]
-    assert batch.document_count == 2
 
 
 def _scored(works: dict[str, dict[str, Any]]) -> dict[str, Any]:
@@ -185,7 +133,7 @@ def test_the_paired_reading_is_weighted_by_characters_and_reports_its_works() ->
             "book-one": {"nats": 20.0, "characters": 10, "documents": 2},
             "book-two": {"nats": 100.0, "characters": 100, "documents": 1},
         }
-    )
+    )  # 20 nats over 10 characters is 2.0 nats per character, which is what the fixture's unit is
     second = _scored(
         {
             "book-one": {"nats": 22.0, "characters": 10, "documents": 2},

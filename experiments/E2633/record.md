@@ -145,3 +145,97 @@ the same-configuration pair is read as `E2612-T` against `E2614-s11`, whose comm
 report this run checks itself against. That fourth pair is descriptive by the rules above: it decides nothing, and it
 is here because it is the clearest available demonstration that a paired interval over text and a band over models are
 different quantities.
+
+## Results (added 2026-11-04)
+
+**Outcome: L-a.** The paired, work-clustered test separates both material pairs and leaves the inside-the-band pair
+alone, and in doing so it measures two things the band never stated: how much of a headline difference one book
+carries, and how weak the per-document sign is even when the pooled gap is large.
+
+Machine-readable evidence: [`results.json`](results.json), produced by the command in the Reproduction block. The
+pack it scored is the runs' own: 996 blocks, 254,976 positions, 535,282 characters, split `adf650435c3a9068`,
+vocabulary `434debe82f949347`, corpus `312571f9fa8351a8`.
+
+### The four readings
+
+| Pair | Published difference | Paired mean | 95 % interval over works | Clears zero | Works favouring first | Sign test p | Leave-one-out range |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| `E2612-T` / `E2612-P` | −0.108246 | −0.108246 | [−0.209325, −0.037284] | **yes** | 15 of 25 | 0.21218 | [−0.122913, −0.072495] |
+| `E2612-T` / `E2613-H` | −0.112770 | −0.112770 | [−0.217418, −0.039099] | **yes** | 15 of 25 | 0.21218 | [−0.128205, −0.076367] |
+| `E2612-P` / `E2613-H` | −0.004525 | −0.004525 | [−0.014888, +0.002641] | no | 14 of 25 | 0.34502 | [−0.005292, −0.000645] |
+| `E2612-T` / `E2614-s11` | −0.003286 | −0.003286 | [−0.020684, +0.007283] | no | 14 of 25 | 0.34502 | [−0.005166, +0.004016] |
+
+The rules fired in the order the record fixed them: both material pairs clear zero and the pair the band calls equal
+does not, which is **L-a** and nothing else. P1 held. P2 held, and nearer than expected: the inside-band interval is
+[−0.0149, +0.0026], straddling zero but with 85 % of its mass on the side the point estimate sits. P3 held in form and
+surprised in substance — the same-configuration pair's interval (±0.014) is *wider* than the inside-band arm pair's
+(±0.009), and its leave-one-out range crosses zero while the arm pair's does not. P4 held exactly: four published
+whole-pack numbers reproduced to better than 1e-9 from the checkpoints on disk, and the run was repeated after the
+tool gained its leave-one-out block, with the pack, the arms and every interval identical to the last digit.
+
+### What the numbers say that the band could not
+
+**The mixture's 0.108-bit advantage is a weight effect, not a majority effect.** E2612-T is better on 15 of the 25
+works and worse on 10 — including the largest prose work in the pack (`prose-pg78424`, 9.0 % of its characters, +0.0407
+against it). The exact sign test over the 25 works cannot reject zero at any of these gaps (p = 0.21218 for the 0.108
+difference), and over documents the same reading gives the same p, because the sign is 15:10. What makes the pooled
+difference large is that the works it wins include the hardest ones: one book, `mathematics-pg302`, is 1.2472 bits per
+character better under the mixture, 3.0 % of the pack's characters, and removing it moves the pooled difference from
+−0.108246 to −0.072495 — a third of the headline effect is one held-out book.
+
+**It survives that, and that is the useful part.** Dropping any *single* work leaves both material readings negative
+and leaves the inside-band reading negative too (its leave-one-out range is [−0.005292, −0.000645]). A pure seed
+difference of comparable size does not behave that way: `E2612-T` against `E2614-s11` flips sign when one work is
+removed (+0.004016 at its most influential). Two arms that differ in their data move together across the whole pack;
+two arms that differ only in their initialisation do not. That is the closest thing to a capability-free discriminator
+between "a different model" and "a different draw" this repository has measured, and it is descriptive — this record
+did not preregister a rule on it.
+
+**The interval is not the band, and the two disagree in both directions.** The 0.02-bit band is a statement about
+re-initialising the protocol; the interval is a statement about re-drawing the held-out works. On 25 works the
+mixture's 0.108-bit gap has an interval half-width of 0.086 — eight times the band — while the inside-band 0.0045
+difference has a half-width of 0.009, below the band. So the band is *wider* than the text-level uncertainty for small
+differences and *narrower* for large ones, which means the two quantities answer different questions and a verdict that
+quotes one where the other is asked is wrong in a way neither number shows.
+
+### Deviations from the preregistered plan
+
+1. **The held-out pack was rebuilt by the experiment driver, not by this script.** The preregistered reproduction
+   block pointed the tool at a vocabulary and a split fingerprint and had it take the test side in split order. That
+   reconstruction was refused by the arms' own committed reports: 256,256 positions and 483,895 characters against the
+   254,976 and 535,282 every report prints, and a pooled 3.253976 bits per character for a model whose published
+   number is 2.055447. The cause is that `max_test_tokens` caps a **seeded sample** of the test side
+   (`_sampled_units`), not its prefix, so the two packs hold different documents. The tool now obtains its pack through
+   `chakaso.training.subword_experiment.work_losses`, which pins, splits and packs through the run's own code path,
+   and the driver gained `pin_and_split` and `evaluation_sides` so that path is shared rather than copied. The refusal
+   is kept in the script as `check_against_reports` and the numbers above are why.
+2. **The pack covers 25 works, not the 62 the limits section said.** The split holds out 62 works; a pack capped at
+   250,000 identifiers samples 34 documents from 25 of them, and each of those 25 carries at least 2.7 % of its
+   characters. Every interval above is over 25 clusters. This weakens the sentence in the preregistration that "62
+   held-out works is the cluster count" and is the reason P3's surprise is worth reporting: with 25 clusters the
+   honest interval is wide.
+3. **The leave-one-out table was added to the tool after the preregistration and before the reported reading.** It is
+   descriptive: no outcome letter, margin, seed, resample count or metric depends on it. The declared readings were
+   recomputed with it present and are identical to the run without it, to the last digit, so no rule moved.
+
+4. **The pack this test paired is not the pack the register tables are measured over, and it holds no medicine at
+   all.** The command's `--pair` differences are computed on the run's whole held-out pack: 34 documents from 25
+   works, 535,282 characters, registers science 46.6 %, prose 41.5 %, mathematics 6.0 %, technology 5.9 % — **no
+   medicine work is in it**. The partition numbers each record prints beside that figure come from a different
+   selection: `partition_packs` samples each register prefix separately at the same `max_test_tokens`, and the
+   committed `E2612-T` report scores 510,290 / 101,008 / 539,534 / 538,564 / 547,586 characters across the five
+   registers — 2,236,982 in total, 4.2 times the whole-pack denominator. So the interval above bounds the whole-pack
+   difference only; O1, the campaign's primary objective, weights a register this test never scored. Filed as
+   [K-033](../../docs/agent/KNOWN_ISSUES.md), because every record in the series prints the two kinds of number in one
+   table and a reader can reasonably take one for the pooled version of the other.
+
+### What this changes, and what it does not
+
+1. **A paired interval belongs beside every future arm difference, labelled for what it measures.** L-a's consequence
+   is exactly that: report the band for model variation and the interval for text variation, and never one in place of
+   the other. `scripts/paired_loss_test.py` is the tool and `results.json` is its shape.
+2. **E2629's negative result is sharpened, not repaired.** The probes still cannot rank two independently trained arms;
+   this record adds that even the loss, tested properly, leans on a handful of hard works, and that the sign of the
+   difference across books is 15:10 at a gap the campaign calls large.
+3. **K-001 stands.** This is a better measurement of a difference in held-out prediction. It is not a capability, not
+   a grounded answer, and not a model that produces useful text.
