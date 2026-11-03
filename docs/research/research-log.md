@@ -1088,3 +1088,52 @@ its curve as loadable models at declared evaluation points.
 preregistered as [E2627](../../experiments/E2627/record.md)) has the headroom the version-1 probe lacks; whether the
 minimal-pair probe's contradiction reproduces at another seed; and whether either probe ranks two arms at all, which
 no ladder can answer.
+
+## 2026-11-03 — the harder probe kept the ceiling it was built to break, and the tokenizer's gain kept its seed
+
+**Type:** result + interpretation ([E2627](../../experiments/E2627/record.md), preregistered as `1cadc1a` before any
+model was scored, and [E2628](../../experiments/E2628/record.md), preregistered as `ef639f0` before its run).
+
+**Observation.** E2626 closed with two open questions that could be attacked without training anything new: the
+continuation probe insensitivity (a distractor from another work is too easy, so a near-perfect score carries no
+information), and H17's single-seed basis. E2627 rebuilt the distractor from the anchor document itself; E2628 ran the
+space-prefixed arm's cleanest design at a second initialisation on the host that had not carried it.
+
+**Measured (E2627).** 215 items, digest `f49c128e…bcc1`, reproduced from the record before scoring. Floors over seven
+untrained initialisations: `prior_span` 0.4638, `next_span` 0.4684, `reversed` 0.4678 — at chance — and `permuted`
+0.4425, outside the declared band, so that kind is tabulated and not read. Endpoints: 0.9395, 0.9674, 0.9581, 0.9581.
+Only `prior_span` has headroom under the 0.95 line, and only it earns a usable verdict (S-b, ρ 0.9267, 25 of 74 rung
+pairs, smallest resolved gap 0.2941); `next_span` is S-b with ρ 0.9614, and `permuted`/`reversed` are S-c. Across the
+ten pairs of E2614's five independently trained seeds — five models of one configuration, one item set — **no kind
+separates a single pair** (smallest p over 40 tests: 0.065). E2623's v1 number reproduced to the last digit,
+0.986046511627907.
+
+**Measured (E2628).** Outcome Y-a. At the control's own 2,400 updates over its own 2,756 training documents, the
+space-prefixed arm beat E2614's seed-11 control by **0.0294 bits per character on the equal-weight register mean**
+(2.02356 → 1.99415) and **0.0349 on the whole pack** (2.05873 → 2.02378), with all five partitions improving
+(medicine +0.0199 smallest, mathematics +0.0491 largest) and 2.93 characters per identifier against 2.10. The
+treatment's own O1 moves 0.0036 between its two seeds. It truncated at the step ceiling with validation still
+falling; all five of its generated samples hit the token bound and one probe was refused.
+
+**Interpretation, by the rules declared before each run.** T-a on one kind of four: the ceiling is not the distractor's
+topic cue. A same-document distractor makes the task marginally harder at the far end of the curve and leaves the
+endpoint where E2623 found it, which says a 24-identifier span after a 64-identifier passage is not a task a
+3.4-million-parameter model at 20 million tokens finds hard once it has learned anything. The v2 instrument is
+therefore not the fix E2623 proposed; a longer continuation or a longer passage would be a new design decision, not a
+next experiment in this series. H17's verdict is the opposite: the gain is not a property of one draw, and it grew
+between draws, which is what makes a candidate default out of it — while `permuted`'s floor at 0.4425 records that an
+untrained network is not neutral between a span and a permutation of itself under pointwise mutual information.
+
+**Limitation.** E2627's floor question is answered for four kinds on one corpus at one split; its ranking figures are
+E2626's rung pairs, so they inherit the "rungs are not arms" bound, and its five-seed result is five models of one
+configuration, where the true gap is zero by construction — it measures the test's resolution, not a difference. E2628
+is one configuration's second seed on a second host, so seed and host move together; E2617 bounds that bundle at 0.0025
+bits per character and the observed Δ difference is 0.0065. One vocabulary, one fitting sample, archaic English, a
+truncated budget, and loss as the only criterion. Neither record is a statement about capability, and K-001 stands
+exactly where it was.
+
+**Open at this point.** Whether either probe ranks two arms separated by a known loss gap — the pair is available at no
+training cost on this host (E2612's mixture against its prose control, both on vocabulary `434debe82f949347`, 0.10824
+bits per character apart, with E2613's half-prose arm 0.0045 from the control as a negative control); whether E2626's
+1600-versus-1800 contradiction reproduces on a second ladder; and what H17 needs before the default moves, which is
+ADR-0048's own "does not decide" clause plus a refit-sensitivity check rather than a third seed.

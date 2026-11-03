@@ -3,7 +3,9 @@
 Real problems with the current state, including the ones that are only
 inconvenient. An empty file here would mean nobody has looked.
 
-Last reviewed: 2026-11-01 (K-024 through K-029 added by the research campaign; K-024 is closed for the
+Last reviewed: 2026-11-03 (K-030's declaration half closed by ADR-0049 with its deciding arm still unrun, K-031 left
+open; K-001 unchanged by E2626, E2627 and E2628, which measure instruments and a tokenizer at a lower loss, not
+capability); before that 2026-11-01 (K-024 through K-029 added by the research campaign; K-024 is closed for the
 pre-E2612 records by `cfdcd1a` and left open for its residue); before that 2026-10-30
 (K-020 and K-021 added by the E2610 diagnosis, K-022 by the data review); before that 2026-10-24, as the whole-documentation audit of every doc against the code and the committed
 records. That pass added K-011 through K-019, narrowed K-001, rewrote K-002's stale component list and removed a

@@ -264,6 +264,25 @@ whose loss gap is 0.02 (E2622's own seed spread on the same 300 pairs is 0.015�
 the loss itself is the right criterion — nothing here validates the loss against anything, and no result here is a
 statement about capability (K-001).
 
+**Answered for the distractor, 2026-11-03 ([E2627](../../experiments/E2627/record.md)): rebuilding the continuation
+probe's distractor from the anchor document does not move it off its ceiling.** Four same-document kinds over 215 items
+were given the same treatment. Three have floors at chance across seven untrained initialisations and one
+(`permuted`, 0.4425) does not, so its numbers are tabulated and not read; only `prior_span` has headroom (endpoint
+0.9395), and it is the only kind to earn a usable verdict, S-b. Across the ten pairs of five independently trained
+models of one configuration, **no kind separates a single pair** (smallest p over 40 tests: 0.065), and E2623's v1
+endpoint reproduced to the last digit. So the ceiling is a property of a 24-identifier span after a 64-identifier
+passage at this scale, not of the distractor's topic cue — the fix E2623 named was tried and is not the fix.
+
+**The remaining instrument question is now a scoring pass, not a training run.** The pair E2626 could not construct —
+two independently trained arms, one item set, a known loss gap — exists on disk at one vocabulary: E2612's mixture arm
+(2.05545 bits per character whole pack) against its prose-only control (2.16369), both on `434debe82f949347` and the
+same whole-work split `adf650435c3a9068`, 0.10824 apart, with E2613's half-prose-at-E2612's-vocabulary arm (2.16822) as
+a negative control 0.0045 from the prose arm. The tempting alternative — E2614's seed-11 control against E2628's
+seed-11 treatment, 0.0294 apart — is not usable for a paired test: the two arms are cut by different vocabularies, the
+runners refuse a foreign checkpoint, and two item sets would leave the comparison unpaired, which is the weaker test the
+paired statistics were written to replace. Whether the loss itself is the right criterion is still open: nothing here
+validates the loss against anything.
+
 **Is archaic English the binding constraint, or 20M tokens?**
 Both records that could separate them are silent. E2612 says a result on this corpus "does not transfer to modern
 web text without a new corpus and a new record", and the data review found that Gutenberg cannot date its own

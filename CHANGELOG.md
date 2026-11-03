@@ -22,7 +22,20 @@ capability is implemented or still planned.
   fifteen times the band — and separates none of the 32 material pairs whose rungs both lie past update 800. Both verdicts are worse than "usable" under rules fixed before the run, because the minimal-pair probe *contradicted* the loss on
   one pair (rungs 1600 and 1800: 24 discordant items to 2, p = 1.0 × 10⁻⁵). One curve, one seed; rungs are not arms, so these are upper bounds on the fineness a probe resolves between two independently trained models. No capability claim,
   and K-001 stands.
-- **H17's second seed is in flight (E2628, preregistered); the same-region continuation probe is preregistered (E2627).** Neither has a number yet.
+- **E2627: rebuilding the continuation probe's distractor from the anchor document does not move it off its ceiling.** Four kinds over 215 held-out
+  items — the document's own prior span, its next span, the truth's identifiers permuted, and reversed — scored against seven untrained
+  initialisations and the curve's rungs. Three kinds have a floor at chance (0.4638, 0.4684, 0.4678) and one does not: `permuted` sits at 0.4425,
+  a construction bias the subtraction does not cancel, so its numbers are tabulated and not read. Only `prior_span` has headroom (endpoint 0.9395)
+  and it is the only kind to earn a usable verdict, S-b. **No kind separates any of the ten pairs among five independently trained seeds** (smallest
+  p = 0.065), and E2623's near-ceiling number reproduced to the last digit (0.986046511627907) — so the ceiling is a property of a 24-identifier
+  span after a 64-identifier passage at this scale, not of the distractor's topic cue. T-a on one kind.
+- **E2628: H17's gain survives a second, independent initialisation, and grows (Y-a).** E2625's design — the control's own 2,400 updates over its
+  own 2,756 training documents, so only the tokenizer and the number of passes differ — run at seed 11 on the Windows host against E2614's seed-11
+  control on the same machine: **+0.0294 bits per character on the equal-weight register mean** (margin 0.02) and **+0.0349 on the whole pack**
+  (tie margin 0.00933), with all five partitions improving and the treatment's own O1 moving 0.0036 between its two seeds. 2.93 characters per
+  identifier against 2.10. Two seeds of the cleanest design in the series now exceed the separable margin on both decision-bearing measures, so the
+  space-prefixed pre-tokenizer is a candidate default on two draws rather than one. **No default changed**: the remaining step is a decision record
+  under ADR-0048's own "does not decide" clause. The arm truncated at the step ceiling and none of its five generated samples is usable text.
 
 **Added**
 

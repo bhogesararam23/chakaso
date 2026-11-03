@@ -407,3 +407,34 @@ E2626) and a probe scoring pass over twenty models is tens of minutes, not hours
 
 Nothing above is started by writing it here, and none of it is a capability claim. [K-001](agent/KNOWN_ISSUES.md) is unchanged by E2626: the record measures
 instruments, not models, and the model it trained to get the curve is bit-identical to one it had already trained.
+
+## Next stage, 2026-11-03 (after E2627 and E2628, later the same day)
+
+Items 2 and 3 of the list above are measured and closed, so the list is re-stated once more. Costs are this host's measured rates: an arm at the
+reference configuration is 4,991–8,902 s and a probe pass over twenty models is tens of minutes.
+
+1. **The arm-pair test, and it needs no training.** E2626 left the real question open — can a probe rank two *independently trained* models — and the
+   obvious pair is not usable: [E2614's seed-11 control](../experiments/E2614/record.md) and [E2628's seed-11 treatment](../experiments/E2628/record.md)
+   differ by 0.0294 bits per character but are cut by different vocabularies (`434debe82f949347` against `4a47f0281c81a9e5`), and the probe runners
+   refuse a checkpoint whose tokenizer is not the one the items were cut with. Two item sets would make the comparison unpaired, which is exactly the
+   weaker test E2626's McNemar work was written to replace. What this host does hold is a same-tokenizer arm pair with a known gap: E2612's mixture
+   (2.05545 whole pack) against its prose-only control (2.16369) — both on `434debe82f949347`, both independently trained, 0.10824 bits per character
+   apart — with E2613's half-prose-at-E2612's-vocab arm (2.16822) as a negative control 0.0045 from the prose arm, inside the band. One scoring pass of
+   the usable minimal-pair subset and both continuation probes over those three checkpoints, paired item-for-item, is the cheapest measurement in the
+   repository that answers a question a record says is unanswered. E2627's negative result raises the prior that the probes will not separate even the
+   0.108 pair; that is the finding worth having, and it is the reason to run the test rather than to guess.
+2. **H17 is two seeds from one configuration on two hosts, and that is not yet a replacement.** The remaining work before a default changes is the
+   adoption ADR under [ADR-0048](decisions/ADR-0048-the-pre-tokenizer-is-a-named-part-of-a-vocabulary-s-identity.md)'s "does not decide" clause and a
+   refit-sensitivity check on a second fitting sample — not a third seed, which would tighten the estimate but is not what the decision turns on. The
+   seeds-and-host confound E2628 declared is bounded by E2617's 0.0025 and does not reach any outcome here.
+3. **A ladder at a second seed** (item 4 above, unchanged): E2626's contradiction (1600 against 1800 updates, 24:2 discordant, p = 1.0 × 10⁻⁵) is one
+   pair on one trajectory. Running the twelve-rung protocol at seed 11 would say whether the disagreement reproduces. It competes with item 1 for the
+   same hours and item 1 is cheaper, so item 1 goes first.
+4. **The continuation probe's ceiling is now explained and not fixed.** E2627 tested the construction E2623 proposed as its own fix and the ceiling
+   survived, so a longer continuation or a longer passage is a new instrument decision, not a next experiment in this series. `permuted`'s floor at
+   0.4425 is a named construction bias; if that kind is ever read, the bias has to be dealt with first.
+5. **The prose share as a decision, the raw-bytes archive (K-031), the minimal-pair v3, and scale** — items 5 above, unchanged in order and in cost.
+   E2612's rule 2 still gates the capacity step on a data weighting that is measured (25 %) and still not an objective.
+
+None of this is a capability claim. [K-001](agent/KNOWN_ISSUES.md) is unchanged by E2627 and E2628: one record measures an instrument's floor, the other
+measures a tokenizer at a lower loss, and every sample either run generated hit its token bound.
