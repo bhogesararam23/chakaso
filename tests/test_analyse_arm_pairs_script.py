@@ -231,6 +231,25 @@ def test_an_instrument_that_missed_an_arm_is_refused_by_name() -> None:
         )
 
 
+def test_a_model_outside_the_criterion_table_is_reported_and_not_compared() -> None:
+    script = _script()
+    scores = {**_BEST_FIRST, "untrained-control": [1.0] * 16}
+
+    result = script.read(
+        reports=_reports(),
+        reference="mixture",
+        pairs_result=_pair_result(scores),
+        continuations_result=_continuation_result(scores),
+        usable_phenomena=_PHENOMENA,
+        materiality=0.02,
+        decision_bearing=("minimal_pairs_usable",),
+    )
+
+    assert result["models_scored_but_not_analysed"] == ["untrained-control"]
+    assert result["models"] == ["mixture", "prose", "half_prose"]
+    assert all(row["first"] != "untrained-control" for row in result["pairs"])
+
+
 def test_the_arm_entries_are_parsed_from_name_equals_path(tmp_path: Path) -> None:
     script = _script()
     first = tmp_path / "first.json"

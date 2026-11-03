@@ -33,6 +33,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src"))
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from analyse_probe_sensitivity import (
+    CONTROL_MODEL,
     AnalysisError,
     context_outcomes,
     continuation_outcomes,
@@ -44,6 +45,10 @@ from chakaso.training.arm_comparison import compare_arms
 from chakaso.training.probe_sensitivity import compare_instruments
 
 __all__ = ["main", "read"]
+
+#: The shared readers name the probe's untrained floor after a curve's rung 0, because that is what it is there.
+#: An arm comparison has no rungs, so a model left out of it is reported under the name the result file uses.
+_TO_FILE_NAME = {"step0": CONTROL_MODEL}
 
 
 def arm_reports(entries: Sequence[str]) -> dict[str, dict[str, Any]]:
@@ -112,6 +117,13 @@ def read(
     }
     if context_result is not None:
         instruments.update(context_outcomes(context_result))
+    # The criterion table, not a result file, defines the population. A probe run usually carries an untrained
+    # floor and other arms beside the ones this record compares; the extras are reported and not used, and a
+    # missing arm is a refusal, because a pair without a score would silently shrink the family Holm corrects over.
+    extras = sorted(
+        _TO_FILE_NAME.get(model, model)
+        for model in {model for scores in instruments.values() for model in scores} - set(table)
+    )
     for name, scores in instruments.items():
         missing = sorted(set(table) - set(scores))
         if missing:
@@ -119,6 +131,10 @@ def read(
                 f"instrument {name!r} scored no {missing}; the arms it left out are not compared"
             )
             raise AnalysisError(message)
+    instruments = {
+        name: {model: scores for model, scores in table_of_model.items() if model in table}
+        for name, table_of_model in instruments.items()
+    }
     criterion = {
         name: float(block["whole_pack_bits_per_character"]) for name, block in table.items()
     }
@@ -136,6 +152,7 @@ def read(
         for name, report in reports.items()
     }
     result["reference_arm"] = reference
+    result["models_scored_but_not_analysed"] = extras
     result["matchedness"] = comparison["declared_differences"]
     result["materiality"] = materiality
     result["decision_bearing"] = list(decision_bearing)
