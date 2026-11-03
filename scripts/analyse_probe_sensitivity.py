@@ -141,6 +141,28 @@ def pair_outcomes(
     return tables
 
 
+def context_outcomes(
+    continuations_result: Mapping[str, Any],
+) -> dict[str, dict[str, dict[str, float]]]:
+    """One instrument per same-region distractor kind: ``context_pmi_prior_span`` and its three siblings."""
+    from chakaso.training.context_continuations import CONTEXT_DISTRACTOR_KINDS
+
+    tables: dict[str, dict[str, dict[str, float]]] = {}
+    for kind in CONTEXT_DISTRACTOR_KINDS:
+        reading = f"pmi_{kind}"
+        per_model: dict[str, dict[str, float]] = {}
+        for model, block in continuations_result["models"].items():
+            outcomes = block["result"].get("outcomes") or {}
+            if reading not in outcomes:
+                message = f"{model}: no per-item outcomes for the same-region reading {reading!r}"
+                raise AnalysisError(message)
+            per_model[_rename(model)] = {
+                str(entry[0]): float(entry[1]) for entry in outcomes[reading]
+            }
+        tables[f"context_pmi_{kind}"] = per_model
+    return tables
+
+
 def continuation_outcomes(
     continuations_result: Mapping[str, Any], *, reading: str
 ) -> dict[str, dict[str, float]]:
@@ -162,20 +184,28 @@ def _rename(model: str) -> str:
 
 def check_same_models(
     criterion: Mapping[str, float], instruments: Mapping[str, Mapping[str, Mapping[str, float]]]
-) -> None:
-    """Every instrument must have scored every rung, and the untrained floor must be in the table."""
+) -> list[str]:
+    """Every rung the criterion names must be scored by every instrument; extra models are reported, not used.
+
+    A probe result usually carries more checkpoints than one analysis needs — E2627 scores a dozen further arms
+    beside the curve — and the criterion table, not the result file, defines the population. Dropping the extras
+    is stated rather than silent; missing a rung is a refusal, because a pair with no score in it would quietly
+    shrink the family Holm corrects over.
+    """
+    extras: set[str] = set()
     for instrument, table in instruments.items():
         missing = sorted(set(criterion) - set(table))
-        extra = sorted(set(table) - set(criterion))
-        if missing or extra:
+        if missing:
             message = (
-                f"{instrument} scored {sorted(table)}, the curve names {sorted(criterion)}; "
-                "a rung missing from one instrument is not one analysis"
+                f"{instrument} is missing {missing} of the curve {sorted(criterion)}; a rung without a "
+                "score would silently shrink the family of pairs being corrected over"
             )
             raise AnalysisError(message)
+        extras |= set(table) - set(criterion)
     if RUNG_ZERO not in criterion:
         message = "the untrained floor is missing from the criterion table"
         raise AnalysisError(message)
+    return sorted(extras)
 
 
 def read(
@@ -187,6 +217,7 @@ def read(
     usable_phenomena: Sequence[str],
     materiality: float,
     endpoint: str,
+    context_result: Mapping[str, Any] | None = None,
 ) -> dict[str, Any]:
     """Assemble the tables and hand them to the library that decides the verdict."""
     from chakaso.training.probe_sensitivity import compare_instruments
@@ -195,18 +226,21 @@ def read(
     table = criterion_table(scored)
     usable = pair_outcomes(pairs_result, phenomena=usable_phenomena)
     all_pairs = pair_outcomes(pairs_result, phenomena=None)
-    instruments = {
+    instruments: dict[str, dict[str, dict[str, float]]] = {
         "minimal_pairs_usable": usable,
         "minimal_pairs_all_800": all_pairs,
         "continuation_pmi_easy": continuation_outcomes(continuations_result, reading="pmi_easy"),
         "continuation_pmi_hard": continuation_outcomes(continuations_result, reading="pmi_hard"),
     }
-    check_same_models(table, instruments)
+    if context_result is not None:
+        instruments.update(context_outcomes(context_result))
+    extras = check_same_models(table, instruments)
     criterion = {
         name: float(block["whole_pack_bits_per_character"]) for name, block in table.items()
     }
     result = compare_instruments(criterion, instruments, materiality=materiality)
     result["criterion"] = table
+    result["models_scored_but_not_analysed"] = extras
     result["materiality_declared_in"] = "experiments/E2626/record.md"
     result["usable_phenomena"] = list(usable_phenomena)
     result["endpoint"] = {
@@ -310,6 +344,12 @@ def main(argv: Sequence[str] | None = None) -> int:
         required=True,
         help="comma-separated phenomenon names the record declared usable (E2622)",
     )
+    parser.add_argument(
+        "--context",
+        type=Path,
+        default=None,
+        help="a same-region probe result (E2627); one instrument per distractor kind",
+    )
     parser.add_argument("--materiality", type=float, default=0.02)
     parser.add_argument(
         "--endpoint", default=None, help="rung to check against the report (default: the last)"
@@ -331,6 +371,7 @@ def main(argv: Sequence[str] | None = None) -> int:
             usable_phenomena=args.usable_phenomena.split(","),
             materiality=args.materiality,
             endpoint=args.endpoint,
+            context_result=_load(args.context) if args.context else None,
         )
     except (AnalysisError, OSError, KeyError, ValueError) as error:
         print(f"error: {error}", file=sys.stderr)

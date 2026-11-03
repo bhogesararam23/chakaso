@@ -186,11 +186,58 @@ def test_a_pair_result_without_per_item_outcomes_is_refused_not_read_as_a_mean()
 def test_a_model_missing_from_one_instrument_stops_the_analysis() -> None:
     module = _script()
 
-    with pytest.raises(module.AnalysisError, match="not one analysis"):
+    with pytest.raises(module.AnalysisError, match="a rung without a score"):
         module.check_same_models(
             {"step0": 6.0, "step400": 2.4, "step800": 2.0},
             {"probe": {"step0": {}, "step400": {}}},
         )
+
+
+def test_models_beyond_the_curve_are_reported_rather_than_silently_dropped() -> None:
+    """E2627 scores a dozen further arms beside the rungs; the criterion table defines the population."""
+    module = _script()
+
+    extras = module.check_same_models(
+        {"step0": 6.0, "step400": 2.4},
+        {"probe": {"step0": {}, "step400": {}, "E2612-T": {}, "E2614-s11": {}}},
+    )
+
+    assert extras == ["E2612-T", "E2614-s11"]
+
+
+def test_each_same_region_kind_becomes_its_own_instrument() -> None:
+    module = _script()
+    result = _continuations({"untrained-control": 10, "step400": 19, "step800": 20})
+    # The same-region runner names its readings pmi_prior_span and siblings, not pmi_easy.
+    for block in result["models"].values():
+        block["result"]["outcomes"] = {
+            f"pmi_{kind}": list(block["result"]["outcomes"]["pmi_easy"])
+            for kind in ("prior_span", "next_span", "permuted", "reversed")
+        }
+
+    instruments = module.context_outcomes(result)
+
+    assert set(instruments) == {
+        "context_pmi_prior_span",
+        "context_pmi_next_span",
+        "context_pmi_permuted",
+        "context_pmi_reversed",
+    }
+    assert sorted(instruments["context_pmi_permuted"]) == ["step0", "step400", "step800"]
+
+
+def test_a_kind_the_runner_did_not_score_is_refused_not_skipped() -> None:
+    module = _script()
+    result = _continuations({"step400": 20})
+    for block in result["models"].values():
+        block["result"]["outcomes"] = {
+            "pmi_prior_span": list(block["result"]["outcomes"]["pmi_easy"])
+        }
+
+    with pytest.raises(
+        module.AnalysisError, match="no per-item outcomes for the same-region reading"
+    ):
+        module.context_outcomes(result)
 
 
 def test_read_produces_a_verdict_per_instrument_from_the_assembled_tables() -> None:
