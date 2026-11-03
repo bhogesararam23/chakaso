@@ -240,6 +240,22 @@ def test_a_kind_the_runner_did_not_score_is_refused_not_skipped() -> None:
         module.context_outcomes(result)
 
 
+def test_a_reused_criterion_table_round_trips_without_losing_the_denominators() -> None:
+    """Reuse must not degrade the analysis: the stored table rebuilds the same table, guard included."""
+    module = _script()
+    scored = _scored()
+
+    table = module.criterion_table(scored)
+    rebuilt = module.criterion_table(module.rescored_from({"criterion": table}))
+
+    assert rebuilt == table
+    assert table["step800"]["positions_scored"] == 254976
+    # The endpoint guard still works on the rebuilt table, which is the point of storing the denominators.
+    module.check_endpoint_matches_the_report(
+        module.rescored_from({"criterion": table}), _report(), endpoint="step800"
+    )
+
+
 def test_read_produces_a_verdict_per_instrument_from_the_assembled_tables() -> None:
     module = _script()
 

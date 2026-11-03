@@ -66,13 +66,13 @@ def rung_names(report: Mapping[str, Any]) -> dict[str, str]:
 
 def criterion_table(
     scored: Mapping[str, Mapping[str, Any]],
-) -> dict[str, dict[str, float]]:
+) -> dict[str, dict[str, Any]]:
     """Bits per character per rung: the whole held-out pack and the equal-weight register mean.
 
     The whole pack is the decision-bearing column because that is what E2614's band was measured on; the
     register mean is reported beside it because the mixture records use it as their primary objective.
     """
-    table: dict[str, dict[str, float]] = {}
+    table: dict[str, dict[str, Any]] = {}
     for name, block in scored.items():
         partitions = block["test_partitions"]
         missing = [prefix for prefix in PARTITIONS if "metrics" not in partitions.get(prefix, {})]
@@ -81,6 +81,16 @@ def criterion_table(
             raise AnalysisError(message)
         table[name] = {
             "whole_pack_bits_per_character": float(block["test"]["bits_per_character"]),
+            # The denominators and the per-partition numbers travel with the headline, so a later analysis can
+            # rebuild this table and still run the endpoint guard instead of trusting a bare float.
+            "positions_scored": int(block["test"]["positions_scored"]),
+            "characters_scored": int(block["test"]["characters_scored"]),
+            "test_partitions": {
+                prefix: {
+                    "bits_per_character": float(partitions[prefix]["metrics"]["bits_per_character"])
+                }
+                for prefix in PARTITIONS
+            },
             "o1_equal_weight_mean": round(
                 sum(
                     float(partitions[prefix]["metrics"]["bits_per_character"])
@@ -218,6 +228,7 @@ def read(
     materiality: float,
     endpoint: str,
     context_result: Mapping[str, Any] | None = None,
+    criterion_from: Path | None = None,
 ) -> dict[str, Any]:
     """Assemble the tables and hand them to the library that decides the verdict."""
     from chakaso.training.probe_sensitivity import compare_instruments
@@ -241,6 +252,8 @@ def read(
     result = compare_instruments(criterion, instruments, materiality=materiality)
     result["criterion"] = table
     result["models_scored_but_not_analysed"] = extras
+    if criterion_from is not None:
+        result["criterion_reused_from"] = str(criterion_from.name)
     result["materiality_declared_in"] = "experiments/E2626/record.md"
     result["usable_phenomena"] = list(usable_phenomena)
     result["endpoint"] = {
@@ -249,6 +262,37 @@ def read(
         "o1": table[endpoint]["o1_equal_weight_mean"],
     }
     return result
+
+
+def rescored_from(earlier: Mapping[str, Any]) -> dict[str, Any]:
+    """Rebuild the scored table a previous analysis stored, so a second instrument needs no re-scoring.
+
+    The stored table carries the whole pack, every partition and both denominators, which is what lets the
+    endpoint guard still run against the report: reusing a criterion is not the same as trusting a bare float.
+    """
+    rebuilt: dict[str, Any] = {}
+    for name, values in earlier["criterion"].items():
+        for field in ("positions_scored", "characters_scored", "test_partitions"):
+            if field not in values:
+                message = (
+                    f"{name} in {earlier.get('criterion_reused_from', 'the given file')!r} carries no "
+                    f"{field!r}, so this table was written before the denominators were stored and the "
+                    "endpoint guard could not be re-run from it; analyse the curve again without "
+                    "--criterion-from"
+                )
+                raise AnalysisError(message)
+        rebuilt[name] = {
+            "test": {
+                "bits_per_character": float(values["whole_pack_bits_per_character"]),
+                "positions_scored": int(values["positions_scored"]),
+                "characters_scored": int(values["characters_scored"]),
+            },
+            "test_partitions": {
+                prefix: {"metrics": {"bits_per_character": float(row["bits_per_character"])}}
+                for prefix, row in values["test_partitions"].items()
+            },
+        }
+    return rebuilt
 
 
 def summarise(result: Mapping[str, Any]) -> str:
@@ -350,6 +394,12 @@ def main(argv: Sequence[str] | None = None) -> int:
         default=None,
         help="a same-region probe result (E2627); one instrument per distractor kind",
     )
+    parser.add_argument(
+        "--criterion-from",
+        type=Path,
+        default=None,
+        help="an earlier run of this script: reuse its criterion table instead of scoring every rung again",
+    )
     parser.add_argument("--materiality", type=float, default=0.02)
     parser.add_argument(
         "--endpoint", default=None, help="rung to check against the report (default: the last)"
@@ -362,7 +412,19 @@ def main(argv: Sequence[str] | None = None) -> int:
     if args.endpoint is None:
         args.endpoint = max(names, key=lambda key: int(key.removeprefix("step")))
     try:
-        scored = _score_rungs(args, names)
+        if args.criterion_from is not None:
+            # A second instrument on one curve needs the same rung loss numbers, and recomputing them costs a
+            # corpus preparation and one evaluation per rung. The table is carried in the first analysis's
+            # output beside the checksum of every artifact it was measured from, so reusing it is stated in
+            # the result rather than implicit: the endpoint guard below then reads the stored blocks.
+            scored = rescored_from(_load(args.criterion_from))
+            print(
+                "note: the criterion table was reused from "
+                f"{args.criterion_from.name}; no rung was re-scored here",
+                file=sys.stderr,
+            )
+        else:
+            scored = _score_rungs(args, names)
         result = read(
             report=report,
             scored=scored,
@@ -372,6 +434,7 @@ def main(argv: Sequence[str] | None = None) -> int:
             materiality=args.materiality,
             endpoint=args.endpoint,
             context_result=_load(args.context) if args.context else None,
+            criterion_from=args.criterion_from,
         )
     except (AnalysisError, OSError, KeyError, ValueError) as error:
         print(f"error: {error}", file=sys.stderr)
