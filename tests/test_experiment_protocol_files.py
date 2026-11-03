@@ -174,3 +174,28 @@ def test_the_equal_updates_and_documents_arm_is_e2620_with_only_the_vocabulary_i
     assert (
         round(positions / arm["max_training_tokens"], 2) == 1.40
     )  # about 1.4 passes over the pool
+
+
+def test_the_ladder_differs_from_e2614_only_in_how_often_it_evaluates_and_what_it_writes() -> None:
+    """E2626 is E2614's model measured more often, not a different model.
+
+    The claim the ladder rests on is that an evaluation and an artifact write do not perturb the weights: the
+    loop's batch plan and its learning-rate schedule are functions of the *absolute* step, so doubling the
+    evaluation cadence cannot move a weight. If any other field had moved, that claim would be about a
+    different run, and the rung ordering would not be E2614's curve.
+    """
+    directory = Path(__file__).resolve().parent.parent / "configs" / "experiments"
+    reference = tomllib.loads((directory / "E2614-decoder-seed-spread.toml").read_text("utf-8"))[
+        "plan"
+    ]
+    arm = tomllib.loads((directory / "E2626-curve-ladder.toml").read_text("utf-8"))["plan"]
+
+    changed = {key for key in {*reference, *arm} if reference.get(key) != arm.get(key)}
+
+    assert changed == {"eval_every", "curve_artifact_steps"}
+    assert arm["eval_every"] == reference["max_steps"] // 12
+    # Every rung is an evaluation point of its own run, and the last one is the ceiling.
+    rungs = list(arm["curve_artifact_steps"])
+    assert rungs == sorted(rungs)
+    assert all(step % arm["eval_every"] == 0 for step in rungs)
+    assert rungs == list(range(arm["eval_every"], reference["max_steps"] + 1, arm["eval_every"]))

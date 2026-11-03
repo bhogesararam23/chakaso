@@ -1,0 +1,54 @@
+# E2626 protocol — the E2614 reference configuration, evaluated and written every 200 updates.
+#
+# Read by `chakaso experiment study --protocol` with `--seeds 7`. Declared before any run
+# (experiments/E2626/record.md). Two fields move from E2614's plan and both are declared there: `eval_every`
+# 400 -> 200, which buys twelve held-out numbers on the same curve (the loop's batch plan, learning-rate
+# schedule and update count are functions of the absolute step, so no weight moves — ADR-0050 tests that),
+# and `curve_artifact_steps`, which writes a usable model at each of those evaluations. A test holds this
+# file to E2614's plan on exactly those two fields. Every other value is E2612 arm T's, as in E2614.
+
+[plan]
+model_family = "decoder"
+
+# Architecture and optimisation (E2608 arm A, the reference configuration).
+vocab_size = 4096
+context_length = 256
+d_model = 256
+num_layers = 4
+num_heads = 8
+feedforward_dim = 640
+batch_size = 32
+grad_accum_steps = 1
+learning_rate = 0.0006
+weight_decay = 0.01
+warmup_steps = 200
+schedule = "cosine"
+decay_to = 0.1
+max_steps = 2400
+eval_every = 200
+patience = 99
+
+# Data: the pinned multi-register corpus, held out by whole work, all five registers in training.
+split_seed = 7
+expected_corpus_fingerprint = "312571f9fa8351a8"
+whole_work_splits = true
+shuffle_training_units = true
+max_training_tokens = 20000000
+max_validation_tokens = 250000
+max_test_tokens = 250000
+test_partitions = ["prose-", "science-", "technology-", "medicine-", "mathematics-"]
+character_baseline = false
+
+# Tokenizer: the vocabulary E2612 trained with, as a committed input (ADR-0044), checked by fingerprint.
+tokenizer_min_frequency = 3
+tokenizer_sample_characters = 12000000
+tokenizer_file = "experiments/E2612/vocabulary-434debe82f949347.json"
+expected_tokenizer_fingerprint = "434debe82f949347"
+
+# Generation: continuations of held-out openings, never the repository's own headings (K-026).
+sample_prompts = "held_out"
+
+# ADR-0050: a usable model at each of these twelve evaluation points, so one curve can be read as an
+# ordering the harness itself measured. Rung 0, the random initialisation, needs no file - the probe
+# scripts build it from the architecture with their --control flag.
+curve_artifact_steps = [200, 400, 600, 800, 1000, 1200, 1400, 1600, 1800, 2000, 2200, 2400]
