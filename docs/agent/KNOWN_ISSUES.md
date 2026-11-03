@@ -842,7 +842,7 @@ preregistered arm, whether norms should be excluded from decay; (4) pin threads 
 or state the tolerance as the contract; (5) derive the protocol identity from the plan instead of a hand-kept list;
 (6) a checkpoint-format revision.
 
-### K-031 — A pinned Gutenberg source can change upstream after the pin; the corpus identity survived once, by luck of where the change fell (drift is now classified; the raw-bytes archive is open)
+### K-031 — A pinned Gutenberg source can change upstream after the pin; drift is now classified and the raw bytes are archived, but one source’s original bytes are gone and the archive’s host is unchosen
 
 **Impact:** Medium for re-trainability. The catalogue pins each source's raw SHA-256, and `corpus prepare` refuses a mismatch,
 which is correct. On 2026-11-02 re-fetching the 430 pinned URLs found one mismatch: `science-pg3489` ("Fabre, Poet of Science"),
@@ -860,8 +860,13 @@ is not an archive (the unresolved half of the artifact policy's "where do releas
 *First half closed 2026-11-02 ([ADR-0047](../decisions/ADR-0047-a-pinned-corpus-declares-the-digest-of-the-text-it-ingests.md)):* a source may
 declare `ingested_sha256`, `ingest` refuses text that differs, `verify_raw` still refuses every raw mismatch and now names whether the
 ingested text is identical, and the committed multiregister catalogue declares all 430. On the current bytes the classifier reports exactly
-`science-pg3489: ingested-text-identical`. *Second half open:* the raw bytes (156 MB, ~59.5 MB gzipped) still exist only on this host's
-`data/`; where an archive lives is the owner's decision (ADR-0047 part 2), and the original `pg3489` bytes are not recoverable.
+`science-pg3489: ingested-text-identical`. *Second half: mechanism built 2026-11-04, host still the owner's choice.* `chakaso corpus
+archive` writes the raw directory as one deterministic tar.gz and `corpus verify-archive` reads every member back against the catalogue.
+Measured on the multiregister corpus: 430 sources, 162,017,394 raw bytes into 59,220,202, digest
+`1b3979ba13a8f35bd15f22c5a4e30128d94c1ead416d63a47a16aa076687532d`, built in 24 s, verified in 3.5 s, and a second build produced the same
+digest. That fixes the loss of future pins — the bytes behind everything pinned now are held and checkable — and it does not recover the
+original `pg3489` bytes, which are gone. Where an archive is *kept* stays ADR-0047 part 2's open question: `data/` on one machine is not
+preservation, and publishing third-party text at scale is a hosting decision.
 
 ### K-032 — Closed: a committed probe extract keeps its per-item arrays, in a compact form a reader can rebuild
 

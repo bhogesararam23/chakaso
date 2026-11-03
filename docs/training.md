@@ -182,6 +182,17 @@ chakaso corpus prepare --catalog configs/corpora/gutenberg-english-prose-v2.toml
   --data-card docs/data/gutenberg-english-prose-v2.md
 ```
 
+A declared corpus is also **archived**, because a URL is not an archive and Gutenberg re-edits its files (K-031: one
+source's bytes were edited upstream a day after the pin and the originals were nowhere). `chakaso corpus archive`
+writes the raw directory as one tar.gz whose bytes depend only on its contents — members sorted by slug, header fields
+that could carry a machine's clock or user fixed — and refuses to archive any file that no longer matches the digest the
+catalogue declares. `chakaso corpus verify-archive` decompresses and re-hashes every member against the catalogue, and
+against the archive's own recorded digest when `--manifest` is given; `chakaso corpus extract-archive` puts the bytes
+back, refusing an existing file and refusing a member name that would escape the destination. Measured on
+`gutenberg-multiregister-v1`: 430 sources, 162,017,394 raw bytes into 59,220,202 in 24 s, verified in 3.5 s, and a
+second build reproduced the same digest. Which host keeps the archive is not decided here — see
+[`artifact-policy.md`](internal/engineering/artifact-policy.md).
+
 The instruction, grounded-QA, correction-pair, abstention and preference rows above are still **no dataset
 collected**, and nothing in this table suggests otherwise: neither pinned corpus contains a question and an
 answer grounded in evidence. The Gutenberg corpora are 19th-century prose, a classical epic and a scientific

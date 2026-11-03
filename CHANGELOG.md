@@ -12,10 +12,39 @@ capability is implemented or still planned.
 
 ## Unreleased
 
-### 2026-11-04 (this session) — the campaign continues: paired statistics, and evidence a reader can re-pair
+### 2026-11-04 (this session) — the campaign continues: paired statistics, re-pairable evidence, a test on the loss itself
+
+**Measured**
+
+- **E2633: the held-out loss difference, tested as a paired statistic over held-out works — outcome L-a.** Four
+  checkpoints already on disk, the runs' own held-out pack, 2,000 bootstrap resamples of 25 works at a declared seed.
+  E2612's mixture separates from its prose control by [−0.209, −0.037] bits per character and from the half-prose arm by
+  [−0.217, −0.039]; the pair the 0.02 band calls equal — prose against half-prose, 0.0045 apart — does not clear zero
+  ([−0.015, +0.003]), and neither does a pure seed difference of −0.0033. Two published claims moved from assertion to
+  measurement on the way: the mixture's advantage is carried by 15 of 25 works, and dropping one mathematics book moves
+  −0.108 to −0.072, so a third of the headline effect is a single held-out volume; the exact sign test across documents
+  does not reject zero even at 0.108 bits (p = 0.212). Deviation 2 is that the pack holds 25 works rather than the 62
+  the split holds out; deviation 4 is the finding filed as K-033, that the whole-pack figure and the five-register table
+  are measured over different text and the whole pack contains no medicine document at all.
+- **K-031's second half, measured on the corpus it was filed about: `chakaso corpus archive`.** 430 sources,
+  162,017,394 raw bytes into 59,220,202, built in 24 s and verified in 3.5 s, archive digest
+  `1b3979ba13a8f35bd15f22c5a4e30128d94c1ead416d63a47a16aa076687532d` — and a second build of the same directory
+  produced that digest again to the character. Where the archive is *kept* remains the owner's decision; what was
+  missing was any way to hold the bytes at all, and there is one now.
 
 **Implemented**
 
+- `scripts/paired_loss_test.py`, `chakaso.training.paired_loss` (`paired_document_test`, `jackknife`) and
+  `chakaso.training.subword_experiment.work_losses`: the statistic, the tool, and the library path that packs the held-out
+  side the way the run does. The tool refuses to compute anything until it reproduces each arm's committed denominators and
+  pooled metric to 1e-9 — the guard that caught this session's own error: a reconstructed pack 1,280 positions longer and
+  1.2 bits per character worse than every published number, because `max_test_tokens` caps a seeded *sample* of the test
+  side, not its prefix.
+- `chakaso.training.corpus_archive`: a deterministic tar.gz (members sorted by slug, every header field that could carry a
+  machine's clock fixed, no name or mtime in the gzip header), a refusal to archive a byte that no longer matches its
+  pinned digest, a verification that decompresses and re-hashes every member rather than trusting the manifest, and an
+  extraction that refuses both an existing file and a member name that would escape its destination. `chakaso corpus
+  archive | verify-archive | extract-archive` are the CLI, and 16 module tests plus 4 CLI tests cover the operations.
 - **K-032 is closed: a committed probe extract now keeps the per-item arrays a paired test is computed from.**
   `scripts/extract_report.py` replaced an outcome array with the digest of its canonical JSON — 1.45 MB, 1.55 MB and
   2.28 MB of rows would not fit the 1 MiB tracked-file bound — which left every McNemar count in E2626's and E2627's

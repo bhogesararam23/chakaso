@@ -70,10 +70,21 @@ enough the moment someone is expected to load a weight they cannot spend an hour
 
 ### Where do a pinned corpus's raw bytes live?
 
-Undecided, and recorded in [ADR-0047](../../decisions/ADR-0047-a-pinned-corpus-declares-the-digest-of-the-text-it-ingests.md) part 2 and K-031:
-the multiregister corpus's raw directory is 156 MB (about 59.5 MB gzipped), a URL is not an archive, and the original bytes of one of its 430
-sources could not be recovered after the source changed upstream. The recommendation is one archive of the verified raw directory, cited by
-its SHA-256 from the data card, in a place the owner chooses; publishing third-party text is a hosting decision, not a code change.
+**The mechanism exists as of 2026-11-04; the host is still the owner's.** K-031 and
+[ADR-0047](../../decisions/ADR-0047-a-pinned-corpus-declares-the-digest-of-the-text-it-ingests.md) part 2 recorded the problem in full: a
+catalogue pins URLs and digests, but a URL is not an archive, and after one Gutenberg source was edited upstream its original bytes could not
+be recovered from anywhere.
+
+`chakaso corpus archive` now writes the archive, and it is a deterministic one: members sorted by slug, every tar header field that could
+carry a machine's clock or user fixed, no name and no mtime in the gzip header. Measured on `gutenberg-multiregister-v1` on 2026-11-04 — 430
+sources, **162,017,394 raw bytes into 59,220,202 compressed**, archive SHA-256 `1b3979ba13a8f35bd15f22c5a4e30128d94c1ead416d63a47a16aa076687532d`,
+built in 24 seconds and read back by `corpus verify-archive` in 3.5 seconds — which decompresses and re-hashes every member rather than
+trusting the manifest it checks. A second build of the same directory, run minutes later, produced the same digest to the character, so two
+holders of an archive can establish they hold the same artifact and not merely similar files.
+
+What remains undecided is where it is *kept*: `data/` on one machine is not preservation, and publishing third-party text at scale is a
+hosting and licensing act, not a code change. Until someone chooses, the archive is reproducible from the raw directory the corpus was built
+from, and the digest above is what a future copy is checked against.
 
 ### Which dataset artifacts are redistributable?
 
