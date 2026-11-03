@@ -928,6 +928,78 @@ def _build_parsers() -> tuple[argparse.ArgumentParser, argparse.ArgumentParser]:
         "--overwrite", action="store_true", help="replace an existing report at --output"
     )
 
+    corpus_archive = corpus_subparsers.add_parser(
+        "archive",
+        help="write a pinned corpus's raw bytes to one checksummed tar.gz (K-031)",
+        description=(
+            "The catalogue pins URLs and digests; this holds the bytes. Every source is re-hashed before it is "
+            "written, so an archive of drifted bytes is refused rather than shipped, and the members are ordered "
+            "and timestamped so two builds of one raw directory agree on the archive digest. The manifest names "
+            "the catalogue it was built from and records the archive's own digest."
+        ),
+    )
+    corpus_archive.add_argument(
+        "--catalog",
+        type=Path,
+        required=True,
+        help="the pinned catalogue whose sources are archived",
+    )
+    corpus_archive.add_argument(
+        "--raw-dir",
+        type=Path,
+        required=True,
+        help="the directory holding one <slug>.txt per declared source",
+    )
+    corpus_archive.add_argument("--output", type=Path, required=True, help="the tar.gz to write")
+    corpus_archive.add_argument(
+        "--manifest",
+        type=Path,
+        required=True,
+        help="the manifest to write beside it, naming the catalogue and the archive digest",
+    )
+    corpus_archive.add_argument(
+        "--overwrite", action="store_true", help="replace an existing archive and manifest"
+    )
+
+    corpus_verify_archive = corpus_subparsers.add_parser(
+        "verify-archive",
+        help="read an archive back against the catalogue it claims to hold",
+        description=(
+            "Decompresses every member and digests it: each pinned source must appear exactly once and match its "
+            "declared digest, the archive must hold nothing the catalogue does not name, and with --manifest the "
+            "file's own digest is checked too. Prints every problem as a sentence; no output means it verifies."
+        ),
+    )
+    corpus_verify_archive.add_argument(
+        "--catalog",
+        type=Path,
+        required=True,
+        help="the pinned catalogue the archive claims to hold",
+    )
+    corpus_verify_archive.add_argument("--archive", type=Path, required=True)
+    corpus_verify_archive.add_argument(
+        "--manifest",
+        type=Path,
+        default=None,
+        help="also check the archive against the digest its manifest records",
+    )
+
+    corpus_extract_archive = corpus_subparsers.add_parser(
+        "extract-archive",
+        help="restore a corpus archive's raw bytes into a directory",
+        description=(
+            "Writes each member as <slug>.txt under the destination. Existing files are refused unless "
+            "--overwrite is given, and a member whose name would land outside the destination stops the run."
+        ),
+    )
+    corpus_extract_archive.add_argument("--archive", type=Path, required=True)
+    corpus_extract_archive.add_argument(
+        "--destination", type=Path, required=True, help="the raw directory to write into"
+    )
+    corpus_extract_archive.add_argument(
+        "--overwrite", action="store_true", help="replace files already at the destination"
+    )
+
     model_parser = subparsers.add_parser(
         "model",
         help="inspect, verify, export, run and serve a trained checkpoint or release",
@@ -2786,6 +2858,12 @@ def _run_corpus_command(args: argparse.Namespace) -> int:
     default paths stay free of it, and a missing extra or an unreadable history is reported by name rather
     than half-done.
     """
+    from chakaso.training.corpus_archive import (
+        extract_archive,
+        verify_archive,
+        write_archive,
+        write_manifest,
+    )
     from chakaso.training.dataset_catalog import (
         declare_gutenberg_directory,
         load_catalog,
@@ -2803,7 +2881,8 @@ def _run_corpus_command(args: argparse.Namespace) -> int:
 
     if args.corpus_command is None:
         print(
-            f"{PROGRAM}: choose a corpus action: 'declare', 'prepare', 'report', 'restore' or 'verify'",
+            f"{PROGRAM}: choose a corpus action: 'archive', 'declare', 'extract-archive', "
+            f"'prepare', 'report', 'restore', 'verify' or 'verify-archive'",
             file=sys.stderr,
         )
         return 1
@@ -2880,6 +2959,46 @@ def _run_corpus_command(args: argparse.Namespace) -> int:
                     ),
                 ),
                 allow_overwrite=args.overwrite,
+            )
+            return 0
+
+        if args.corpus_command == "archive":
+            catalog = load_catalog(args.catalog)
+            archive_manifest = write_archive(
+                catalog,
+                args.output,
+                catalog_path=args.catalog,
+                raw_dir=args.raw_dir,
+                allow_overwrite=args.overwrite,
+            )
+            write_manifest(archive_manifest, args.manifest, allow_overwrite=args.overwrite)
+            print(
+                f"archived {len(archive_manifest.sources)} source(s) of {archive_manifest.corpus} "
+                f"{archive_manifest.version} to {str(args.output)!r}: "
+                f"{archive_manifest.raw_bytes:,} raw bytes in {archive_manifest.archive_bytes:,} "
+                f"compressed, digest {archive_manifest.archive_sha256}"
+            )
+            return 0
+
+        if args.corpus_command == "verify-archive":
+            catalog = load_catalog(args.catalog)
+            problems = verify_archive(catalog, args.archive, manifest_path=args.manifest)
+            if problems:
+                for problem in problems:
+                    print(f"{PROGRAM}: {problem}", file=sys.stderr)
+                return 1
+            recorded = " and its manifest" if args.manifest is not None else ""
+            print(
+                f"archive {str(args.archive)!r} holds the {len(catalog.sources)} source(s) "
+                f"{catalog.name} {catalog.version} pins{recorded}"
+            )
+            return 0
+
+        if args.corpus_command == "extract-archive":
+            names = extract_archive(args.archive, args.destination, allow_overwrite=args.overwrite)
+            print(
+                f"extracted {len(names)} source file(s) into {str(args.destination)!r}; "
+                "every digest is the archive's, not a re-download"
             )
             return 0
 

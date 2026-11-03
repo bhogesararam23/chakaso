@@ -1242,6 +1242,183 @@ def _declared(tmp_path: Path, raw: Path) -> Path:
     return catalog
 
 
+def test_corpus_archive_writes_an_archive_its_own_verification_accepts(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    raw = _gutenberg_raw(tmp_path)
+    catalog = _declared(tmp_path, raw)
+    archive = tmp_path / "out" / "cli-corpus.tar.gz"
+    manifest = tmp_path / "out" / "cli-corpus-manifest.json"
+
+    assert (
+        main(
+            [
+                "corpus",
+                "archive",
+                "--catalog",
+                str(catalog),
+                "--raw-dir",
+                str(raw),
+                "--output",
+                str(archive),
+                "--manifest",
+                str(manifest),
+            ]
+        )
+        == 0
+    )
+    assert "archived 2 source(s) of cli-corpus 1.0.0" in capsys.readouterr().out
+    assert archive.is_file() and manifest.is_file()
+
+    assert (
+        main(
+            [
+                "corpus",
+                "verify-archive",
+                "--catalog",
+                str(catalog),
+                "--archive",
+                str(archive),
+                "--manifest",
+                str(manifest),
+            ]
+        )
+        == 0
+    )
+    assert "holds the 2 source(s) cli-corpus 1.0.0 pins and its manifest" in capsys.readouterr().out
+
+
+def test_corpus_archive_refuses_a_replacement_and_a_drifted_source(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    raw = _gutenberg_raw(tmp_path)
+    catalog = _declared(tmp_path, raw)
+    archive = tmp_path / "cli-corpus.tar.gz"
+    manifest = tmp_path / "cli-corpus-manifest.json"
+    arguments = [
+        "corpus",
+        "archive",
+        "--catalog",
+        str(catalog),
+        "--raw-dir",
+        str(raw),
+        "--output",
+        str(archive),
+        "--manifest",
+        str(manifest),
+    ]
+    assert main(arguments) == 0
+    capsys.readouterr()
+
+    assert main(arguments) == 1
+    assert "not replaced unasked" in capsys.readouterr().err
+
+    (raw / "pg11.txt").write_text("someone edited the downloaded book\n", encoding="utf-8")
+    assert main([*arguments, "--overwrite"]) == 1
+    error = capsys.readouterr().err
+    assert "pg11: the bytes digest" in error and "the catalogue declares" in error
+    assert archive.read_bytes() != b""
+
+
+def test_corpus_verify_archive_names_every_problem_it_found(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    raw = _gutenberg_raw(tmp_path)
+    catalog = _declared(tmp_path, raw)
+    archive = tmp_path / "cli-corpus.tar.gz"
+    manifest = tmp_path / "cli-corpus-manifest.json"
+    assert (
+        main(
+            [
+                "corpus",
+                "archive",
+                "--catalog",
+                str(catalog),
+                "--raw-dir",
+                str(raw),
+                "--output",
+                str(archive),
+                "--manifest",
+                str(manifest),
+            ]
+        )
+        == 0
+    )
+    capsys.readouterr()
+    archive.write_bytes(b"not a gzip stream at all\n")
+
+    assert (
+        main(
+            [
+                "corpus",
+                "verify-archive",
+                "--catalog",
+                str(catalog),
+                "--archive",
+                str(archive),
+                "--manifest",
+                str(manifest),
+            ]
+        )
+        == 1
+    )
+    assert "cannot be read as a gzip tar stream" in capsys.readouterr().err
+
+
+def test_corpus_extract_archive_restores_the_bytes_and_refuses_to_clobber(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    raw = _gutenberg_raw(tmp_path)
+    catalog = _declared(tmp_path, raw)
+    archive = tmp_path / "cli-corpus.tar.gz"
+    assert (
+        main(
+            [
+                "corpus",
+                "archive",
+                "--catalog",
+                str(catalog),
+                "--raw-dir",
+                str(raw),
+                "--output",
+                str(archive),
+                "--manifest",
+                str(tmp_path / "cli-corpus-manifest.json"),
+            ]
+        )
+        == 0
+    )
+    out = tmp_path / "restored"
+
+    assert (
+        main(["corpus", "extract-archive", "--archive", str(archive), "--destination", str(out)])
+        == 0
+    )
+    assert "extracted 2 source file(s)" in capsys.readouterr().out
+    assert sorted(path.name for path in out.iterdir()) == ["pg11.txt", "pg84.txt"]
+    assert (out / "pg11.txt").read_bytes() == (raw / "pg11.txt").read_bytes()
+
+    assert (
+        main(["corpus", "extract-archive", "--archive", str(archive), "--destination", str(out)])
+        == 1
+    )
+    assert "already exists" in capsys.readouterr().err
+    assert (
+        main(
+            [
+                "corpus",
+                "extract-archive",
+                "--archive",
+                str(archive),
+                "--destination",
+                str(out),
+                "--overwrite",
+            ]
+        )
+        == 0
+    )
+
+
 def test_corpus_declare_records_what_each_source_file_says(
     tmp_path: Path, capsys: pytest.CaptureFixture[str]
 ) -> None:
