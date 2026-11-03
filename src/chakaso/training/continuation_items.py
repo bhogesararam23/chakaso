@@ -19,7 +19,7 @@ from __future__ import annotations
 import json
 from collections import defaultdict
 from collections.abc import Callable, Sequence
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Any
 
 from chakaso.core.hashing import sha256_hex
@@ -236,6 +236,10 @@ class ItemScores:
     blind_easy: ChoiceReading
     blind_hard: ChoiceReading
     by_register: dict[str, dict[str, dict[str, Any]]]
+    #: Each reading as ``[(item identifier, value), …]`` in item order. Two models scored on one item set are
+    #: compared item by item (McNemar, :mod:`chakaso.training.paired_stats`), and that needs the per-item
+    #: record the aggregate threw away; E2623 could only set two marginal intervals beside each other.
+    outcomes: dict[str, tuple[tuple[str, float], ...]] = field(default_factory=dict)
 
     def as_dict(self) -> dict[str, Any]:
         return {
@@ -247,6 +251,10 @@ class ItemScores:
             "blind_easy": self.blind_easy.as_dict(),
             "blind_hard": self.blind_hard.as_dict(),
             "by_register": self.by_register,
+            "outcomes": {
+                name: [[identifier, value] for identifier, value in pairs]
+                for name, pairs in self.outcomes.items()
+            },
         }
 
 
@@ -270,12 +278,14 @@ def score_items(items: Sequence[ContinuationItem], scorer: Scorer) -> ItemScores
         raise CorpusError(message)
     outcomes: dict[str, dict[str, list[float]]] = {name: defaultdict(list) for name in _READINGS}
     ties: dict[str, dict[str, int]] = {name: defaultdict(int) for name in _READINGS}
+    per_item: dict[str, list[tuple[str, float]]] = {name: [] for name in _READINGS}
 
     def record(name: str, register: str, good: float, bad: float) -> None:
         value = 0.5 if good == bad else (1.0 if good > bad else 0.0)
         for key in ("all", register):
             outcomes[name][key].append(value)
             ties[name][key] += good == bad
+        per_item[name].append((item.identifier, value))
 
     for item in items:
         true_c = scorer(item.prefix, item.true_continuation)
@@ -304,4 +314,5 @@ def score_items(items: Sequence[ContinuationItem], scorer: Scorer) -> ItemScores
         blind_easy=readings["blind_easy"],
         blind_hard=readings["blind_hard"],
         by_register=by_register,
+        outcomes={name: tuple(per_item[name]) for name in _READINGS},
     )

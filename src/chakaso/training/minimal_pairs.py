@@ -198,6 +198,11 @@ class PairResult:
     token_count_only_accuracy: float | None = None
     good_fewer_tokens: int = 0
     good_more_tokens: int = 0
+    #: ``(identifier, phenomenon, value)`` for every pair, in the order it was scored. The aggregate accuracy is
+    #: the wrong object for comparing two models on the same pairs — what carries the difference is the items
+    #: they answered *unlike*, which is what McNemar's test counts (see :mod:`chakaso.training.paired_stats`).
+    #: E2621-E2623 could not run that test because the per-item record was dropped at scoring time.
+    outcomes: tuple[tuple[str, str, float], ...] = ()
 
     @property
     def chance_inside_interval(self) -> bool:
@@ -225,6 +230,9 @@ class PairResult:
             "token_count_only_accuracy": self.token_count_only_accuracy,
             "good_fewer_tokens": self.good_fewer_tokens,
             "good_more_tokens": self.good_more_tokens,
+            # Every pair, in score order, so a second model's result on the same set can be tested against this
+            # one item by item rather than through two marginal intervals.
+            "outcomes": [[name, phenomenon, value] for name, phenomenon, value in self.outcomes],
         }
 
 
@@ -253,6 +261,7 @@ def score_pairs(
     longer = shorter = 0
     token_credit = 0.0
     fewer = more = 0
+    seen: list[tuple[str, str, float]] = []
     for pair in pairs:
         good, bad = log_probability(pair.good), log_probability(pair.bad)
         if good == bad:
@@ -262,6 +271,7 @@ def score_pairs(
             value = 1.0 if good > bad else 0.0
         credit[pair.phenomenon] += value
         counts[pair.phenomenon] += 1
+        seen.append((pair.identifier, pair.phenomenon, value))
         if token_count is not None:
             good_tokens, bad_tokens = token_count(pair.good), token_count(pair.bad)
             if good_tokens < bad_tokens:
@@ -296,6 +306,7 @@ def score_pairs(
         token_count_only_accuracy=None if token_count is None else token_credit / total,
         good_fewer_tokens=fewer,
         good_more_tokens=more,
+        outcomes=tuple(seen),
     )
 
 

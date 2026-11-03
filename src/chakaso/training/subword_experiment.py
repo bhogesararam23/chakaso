@@ -98,6 +98,7 @@ __all__ = [
     "prepare_corpus",
     "protocol_digest",
     "run_experiment",
+    "score_artifacts",
     "summarise",
     "write_report",
 ]
@@ -1307,6 +1308,50 @@ def _test_partition_metrics(
             ),
         }
     return produced
+
+
+def score_artifacts(
+    plan: ExperimentPlan, artifacts: Mapping[str, Path]
+) -> dict[str, dict[str, Any]]:
+    """Measure several models of one protocol against the same held-out pack, through the run's own code path.
+
+    A training curve written by ADR-0050's rungs, a seed study's outputs, or any two arms a record wants
+    compared have to be scored over identical documents and identical arithmetic; re-implementing the pack
+    selection or the metric in a script would make the comparison a claim about two code paths instead of one.
+    The corpus is prepared once and every named artifact is scored against that same prepared pack, with the
+    whole test side and each declared partition, in the shapes ``run_experiment`` writes into its report.
+
+    Raises:
+        CorpusError: an artifact was trained on a different corpus or a different vocabulary than the plan
+            prepares. A rung from another pack would be scored on text its own run never split.
+    """
+    prepared = prepare_corpus(plan)
+    scored: dict[str, dict[str, Any]] = {}
+    for name, path in artifacts.items():
+        artifact = load_artifact(path)
+        if artifact.corpus_fingerprint != prepared.manifest.fingerprint:
+            message = (
+                f"{name} was trained on corpus {artifact.corpus_fingerprint}, but this plan prepares "
+                f"{prepared.manifest.fingerprint}; its held-out numbers would not be comparable"
+            )
+            raise CorpusError(message)
+        if artifact.vocabulary.fingerprint != prepared.vocabulary.fingerprint:
+            message = (
+                f"{name} carries tokenizer {artifact.vocabulary.fingerprint}, but this plan prepares "
+                f"{prepared.vocabulary.fingerprint}; encoding the same text differently changes the metric"
+            )
+            raise CorpusError(message)
+        model = artifact.to_model()
+        scored[name] = {
+            "path": path.name,
+            "checksum": artifact.checksum(),
+            "step": artifact.step,
+            "test": score_transformer(
+                model, prepared.test, prepared.vocabulary, plan=plan
+            ).as_dict(),
+            "test_partitions": _test_partition_metrics(model, prepared, plan),
+        }
+    return scored
 
 
 def _training_config(

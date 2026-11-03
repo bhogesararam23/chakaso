@@ -198,3 +198,42 @@ def test_pairs_balanced_in_tokens_make_the_token_count_reading_exactly_chance() 
 
     assert result.token_count_only_accuracy == 0.5
     assert result.good_fewer_tokens == result.good_more_tokens == 0
+
+
+# ------------------------------------------------------------------ the per-item record
+
+
+def test_the_result_carries_which_way_every_pair_went() -> None:
+    """A paired comparison of two models on one pair set needs the per-item outcome, not the mean.
+
+    E2622 could only set two Wilson intervals beside each other and had to withdraw the ordering it produced;
+    the item-level record is what McNemar's test counts.
+    """
+    result = score_pairs(_pairs(), _oracle)
+
+    assert [entry[0] for entry in result.outcomes] == ["p1", "p2", "p3", "p4"]
+    assert [entry[1] for entry in result.outcomes] == ["agreement", "agreement", "order", "order"]
+    assert all(entry[2] == 1.0 for entry in result.outcomes)
+    assert result.as_dict()["outcomes"] == [
+        ["p1", "agreement", 1.0],
+        ["p2", "agreement", 1.0],
+        ["p3", "order", 1.0],
+        ["p4", "order", 1.0],
+    ]
+
+
+def test_a_tie_and_a_failure_are_kept_apart_in_the_per_item_record() -> None:
+    # One pair the scorer cannot tell (equal log-probability, half credit), one it gets wrong.
+    def scorer(text: str) -> float:
+        return {
+            "The dog runs.": -5.0,
+            "The dog run.": -5.0,
+            "The dogs run.": -1.0,
+            "The dogs runs.": -5.0,
+        }.get(text, 0.0)
+
+    result = score_pairs(_pairs()[:2], scorer)
+
+    assert result.outcomes[0] == ("p1", "agreement", 0.5)
+    assert result.outcomes[1] == ("p2", "agreement", 1.0)
+    assert result.ties == 1

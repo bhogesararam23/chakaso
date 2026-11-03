@@ -183,3 +183,29 @@ def test_results_are_split_by_register_with_intervals() -> None:
     assert prose["accuracy"] == 1.0
     assert prose["interval_95"][0] > 0.5
     assert result.as_dict()["items"] == 10
+
+
+def test_every_reading_keeps_its_per_item_outcomes() -> None:
+    """Same reason as the pair set: two models on one item set are compared item by item, and the aggregate
+    accuracy is not enough to run that test. ``as_dict`` has to carry it, because the record cites the JSON.
+    """
+    items = _items()
+    result = score_items(items, _scorer_prefers(True))
+
+    assert set(result.outcomes) == {
+        "pmi_easy",
+        "pmi_hard",
+        "conditional_easy",
+        "conditional_hard",
+        "blind_easy",
+        "blind_hard",
+    }
+    for name, pairs in result.outcomes.items():
+        assert len(pairs) == len(items), name
+        assert {identifier for identifier, _ in pairs} == {item.identifier for item in items}, name
+    # The model that uses its prefix answers every item right, and the one that ignores it ties every item.
+    assert all(value == 1.0 for _, value in result.outcomes["pmi_easy"])
+    assert all(
+        value == 0.5 for _, value in score_items(items, _scorer_prefers(False)).outcomes["pmi_easy"]
+    )
+    assert result.as_dict()["outcomes"]["pmi_hard"][0][0] == items[0].identifier
