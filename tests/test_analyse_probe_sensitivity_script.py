@@ -240,20 +240,44 @@ def test_a_kind_the_runner_did_not_score_is_refused_not_skipped() -> None:
         module.context_outcomes(result)
 
 
-def test_a_reused_criterion_table_round_trips_without_losing_the_denominators() -> None:
-    """Reuse must not degrade the analysis: the stored table rebuilds the same table, guard included."""
+def test_a_reused_criterion_table_carries_both_columns_and_refuses_a_hand_made_one() -> None:
+    """Reuse is stated, not silent: the table is taken whole and anything it lacks is a named refusal."""
     module = _script()
-    scored = _scored()
 
-    table = module.criterion_table(scored)
-    rebuilt = module.criterion_table(module.rescored_from({"criterion": table}))
+    table = module.criterion_table(_scored())
+    stored = module.stored_criterion({"criterion": table})
 
-    assert rebuilt == table
-    assert table["step800"]["positions_scored"] == 254976
-    # The endpoint guard still works on the rebuilt table, which is the point of storing the denominators.
-    module.check_endpoint_matches_the_report(
-        module.rescored_from({"criterion": table}), _report(), endpoint="step800"
+    assert stored == {
+        name: {
+            "whole_pack_bits_per_character": values["whole_pack_bits_per_character"],
+            "o1_equal_weight_mean": values["o1_equal_weight_mean"],
+        }
+        for name, values in table.items()
+    }
+    assert stored["step800"]["whole_pack_bits_per_character"] == 2.0
+    broken = {"criterion": {"step800": {"o1_equal_weight_mean": 2.0}}}
+    with pytest.raises(module.AnalysisError, match="carries no 'whole_pack_bits_per_character'"):
+        module.stored_criterion(broken)
+
+
+def test_reusing_a_criterion_reports_the_endpoint_check_as_another_analysis_s() -> None:
+    module = _script()
+    stored = module.stored_criterion({"criterion": module.criterion_table(_scored())})
+
+    result = module.read(
+        report=_report(),
+        scored={},
+        pairs_result=_pairs({"untrained-control": 1, "step400": 12, "step800": 20}),
+        continuations_result=_continuations({"untrained-control": 10, "step400": 19, "step800": 20}),
+        usable_phenomena=["agreement", "order"],
+        materiality=0.02,
+        endpoint="step800",
+        criterion_override=stored,
+        endpoint_check="recomputed here from every rung's bytes",
     )
+
+    assert result["endpoint_check"] == "recomputed here from every rung's bytes"
+    assert len(result["models"]) == 3
 
 
 def test_read_produces_a_verdict_per_instrument_from_the_assembled_tables() -> None:

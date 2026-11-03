@@ -134,6 +134,41 @@ def test_writing_is_deterministic_and_refuses_to_replace_an_existing_extract(
     )
 
 
+def test_a_probe_result_keeps_its_tables_and_stubs_only_the_per_item_arrays() -> None:
+    """The same compactor has to work on a probe result, whose big array is one level below its container.
+
+    ``models`` is a mapping of thirteen entries whose canonical JSON is enormous because each carries 800
+    per-item outcomes; stubbing the container would throw away every accuracy the record cites, so the walk
+    descends through a kept key and replaces only the leaf that is actually bulky.
+    """
+    module = _script()
+    probe = {
+        "pair_set": {"digest": "d" * 64, "name": "grammatical-minimal-pairs-v2"},
+        "models": {
+            f"step{step}": {
+                "checkpoint_checksum": "c" * 64,
+                "result": {
+                    "accuracy": 0.8,
+                    "by_phenomenon": {
+                        f"phenomenon_{index}": {"accuracy": 0.9, "pairs": 100} for index in range(8)
+                    },
+                    "outcomes": [[f"p{index}", "agreement", 1.0] for index in range(800)],
+                },
+            }
+            for step in range(200, 2600, 200)
+        },
+    }
+
+    compacted = module.compact(probe, max_entries=20, max_bytes=2048, key="root")
+
+    assert len(compacted["models"]) == 12
+    first = compacted["models"]["step200"]["result"]
+    assert first["accuracy"] == 0.8
+    assert len(first["by_phenomenon"]) == 8
+    assert first["outcomes"]["omitted_from_extract"] is True
+    assert first["outcomes"]["json_bytes"] > 2048
+
+
 def test_a_missing_report_is_a_named_failure_not_a_traceback(
     tmp_path: Path, capsys: pytest.CaptureFixture[str]
 ) -> None:

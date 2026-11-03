@@ -32,21 +32,29 @@ MAX_ENTRIES = 6
 MAX_BYTES = 2048
 
 #: The keys the series' extracts keep whole whatever their size: the numbers a record's tables are read from.
+#: A kept key is descended into and only the bulky leaf inside it becomes a stub, which is what lets the same
+#: script compact a run's report and a probe result — both are a thin layer of structure over a small set of
+#: numbers, with the big arrays one level further down than the container that holds them.
 ALWAYS_KEEP = frozenset(
     {
         "architecture",
         "artifact",
         "baselines_subword",
         "budget",
+        "by_phenomenon",
         "corpus",
         "curve",
         "curve_artifacts",
         "environment",
         "experiment",
+        "items",
         "model_family",
+        "models",
         "parameter_count",
         "parameters_by_configuration",
+        "pair_set",
         "plan",
+        "result",
         "test",
         "test_partitions",
         "timings",
