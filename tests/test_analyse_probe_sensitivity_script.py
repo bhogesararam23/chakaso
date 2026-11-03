@@ -268,7 +268,9 @@ def test_reusing_a_criterion_reports_the_endpoint_check_as_another_analysis_s() 
         report=_report(),
         scored={},
         pairs_result=_pairs({"untrained-control": 1, "step400": 12, "step800": 20}),
-        continuations_result=_continuations({"untrained-control": 10, "step400": 19, "step800": 20}),
+        continuations_result=_continuations(
+            {"untrained-control": 10, "step400": 19, "step800": 20}
+        ),
         usable_phenomena=["agreement", "order"],
         materiality=0.02,
         endpoint="step800",

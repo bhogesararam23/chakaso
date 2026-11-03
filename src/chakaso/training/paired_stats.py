@@ -21,6 +21,7 @@ vectors; :func:`chakaso.training.minimal_pairs.score_pairs` and
 
 from __future__ import annotations
 
+import math
 from collections.abc import Sequence
 from math import comb, fabs
 
@@ -115,7 +116,9 @@ def spearman_rho(first: Sequence[float], second: Sequence[float]) -> float:
     spread_b = sum((y - mean_b) ** 2 for y in b)
     if spread_a == 0.0 or spread_b == 0.0:
         return 0.0
-    return covariance / (spread_a**0.5 * spread_b**0.5)
+    # `float(...)` and `math.sqrt` rather than `x ** 0.5`: a power of a sum is typed loosely enough that
+    # mypy reports the quotient as Any, and the division below has no business being Any.
+    return float(covariance / (math.sqrt(spread_a) * math.sqrt(spread_b)))
 
 
 def holm_rejections(p_values: Sequence[float], *, alpha: float = 0.05) -> list[bool]:
