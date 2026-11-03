@@ -3,9 +3,10 @@
 Real problems with the current state, including the ones that are only
 inconvenient. An empty file here would mean nobody has looked.
 
-Last reviewed: 2026-11-04 (**K-032 closed** — a committed probe extract keeps its per-item outcome arrays in a compact,
-digest-checked form, demonstrated by re-running E2629's refused reading from E2627's bytes and getting all eight
-instrument rows identical; K-001 unchanged, K-030's deciding arm and K-031's raw-byte archive still open); before that
+Last reviewed: 2026-11-04 (**K-033 filed** by E2633 — a record's whole-pack figure and its five-register table are measured over different
+held-out samples, and the whole-pack sample holds no medicine at all; **K-032 closed** — a committed probe extract keeps its per-item
+outcome arrays in a compact, digest-checked form, demonstrated by re-running E2629's refused reading from E2627's bytes and getting all
+eight instrument rows identical; K-001 unchanged, K-030's deciding arm and K-031's raw-byte archive still open); before that
 2026-11-03 (K-032 filed by E2629's deviation; K-030's declaration half closed by ADR-0049 with its deciding arm still unrun, K-031 left
 open; K-001 unchanged by E2626, E2627, E2628 and E2629, which measure instruments and a tokenizer at a lower loss, not
 capability); before that 2026-11-01 (K-024 through K-029 added by the research campaign; K-024 is closed for the
@@ -896,6 +897,39 @@ as the closing demonstration, and E2626, E2627 and E2629 each carry a dated adde
 
 **Status:** closed 2026-11-04. The rule now belongs to `docs/internal/experiments/README.md` and
 [`artifact-policy.md`](../internal/engineering/artifact-policy.md), not to an issue register.
+
+### K-033 — A record prints one whole-pack number and a five-register table beside it, and they are measured over different text
+
+**Impact:** Medium for interpretation, and it touches every arm verdict in the series. Found while writing E2633, whose
+paired test had to know which text it was resampling.
+
+`prepare_corpus` packs the held-out side twice over, differently. The whole-pack figure the reports call
+`transformer.test` comes from `_sampled_units(split.test, max_test_tokens, seed)` — a **seeded sample of all the
+held-out documents**, capped at 250,000 identifiers. The register table comes from `partition_packs`, which filters
+`split.test` by each prefix and samples *each register separately* at the same cap. Both are legitimate; neither is the
+other.
+
+Measured on the committed report of E2612 arm T ([`experiments/E2629/E2612-T-report.json`](../../experiments/E2629/E2612-T-report.json)),
+the same run that every later comparison quotes: the whole pack scores **535,282 characters** and the five partitions
+score 510,290 (mathematics), 101,008 (medicine), 539,534 (prose), 538,564 (science) and 547,586 (technology) —
+**2,236,982 characters, 4.2 times the whole-pack denominator**. And because the capped sample draws by seed, not by
+quota, E2633 read its registers off the actual pack and found science 46.6 %, prose 41.5 %, mathematics 6.0 %,
+technology 5.9 % and **medicine 0 %**: no medicine work is in the pack that produces the headline whole-pack number,
+while O1 — the equal-weight mean of the five partitions, the objective E2615, E2618, E2620, E2625, E2628 and E2630 all
+declare as primary — gives medicine a fifth of its weight.
+
+**Why nothing was changed on the spot.** The two quantities answer different questions and both are cited by measured
+records: the whole pack is one number on one sample of the held-out text, the partition table is a per-register
+estimate with deliberate equal weighting. Restating either would move published numbers, and adding a third figure
+(the pooled five-register mean) is a decision about which denominator a verdict is read on — the same dispute K-027
+settled by naming the weighting field, one level up.
+
+**What would close it:** a stated rule in `docs/internal/experiments/README.md` that a record names, for each loss
+figure, which pack it came from — whole pack or per-register sample — and a record that declares both prints them in
+separate tables rather than one; then, if the pooled figure is wanted, computed from the partition packs and labelled
+as such. E2633's deviation 4 is the first instance of the disclosure.
+
+**Status:** open, measured 2026-11-04 by E2633.
 
 ## Resolved
 
