@@ -13,10 +13,13 @@ Requires the optional ``[nn]`` extra.
 
 from __future__ import annotations
 
+import math
 from collections.abc import Sequence
+from dataclasses import dataclass
 
 import torch
 
+from chakaso.training.data import TextUnit
 from chakaso.training.errors import TrainingError, TrainingScheduleError
 from chakaso.training.model_metrics import ModelMetrics, metrics_from_scores
 from chakaso.training.nn_checkpoint import ModelArtifact, TrainedModel
@@ -25,13 +28,49 @@ from chakaso.training.packing import PackedExample
 from chakaso.training.subword import DOCUMENT_END, SubwordVocabulary
 
 __all__ = [
+    "DocumentLoss",
     "continuation_log_probabilities",
+    "document_losses",
     "evaluate_artifact",
     "evaluate_model",
+    "position_losses",
     "score_model_on_examples",
     "sequence_log_probabilities",
     "untrained_model_like",
 ]
+
+
+@dataclass(frozen=True, slots=True)
+class _ScoredRow:
+    """One example's cross-entropies, targets and argmaxes — the row every scorer here walks."""
+
+    losses: list[float]
+    targets: list[int]
+    predictions: list[int]
+
+
+@dataclass(frozen=True, slots=True)
+class DocumentLoss:
+    """What one held-out document contributed to a packed evaluation.
+
+    ``bits_per_character`` is the same arithmetic as the whole-pack metric on that document's own slice, so a
+    comparison between two arms can be paired document by document; ``group`` is the work the split held out,
+    which is the unit a bootstrap resamples because a book contributes many of these rows and they are not
+    independent observations.
+    """
+
+    segment: int
+    group: str
+    positions: int
+    nats: float
+    characters: int
+
+    @property
+    def bits_per_character(self) -> float:
+        """This document's loss in the series' unit, or ``inf`` if it scored no characters at all."""
+        if not self.characters:
+            return math.inf
+        return math.log2(math.e) * self.nats / self.characters
 
 
 def score_model_on_examples(
@@ -44,7 +83,8 @@ def score_model_on_examples(
     """Return per-position cross-entropies, target identifiers and predicted identifiers.
 
     Positions come out in block order, so the concatenation of the targets is the scored token stream —
-    which is what makes the bits-per-character denominator the decoded length of *that* text.
+    which is what makes the bits-per-character denominator the decoded length of *that* text. The walk is
+    :func:`_scored_rows`; this is its flattened form.
 
     Scoring is batched because the alternative is a measurement artefact: at one forward pass per block,
     evaluating 3,908 test blocks of a 256-token model took longer than the 2,400 training steps did, which
@@ -62,6 +102,30 @@ def score_model_on_examples(
         TrainingScheduleError: there are no examples to score, ``batch_size`` is not a positive integer, or
             ``document_masking`` is set and an example carries no segment identifiers.
     """
+    nats: list[float] = []
+    targets: list[int] = []
+    predictions: list[int] = []
+    for row in _scored_rows(
+        model, examples, batch_size=batch_size, document_masking=document_masking
+    ):
+        nats.extend(row.losses)
+        targets.extend(row.targets)
+        predictions.extend(row.predictions)
+    return nats, targets, predictions
+
+
+def _scored_rows(
+    model: TrainedModel,
+    examples: Sequence[PackedExample],
+    *,
+    batch_size: int = 32,
+    document_masking: bool = False,
+) -> list[_ScoredRow]:
+    """One :class:`_ScoredRow` per example, in the order given — the single forward-pass path every scorer here shares.
+
+    Kept in one place because two paths that compute the same held-out number differently is how an arm
+    comparison becomes a statement about the evaluation code.
+    """
     if not examples:
         message = "cannot score zero examples"
         raise TrainingScheduleError(message)
@@ -69,9 +133,7 @@ def score_model_on_examples(
         message = f"batch_size must be an integer >= 1, got {batch_size!r}"
         raise TrainingScheduleError(message)
     model.eval()
-    nats: list[float] = []
-    targets: list[int] = []
-    predictions: list[int] = []
+    rows: list[_ScoredRow] = []
     with torch.no_grad():
         for start in range(0, len(examples), batch_size):
             chunk = list(examples[start : start + batch_size])
@@ -79,10 +141,10 @@ def score_model_on_examples(
             if len(widths) != 1:
                 # A ragged chunk is legal input and rare; scoring it row by row keeps one code path for the
                 # numbers rather than two that could disagree.
-                rows: list[Sequence[PackedExample]] = [[row] for row in chunk]
+                groups: list[Sequence[PackedExample]] = [[row] for row in chunk]
             else:
-                rows = [chunk]
-            for group in rows:
+                groups = [chunk]
+            for group in groups:
                 inputs = torch.tensor([list(row.input_ids) for row in group], dtype=torch.int64)
                 wanted = torch.tensor([list(row.targets) for row in group], dtype=torch.int64)
                 if document_masking:
@@ -93,10 +155,104 @@ def score_model_on_examples(
                 selected = log_probabilities.gather(-1, wanted.unsqueeze(-1)).squeeze(-1)
                 best = logits.argmax(dim=-1)
                 for index in range(len(group)):
-                    nats.extend(-float(value) for value in selected[index])
-                    targets.extend(int(value) for value in wanted[index])
-                    predictions.extend(int(value) for value in best[index])
-    return nats, targets, predictions
+                    rows.append(
+                        _ScoredRow(
+                            losses=[-float(value) for value in selected[index]],
+                            targets=[int(value) for value in wanted[index]],
+                            predictions=[int(value) for value in best[index]],
+                        )
+                    )
+    return rows
+
+
+def position_losses(
+    model: TrainedModel,
+    examples: Sequence[PackedExample],
+    *,
+    batch_size: int = 32,
+    document_masking: bool = False,
+) -> list[list[float]]:
+    """Per-position cross-entropies, one list per packed example, in block order."""
+    return [
+        row.losses
+        for row in _scored_rows(
+            model, examples, batch_size=batch_size, document_masking=document_masking
+        )
+    ]
+
+
+def document_losses(
+    model: TrainedModel,
+    examples: Sequence[PackedExample],
+    vocabulary: SubwordVocabulary,
+    units: Sequence[TextUnit] = (),
+    *,
+    batch_size: int = 32,
+    document_masking: bool = False,
+) -> list[DocumentLoss]:
+    """Split a packed evaluation into the documents that produced it, with each one's loss and character count.
+
+    A paired comparison between two arms needs a unit to pair on, and the packed block is not one: it is a
+    window over a stream, and the same document usually spans several. ``segment_ids`` says which document each
+    *input* position came from, and a target at position ``i`` is the prediction for the input token one place
+    later — the first token of the next block when ``i`` is the block's last. That shift is the whole of this
+    function's arithmetic, and it is why the totals below equal the shared metric exactly rather than
+    approximately.
+
+    The final scored token lies one past the last block's last input, so no segment covers it: exactly one
+    position per pack, attributed to that last block's final document, which is the document the stream was
+    still inside when the block ended.
+
+    Raises:
+        TrainingScheduleError: an example carries no segment identifiers — the pack was built without
+            ``track_documents=True``, so there is no boundary to split on and the function refuses to guess
+            one — or the pack names a document the caller's unit list does not contain.
+    """
+    segments: list[tuple[int, ...]] = []
+    for example in examples:
+        if example.segment_ids is None:
+            message = (
+                "per-document losses need document boundaries: pack the evaluation with "
+                "track_documents=True, or score the whole pack through evaluate_model"
+            )
+            raise TrainingScheduleError(message)
+        segments.append(example.segment_ids)
+    rows = _scored_rows(model, examples, batch_size=batch_size, document_masking=document_masking)
+    # ``segment`` answers for every scored token: the segments of each block cover its own input positions,
+    # and a block's last target is the next block's first input token.
+    width = len(examples[0].input_ids)
+    grouped: dict[int, list[float]] = {}
+    identifiers: dict[int, list[int]] = {}
+    for block, row in enumerate(rows):
+        for index, target in enumerate(row.targets):
+            if index + 1 < width:
+                segment = segments[block][index + 1]
+            elif block + 1 < len(segments):
+                segment = segments[block + 1][0]
+            else:
+                segment = segments[block][-1]
+            grouped.setdefault(segment, []).append(row.losses[index])
+            identifiers.setdefault(segment, []).append(target)
+
+    if units and max(grouped) >= len(units):
+        message = (
+            f"the pack names document {max(grouped)} but the caller supplied {len(units)} units; a segment "
+            "index is only meaningful beside the unit list that was packed"
+        )
+        raise TrainingScheduleError(message)
+    out: list[DocumentLoss] = []
+    for segment in sorted(grouped):
+        characters = len(vocabulary.decode(identifiers[segment]))
+        out.append(
+            DocumentLoss(
+                segment=segment,
+                group=units[segment].group if units else "",
+                positions=len(grouped[segment]),
+                nats=math.fsum(grouped[segment]),
+                characters=characters,
+            )
+        )
+    return out
 
 
 def evaluate_model(

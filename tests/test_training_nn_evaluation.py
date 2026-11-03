@@ -21,8 +21,10 @@ from chakaso.training.errors import (  # noqa: E402
     TrainingScheduleError,
 )
 from chakaso.training.nn_evaluation import (  # noqa: E402
+    document_losses,
     evaluate_artifact,
     evaluate_model,
+    position_losses,
     score_model_on_examples,
 )
 from chakaso.training.nn_training import evaluate_loss  # noqa: E402
@@ -537,3 +539,68 @@ def test_building_an_untrained_control_does_not_move_the_callers_random_stream()
         torch.equal(a, b)
         for a, b in zip(first.state_dict().values(), second.state_dict().values(), strict=True)
     )
+
+
+def _tracked_units():
+    """Two documents from two works, packed with document tracking, over a window that needs two blocks."""
+    units = (
+        TextUnit(identifier="a", text="the quick red fox ran over the dry sand", group="work-one"),
+        TextUnit(identifier="b", text="the quiet owl slept", group="work-two"),
+    )
+    batch = pack_units(units, _VOCABULARY, context_length=6, track_documents=True)
+    return units, batch
+
+
+def test_document_losses_partition_the_packed_loss_over_the_documents_that_produced_it() -> None:
+    units, batch = _tracked_units()
+    model = _model()
+    per_document = document_losses(model, batch.examples, _VOCABULARY, units)
+
+    assert [loss.segment for loss in per_document] == [0, 1]
+    assert [loss.group for loss in per_document] == ["work-one", "work-two"]
+    assert all(loss.positions > 0 for loss in per_document)
+    # The whole-pack metric is the pooled arithmetic over these parts, not a number computed beside them.
+    metrics = evaluate_model(model, batch.examples, _VOCABULARY)
+    nats_total = math.fsum(loss.nats for loss in per_document)
+    characters_total = sum(loss.characters for loss in per_document)
+    assert characters_total == metrics.characters_scored
+    assert math.log2(math.e) * nats_total / characters_total == pytest.approx(
+        metrics.bits_per_character, rel=1e-12
+    )
+
+
+def test_a_block_boundary_inside_a_document_does_not_move_a_single_nat() -> None:
+    # One document long enough to need three blocks: its losses must add to exactly what scoring the same
+    # blocks through the shared metric path reports, with no position double-counted or dropped at a seam.
+    units = (
+        TextUnit(
+            identifier="a",
+            text="the quick red fox ran over the dry sand and the quiet owl slept",
+            group="solo",
+        ),
+    )
+    batch = pack_units(units, _VOCABULARY, context_length=6, track_documents=True)
+    model = _model()
+    per_document = document_losses(model, batch.examples, _VOCABULARY, units)
+
+    assert len(per_document) == 1
+    metrics = evaluate_model(model, batch.examples, _VOCABULARY)
+    assert sum(loss.characters for loss in per_document) == metrics.characters_scored
+    assert math.fsum(loss.nats for loss in per_document) == pytest.approx(
+        metrics.loss_nats * metrics.positions_scored, rel=1e-12
+    )
+
+
+def test_scoring_a_pack_without_document_tracking_is_refused_by_name() -> None:
+    units = (TextUnit(identifier="a", text="the quick red fox ran", group="w"),)
+    batch = pack_units(units, _VOCABULARY, context_length=6)
+    with pytest.raises(TrainingScheduleError, match="track_documents=True"):
+        document_losses(_model(), batch.examples, _VOCABULARY, units)
+
+
+def test_per_position_losses_come_out_in_block_order_and_match_the_flat_list() -> None:
+    batch = _tracked_units()[1]
+    rows = position_losses(_model(), batch.examples)
+    flat, _targets, _predictions = score_model_on_examples(_model(), batch.examples)
+    assert math.fsum(math.fsum(row) for row in rows) == pytest.approx(math.fsum(flat), rel=1e-12)
+    assert [len(row) for row in rows] == [len(example.targets) for example in batch.examples]
