@@ -33,6 +33,8 @@ from typing import Any
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src"))
 
+from chakaso.training.outcome_vectors import is_compacted, restore_probe_result
+
 PARTITIONS = ("prose-", "science-", "technology-", "medicine-", "mathematics-")
 #: The name ``evaluate_minimal_pairs.py`` and ``evaluate_continuations.py`` give their untrained floor.
 CONTROL_MODEL = "untrained-control"
@@ -45,7 +47,9 @@ class AnalysisError(RuntimeError):
 
 
 def _load(path: Path) -> dict[str, Any]:
-    return json.loads(Path(path).read_text(encoding="utf-8"))
+    """A run report or probe result, with a compact extract's per-item arrays rebuilt before anything reads them."""
+    document = json.loads(Path(path).read_text(encoding="utf-8"))
+    return restore_probe_result(document) if is_compacted(document) else document
 
 
 def rung_names(report: Mapping[str, Any]) -> dict[str, str]:
@@ -124,6 +128,23 @@ def check_endpoint_matches_the_report(
             raise AnalysisError(message)
 
 
+def _refuse_stub(outcomes: Any, model: str) -> None:
+    """Refuse a per-item array the extractor omitted, and say which fact about the file that is.
+
+    The three readers below each already refuse a *missing* reading, which would swallow this case into a message
+    about phenomena that did not match. They are different failures: the run scored the items, and the committed
+    extract left the rows out to fit the 1 MiB tracked-file bound (K-032). A reader told the second thing can fix
+    it — re-extract with the compaction on — and a reader told the first goes looking for a scoring bug.
+    """
+    if isinstance(outcomes, Mapping) and outcomes.get("omitted_from_extract") is True:
+        message = (
+            f"{model}: its per-item outcomes were omitted from this extract to fit the tracked-file bound, so "
+            "the paired test cannot be recomputed from the committed file; scripts/extract_report.py after "
+            "2026-11-04 keeps them in the compact form (K-032)"
+        )
+        raise AnalysisError(message)
+
+
 def pair_outcomes(
     pairs_result: Mapping[str, Any], *, phenomena: Sequence[str] | None
 ) -> dict[str, dict[str, float]]:
@@ -137,6 +158,7 @@ def pair_outcomes(
     tables: dict[str, dict[str, float]] = {}
     for model, block in pairs_result["models"].items():
         outcomes = block["result"].get("outcomes")
+        _refuse_stub(outcomes, str(model))
         if not outcomes:
             message = (
                 f"{model}: this pair result has no per-item outcomes, so it was scored before the probe "
@@ -163,6 +185,7 @@ def context_outcomes(
         per_model: dict[str, dict[str, float]] = {}
         for model, block in continuations_result["models"].items():
             outcomes = block["result"].get("outcomes") or {}
+            _refuse_stub(outcomes, str(model))
             if reading not in outcomes:
                 message = f"{model}: no per-item outcomes for the same-region reading {reading!r}"
                 raise AnalysisError(message)
@@ -180,6 +203,7 @@ def continuation_outcomes(
     tables: dict[str, dict[str, float]] = {}
     for model, block in continuations_result["models"].items():
         outcomes = block["result"].get("outcomes")
+        _refuse_stub(outcomes, str(model))
         if not outcomes or reading not in outcomes:
             message = f"{model}: no per-item outcomes for reading {reading!r}"
             raise AnalysisError(message)

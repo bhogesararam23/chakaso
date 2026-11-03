@@ -277,3 +277,60 @@ def test_the_summary_names_each_pair_and_the_outcome() -> None:
     assert "mixture vs prose: gap 0.10824 material" in text
     assert "prose vs half_prose: gap 0.00453 inside the band" in text
     assert "outcome: Z-a" in text
+
+
+def test_a_compact_extract_of_a_probe_result_is_read_as_the_arrays_it_stands_for(
+    tmp_path: Path,
+) -> None:
+    """K-032's fix on the reader's side: the file that was refused can now be paired.
+
+    E2629 handed this script E2627's committed extract and was refused because the extractor had stubbed the
+    per-item array. A file written in the compact form carries the same rows, and the analysis must produce the
+    same verdict from it as from the whole result — byte for byte, not approximately.
+    """
+    from chakaso.training.outcome_vectors import compact_probe_result
+
+    script = _script()
+    whole = _pair_result(_BEST_FIRST)
+    path = tmp_path / "minimal-pairs.json"
+    path.write_text(json.dumps(compact_probe_result(whole), indent=2), encoding="utf-8")
+
+    loaded = script._load(path)
+    assert loaded == whole
+    result = script.read(
+        reports=_reports(),
+        reference="mixture",
+        pairs_result=loaded,
+        continuations_result=_continuation_result(_BEST_FIRST),
+        usable_phenomena=_PHENOMENA,
+        materiality=0.02,
+        decision_bearing=("minimal_pairs_usable",),
+    )
+    assert result["outcome"] == _read()["outcome"]
+
+
+def test_an_extract_whose_array_was_stubbed_is_still_refused_by_name(tmp_path: Path) -> None:
+    """The other half of the same fix: a pre-K-032 extract must not silently read as an empty one."""
+    script = _script()
+    stubbed = _pair_result(_BEST_FIRST)
+    for entry in stubbed["models"].values():
+        entry["result"]["outcomes"] = {
+            "omitted_from_extract": True,
+            "canonical_json_sha256": "0" * 64,
+            "json_bytes": 58_600,
+        }
+    path = tmp_path / "old.json"
+    path.write_text(json.dumps(stubbed), encoding="utf-8")
+
+    # The refusal names the fact about the file — the rows were left out to fit the size bound — rather than the
+    # misleading "no pair matched the usable phenomena" a reader would otherwise get and go debugging for.
+    with pytest.raises(script.AnalysisError, match="omitted from this extract"):
+        script.read(
+            reports=_reports(),
+            reference="mixture",
+            pairs_result=script._load(path),
+            continuations_result=_continuation_result(_BEST_FIRST),
+            usable_phenomena=_PHENOMENA,
+            materiality=0.02,
+            decision_bearing=("minimal_pairs_usable",),
+        )

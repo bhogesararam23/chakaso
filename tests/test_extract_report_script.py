@@ -135,11 +135,12 @@ def test_writing_is_deterministic_and_refuses_to_replace_an_existing_extract(
 
 
 def test_a_probe_result_keeps_its_tables_and_stubs_only_the_per_item_arrays() -> None:
-    """The same compactor has to work on a probe result, whose big array is one level below its container.
+    """The walk itself: an array that is bulky and not compacted becomes a digest stub, one level below its container.
 
     ``models`` is a mapping of thirteen entries whose canonical JSON is enormous because each carries 800
     per-item outcomes; stubbing the container would throw away every accuracy the record cites, so the walk
-    descends through a kept key and replaces only the leaf that is actually bulky.
+    descends through a kept key and replaces only the leaf that is actually bulky. This is what an extract looks
+    like written with ``--no-compact-outcomes``, and it is the shape K-032 filed: the next test is the fix.
     """
     module = _script()
     probe = {
@@ -167,6 +168,105 @@ def test_a_probe_result_keeps_its_tables_and_stubs_only_the_per_item_arrays() ->
     assert len(first["by_phenomenon"]) == 8
     assert first["outcomes"]["omitted_from_extract"] is True
     assert first["outcomes"]["json_bytes"] > 2048
+
+
+def _probe_result() -> dict[str, Any]:
+    return {
+        "pair_set": {"digest": "d" * 64, "name": "grammatical-minimal-pairs-v2"},
+        "models": {
+            f"step{step}": {
+                "checkpoint_checksum": "c" * 64,
+                "result": {
+                    "accuracy": 0.8,
+                    "by_phenomenon": {
+                        f"phenomenon_{index}": {"accuracy": 0.9, "pairs": 100} for index in range(8)
+                    },
+                    "outcomes": [[f"p{index}", "agreement", 1.0] for index in range(800)],
+                },
+            }
+            for step in range(200, 2600, 200)
+        },
+    }
+
+
+def test_an_extract_of_a_probe_result_keeps_the_per_item_arrays_compact(tmp_path: Path) -> None:
+    """K-032's fix through the CLI: the array a McNemar test is computed from stays in the committed file.
+
+    Twelve models, the same 800 items, one bit per item per model and the item identities hoisted once. The
+    property is not the size, it is that ``restore_probe_result`` on the bytes that landed in the repository
+    rebuilds the arrays the run scored — the reading E2629 was refused.
+    """
+    from chakaso.training.outcome_vectors import restore_probe_result
+
+    module = _script()
+    source = tmp_path / "minimal-pairs.json"
+    source.write_text(json.dumps(_probe_result()), encoding="utf-8")
+    out = tmp_path / "extract.json"
+    assert module.main([f"--report={source}", f"--out={out}"]) == 0
+    extract = json.loads(out.read_text(encoding="utf-8"))
+
+    assert extract["extract"]["outcomes_compacted"] is True
+    assert len(extract["outcome_items"]["result.outcomes"]) == 800
+    for entry in extract["models"].values():
+        block = entry["result"]["outcomes"]["compact_v1"]
+        assert block["vectors"][""] == "1" * 800
+        assert "omitted_from_extract" not in entry["result"]["outcomes"]
+        # The tables the record prints still survived alongside the array.
+        assert entry["result"]["accuracy"] == 0.8
+        assert len(entry["result"]["by_phenomenon"]) == 8
+    restored = restore_probe_result(extract)
+    assert (
+        restored["models"]["step200"]["result"]["outcomes"]
+        == _probe_result()["models"]["step200"]["result"]["outcomes"]
+    )
+    # The size claim, measured on like for like: the extract is rendered with an indent and the fixture is not, so
+    # the honest comparison is between the two documents, not the two files.
+    probe_canonical = len(json.dumps(_probe_result(), sort_keys=True, separators=(",", ":")))
+    extract_canonical = len(json.dumps(extract, sort_keys=True, separators=(",", ":")))
+    assert extract_canonical < probe_canonical / 3
+
+
+def test_the_stub_form_a_committed_extract_was_written_in_is_still_reachable(
+    tmp_path: Path,
+) -> None:
+    """``--no-compact-outcomes`` reproduces the pre-K-032 extract, so an old record's bytes are still producible.
+
+    Kept as a test because E2626's and E2627's committed evidence is in that shape and a reader is entitled to
+    regenerate it and compare.
+    """
+    module = _script()
+    source = tmp_path / "minimal-pairs.json"
+    source.write_text(json.dumps(_probe_result()), encoding="utf-8")
+    out = tmp_path / "extract.json"
+    assert module.main([f"--report={source}", f"--out={out}", "--no-compact-outcomes"]) == 0
+    extract = json.loads(out.read_text(encoding="utf-8"))
+
+    assert extract["extract"]["outcomes_compacted"] is False
+    assert "outcome_items" not in extract
+    stub = extract["models"]["step200"]["result"]["outcomes"]
+    assert stub["omitted_from_extract"] is True
+    assert stub["json_bytes"] > 2048
+
+
+def test_a_run_report_is_unaffected_because_it_has_no_outcome_arrays(tmp_path: Path) -> None:
+    """``--compact-outcomes`` is a no-op on a run report's bytes, because a run report has no outcome arrays.
+
+    Every measured record's arm evidence is written by this one script, so a change that quietly re-styled a run
+    report would break the digests the records already cite. The two extracts differ in one honest field: which
+    mode produced them.
+    """
+    module = _script()
+    source = tmp_path / "report.json"
+    source.write_text(json.dumps(_report()), encoding="utf-8")
+    compacted = tmp_path / "with.json"
+    plain = tmp_path / "without.json"
+    assert module.main([f"--report={source}", f"--out={compacted}"]) == 0
+    assert module.main([f"--report={source}", f"--out={plain}", "--no-compact-outcomes"]) == 0
+    with_block = json.loads(compacted.read_text(encoding="utf-8"))
+    without_block = json.loads(plain.read_text(encoding="utf-8"))
+    with_block.pop("extract")
+    without_block.pop("extract")
+    assert with_block == without_block
 
 
 def test_a_partition_metrics_table_survives_because_a_record_cites_its_numbers() -> None:

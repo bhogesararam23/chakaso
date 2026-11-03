@@ -28,8 +28,16 @@ from hashlib import sha256
 from pathlib import Path
 from typing import Any
 
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src"))
+
+from chakaso.training.outcome_vectors import ITEMS_KEY, compact_probe_result
+
 MAX_ENTRIES = 6
 MAX_BYTES = 2048
+
+#: The two blocks the outcome compaction writes. They are the array, in its compacted form, with the digest that
+#: proves a reader can rebuild it — so the walk stops at them rather than stubbing them as bulky.
+COMPACT_KEYS = frozenset({"compact_v1", ITEMS_KEY})
 
 #: The keys the series' extracts keep whole whatever their size: the numbers a record's tables are read from.
 #: A kept key is descended into and only the bulky leaf inside it becomes a stub, which is what lets the same
@@ -92,9 +100,14 @@ def _holds_kept_numbers(value: Any) -> bool:
     A parent block is often large precisely because its children are: ``transformer`` exceeds the byte budget
     only because the curve and the rung list are in it. Stubbing the parent would throw away the test metrics
     along with the lists, so a block that carries a kept key is walked instead of replaced, and only the bulky
-    leaf inside it becomes a stub.
+    leaf inside it becomes a stub. A block holding a compact outcome array is the same case in miniature — its
+    size is the evidence, and replacing it would put the per-item rows back out of a reader's reach.
     """
-    return isinstance(value, Mapping) and any(str(name) in ALWAYS_KEEP for name in value)
+    if not isinstance(value, Mapping):
+        return False
+    if any(str(name) in ALWAYS_KEEP or str(name) in COMPACT_KEYS for name in value):
+        return True
+    return any(isinstance(item, Mapping) and "compact_v1" in item for item in value.values())
 
 
 def compact(
@@ -104,8 +117,12 @@ def compact(
 
     The walk is top-down and the keep-list is checked at every level, so ``transformer.test`` survives whole
     while a 6,500-entry group listing inside ``corpus`` does not — and a bulky block nested inside a kept key is
-    still replaced, because what is being bounded is the file, not the field's name.
+    still replaced, because what is being bounded is the file, not the field's name. A compact outcome block and the
+    shared item listing beside it end the walk: they are already the compacted array, each with its own digest, and
+    stubbing one would put the array back out of a reader's reach — the defect K-032 was filed about.
     """
+    if key in COMPACT_KEYS or (isinstance(value, Mapping) and "compact_v1" in value):
+        return json.loads(json.dumps(value))
     if (
         key not in ALWAYS_KEEP
         and not _holds_kept_numbers(value)
@@ -130,19 +147,32 @@ def compact(
 
 
 def build_extract(
-    report: Mapping[str, Any], source: Path, *, max_entries: int, max_bytes: int
+    report: Mapping[str, Any],
+    source: Path,
+    *,
+    max_entries: int,
+    max_bytes: int,
+    compact_outcomes: bool = True,
 ) -> dict[str, Any]:
-    """The extract document: the compacted report, plus the block that says where it came from."""
+    """The extract document: the compacted report, plus the block that says where it came from.
+
+    ``compact_outcomes`` is the K-032 half: a probe result's per-item arrays are put in the digest-checked compact
+    form before the bulky-block walk runs, so they survive into the extract as evidence instead of leaving as a
+    stub. A run report has no outcome arrays, and the compaction is a no-op on it by construction — it looks for a
+    ``models`` block and returns anything else unchanged.
+    """
+    document = compact_probe_result(report) if compact_outcomes else report
     body = {
         str(key): compact(value, max_entries=max_entries, max_bytes=max_bytes, key=str(key))
-        for key, value in report.items()
+        for key, value in document.items()
     }
-    document = _canonical(body)
+    document_json = _canonical(body)
     body["extract"] = {
         "note": "compact extract of the run's report.json; bulky blocks replaced by digest stubs",
         "report_file_sha256": sha256(Path(source).read_bytes()).hexdigest(),
         "source_path": str(source),
-        "document_sha256": sha256(document.encode("utf-8")).hexdigest(),
+        "document_sha256": sha256(document_json.encode("utf-8")).hexdigest(),
+        "outcomes_compacted": compact_outcomes,
     }
     return body
 
@@ -157,6 +187,13 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--out", type=Path, required=True)
     parser.add_argument("--max-entries", type=int, default=MAX_ENTRIES)
     parser.add_argument("--max-bytes", type=int, default=MAX_BYTES)
+    parser.add_argument(
+        "--compact-outcomes",
+        action=argparse.BooleanOptionalAction,
+        default=True,
+        help="put each model's per-item outcome arrays in the digest-checked compact form (K-032) instead of "
+        "stubbing them; --no-compact-outcomes reproduces the extracts written before that fix",
+    )
     args = parser.parse_args(argv)
     try:
         report = json.loads(args.report.read_text(encoding="utf-8"))
@@ -164,7 +201,11 @@ def main(argv: list[str] | None = None) -> int:
         print(f"error: {error}", file=sys.stderr)
         return 1
     extract = build_extract(
-        report, args.report, max_entries=args.max_entries, max_bytes=args.max_bytes
+        report,
+        args.report,
+        max_entries=args.max_entries,
+        max_bytes=args.max_bytes,
+        compact_outcomes=args.compact_outcomes,
     )
     text = render(extract)
     if args.out.exists():

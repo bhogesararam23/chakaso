@@ -42,6 +42,7 @@ from analyse_probe_sensitivity import (
 )
 
 from chakaso.training.arm_comparison import compare_arms
+from chakaso.training.outcome_vectors import is_compacted, restore_probe_result
 from chakaso.training.probe_sensitivity import compare_instruments
 
 __all__ = ["main", "read"]
@@ -323,11 +324,18 @@ def main(argv: Sequence[str] | None = None) -> int:
 
 
 def _load(path: Path) -> dict[str, Any]:
+    """Read a probe result or run report, rebuilding the per-item arrays when the file carries them compacted.
+
+    K-032 was filed because this script refused E2627's committed extract: the extractor had stubbed the array a
+    McNemar test is computed from. An extract written after the fix carries the array in its compact form, and a
+    reader that does not rebuild it is back where the issue started.
+    """
     try:
-        return json.loads(path.read_text(encoding="utf-8"))
+        document = json.loads(path.read_text(encoding="utf-8"))
     except (OSError, ValueError) as error:
         message = f"{path}: {error}"
         raise AnalysisError(message) from error
+    return restore_probe_result(document) if is_compacted(document) else document
 
 
 if __name__ == "__main__":
