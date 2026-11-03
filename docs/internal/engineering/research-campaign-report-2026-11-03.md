@@ -90,11 +90,15 @@ equal to E2626's `step2400` rung to every digit — and re-scoring the same-regi
 `test_extract_report_script.py` and `test_analyse_arm_pairs_script.py`.
 
 CI was read back from the runner, not inferred: **all eight jobs** (core / train / model path across Python 3.11, 3.12
-and 3.13) green on `775974c` and again on `35c2504` (run `41605612713`). Three runs during the phase were red and each
-had a named cause that was fixed forward — a model-path type error and format drift that the local dependency-free
-gates could not see (`da0ef81`), an `importorskip` missing from a test, and a fixture the metrics-extract test never
-asked for (`71abc83`). One run was cancelled by the workflow's concurrency rule when a later push superseded it
-(`e8bddc2`). No test was weakened or deleted to get green.
+and 3.13) green on `775974c`, `3948926`, `35c2504`, `bf55e12`, `d690e1b`, `0446f5d` and `80be853` — the last as run
+`41609570829`. The phase's record is not uniformly green, and it is stated as measured: **six runs failed** —
+`1939e81`, `2121362`, `8510053`, `acdc71a`, `9bd6ecd` and `59ef3b1` — all from one cause cluster: a model-path type error
+and format drift that the dependency-free local gates cannot see, because numpy and torch are absent from them. That was
+fixed forward in `da0ef81`, which ran green, and every run after it is green. Two runs were cancelled by the workflow's
+concurrency rule when a later push superseded them (`45aca65`, `e8bddc2`); neither was an unexplained failure. The
+lesson is recorded where it belongs: touching the model path means running the `[train,nn]` suite and
+`mypy --config-file configs/mypy-model-path.toml` locally before pushing, not after CI says no. No test was weakened or
+deleted to get green.
 
 ---
 
@@ -169,8 +173,9 @@ one of the four records was committed before the run or scoring it describes. Fo
 as measured at `d690e1b`, of which these 36 are the last; the count is pinned to that commit rather than to a date so
 this report's own commits cannot make it wrong.
 
-Push verification: every batch was pushed as it landed and each push was confirmed — `775974c` and `35c2504` were read
-back as green from the runner with all eight jobs, and this report's commits went up on top of them. The end state of
+Push verification: every batch was pushed as it landed and each push was confirmed — `775974c`, `35c2504`, `d690e1b`,
+`0446f5d` and `80be853` were each read back from the runner with **all eight jobs green** (the last as run
+`41609570829`), and this report's commits went up on top of the phase's work. The end state of
 the phase, checked with:
 
 ```text
