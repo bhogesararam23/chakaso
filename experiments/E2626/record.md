@@ -134,9 +134,20 @@ python scripts/evaluate_continuations.py \
   --registers prose-:100,science-:55,technology-:40,mathematics-:20 --max-per-work 5 --control \
   --checkpoint E2626-step200=… --out experiments/E2626/continuations.json
 python scripts/analyse_probe_sensitivity.py --report data/experiments/E2626/seed-7/report.json \
+  --protocol configs/experiments/E2626-curve-ladder.toml --work-dir data/experiments/E2626/seed-7 \
+  --corpus-snapshot data/corpora/gutenberg-multiregister-v1/gutenberg-multiregister-v1-snapshot.json \
+  --split-seed 7 --expected-corpus-fingerprint 312571f9fa8351a8 \
   --pairs experiments/E2626/minimal-pairs.json --continuations experiments/E2626/continuations.json \
+  --usable-phenomena auxiliary_agreement,determiner_noun_agreement,reflexive_pronoun_agreement \
   --materiality 0.02 --out experiments/E2626/results.json
 ```
+
+*The reproduction block was corrected on 2026-11-03 after the analysis was built: as preregistered it named only the two probe files, the
+materiality and the output, because the criterion had to be computed per rung and the arguments that reconstruct the held-out pack (the
+protocol, the work directory, the snapshot, the split seed and the corpus fingerprint) and the `--usable-phenomena` list — which E2622
+declares and the script must be told — had not been spelled out. Nothing about the measurement changed: the same pair set, the same item
+set, the same 0.02 band and the same rules. The exact command that ran is recorded in `data/run_e2626_analysis.sh` alongside the two probe
+invocations above.*
 
 ## Known limits, declared in advance
 
