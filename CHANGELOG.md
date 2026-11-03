@@ -14,6 +14,16 @@ capability is implemented or still planned.
 
 ### 2026-11-03 (this session) — a run declares its optimizer recipe, and can be measured along its own curve
 
+**Measured**
+
+- **E2626: one capability probe follows a training curve; the other goes blind after update 800.** A single run published thirteen measurable models — its random initialisation and twelve evaluation points — and the endpoint's 43 tensors
+  are bit-identical to the committed E2614 seed-7 artifact, so the ordering is the curve, not an artifact of the new mechanism. Against held-out bits per character the minimal-pair probe (three usable phenomena, 300 pairs) ranks the rungs
+  at ρ = 0.951 and separates 63 of the 74 pairs whose loss gap exceeds the project's 0.02-bit band, resolving gaps down to 0.0218. The continuation probe ranks them at ρ = 0.918 but resolves nothing below **0.294** bits per character —
+  fifteen times the band — and separates none of the 32 material pairs whose rungs both lie past update 800. Both verdicts are worse than "usable" under rules fixed before the run, because the minimal-pair probe *contradicted* the loss on
+  one pair (rungs 1600 and 1800: 24 discordant items to 2, p = 1.0 × 10⁻⁵). One curve, one seed; rungs are not arms, so these are upper bounds on the fineness a probe resolves between two independently trained models. No capability claim,
+  and K-001 stands.
+- **H17's second seed is in flight (E2628, preregistered); the same-region continuation probe is preregistered (E2627).** Neither has a number yet.
+
 **Added**
 
 - **A training run can write a usable model at each declared evaluation point** (`ExperimentPlan.curve_artifact_steps`, ADR-0050). A rung is a
@@ -22,6 +32,23 @@ capability is implemented or still planned.
   what every committed record ran: one artifact, at the end. A step that is not an evaluation point, a step beyond the ceiling, a repeated step and
   steps named without a writer are all refused. This exists so one training curve can be used as an ordering criterion for the capability probes —
   the cheapest sensitivity test available for the question "can any instrument here detect a real improvement".
+- **Probe results carry their per-item record, and two models on one item set can now be compared as a pair**
+  (`score_pairs`/`score_items` outcomes; `chakaso.training.paired_stats`). McNemar's exact test, Spearman's rank correlation with average ranks over
+  ties, and Holm's step-down correction — all dependency-free, all hand-derived in their tests. E2621–E2623 could only set two marginal Wilson
+  intervals beside each other, which is the weaker test when both models were asked the same questions.
+- **`chakaso.training.probe_sensitivity` states what an instrument can see**: given a quality number and per-item probe scores for several models,
+  it reports the rank correlation, the share of materially-different pairs the instrument separates, the smallest gap it resolves and the largest it
+  misses, and a verdict (S-a to S-d) per instrument, never pooled across instruments.
+- **Same-region continuation items** (`chakaso.training.context_continuations`, `scripts/evaluate_context_continuations.py`): the construction
+  E2623 named as its own fix. Four distractors per passage — the document's text immediately before and immediately after, and the truth's
+  identifiers permuted and reversed — so topic, register and hand are held fixed and only position and sequence remain. Its own digest; v1's
+  unchanged, because a committed record cites it. Scored by the same pointwise mutual information, and it keeps the per-item record.
+- **`chakaso.training.subword_experiment.score_artifacts`** measures several models of one protocol over the
+  same prepared held-out pack, refusing by name an artifact from another corpus or another tokenizer, and returns the blocks in the shapes a report
+  writes. A test pins the property that matters: scored this way, a run's own final artifact reproduces its reported numbers exactly.
+- **`scripts/extract_report.py`**: the compacted-report convention that four records established by hand, now scripted, with the digest of every
+  block it leaves out. It compacts a run's report and a probe result alike, and refuses to replace a file that already exists.
+
 - **Weight decay can be exempted from the one-dimensional parameters** (`weight_decay_excludes_vectors`, ADR-0049, K-030 item 3). The rule is by
   shape, not by name: norm scales and biases. Off by default, which is what every committed record ran; the report's `decay_applied_to` states which
   of the two a run trained under. Whether it helps is an unrun arm.

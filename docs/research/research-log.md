@@ -1038,3 +1038,53 @@ that a trained decoder uses its context and knows some agreement constructions; 
 
 **Limitations.** One seed per treatment of every tokenizer and composition-free comparison; margins measured with the default tokenizer; templated pairs from a small lexicon; archaic English; a corpus the models trained on; likelihood preference, not generation. Two earlier statements were corrected in place and are recorded as such (E2621's below-chance attractor finding was a pair-subset artefact; E2624's "harmful at equal text" over-read a design that cut the updates).
 
+
+## 2026-11-03 — a training curve became the yardstick, and one probe follows it while the other goes blind
+
+**Type:** result + interpretation ([E2626](../../experiments/E2626/record.md), preregistered as `cafbb8a` before the
+run), with the mechanism that made it possible ([ADR-0049](../decisions/ADR-0049-a-runs-optimizer-settings-are-declared-not-inherited.md),
+[ADR-0050](../decisions/ADR-0050-a-run-can-write-usable-models-at-declared-points-on-its-curve.md)).
+
+**Observation.** The campaign's sharpest open question — no instrument here is known to detect a real improvement in
+what the model has learned — had never been testable, because a run published exactly one usable model, at its end.
+ADR-0050 lets a run write a usable artifact at each of its own evaluation points, so one training curve becomes an
+ordering the harness already measures and records for each member. E2626 ran E2614's seed-7 configuration with
+`eval_every` 200 and twelve declared rungs.
+
+**Measured.** The endpoint guard held at the strongest level available: all 43 tensors of E2614's seed-7 artifact are
+bit-identical to E2626's final model and to rung 2400, the test and validation blocks equal the committed report
+digit for digit, and the six intermediate evaluations E2614 never had fall where its curve says they should. Writing
+twelve artifacts and evaluating twice as often cost 15 % of wall clock and moved nothing. Whole-pack held-out bits per
+character runs 5.7533 (untrained) → 2.7365 → 2.0554 (update 2400); O1 5.6797 → 2.0214.
+
+**Interpretation, by the rules declared before the run.** Seventy-eight rung pairs per instrument, 74 of them material
+by the project's own 0.02-bit band. The minimal-pair probe on its three usable phenomena: ρ = 0.951, 63 of 74 material
+pairs separated, smallest material gap resolved 0.0218 — inside the band. The continuation probe: ρ = 0.918, 23 of 74,
+smallest gap resolved **0.2941**, and among the 32 material pairs whose rungs both sit past update 800 it separates
+**none**. E2623's near-ceiling result is therefore not a matter of interval overlap; it is insensitivity across the
+last two thirds of a learning curve, now with a size attached. Neither instrument earned the strong verdict, and the
+reason is a single pair: rungs 1600 and 1800, where the loss prefers 1800 by 0.0233 and the grammatical probe prefers
+1600, 24 discordant items to 2, p = 1.0 × 10⁻⁵.
+
+**Why the contradiction is the interesting result.** It is E2612's loss-versus-repetition disagreement reproduced inside
+one model at one seed with a paired test behind it, and it is why the preregistered rule treats a wrong-direction
+separation as disqualifying rather than as one datum among many: an instrument that can be confidently wrong about
+which of two models learned more cannot corroborate a loss change.
+
+**Limitation.** Rungs of one trajectory are not arms: they share an initialisation, a data order and nearly all their
+weights, which makes this the *most favourable* ordering available to an instrument and its sensitivity figures upper
+bounds on what the same probe will resolve between two independently trained models — where E2622's own seed spread
+(0.015–0.048 on the same 300 pairs) is the same size as the band. The criterion is loss, which nothing here validates
+against anything. One curve, one seed, archaic English, preference rather than generation. No statement about
+capability, and K-001 stands exactly where it was.
+
+**Decision recorded.** [ADR-0049](../decisions/ADR-0049-a-runs-optimizer-settings-are-declared-not-inherited.md): a
+run names its optimizer's betas, epsilon and decay policy instead of inheriting them, and can exempt the
+one-dimensional parameters from decay (off by default; the arm that would decide it is still unrun).
+[ADR-0050](../decisions/ADR-0050-a-run-can-write-usable-models-at-declared-points-on-its-curve.md): a run can publish
+its curve as loadable models at declared evaluation points.
+
+**Open at this point.** Whether the same-region continuation probe (the construction E2623 named as its own fix,
+preregistered as [E2627](../../experiments/E2627/record.md)) has the headroom the version-1 probe lacks; whether the
+minimal-pair probe's contradiction reproduces at another seed; and whether either probe ranks two arms at all, which
+no ladder can answer.

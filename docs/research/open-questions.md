@@ -247,6 +247,23 @@ generation-quality readout are not merely weakly correlated here — they moved 
 instrument could detect a real improvement in *what the model has learned*, given that both current instruments
 disagree, is the open methodological problem, not the open engineering one.
 
+**Answered in part, 2026-11-03 ([E2626](../../experiments/E2626/record.md)), with numbers.** One training curve was
+published as thirteen measurable models — the untrained initialisation and twelve rungs of E2614's seed-7 protocol,
+bit-identical to it at every shared point — which gives the two capability probes an ordering the harness already
+measures instead of a single endpoint. Against that ordering the minimal-pair probe on its three usable phenomena
+tracks held-out loss (Spearman ρ = 0.951) and separates 63 of the 74 rung pairs whose loss gap exceeds the
+project's own 0.02-bit band, resolving gaps down to 0.0218 bits per character; the continuation probe tracks it too
+(ρ = 0.918) but resolves nothing below 0.294 bits per character and nothing at all among the 32 material pairs whose
+rungs both sit past update 800. So the answer to "can anything judge the distribution other than by loss" is now:
+**one instrument follows the loss closely enough to corroborate it, and the other is blind to two thirds of the
+curve.** Both were judged S-c or S-b under rules fixed before the run, because the minimal-pair probe also
+*contradicted* the loss on one pair (rungs 1600 and 1800: the better-loss model scored 0.8067 against 0.8800,
+24 discordant items to 2, p = 1.0 × 10⁻⁵) — E2612's disagreement reproduced inside a single model with a paired
+test behind it. Still open, and unchanged by this: whether either probe ranks two *independently trained* arms
+whose loss gap is 0.02 (E2622's own seed spread on the same 300 pairs is 0.015–0.048, the same size), and whether
+the loss itself is the right criterion — nothing here validates the loss against anything, and no result here is a
+statement about capability (K-001).
+
 **Is archaic English the binding constraint, or 20M tokens?**
 Both records that could separate them are silent. E2612 says a result on this corpus "does not transfer to modern
 web text without a new corpus and a new record", and the data review found that Gutenberg cannot date its own

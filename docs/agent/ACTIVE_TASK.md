@@ -2,7 +2,51 @@
 
 # Active task
 
-## Current unit: settle E2612's confound, calibrate the band, and widen the instrument (2026-11-01, from `c9dd302`)
+## Current unit: make a run measurable along its own curve, and measure what the probes can see (2026-11-03, from `c498eb8`)
+
+**Goal.** Answer the campaign's sharpest open question with a number instead of an adjective, and build the two things
+that made it answerable: a run that can publish its own training curve as loadable models, and an analysis that judges a
+capability instrument against an ordering the harness already measures. Then settle the two open halves of the
+instrument story the previous sessions left: whether the continuation probe's ceiling is the distractor's fault, and
+whether the space-prefixed tokenizer's gain survives a second seed.
+
+**State at the start (measured).** `main` == `origin/main` == `c498eb8`, clean tree; the `k030-measurement-path`
+worktree at `D:/chakaso-k030` was checked and found stale — its fix landed independently on `main`, so nothing was
+merged from it. Baseline gates on this machine: **1,901 pass / 33 skip** dependency-free, **2,478 pass / 1 skip** with
+`[train,nn]`, `mypy src` clean over 125 files, the model-path configuration clean over 165. 18 logical CPUs, no CUDA
+device, 15.43 GB RAM with 1.9 GB free at inspection, 152.8 GB free on `D:`; a 3.4M-parameter arm at 2,400 updates costs
+**4,991 s** here (E2614 seed 7) and its peak resident set is 2,574 MB. E2616–E2625's checkpoints are on the other
+host; this machine holds E2605–E2615's.
+
+| Node | Task | Depends on | Acceptance | Status | Evidence |
+| --- | --- | --- | --- | --- | --- |
+| U0 | Audit the tree, the ledger and the stale worktree; measure the baseline | — | head, tree, three tiers, resources recorded | **done** | this section; `git worktree list`, gates above |
+| U1 | A run declares its optimizer recipe; decay can exempt the vectors | U0 | tests fail against inherited defaults; no committed digest, checksum or number moves | **done** | [ADR-0049](../decisions/ADR-0049-a-runs-optimizer-settings-are-declared-not-inherited.md), `a77ea4e`, K-030 item 3 (declaration half closed, arm still open) |
+| U2 | A run can publish usable models along its own curve | U1 | rung must be an evaluation point; steps without a writer refused; rungs bit-identical to a run without them | **done, then measured at scale** | [ADR-0050](../decisions/ADR-0050-a-run-can-write-usable-models-at-declared-points-on-its-curve.md), `a77ea4e`; E2626's P4 is the real-run confirmation |
+| U3 | The probes keep their per-item record; the paired statistics exist | U0 | McNemar exact, Spearman, Holm step-down, each hand-derived in a test | **done** | `0c1004f`, `32ce306`; the first Holm implementation was wrong and the tests caught it |
+| U4 | Sensitivity of an instrument to a quality criterion is computable | U3 | verdict per instrument, no pooling, extras reported not dropped | **done** | `35e317d`, `1939e81`, `8510053` |
+| U5 | Same-region continuation items — the construction E2623 named as its own fix | U3 | four kinds, digest separate from v1's, PMI shown to defeat an order sensor | **done as code; unmeasured** | `367b54d`, `b635fd8`; the item set is fixed by digest in E2627 |
+| U6 | **E2626 — probe sensitivity against the training curve** | U2, U3, U4 | preregistered before the run; P4 endpoint check; verdict per instrument | **measured** | [E2626](../../experiments/E2626/record.md): minimal-pairs ρ 0.951, 63/74 material pairs, one contradiction → **S-c**; continuation ρ 0.918, smallest resolved gap 0.294 → **S-b**; rung weights bit-identical to E2614 seed 7 |
+| U7 | **E2627 — the same-region probe against its own floor** | U5, U6 | floor per kind over seven initialisations; headroom; the ranking delegated to E2626's rule | **preregistered, not run** | [E2627](../../experiments/E2627/record.md), items `f49c128e…`, 215 items |
+| U8 | **E2628 — H17 at a second seed, on this host** | U1 | Y-a/b/c/d by E2614's margins; confound (seed and host move together) declared | **preregistered, arm running** | [E2628](../../experiments/E2628/record.md); its step-400 validation loss 4.8488 matches E2625's 4.8368, so the arm is on the expected curve |
+| U9 | Documents reconciled, all four gates in every tier, history pushed and read back | U1–U8 | no stale claim, no unmeasured number, CI read from the runner | **in progress** | this commit; the `[train]` tier measured at 2,057 / 24 and the dependency-free at 1,970 / 34 on this tree |
+
+**What this unit found.** Two things, one about the models and one about the measuring. The mechanism claim: a run can
+publish thirteen measurable points on its own curve and the curve is bit-for-bit the one it would have trained anyway —
+that is a permanent capability of the experiment path, bought for 15 % of wall clock. The instrument claim: the
+minimal-pair probe follows held-out loss along a learning curve and resolves gaps inside the project's own materiality
+band, while the continuation probe goes blind after update 800 and never resolves anything below 0.294 bits per
+character; and the minimal-pair probe contradicted the loss once, at 1600 versus 1800 updates, which is E2612's
+loss-versus-text disagreement reproduced with a p-value behind it. Neither instrument can yet be cited as evidence
+that an arm improved, because rungs are not arms.
+
+**Stop conditions, declared at the start.** Do not call a rung pair an arm pair. Do not read E2627's or E2628's numbers
+before their records are committed. Do not change a default — the space-prefixed pre-tokenizer stays a candidate until
+a decision record says otherwise, and the vector-decay exemption stays an option until an arm decides it. Do not treat
+a probe that tracks the loss as a probe that tracks usefulness. Do not weaken the 1 MiB tracked-file guard to commit a
+probe output; compact it and digest what was left out.
+
+## Previous unit: settle E2612's confound, calibrate the band, and widen the instrument (2026-11-01, from `c9dd302`)
 
 **Goal.** Turn the 2026-11-01 research campaign's decision matrix into measured results: decide whether E2612's
 prose regression is mixture or dose, give the project its first seed spread for the decoder, fix the two
