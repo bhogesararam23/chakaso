@@ -1746,3 +1746,44 @@ def test_a_ladder_step_that_is_not_an_evaluation_point_is_refused_before_any_wor
                 curve_artifact_steps=(3,),
             )
         )
+
+
+# ------------------------------------------------------------------ scoring several models of one protocol
+
+
+def test_score_artifacts_reproduces_the_numbers_the_run_itself_reported(tmp_path: Path) -> None:
+    """The property E2626's criterion rests on: rungs are scored by the same path as the run, so a rung's
+    bits per character and the report's are the same measurement of the same weights, not two arithmetic."""
+    from chakaso.training.subword_experiment import score_artifacts
+
+    root = _root(tmp_path)
+    work = tmp_path / "work-score"
+    plan = _plan(root, work, max_steps=4, eval_every=4, curve_artifact_steps=(4,))
+    report = run_experiment(plan)
+    final = work / checkpoint_filename("E2605", "transformer")
+    rung = work / "E2605-step4-transformer.pt"
+
+    scored = score_artifacts(plan, {"final": final, "rung-4": rung})
+
+    assert scored["final"]["test"] == report["transformer"]["test"]
+    assert scored["final"]["test_partitions"] == report["transformer"]["test_partitions"]
+    assert scored["final"]["checksum"] == report["transformer"]["artifact"]["checksum"]
+    assert scored["rung-4"]["step"] == 4
+    assert {name: block["test"]["bits_per_character"] for name, block in scored.items()} == {
+        "final": pytest.approx(scored["rung-4"]["test"]["bits_per_character"]),
+        "rung-4": pytest.approx(scored["final"]["test"]["bits_per_character"]),
+    }
+
+
+def test_score_artifacts_refuses_a_model_from_another_corpus(tmp_path: Path) -> None:
+    from chakaso.training.subword_experiment import score_artifacts
+
+    root = _root(tmp_path)
+    work = tmp_path / "work-mine"
+    plan = _plan(root, work, max_steps=4, eval_every=4)
+    run_experiment(plan)
+    artifact = work / checkpoint_filename("E2605", "transformer")
+    other = _plan(_other_root(tmp_path), tmp_path / "work-other", max_steps=4, eval_every=4)
+
+    with pytest.raises(CorpusError, match="was trained on corpus"):
+        score_artifacts(other, {"mine": artifact})
