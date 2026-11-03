@@ -169,9 +169,7 @@ def test_a_probe_result_keeps_its_tables_and_stubs_only_the_per_item_arrays() ->
     assert first["outcomes"]["json_bytes"] > 2048
 
 
-def test_a_partition_metrics_table_survives_because_a_record_cites_its_numbers(
-    tmp_path: Path,
-) -> None:
+def test_a_partition_metrics_table_survives_because_a_record_cites_its_numbers() -> None:
     """The first committed extract of E2626 stubbed every partition's `metrics` block.
 
     A metrics table is eleven keys, so the entry bound ate it whole — and the per-partition bits per character
