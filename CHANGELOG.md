@@ -12,6 +12,18 @@ capability is implemented or still planned.
 
 ## Unreleased
 
+### 2026-11-04 (this session) — the campaign continues: paired statistics a handful of draws can carry
+
+**Implemented**
+
+- `chakaso.training.paired_stats` gained `student_t_quantile`, `mean_confidence_interval` and `sign_test_p_value`, dependency-free
+  like the rest of the module (bisection on the regularised incomplete beta, the same route `seed_study` already takes for its chi-square
+  quantiles). They exist because the campaign's comparisons are between **arms**, and an arm pair gives one difference per seed: E2614 measured
+  the noise, E2629 measured that no probe ranks an arm pair, and neither could say whether a mean of three or four paired differences clears zero.
+  At four draws the honest two-sided 95 % critical value is 3.182, not 1.96, and the difference is the whole content of a "the interval excludes
+  zero" claim. Nine published table values, a hand-derived interval and the exact binomial tails are pinned by tests; `sign_agreement` was already
+  public and is now in `__all__` beside them.
+
 ### 2026-11-03 (this session) — a run declares its optimizer recipe, and can be measured along its own curve
 
 **Measured**
