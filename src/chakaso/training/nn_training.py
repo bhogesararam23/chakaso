@@ -35,7 +35,7 @@ import math
 import random
 import time
 from collections.abc import Callable, Mapping, Sequence
-from dataclasses import asdict, dataclass
+from dataclasses import MISSING, asdict, dataclass, fields
 from functools import lru_cache
 from pathlib import Path
 from typing import Any
@@ -50,6 +50,9 @@ from chakaso.training.subword import SubwordVocabulary
 from chakaso.training.transformer import CausalTransformer, TransformerConfig
 
 __all__ = [
+    "ADAM_AMSGRAD",
+    "ADAM_BETAS",
+    "ADAM_EPSILON",
     "COMPLETED_BUDGET_CEILING",
     "COMPLETED_CONVERGED",
     "COMPLETED_STOP_REQUESTED",
@@ -63,11 +66,30 @@ __all__ = [
     "choose_validation_best",
     "evaluate_loss",
     "optimizer_settings",
+    "parameter_groups",
     "plan_batch",
     "resume_state_from",
+    "rung_artifact",
     "train_transformer",
     "verify_resume_compatibility",
 ]
+
+#: The AdamW settings a Chakaso run trains with, **named here rather than inherited from the library**
+#: (K-030 item 3). They are the values ``torch.optim.AdamW`` documented as its defaults at
+#: ``torch 2.13.0+cpu``, the version every committed record ran under, so passing them explicitly moves no
+#: recorded number. What it does change is what a library default change would do: without them a newer torch
+#: could retarget a measured recipe and the run would report new numbers under an old protocol name.
+#: ``test_declared_adam_settings_are_the_libraries_current_defaults`` asserts the equality against whatever
+#: library is installed, so the drift becomes a named test failure instead of a silent loss.
+ADAM_BETAS: tuple[float, float] = (0.9, 0.999)
+ADAM_EPSILON: float = 1e-8
+ADAM_AMSGRAD: bool = False
+
+#: Which parameters the decay is applied to, in the words the report has always used for the committed
+#: recipes. Kept as two literals rather than one f-string so a re-run of an existing protocol reproduces the
+#: budget block — and therefore the protocol digest — byte for byte.
+_DECAY_EVERY_PARAMETER = "every parameter, norm scales included"
+_DECAY_MATRICES_ONLY = "2-D parameters only; 1-D norm scales and biases exempt"
 
 
 @dataclass(frozen=True, slots=True)
@@ -99,6 +121,18 @@ class TransformerTrainingConfig:
             Off by default because every measured protocol so far trained with full causal attention across
             the packed block, and changing it would make those reports unreproducible by name. Requires
             packed examples that carry ``segment_ids`` and the ``decoder`` family.
+        weight_decay_excludes_vectors: Whether decoupled weight decay is withheld from every one-dimensional
+            parameter — the norm scales and the biases — and applied only to the matrices. ``False`` is what
+            every committed record ran with, and it stays the default so a measured protocol reproduces.
+            K-030 item 3 filed the question; excluding them is the convention in the published small-model
+            recipes that use this optimiser, and whether it matters at 3.4M parameters is an arm, not an
+            assumption.
+        curve_artifact_steps: Optimizer steps at which the run also writes a **usable** model artifact, so a
+            single training curve can be measured at several learning stages. Empty is what every committed
+            record ran: one usable artifact, at the end. A step listed must be one the run evaluates at, because
+            the rung is only interpretable beside the held-out loss recorded for it. Writing one needs
+            ``train_transformer(curve_artifact_writer=…)``; naming steps without a writer is refused rather than
+            silently skipped.
     """
 
     batch_size: int
@@ -117,6 +151,8 @@ class TransformerTrainingConfig:
     grad_accum_steps: int = 1
     checkpoint_every: int = 0
     document_masking: bool = False
+    weight_decay_excludes_vectors: bool = False
+    curve_artifact_steps: tuple[int, ...] = ()
 
     def __post_init__(self) -> None:
         for name in ("batch_size", "max_steps", "warmup_steps", "eval_every", "patience"):
@@ -181,6 +217,38 @@ class TransformerTrainingConfig:
                 "decoder, or leave document_masking off."
             )
             raise TrainingScheduleError(message)
+        if not isinstance(self.weight_decay_excludes_vectors, bool):
+            message = (
+                "weight_decay_excludes_vectors must be a boolean, got "
+                f"{self.weight_decay_excludes_vectors!r}"
+            )
+            raise ValueError(message)
+        steps = self.curve_artifact_steps
+        if isinstance(steps, str) or not isinstance(steps, tuple):
+            message = f"curve_artifact_steps must be a tuple of ints, got {steps!r}"
+            raise ValueError(message)
+        if any(isinstance(step, bool) or not isinstance(step, int) or step < 1 for step in steps):
+            message = f"curve_artifact_steps must hold positive ints, got {steps!r}"
+            raise ValueError(message)
+        if len(set(steps)) != len(steps):
+            message = f"curve_artifact_steps repeats a step: {steps!r}"
+            raise ValueError(message)
+        if any(step > self.max_steps for step in steps):
+            message = (
+                f"curve_artifact_steps {steps!r} names a step beyond max_steps ({self.max_steps}); "
+                "a rung the run never reaches would be recorded as missing, not as trained"
+            )
+            raise TrainingScheduleError(message)
+        unevaluated = sorted(
+            step for step in steps if step % self.eval_every != 0 and step != self.max_steps
+        )
+        if unevaluated:
+            message = (
+                f"curve_artifact_steps {unevaluated} are not evaluation points (eval_every="
+                f"{self.eval_every}, ceiling={self.max_steps}); a rung with no recorded held-out loss "
+                "cannot be read against the curve it came from"
+            )
+            raise TrainingScheduleError(message)
 
     @property
     def effective_batch_size(self) -> int:
@@ -188,13 +256,38 @@ class TransformerTrainingConfig:
         return self.batch_size * self.grad_accum_steps
 
     def as_dict(self) -> dict[str, Any]:
-        """The configuration as plain data, minus the architecture, which is recorded separately."""
+        """The configuration as plain data, minus the architecture, which is recorded separately.
+
+        ``_DEFAULT_ELIDED_FIELDS`` are dropped when they hold their default. This block is embedded in a
+        checkpoint's metadata document, whose SHA-256 is the artifact's checksum, so writing a new field at
+        its default would re-digest every re-run of an existing protocol and break the rule that a measured
+        record stays re-trainable (ADR-0036). Eliding is the route ADR-0046 took for
+        ``tokenizer_min_frequency``: a field appears when it carries information, and an absent one reads as
+        the default rather than as unknown.
+        """
         values = asdict(self)
         values.pop("architecture")
+        for name in _DEFAULT_ELIDED_FIELDS:
+            if values[name] == _CONFIG_DEFAULTS[name]:
+                values.pop(name)
         return values
 
 
 _SCHEDULES = frozenset({"constant", "cosine"})
+
+#: New ``TransformerTrainingConfig`` fields that are omitted from :meth:`as_dict` at their default, so a
+#: re-run of a protocol written before they existed produces the same checkpoint metadata document.
+_DEFAULT_ELIDED_FIELDS: frozenset[str] = frozenset(
+    {"weight_decay_excludes_vectors", "curve_artifact_steps"}
+)
+
+#: Each field's default, read off the dataclass rather than copied into a comment. ``as_dict`` compares
+#: against this, so a field whose default changes cannot be elided by an out-of-date literal.
+_CONFIG_DEFAULTS: dict[str, Any] = {
+    field.name: field.default
+    for field in fields(TransformerTrainingConfig)
+    if field.default is not MISSING
+}
 
 
 @dataclass(frozen=True, slots=True)
@@ -365,26 +458,66 @@ def choose_validation_best(
     return best_step, best_loss, False
 
 
+def parameter_groups(
+    parameters: Sequence[torch.nn.Parameter], config: TransformerTrainingConfig
+) -> list[dict[str, Any]]:
+    """The optimizer's parameter groups: one decayed group, and an undecayed one when vectors are exempt.
+
+    "Vector" here means a parameter with fewer than two axes — the norm scales and every bias. The rule is by
+    **shape**, not by name, because the two families name their layers differently and a name list would stop
+    matching silently on the day a module is renamed. Embedding tables and weight matrices keep the decay,
+    which is the half the recipe was written for.
+
+    With :attr:`TransformerTrainingConfig.weight_decay_excludes_vectors` off — every committed record — this
+    returns one group carrying the plan's decay, which is what ``torch.optim.AdamW(parameters, …)`` builds.
+    """
+    taken = list(parameters)
+    if not config.weight_decay_excludes_vectors:
+        return [{"params": taken, "weight_decay": config.weight_decay}]
+    decayed = [parameter for parameter in taken if parameter.ndim >= 2]
+    exempt = [parameter for parameter in taken if parameter.ndim < 2]
+    groups: list[dict[str, Any]] = []
+    if decayed:
+        groups.append({"params": decayed, "weight_decay": config.weight_decay})
+    if exempt:
+        groups.append({"params": exempt, "weight_decay": 0.0})
+    return groups
+
+
 def build_optimizer(
     parameters: Sequence[torch.nn.Parameter], config: TransformerTrainingConfig
 ) -> torch.optim.Optimizer:
     """The optimiser a run trains with, built in one place so the report can describe exactly this one.
 
-    Decoupled weight decay applies to **every** parameter passed in, norm scales included; betas and epsilon
-    are the library's defaults. Both are facts of the recipe (K-030), recorded by :func:`optimizer_settings`.
+    Betas, epsilon and ``amsgrad`` are passed from :data:`ADAM_BETAS` and its siblings instead of being left to
+    the library's defaults (K-030 item 3). Those constants are the values ``torch.optim.AdamW`` used for every
+    committed record, so this changes no number; it changes what a library default change would do. Decoupled
+    weight decay applies to **every** parameter unless the plan exempts the one-dimensional ones, and
+    :func:`optimizer_settings` records which of the two a run did.
     """
     return torch.optim.AdamW(
-        list(parameters), lr=config.learning_rate, weight_decay=config.weight_decay
+        parameter_groups(parameters, config),
+        lr=config.learning_rate,
+        betas=ADAM_BETAS,
+        eps=ADAM_EPSILON,
+        weight_decay=config.weight_decay,
+        amsgrad=ADAM_AMSGRAD,
     )
 
 
 def optimizer_settings(config: TransformerTrainingConfig) -> dict[str, Any]:
     """The optimiser's full recipe as a report can state it, read off the object the loop would build.
 
-    Built from a one-element probe rather than copied from documentation, so a library upgrade that changed a
-    default changes this record rather than leaving a stale claim behind.
+    Built from a probe rather than copied from documentation, so a library upgrade that changed a default
+    changes this record rather than leaving a stale claim behind. The probe is a **matrix**, because with the
+    vectors exempt a one-dimensional probe would land in the undecayed group and the report would describe a
+    run that had no decayed parameter at all.
+
+    The keys are the ones every committed report already carries: adding one would move
+    ``protocol_digest``, which covers the budget block, and a re-run of an existing protocol would stop
+    aggregating with the study it belongs to.
     """
-    probe = build_optimizer([torch.nn.Parameter(torch.zeros(1))], config)
+    probe = build_optimizer([torch.nn.Parameter(torch.zeros(2, 3))], config)
     defaults = probe.defaults
     return {
         "name": type(probe).__name__,
@@ -392,7 +525,9 @@ def optimizer_settings(config: TransformerTrainingConfig) -> dict[str, Any]:
         "eps": defaults["eps"],
         "weight_decay": defaults["weight_decay"],
         "amsgrad": defaults["amsgrad"],
-        "decay_applied_to": "every parameter, norm scales included",
+        "decay_applied_to": (
+            _DECAY_MATRICES_ONLY if config.weight_decay_excludes_vectors else _DECAY_EVERY_PARAMETER
+        ),
     }
 
 
@@ -595,6 +730,9 @@ def train_transformer(
     start_step: int = 0,
     on_step: Callable[[StepRecord], None] | None = None,
     checkpoint_path: Path | None = None,
+    curve_artifact_writer: (
+        Callable[[int, Mapping[str, torch.Tensor], float | None], None] | None
+    ) = None,
     should_stop: Callable[[], bool] | None = None,
 ) -> TrainingOutcome:
     """Train on packed examples, selecting the returned parameters on validation loss.
@@ -609,9 +747,16 @@ def train_transformer(
     resume point and reports :data:`COMPLETED_STOP_REQUESTED` — an interruption a caller asked for is not a
     failure and not a convergence, and the record says which.
 
+    ``curve_artifact_writer`` is called as ``(step, weights, validation_loss)`` at every step named in
+    ``config.curve_artifact_steps``, with a private copy of the **current** weights and the held-out loss
+    recorded for that same step. It is how one training curve becomes several measurable learning stages; the
+    writer owns where the bytes go, and the loop keeps the copy so a caller cannot be handed a view that the
+    next update overwrites. Naming steps without a writer is refused: a run that silently wrote nothing extra
+    would report a ladder it never produced.
+
     Raises:
         TrainingScheduleError: either side has no examples, or ``start_step`` is negative or already at the
-            ceiling.
+            ceiling, or ``curve_artifact_steps`` is named with no writer to receive it.
     """
     if not train_examples:
         message = "cannot train on zero examples"
@@ -627,6 +772,13 @@ def train_transformer(
             f"start_step ({start_step}) has already reached max_steps ({config.max_steps}); max_steps is "
             "the absolute ceiling, so resuming past it would train a schedule the configuration does not "
             "describe"
+        )
+        raise TrainingScheduleError(message)
+
+    if config.curve_artifact_steps and curve_artifact_writer is None:
+        message = (
+            f"the configuration names curve_artifact_steps {config.curve_artifact_steps!r} but the call "
+            "supplies no curve_artifact_writer; the run would train the curve and record no rungs of it"
         )
         raise TrainingScheduleError(message)
 
@@ -761,6 +913,11 @@ def train_transformer(
             records.append(record)
             if on_step is not None:
                 on_step(record)
+            if curve_artifact_writer is not None and step in config.curve_artifact_steps:
+                # Copied before handing it over: the optimizer keeps writing into these tensors on the next
+                # update, and a rung whose bytes quietly became rung+1's is worse than no rung. The loss is the
+                # one recorded for this very step, so the rung arrives with the number it is read against.
+                curve_artifact_writer(step, _snapshot(model), record.validation_loss)
             if validation_loss < best_validation - config.min_delta:
                 best_validation = validation_loss
                 best_step = step
@@ -857,6 +1014,44 @@ def resume_state_from(
         )
         raise TrainingScheduleError(message)
     return dict(artifact.state), dict(artifact.optimizer_state), artifact.step
+
+
+def rung_artifact(
+    *,
+    state: Mapping[str, torch.Tensor],
+    config: TransformerTrainingConfig,
+    vocabulary: SubwordVocabulary,
+    corpus_fingerprint: str,
+    step: int,
+    validation_loss_nats: float | None = None,
+) -> ModelArtifact:
+    """A **usable** artifact of the weights at one point on the curve, with no optimizer state.
+
+    :meth:`TrainingOutcome.artifact` describes the finished run and its selected step; this describes an
+    intermediate one, so a measurement taken at step *n* can be traced to the bytes that produced it. The
+    metadata repeats what the rung needs to be read on its own — the architecture, the tokenizer, the step and
+    the held-out loss the loop recorded for that step — and carries no moments, because a rung is a model, not
+    a resume point (:func:`resume_state_from` refuses it, which is the point).
+    """
+    return ModelArtifact(
+        config=config.architecture,
+        state=dict(state),
+        vocabulary=vocabulary,
+        corpus_fingerprint=corpus_fingerprint,
+        run_metadata={
+            "kind": "usable",
+            "curve_rung_step": step,
+            "rung_validation_loss_nats": validation_loss_nats,
+            "training": config.as_dict(),
+            "architecture": config.architecture.as_dict(),
+            "tokenizer_fingerprint": vocabulary.fingerprint,
+            "parameter_count": config.architecture.parameter_count,
+        },
+        step=step,
+        optimizer_state=None,
+        environment=describe_environment(),
+        tokenizer_min_frequency=vocabulary.min_frequency,
+    )
 
 
 def _interim_artifact(

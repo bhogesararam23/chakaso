@@ -26,6 +26,7 @@ from __future__ import annotations
 import json
 import random
 import time
+from collections.abc import Mapping
 from dataclasses import asdict, dataclass
 from math import log
 from pathlib import Path
@@ -72,6 +73,7 @@ from chakaso.training.nn_evaluation import score_model_on_examples
 from chakaso.training.nn_training import (
     TransformerTrainingConfig,
     optimizer_settings,
+    rung_artifact,
     train_transformer,
     verify_resume_compatibility,
 )
@@ -270,6 +272,16 @@ class ExperimentPlan:
     #: Whether attention is confined to the document each packed position came from. Off by default so
     #: every measured protocol remains reproducible by name; requires the decoder family.
     document_masking: bool = False
+    #: Whether decoupled weight decay is withheld from the one-dimensional parameters (norm scales, biases).
+    #: Off by default, which is what every committed record ran; K-030 item 3 filed the question and the
+    #: published small-model recipes that use this optimizer exempt them, so the choice is an arm rather than
+    #: a default change.
+    weight_decay_excludes_vectors: bool = False
+    #: Optimizer steps at which the run additionally writes a **usable** model artifact beside its own, named
+    #: ``<experiment>-<family>-step<step>.pt``. Empty — every committed record — means one usable artifact at
+    #: the end. A rung is only interpretable beside the held-out loss the loop records for it, so each step
+    #: must be an evaluation point. See ADR-0049.
+    curve_artifact_steps: tuple[int, ...] = ()
     #: Whether every chunk of a work lands on one side of the split. Off by default because it changes the
     #: split fingerprint, and a measured protocol's split must not move under its record; a corpus cut from
     #: books declares it on, or its held-out score is within-work rather than held-out by work.
@@ -393,6 +405,19 @@ class ExperimentPlan:
             )
             raise ValueError(message)
         self._validate_share()
+        if not isinstance(self.weight_decay_excludes_vectors, bool):
+            message = (
+                "weight_decay_excludes_vectors must be a boolean, got "
+                f"{self.weight_decay_excludes_vectors!r}"
+            )
+            raise ValueError(message)
+        rungs = self.curve_artifact_steps
+        if isinstance(rungs, str) or not isinstance(rungs, tuple):
+            message = f"curve_artifact_steps must be a tuple of ints, got {rungs!r}"
+            raise ValueError(message)
+        if any(isinstance(step, bool) or not isinstance(step, int) or step < 1 for step in rungs):
+            message = f"curve_artifact_steps holds a non-positive or non-integer step: {rungs!r}"
+            raise ValueError(message)
         for field_name in ("max_validation_tokens", "max_test_tokens"):
             value = getattr(self, field_name)
             if value is not None and (
@@ -1310,6 +1335,8 @@ def _training_config(
         grad_accum_steps=plan.grad_accum_steps,
         checkpoint_every=plan.checkpoint_every,
         document_masking=plan.document_masking,
+        weight_decay_excludes_vectors=plan.weight_decay_excludes_vectors,
+        curve_artifact_steps=plan.curve_artifact_steps,
     )
 
 
@@ -1348,13 +1375,46 @@ def run_experiment(plan: ExperimentPlan, *, verbose: bool = False) -> dict[str, 
             )
 
     started = time.perf_counter()
+    config = _training_config(plan, architecture)
+    rungs: list[dict[str, Any]] = []
+
+    def write_rung(step: int, state: Mapping[str, Any], validation_loss: float | None) -> None:
+        """One point on the curve, written as a model a reader can load.
+
+        Named by the same helper the final artifact uses, so a rung and the run's own file differ only in the
+        step in their name; ``save_artifact`` re-enters the refuse-to-clobber rule, so a second ladder run in
+        the same work directory is a collision the operator asked for rather than an overwrite. The checksum
+        is recorded beside it, because a rung a later measurement cites has to be identifiable after the file
+        has moved.
+        """
+        path = work / checkpoint_filename(f"{plan.experiment_id}-step{step}", plan.model_family)
+        rung = rung_artifact(
+            state=state,
+            config=config,
+            vocabulary=prepared.vocabulary,
+            corpus_fingerprint=prepared.manifest.fingerprint,
+            step=step,
+            validation_loss_nats=validation_loss,
+        )
+        save_artifact(rung, path, allow_overwrite=plan.overwrite_artifacts)
+        rungs.append(
+            {
+                "step": step,
+                "path": path.name,
+                "validation_loss_nats": (
+                    None if validation_loss is None else round(float(validation_loss), 6)
+                ),
+                "checksum": rung.checksum(),
+            }
+        )
+
     resume: dict[str, Any] = {}
     budget_extended_from: int | None = None
     if plan.resume_from is not None:
         point = load_artifact(plan.resume_from)
         verified = verify_resume_compatibility(
             point,
-            config=_training_config(plan, architecture),
+            config=config,
             corpus_fingerprint=prepared.manifest.fingerprint,
             vocabulary=prepared.vocabulary,
         )
@@ -1369,9 +1429,10 @@ def run_experiment(plan: ExperimentPlan, *, verbose: bool = False) -> dict[str, 
         validation_examples=prepared.validation.examples,
         vocabulary=prepared.vocabulary,
         **resume,
-        config=_training_config(plan, architecture),
+        config=config,
         corpus_fingerprint=prepared.manifest.fingerprint,
         on_step=on_step,
+        curve_artifact_writer=write_rung if plan.curve_artifact_steps else None,
         checkpoint_path=work / f"{plan.experiment_id}-{plan.model_family}-resumable.pt",
     )
     wall = time.perf_counter() - started
@@ -1600,6 +1661,11 @@ def run_experiment(plan: ExperimentPlan, *, verbose: bool = False) -> dict[str, 
                 "checksum": artifact.checksum(),
                 "schema": schema_of(artifact.config),
             },
+            # One entry per declared rung, in step order, each naming the file and the held-out loss recorded
+            # for that step. An empty list says the run wrote only its final artifact, which is every
+            # committed protocol; the key is present either way so a reader can tell "no rungs" from
+            # "report written before rungs existed" by the plan field beside it.
+            "curve_artifacts": sorted(rungs, key=lambda rung: int(rung["step"])),
         },
         "baselines_subword": baseline_metrics(prepared),
         "samples": samples,

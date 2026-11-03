@@ -137,3 +137,26 @@ def test_a_share_declaration_loads_as_a_string_and_a_float(tmp_path: Path) -> No
 
     assert plan.share_group_prefix == "prose-"
     assert plan.share_of_tokens == 1.0 and isinstance(plan.share_of_tokens, float)
+
+
+def test_the_rung_and_decay_fields_are_nameable_in_a_protocol(tmp_path: Path) -> None:
+    """A record preregisters by naming a protocol file, so a run whose ladder is declared in code but not on
+    disk would be a protocol the record cannot cite (ADR-0049)."""
+    text = (
+        "[plan]\n"
+        'model_family = "decoder"\n'
+        "max_steps = 2400\n"
+        "eval_every = 200\n"
+        "curve_artifact_steps = [200, 400, 2400]\n"
+        "weight_decay_excludes_vectors = true\n"
+    )
+
+    plan = _load(_write(tmp_path, text))
+
+    assert plan.curve_artifact_steps == (200, 400, 2400)
+    assert plan.weight_decay_excludes_vectors is True
+
+
+def test_a_protocol_that_names_a_non_integer_rung_is_refused(tmp_path: Path) -> None:
+    with pytest.raises((ProtocolError, ValueError), match="curve_artifact_steps"):
+        _load(_write(tmp_path, '[plan]\ncurve_artifact_steps = ["400"]\n'))

@@ -12,6 +12,30 @@ capability is implemented or still planned.
 
 ## Unreleased
 
+### 2026-11-03 (this session) — a run declares its optimizer recipe, and can be measured along its own curve
+
+**Added**
+
+- **A training run can write a usable model at each declared evaluation point** (`ExperimentPlan.curve_artifact_steps`, ADR-0050). A rung is a
+  `ModelArtifact` with its step and the held-out loss recorded for it, carries no optimizer state (so it refuses to be resumed as a checkpoint),
+  is written through the same verifying, refuse-to-clobber writer as the final artifact, and is listed in the report with its checksum. Empty is
+  what every committed record ran: one artifact, at the end. A step that is not an evaluation point, a step beyond the ceiling, a repeated step and
+  steps named without a writer are all refused. This exists so one training curve can be used as an ordering criterion for the capability probes —
+  the cheapest sensitivity test available for the question "can any instrument here detect a real improvement".
+- **Weight decay can be exempted from the one-dimensional parameters** (`weight_decay_excludes_vectors`, ADR-0049, K-030 item 3). The rule is by
+  shape, not by name: norm scales and biases. Off by default, which is what every committed record ran; the report's `decay_applied_to` states which
+  of the two a run trained under. Whether it helps is an unrun arm.
+
+**Changed**
+
+- **A run's AdamW betas, epsilon and `amsgrad` are named constants of this project** rather than inherited from the library (ADR-0049, K-030 item 3).
+  They equal the values `torch 2.13.0+cpu` used for every committed record, so no number moves; what changes is that a library default can no longer
+  retarget a measured recipe silently — a test compares the constants against the installed library and fails by name if they diverge.
+- **A new configuration field stays out of the checkpoint metadata while it holds its default** (ADR-0049, following ADR-0046). The metadata document
+  is what an artifact's checksum covers, so a re-run of a committed protocol reproduces its checksum; `no key` reads as the default, not as unknown.
+  `protocol_digest` gained no key either, which a test pins: a faithful re-run still aggregates with the study it belongs to.
+
+
 ### 2026-11-02 (third session) — a checkpoint can say which frequency floor its tokenizer was fitted at; a drifted corpus source can be classified; a first capability probe
 
 **Measured**

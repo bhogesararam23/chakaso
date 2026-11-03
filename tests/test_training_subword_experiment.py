@@ -32,7 +32,7 @@ from chakaso.training.errors import (
     CorpusError,
     CorruptedCorpusArtifactError,
 )
-from chakaso.training.nn_checkpoint import checkpoint_filename
+from chakaso.training.nn_checkpoint import checkpoint_filename, load_artifact
 from chakaso.training.nn_training import TrainingScheduleError
 from chakaso.training.subword_experiment import (
     CorpusSpec,
@@ -1657,3 +1657,92 @@ def test_the_report_states_the_selection_vocabulary_only_when_one_was_used(tmp_p
     block = selected["corpus"]["evaluation_selection"]
     assert block["tokenizer_fingerprint"] == plain["tokenizer"]["fingerprint"]
     assert set(block) >= {"tokenizer_fingerprint", "test_documents", "validation_documents"}
+
+
+# ------------------------------------------------------------------ rungs along the curve
+
+
+def test_a_ladder_run_writes_one_loadable_artifact_per_declared_step(tmp_path: Path) -> None:
+    """ADR-0049: one training curve has to be measurable at several learning stages."""
+    work = tmp_path / "work-ladder"
+
+    report = run_experiment(
+        _plan(_root(tmp_path), work, max_steps=8, eval_every=4, curve_artifact_steps=(4, 8))
+    )
+
+    rungs = report["transformer"]["curve_artifacts"]
+    assert [rung["step"] for rung in rungs] == [4, 8]
+    assert [rung["path"] for rung in rungs] == [
+        "E2605-step4-transformer.pt",
+        "E2605-step8-transformer.pt",
+    ]
+    curve = {int(entry["step"]): entry for entry in report["transformer"]["curve"]}
+    for rung in rungs:
+        named = work / rung["path"]
+        assert named.is_file()
+        assert rung["validation_loss_nats"] == pytest.approx(
+            float(curve[rung["step"]]["validation_loss"]), abs=1e-6
+        )
+        # Read back through the checkpoint contract: a rung a later measurement cites has to be a model that
+        # says which step it is, and it is not a resume point.
+        loaded = load_artifact(named)
+        assert loaded.step == rung["step"]
+        assert loaded.run_metadata["kind"] == "usable"
+        assert loaded.optimizer_state is None
+        assert loaded.checksum() == rung["checksum"]
+        loaded.to_model()
+    assert not (work / "E2605-step2-transformer.pt").exists()
+
+
+def test_a_run_with_no_declared_rungs_writes_none_and_says_so(tmp_path: Path) -> None:
+    report = run_experiment(
+        _plan(_root(tmp_path), tmp_path / "work-plain", max_steps=8, eval_every=4)
+    )
+
+    assert report["transformer"]["curve_artifacts"] == []
+    assert not list((tmp_path / "work-plain").glob("*-step*-*.pt"))
+
+
+def test_the_ladder_leaves_the_final_weights_and_the_protocol_untouched(tmp_path: Path) -> None:
+    """The rung files are an addition to a run, never a change in it.
+
+    The property is the weights, not the artifact checksum: a finished run's metadata block records its wall
+    clock and throughput, so two faithful runs of one protocol already differ by hash. The tensors and the
+    measured numbers have to be identical, and the digest a seed study aggregates on has to agree.
+    """
+    root = _root(tmp_path)
+
+    plain = run_experiment(_plan(root, tmp_path / "w-plain", max_steps=8, eval_every=4))
+    ladder = run_experiment(
+        _plan(root, tmp_path / "w-ladder", max_steps=8, eval_every=4, curve_artifact_steps=(4,))
+    )
+
+    plain_weights = load_artifact(
+        tmp_path / "w-plain" / checkpoint_filename("E2605", "transformer")
+    )
+    ladder_weights = load_artifact(
+        tmp_path / "w-ladder" / checkpoint_filename("E2605", "transformer")
+    )
+
+    assert sorted(plain_weights.state) == sorted(ladder_weights.state)
+    for name in plain_weights.state:
+        # Compared as Python lists rather than tensor equality: this file deliberately does not import torch,
+        # so it stays in the tier its importorskip line places it in.
+        assert plain_weights.state[name].tolist() == ladder_weights.state[name].tolist()
+    assert protocol_digest(ladder) == protocol_digest(plain)
+    assert ladder["transformer"]["test"] == plain["transformer"]["test"]
+
+
+def test_a_ladder_step_that_is_not_an_evaluation_point_is_refused_before_any_work(
+    tmp_path: Path,
+) -> None:
+    with pytest.raises((TrainingScheduleError, ValueError), match="not evaluation points"):
+        run_experiment(
+            _plan(
+                _root(tmp_path),
+                tmp_path / "w-bad",
+                max_steps=8,
+                eval_every=4,
+                curve_artifact_steps=(3,),
+            )
+        )

@@ -8,6 +8,7 @@ instead of reporting a loss over zero positions.
 
 from __future__ import annotations
 
+import inspect
 from collections.abc import Callable, Mapping
 from pathlib import Path
 
@@ -20,15 +21,21 @@ from chakaso.training.decoder import DecoderConfig  # noqa: E402
 from chakaso.training.errors import TrainingError  # noqa: E402
 from chakaso.training.nn_checkpoint import load_artifact, save_artifact  # noqa: E402
 from chakaso.training.nn_training import (  # noqa: E402
+    _DECAY_EVERY_PARAMETER,
+    _DECAY_MATRICES_ONLY,
     StepRecord,
     TrainingOutcome,
     TrainingScheduleError,
     TransformerTrainingConfig,
     choose_validation_best,
     evaluate_loss,
+    optimizer_settings,
+    parameter_groups,
     plan_batch,
     resume_state_from,
+    rung_artifact,
     train_transformer,
+    verify_resume_compatibility,
 )
 from chakaso.training.packing import pack_units  # noqa: E402
 from chakaso.training.subword import SubwordVocabulary, train_subword_vocabulary  # noqa: E402
@@ -111,6 +118,9 @@ def _run(
     fingerprint: str = "fixture",
     on_step: Callable[[StepRecord], None] | None = None,
     checkpoint_path: Path | None = None,
+    curve_artifact_writer: (
+        Callable[[int, Mapping[str, torch.Tensor], float | None], None] | None
+    ) = None,
     start_step: int = 0,
     resume_state: Mapping[str, torch.Tensor] | None = None,
     resume_optimizer: Mapping[str, object] | None = None,
@@ -123,6 +133,7 @@ def _run(
         corpus_fingerprint=fingerprint,
         on_step=on_step,
         checkpoint_path=checkpoint_path,
+        curve_artifact_writer=curve_artifact_writer,
         start_step=start_step,
         resume_state=resume_state,
         resume_optimizer=resume_optimizer,
@@ -133,6 +144,9 @@ def _train(
     *,
     on_step: Callable[[StepRecord], None] | None = None,
     checkpoint_path: Path | None = None,
+    curve_artifact_writer: (
+        Callable[[int, Mapping[str, torch.Tensor], float | None], None] | None
+    ) = None,
     start_step: int = 0,
     resume_state: Mapping[str, torch.Tensor] | None = None,
     resume_optimizer: Mapping[str, object] | None = None,
@@ -149,6 +163,7 @@ def _train(
         _config(**settings),
         on_step=on_step,
         checkpoint_path=checkpoint_path,
+        curve_artifact_writer=curve_artifact_writer,
         start_step=start_step,
         resume_state=resume_state,
         resume_optimizer=resume_optimizer,
@@ -677,3 +692,206 @@ def test_the_cached_order_cannot_be_changed_by_a_caller() -> None:
     list(first).append(99)  # a caller mutating its own copy
 
     assert plan_batch(20, 0, batch_size=5, seed=1) == first
+
+
+# ------------------------------------------------------------------ the optimizer recipe
+
+
+def test_declared_adam_settings_are_the_libraries_current_defaults() -> None:
+    """The canary behind ADR-0049.
+
+    The run now passes its own betas and epsilon instead of inheriting them, so a library default changing
+    must not silently retarget a measured recipe. It surfaces here, where the two are compared, rather than in
+    a re-run whose numbers moved under an old protocol's name.
+    """
+    from chakaso.training.nn_training import ADAM_AMSGRAD, ADAM_BETAS, ADAM_EPSILON
+
+    defaults = {
+        name: parameter.default
+        for name, parameter in inspect.signature(torch.optim.AdamW.__init__).parameters.items()
+        if parameter.default is not inspect.Parameter.empty
+    }
+
+    assert tuple(ADAM_BETAS) == tuple(defaults["betas"])
+    assert defaults["eps"] == ADAM_EPSILON
+    assert defaults["amsgrad"] is ADAM_AMSGRAD
+
+
+def test_the_optimizer_is_built_from_the_named_constants_not_from_the_library(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """A falsifiable version of the same claim: change the constant and the built optimizer changes."""
+    from chakaso.training import nn_training
+
+    monkeypatch.setattr(nn_training, "ADAM_BETAS", (0.11, 0.22))
+    monkeypatch.setattr(nn_training, "ADAM_EPSILON", 1e-6)
+    built = nn_training.build_optimizer([torch.nn.Parameter(torch.zeros(2, 2))], _config())
+
+    assert built.defaults["betas"] == (0.11, 0.22)
+    assert built.defaults["eps"] == 1e-6
+
+
+def test_decay_by_default_reaches_every_parameter_in_one_group() -> None:
+    parameters = list(_fresh_model().parameters())
+
+    groups = parameter_groups(parameters, _config(weight_decay=0.05))
+
+    assert len(groups) == 1
+    assert groups[0]["weight_decay"] == 0.05
+    assert len(groups[0]["params"]) == len(parameters)
+
+
+def test_the_vector_exemption_is_by_shape_and_moves_only_the_one_dimension_parameters() -> None:
+    parameters = list(_fresh_model().parameters())
+    matrices = [parameter for parameter in parameters if parameter.ndim >= 2]
+    vectors = [parameter for parameter in parameters if parameter.ndim < 2]
+    assert matrices and vectors, "the fixture must hold both kinds, or the rule goes untested"
+
+    groups = parameter_groups(
+        parameters, _config(weight_decay=0.05, weight_decay_excludes_vectors=True)
+    )
+    by_decay = {float(group["weight_decay"]): group["params"] for group in groups}
+
+    assert by_decay[0.05] == matrices
+    assert by_decay[0.0] == vectors
+    assert sum(len(group["params"]) for group in groups) == len(parameters)
+
+
+def test_the_recipe_the_report_states_keeps_exactly_the_keys_committed_reports_carry() -> None:
+    """A new key here would move ``protocol_digest``, and a re-run would stop aggregating with its study."""
+    settings = optimizer_settings(_config(weight_decay=0.05))
+
+    assert set(settings) == {
+        "name",
+        "betas",
+        "eps",
+        "weight_decay",
+        "amsgrad",
+        "decay_applied_to",
+    }
+    assert settings["decay_applied_to"] == _DECAY_EVERY_PARAMETER
+    assert settings["weight_decay"] == 0.05
+
+    exempt = optimizer_settings(_config(weight_decay=0.05, weight_decay_excludes_vectors=True))
+    assert exempt["decay_applied_to"] == _DECAY_MATRICES_ONLY
+    assert exempt["betas"] == settings["betas"]
+
+
+def test_a_new_field_at_its_default_is_not_written_into_the_checkpoint_metadata(
+    tmp_path: Path,
+) -> None:
+    """A re-run of a committed protocol has to reproduce its artifact checksum, so a field carrying no
+    information stays out of the document the checksum covers — the route ADR-0046 took."""
+    plain = _config()
+    ladder = _config(curve_artifact_steps=(2,), weight_decay_excludes_vectors=True)
+
+    assert "curve_artifact_steps" not in plain.as_dict()
+    assert "weight_decay_excludes_vectors" not in plain.as_dict()
+    assert ladder.as_dict()["curve_artifact_steps"] == (2,)
+    assert ladder.as_dict()["weight_decay_excludes_vectors"] is True
+
+    path = tmp_path / "resumable.pt"
+    _train(max_steps=2, eval_every=2, checkpoint_path=path)
+    verify_resume_compatibility(
+        load_artifact(path),
+        config=_config(),
+        corpus_fingerprint="fixture",
+        vocabulary=_VOCABULARY,
+    )
+    with pytest.raises(TrainingScheduleError, match="differs in"):
+        verify_resume_compatibility(
+            load_artifact(path),
+            config=_config(weight_decay_excludes_vectors=True),
+            corpus_fingerprint="fixture",
+            vocabulary=_VOCABULARY,
+        )
+
+
+@pytest.mark.parametrize(
+    ("steps", "message"),
+    [
+        ((3,), "not evaluation points"),
+        ((8,), "beyond max_steps"),
+        ((2, 2), "repeats"),
+        ((0,), "positive ints"),
+    ],
+)
+def test_rungs_are_refused_unless_they_are_real_evaluation_points(
+    steps: tuple[int, ...], message: str
+) -> None:
+    with pytest.raises((TrainingScheduleError, ValueError), match=message):
+        _config(curve_artifact_steps=steps)
+
+
+def test_naming_rungs_without_a_writer_is_refused() -> None:
+    with pytest.raises(TrainingScheduleError, match="no curve_artifact_writer"):
+        _train(max_steps=4, eval_every=2, curve_artifact_steps=(2,))
+
+
+def test_each_rung_arrives_with_its_own_weights_and_its_steps_held_out_loss() -> None:
+    seen: list[tuple[int, Mapping[str, torch.Tensor], float | None]] = []
+
+    def record_rung(step: int, state: Mapping[str, torch.Tensor], loss: float | None) -> None:
+        seen.append((step, state, loss))
+
+    outcome = _train(
+        max_steps=4,
+        eval_every=2,
+        curve_artifact_steps=(2, 4),
+        curve_artifact_writer=record_rung,
+    )
+
+    assert [step for step, _, _ in seen] == [2, 4]
+    assert [loss for _, _, loss in seen] == [
+        record.validation_loss for record in outcome.records if record.step in (2, 4)
+    ]
+    key = next(iter(seen[0][1]))
+    assert not torch.equal(seen[0][1][key], seen[1][1][key]), "two rungs of a curve must differ"
+    assert torch.equal(seen[1][1][key], outcome.final_state[key])
+
+
+def test_writing_rungs_does_not_perturb_the_run_it_records() -> None:
+    """The property the ladder depends on: an artifact write must not consume the training stream, or the
+    curve being measured would be a curve of the instrument rather than of the model (K-030 item 2)."""
+    collected: list[Mapping[str, torch.Tensor]] = []
+
+    def collect_rung(_step: int, state: Mapping[str, torch.Tensor], _loss: float | None) -> None:
+        collected.append(state)
+
+    plain = _train(max_steps=6, eval_every=2)
+    ladder = _train(
+        max_steps=6,
+        eval_every=2,
+        curve_artifact_steps=(2, 4, 6),
+        curve_artifact_writer=collect_rung,
+    )
+
+    assert [record.step for record in plain.records] == [record.step for record in ladder.records]
+    for before, after in zip(plain.records, ladder.records, strict=True):
+        assert before.train_loss == after.train_loss
+        assert before.validation_loss == after.validation_loss
+    for name in plain.state:
+        assert torch.equal(plain.state[name], ladder.state[name])
+    assert len(collected) == 3
+
+
+def test_a_rung_is_a_usable_model_and_refuses_to_be_a_resume_point(tmp_path: Path) -> None:
+    rung = rung_artifact(
+        state=_fresh_model().state_dict(),
+        config=_config(),
+        vocabulary=_VOCABULARY,
+        corpus_fingerprint="fixture",
+        step=2,
+        validation_loss_nats=1.5,
+    )
+    path = tmp_path / "E9-step2-transformer.pt"
+    save_artifact(rung, path)
+
+    loaded = load_artifact(path)
+    assert loaded.step == 2
+    assert loaded.run_metadata["kind"] == "usable"
+    assert loaded.run_metadata["curve_rung_step"] == 2
+    assert loaded.run_metadata["rung_validation_loss_nats"] == 1.5
+    assert loaded.to_model() is not None
+    with pytest.raises(TrainingScheduleError, match="no optimizer state"):
+        resume_state_from(loaded)

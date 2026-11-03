@@ -141,3 +141,5 @@ creates.
 | [ADR-0046](ADR-0046-checkpoint-records-the-tokenizer-frequency-floor-as-an-optional-field.md) | A checkpoint records the tokenizer's frequency floor as an optional field, and says "unrecorded" when it is not | Accepted |
 | [ADR-0047](ADR-0047-a-pinned-corpus-declares-the-digest-of-the-text-it-ingests.md) | A pinned corpus declares the digest of the text it ingests, and where its raw bytes live is left to the owner | Accepted in part |
 | [ADR-0048](ADR-0048-the-pre-tokenizer-is-a-named-part-of-a-vocabulary-s-identity.md) | The pre-tokenizer is a named part of a vocabulary's identity, and a space-prefixed rule is available | Accepted |
+| [ADR-0049](ADR-0049-a-runs-optimizer-settings-are-declared-not-inherited.md) | A run names its optimizer's betas, epsilon and decay policy instead of inheriting them, and can exempt the one-dimensional parameters from decay | Accepted |
+| [ADR-0050](ADR-0050-a-run-can-write-usable-models-at-declared-points-on-its-curve.md) | A run can write a usable model at each declared evaluation point, so one training curve can be measured at several learning stages | Accepted |
