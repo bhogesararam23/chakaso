@@ -226,3 +226,49 @@ def test_arms_that_differ_only_in_share_list_the_share_as_the_declared_differenc
         "high": 0.75,
     }
     assert "share_group_prefix" not in result["declared_differences"]
+
+
+def test_arms_that_differ_only_in_what_decay_reaches_are_reported_as_such() -> None:
+    """ADR-0049's exemption option is the experiment E2631 asks about, so the comparison has to name it.
+
+    Before it was listed as declarable the field sat in neither table, and the module's own comment promised that
+    a difference outside both is "simply not looked at" — which is how a report of two arms could say every
+    condition matched while the optimizer treated their norm scales differently.
+    """
+    reference = _report(prose=1.84, science=1.95)
+    treated = _report(prose=1.83, science=1.94)
+    for report, phrase in (
+        (reference, "every parameter, norm scales included"),
+        (treated, "2-D parameters only; 1-D norm scales and biases exempt"),
+    ):
+        report["transformer"]["budget"]["optimizer"] = {
+            "name": "AdamW",
+            "betas": [0.9, 0.999],
+            "eps": 1e-08,
+            "weight_decay": 0.01,
+            "amsgrad": False,
+            "decay_applied_to": phrase,
+        }
+    treated["transformer"]["budget"]["max_steps"] = 2400
+
+    result = compare_arms({"control": reference, "treated": treated}, reference="control")
+
+    assert result["all_conditions_matched"] is True
+    declared = result["declared_differences"]["decay_applied_to"]["values"]
+    assert declared["control"] == "every parameter, norm scales included"
+    assert declared["treated"].startswith("2-D parameters only")
+
+
+def test_a_report_written_before_the_recipe_was_declared_shows_the_field_as_absent() -> None:
+    """The pre-ADR-0049 reports are E2612's and E2614's, and "absent" is their real value, not a zero."""
+    older = _report(prose=1.84, science=1.95)
+    newer = _report(prose=1.83, science=1.94)
+    newer["transformer"]["budget"]["optimizer"] = {
+        "decay_applied_to": "every parameter, norm scales included"
+    }
+
+    result = compare_arms({"older": older, "newer": newer}, reference="older")
+
+    assert result["all_conditions_matched"] is True
+    values = result["declared_differences"]["decay_applied_to"]["values"]
+    assert values["older"] is None and values["newer"] == "every parameter, norm scales included"

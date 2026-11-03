@@ -55,12 +55,19 @@ _DECLARABLE: dict[str, tuple[str, ...]] = {
     "document_masking": ("transformer", "budget", "document_masking"),
     "grad_accum_steps": ("transformer", "budget", "grad_accum_steps"),
     "training_tokens_packed": ("corpus", "training_tokens_packed"),
+    # ADR-0049's option, and the experiment E2631 asks about. Until it was listed here a comparison of two arms
+    # that differed in what decay reached would have reported them as matched, because the field sat in neither
+    # table and "any other difference is simply not looked at" is what the comment above this one promises.
+    "decay_applied_to": ("transformer", "budget", "optimizer", "decay_applied_to"),
 }
 
 #: Declarable fields a report only carries when the run used the feature. A report written before the feature
 #: existed (E2612 to E2614) has no such key, and "absent" is a real value there: the arm was not composed by
-#: share. Every other field is required, because a missing required field is a report the comparison cannot trust.
-_OPTIONAL_DECLARABLE = frozenset({"share_group_prefix", "share_of_tokens", "training_composition"})
+#: share, or the optimizer recipe was not declared. Every other field is required, because a missing required
+#: field is a report the comparison cannot trust.
+_OPTIONAL_DECLARABLE = frozenset(
+    {"share_group_prefix", "share_of_tokens", "training_composition", "decay_applied_to"}
+)
 
 
 def compare_arms(

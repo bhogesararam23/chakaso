@@ -1,0 +1,58 @@
+# E2631 protocol — the E2626 ladder, with decoupled weight decay withheld from the one-dimensional parameters.
+#
+# Read by `chakaso experiment study --protocol` with `--seeds 7`. Declared before the run
+# (experiments/E2631/record.md). Exactly one field moves from E2626's plan: `weight_decay_excludes_vectors`
+# false -> true, the option ADR-0049 added so this question could be asked and left unanswered. Everything else —
+# corpus, whole-work split, the committed vocabulary E2612 fitted, seed 7, 2,400 updates, the twelve rungs — is
+# E2626's, because the control is E2626's own run on this host. A test holds this file to those two facts.
+#
+# What the flag withholds decay from, measured in the control's checkpoint: 17 one-dimensional tensors holding
+# 5,888 elements — the four attention norms, four feed-forward norms and eight feed-forward biases plus the final
+# norm — which is 0.17 % of the 3,413,760 parameters the report counts.
+
+[plan]
+model_family = "decoder"
+
+# Architecture and optimisation (E2608 arm A, the reference configuration).
+vocab_size = 4096
+context_length = 256
+d_model = 256
+num_layers = 4
+num_heads = 8
+feedforward_dim = 640
+batch_size = 32
+grad_accum_steps = 1
+learning_rate = 0.0006
+weight_decay = 0.01
+# ADR-0049's declared recipe, unchanged; ADR-0049's *option* is what this run turns on.
+weight_decay_excludes_vectors = true
+warmup_steps = 200
+schedule = "cosine"
+decay_to = 0.1
+max_steps = 2400
+eval_every = 200
+patience = 99
+
+# Data: the pinned multi-register corpus, held out by whole work, all five registers in training.
+split_seed = 7
+expected_corpus_fingerprint = "312571f9fa8351a8"
+whole_work_splits = true
+shuffle_training_units = true
+max_training_tokens = 20000000
+max_validation_tokens = 250000
+max_test_tokens = 250000
+test_partitions = ["prose-", "science-", "technology-", "medicine-", "mathematics-"]
+character_baseline = false
+
+# Tokenizer: the vocabulary E2612 trained with, as a committed input (ADR-0044), checked by fingerprint.
+tokenizer_min_frequency = 3
+tokenizer_sample_characters = 12000000
+tokenizer_file = "experiments/E2612/vocabulary-434debe82f949347.json"
+expected_tokenizer_fingerprint = "434debe82f949347"
+
+# Generation: continuations of held-out openings, never the repository's own headings (K-026).
+sample_prompts = "held_out"
+
+# ADR-0050, as in the control: a usable model at each of the twelve evaluation points, so the exemption can be
+# read along the curve and not only at its end.
+curve_artifact_steps = [200, 400, 600, 800, 1000, 1200, 1400, 1600, 1800, 2000, 2200, 2400]

@@ -199,3 +199,36 @@ def test_the_ladder_differs_from_e2614_only_in_how_often_it_evaluates_and_what_i
     assert rungs == sorted(rungs)
     assert all(step % arm["eval_every"] == 0 for step in rungs)
     assert rungs == list(range(arm["eval_every"], reference["max_steps"] + 1, arm["eval_every"]))
+
+
+def test_the_decay_exemption_protocol_differs_from_the_ladder_in_one_declared_field() -> None:
+    """E2631 asks one question, so its plan moves one field: ADR-0049's `weight_decay_excludes_vectors`.
+
+    The control is the ladder run at E2626 on the same host, which is bit-identical to E2614 seed 7; a second
+    difference anywhere in this file would make the arm pair a comparison of two protocols and not of one option.
+    """
+    directory = Path(__file__).resolve().parent.parent / "configs" / "experiments"
+    ladder = tomllib.loads((directory / "E2626-curve-ladder.toml").read_text("utf-8"))["plan"]
+    arm = tomllib.loads((directory / "E2631-vector-decay-exemption.toml").read_text("utf-8"))[
+        "plan"
+    ]
+
+    changed = {key for key in {*ladder, *arm} if ladder.get(key) != arm.get(key)}
+
+    assert changed == {"weight_decay_excludes_vectors"}
+    assert arm["weight_decay_excludes_vectors"] is True
+    assert ladder.get("weight_decay_excludes_vectors", False) is False
+    # Everything the control's report fixes as matched, the file repeats verbatim.
+    for key in (
+        "split_seed",
+        "expected_corpus_fingerprint",
+        "expected_tokenizer_fingerprint",
+        "tokenizer_file",
+        "max_steps",
+        "eval_every",
+        "curve_artifact_steps",
+        "learning_rate",
+        "weight_decay",
+        "test_partitions",
+    ):
+        assert arm[key] == ladder[key], key
