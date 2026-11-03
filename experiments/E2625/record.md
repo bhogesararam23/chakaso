@@ -1,6 +1,6 @@
 # E2625 — H17 with updates and documents both held fixed: is the space-prefixed tokenizer better per character of the same text, at the same compute?
 
-**Status:** preregistered, not yet run. Committed before the run starts; the Results section is added after the report is on disk.
+**Status:** measured — **X-a: with updates and training documents both equal to the control's, the space-prefixed tokenizer still lowers held-out loss beyond seed noise (O1 −0.0229, whole pack −0.0286).** Preregistered and committed (`439392b`) before the run; the Results section was added after the report was on disk.
 **Type:** Research experiment, **preregistered**. It is the cell [E2624](../E2624/record.md) named as missing. E2620 held updates and positions fixed and gave the treatment 40 % more text; E2624 held the text fixed and gave the treatment 30 % fewer updates. Each moved a second thing.
 **Protocol file:** [`configs/experiments/E2625-space-prefixed-equal-updates-and-documents.toml`](../../configs/experiments/E2625-space-prefixed-equal-updates-and-documents.toml), read by `chakaso experiment study --protocol … --seeds 7`. A test holds it to E2620's on exactly three fields.
 
@@ -68,3 +68,37 @@ chakaso experiment study --work-dir data/experiments --experiment E2625 --seeds 
 python scripts/read_tokenizer_arm.py --same-documents --treatment data/experiments/E2625/seed-7/report.json \
   --control experiments/E2617/E2617-report.json --out experiments/E2625/results.json
 ```
+
+## Results (added 2026-11-03)
+
+Produced by `scripts/read_tokenizer_arm.py --same-documents` from committed files: [`E2625-report.json`](E2625-report.json), [`../E2617/E2617-report.json`](../E2617/E2617-report.json) and [`results.json`](results.json) (mode `equal-updates-and-documents`). The guards passed: the control's 2,400 updates and the control's 2,756 training documents
+(14,033,424 identifiers under the committed vocabulary `4a47f0281c81a9e5`), the same corpus, split and parameter count, the control's held-out documents. 2,400 updates to the ceiling on this host (2,605 s, none early-stopped, none diverged).
+
+| Partition | control | E2625 treatment | **Δ here** | Δ in E2620 (equal updates, +40 % text) | Δ in E2624 (equal text, 30 % fewer updates) |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| mathematics | 2.5753 | 2.5570 | +0.0183 | +0.0223 | -0.0300 |
+| medicine | 1.8379 | 1.8151 | +0.0228 | +0.0277 | -0.0335 |
+| prose | 1.8392 | 1.8229 | +0.0163 | +0.0217 | -0.0382 |
+| science | 1.9488 | 1.9228 | +0.0260 | +0.0307 | -0.0362 |
+| technology | 1.9022 | 1.8711 | +0.0311 | +0.0297 | -0.0374 |
+| **O1** | **2.0207** | **1.9978** | **+0.0229** | +0.0264 | -0.0351 |
+| **whole pack** | **2.0555** | **2.0269** | **+0.0286** | +0.0320 | -0.0319 |
+
+### The preregistered reading
+
+* **Outcome: X-a.** Δ(O1) = **+0.0229** is over the 0.02 separable margin and Δ(whole pack) = **+0.0286** over the 0.00933 tie margin. Every partition improves (0.016 to 0.031). The tokenizer lowers loss when only the tokenizer, and the 1.40 passes it implies, differ from the control — at the same compute and over the same distinct text.
+* **Predictions.** P1 held (+0.0229 lies between E2624's −0.0351 and E2620's +0.0264). P2 held: E2625's O1 is worse than E2620's, by **0.0035** (whole pack 0.0035), a small amount. P3 held: all five partitions move the same way.
+
+### What the three records show together
+
+The three treatment arms differ from the control as follows and no other way: E2620 = more distinct text, same updates; E2624 = same text, 30 % fewer updates; E2625 = same text, same updates. Read as a set:
+
+* **Most of E2620's gain is the tokenizer, not the extra text.** E2625 keeps 87 % of E2620's O1 gain (0.0229 of 0.0264) and 89 % of its whole-pack gain, with 25 % less distinct text. The remaining 0.0035 is the value, at this budget, of 15M more distinct characters (58M against 43M), consistent with E2619's finding that repetition up to two passes is nearly free.
+* **E2624's loss was the updates.** E2625 and E2624 differ in the number of updates (2,400 against 1,684) and the passes (1.40 against 0.98), over the same text and the same tokenizer: O1 +0.0229 against −0.0351, a difference of **0.058 bits per character for 30 % fewer updates** at this scale. The W-b of E2624 is therefore not a statement about the tokenizer, as that record said it could not be.
+* **The tokenizer's gain is robust to which of text or updates is held fixed** (it is +0.023 or +0.026 whenever the updates are the control's) and **is bought by compute, not by text:** at the control's compute the arm with fewer identifiers per character wins by about 1.1 % of O1.
+
+### What it does and does not establish
+
+It establishes, for one seed, one vocabulary and one budget, that the space-prefixed pre-tokenizer lowers held-out bits per character by about 0.023 on the equal-weight mean at the control's compute and documents. **It does not change a default:** replacement needs the seeds the E2620 consequence names (the margins are E2614's, measured with the default tokenizer;
+the treatment's seed spread is unmeasured), a refit sensitivity check, and a decision with its own record. The vocabulary is also fitted on the corpus the arms are scored against; whether the gain holds on another corpus is untested. The probe instruments (E2622, E2623) have not been run on these three checkpoints, and the tokenizer is the part of the model they hold fixed in their own design.
+Nothing here is capability (K-001).

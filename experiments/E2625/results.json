@@ -1,0 +1,65 @@
+{
+  "characters_per_identifier": {
+    "control": 2.0993,
+    "treatment": 2.9332
+  },
+  "delta_o1": 0.02290730819634801,
+  "delta_whole_pack": 0.028590754252330264,
+  "margins": {
+    "o1_separable": 0.02,
+    "o1_tie": 0.0062,
+    "whole_tie": 0.00933
+  },
+  "mode": "equal-updates-and-documents",
+  "o1": {
+    "control": 2.020683742284862,
+    "treatment": 1.997776434088514
+  },
+  "outcome": "V-a",
+  "partitions": {
+    "mathematics-": {
+      "characters_scored": {
+        "control": 510290,
+        "treatment": 510192
+      },
+      "control": 2.5753170251063824,
+      "treatment": 2.557014986095603
+    },
+    "medicine-": {
+      "characters_scored": {
+        "control": 101008,
+        "treatment": 101341
+      },
+      "control": 1.837905065348003,
+      "treatment": 1.8151147482627046
+    },
+    "prose-": {
+      "characters_scored": {
+        "control": 539534,
+        "treatment": 539069
+      },
+      "control": 1.8391877150263278,
+      "treatment": 1.8228536703073217
+    },
+    "science-": {
+      "characters_scored": {
+        "control": 538564,
+        "treatment": 538932
+      },
+      "control": 1.9487852533420127,
+      "treatment": 1.9227876218745257
+    },
+    "technology-": {
+      "characters_scored": {
+        "control": 547586,
+        "treatment": 547016
+      },
+      "control": 1.9022236526015852,
+      "treatment": 1.8711111439024162
+    }
+  },
+  "whole_pack": {
+    "control": 2.055531802497055,
+    "treatment": 2.0269410482447245
+  }
+}
