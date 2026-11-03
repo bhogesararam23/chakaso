@@ -250,6 +250,11 @@ def read(
     if context_result is not None:
         instruments.update(context_outcomes(context_result))
     extras = check_same_models(table, instruments)
+    population = set(table)
+    instruments = {
+        name: {model: scores for model, scores in table_of_model.items() if model in population}
+        for name, table_of_model in instruments.items()
+    }
     criterion = {
         name: float(block["whole_pack_bits_per_character"]) for name, block in table.items()
     }

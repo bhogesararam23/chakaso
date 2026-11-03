@@ -282,6 +282,34 @@ def test_reusing_a_criterion_reports_the_endpoint_check_as_another_analysis_s() 
     assert len(result["models"]) == 3
 
 
+def test_read_narrowes_an_instrument_to_the_curve_and_names_what_it_left_out() -> None:
+    """E2627 scored eight arms beside the curve; the ranking population is the curve, and the rest is reported.
+
+    The library refuses an instrument table that is not exactly the criterion table, because a comparison whose
+    two sides name different models has no family size. The script is the place that decides the population, so
+    it filters first and then hands the library two tables that agree.
+    """
+    module = _script()
+    pairs = _pairs({"untrained-control": 1, "step400": 12, "step800": 20, "E2612-T": 15})
+    pairs["models"]["E2612-T"]["result"]["outcomes"].append(["p999", "agreement", 1.0])
+    continuations = _continuations({"untrained-control": 10, "step400": 19, "step800": 20})
+
+    result = module.read(
+        report=_report(),
+        scored=_scored(),
+        pairs_result=pairs,
+        continuations_result=continuations,
+        usable_phenomena=["agreement", "order"],
+        materiality=0.02,
+        endpoint="step800",
+    )
+
+    assert len(result["models"]) == 3
+    assert "E2612-T" in result["models_scored_but_not_analysed"]
+    for row in result["pairs"]:
+        assert row["first"] != "E2612-T" and row["second"] != "E2612-T"
+
+
 def test_read_produces_a_verdict_per_instrument_from_the_assembled_tables() -> None:
     module = _script()
 
