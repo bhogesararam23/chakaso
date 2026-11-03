@@ -28,7 +28,7 @@ import random
 import time
 from collections.abc import Mapping
 from dataclasses import asdict, dataclass
-from math import log
+from math import e, fsum, inf, log, log2
 from pathlib import Path
 from typing import Any
 
@@ -69,7 +69,7 @@ from chakaso.training.nn_checkpoint import (
     save_artifact,
     schema_of,
 )
-from chakaso.training.nn_evaluation import score_model_on_examples
+from chakaso.training.nn_evaluation import document_losses, score_model_on_examples
 from chakaso.training.nn_training import (
     TransformerTrainingConfig,
     optimizer_settings,
@@ -93,13 +93,17 @@ __all__ = [
     "EXPERIMENT_ID",
     "REPO_TEXT_CORPUS",
     "CorpusSpec",
+    "EvaluationSides",
     "ExperimentPlan",
     "PreparedCorpus",
+    "evaluation_sides",
+    "pin_and_split",
     "prepare_corpus",
     "protocol_digest",
     "run_experiment",
     "score_artifacts",
     "summarise",
+    "work_losses",
     "write_report",
 ]
 
@@ -914,17 +918,20 @@ def _require_share_classes(units: tuple[Any, ...], prefix: str, share: float) ->
         raise ValueError(message)
 
 
-def prepare_corpus(plan: ExperimentPlan) -> PreparedCorpus:
-    """Pin the corpus, split it once by document, and train both tokenizations on the training side only.
+def pin_and_split(
+    plan: ExperimentPlan,
+) -> tuple[CorpusManifest, str, CorpusSnapshot | None, UnitSplit]:
+    """Pin the corpus the plan names and split it once by document — nothing else.
+
+    Split out of :func:`prepare_corpus` so a measurement that re-scores existing artifacts against the run's own
+    held-out text (:func:`work_losses`) cannot drift from the path that produced that text. The guards are the run's
+    guards: a corpus fingerprint the plan names and did not resolve stops the call, and a repository-prompted run on
+    a foreign corpus stops too (K-026).
 
     Raises:
-        CorpusDriftError: a manifest already recorded for this experiment pins different content than the
-            tracked files now hold, or the corpus this run was pointed at is not the one its directory
-            records.
-        CorpusError: the plan declares an expected corpus fingerprint and the corpus it resolved is not that
-            one — a study must not train on *a* pinned corpus once it has named the one it means.
+        CorpusDriftError: a recorded manifest pins different content than the tracked files now hold.
+        CorpusError: the resolved corpus is not the one the plan names, or the prompts do not belong to the corpus.
     """
-    started = time.perf_counter()
     work = plan.work_dir
     work.mkdir(parents=True, exist_ok=True)
 
@@ -958,6 +965,76 @@ def prepare_corpus(plan: ExperimentPlan) -> PreparedCorpus:
         seed=plan.effective_split_seed,
         whole_works=plan.whole_work_splits,
     )
+    # Deliberately stops here. The vocabulary is fitted on the whole training side whichever prefixes the run
+    # trains on, and a plan whose share prefix no work carries must be refused before that happens — a refused
+    # plan that left a fitted tokenizer behind would cache an artifact no record cites.
+    return manifest, origin, snapshot, split
+
+
+@dataclass(frozen=True, slots=True)
+class EvaluationSides:
+    """The two held-out sides of a plan, packed the way the plan packs them, with the units each pack holds.
+
+    The units travel beside the batch because a segment identifier is only meaningful against the list that was
+    packed, and a caller that wants to know which work a scored document came from must ask the pack, not guess.
+    """
+
+    validation: PackedBatch
+    validation_units: tuple[Any, ...]
+    test: PackedBatch
+    test_units: tuple[Any, ...]
+    selection_vocabulary: SubwordVocabulary | None
+
+
+def evaluation_sides(
+    plan: ExperimentPlan, split: UnitSplit, vocabulary: SubwordVocabulary
+) -> EvaluationSides:
+    """The held-out packs, sampled and capped in one place.
+
+    A run's published loss is computed over exactly these blocks, so any second implementation that sampled the
+    test side differently would be scoring different text and calling it the same measurement. E2633 found that by
+    being refused: taking the test side in split order gives 256,256 positions and 483,895 characters against the
+    254,976 and 535,282 every report prints, because ``max_test_tokens`` caps a **seeded sample** of the side, not
+    its prefix.
+    """
+    selection_vocabulary = (
+        None
+        if plan.evaluation_selection_tokenizer_file is None
+        else SubwordVocabulary.load(plan.evaluation_selection_tokenizer_file)
+    )
+    validation_units = _sampled_units(
+        split.validation, plan.max_validation_tokens, plan.effective_split_seed
+    )
+    test_units = _sampled_units(split.test, plan.max_test_tokens, plan.effective_split_seed)
+    packed: dict[str, tuple[tuple[Any, ...], PackedBatch]] = {}
+    for side, units, cap in (
+        ("validation", validation_units, plan.max_validation_tokens),
+        ("test", test_units, plan.max_test_tokens),
+    ):
+        packed[side] = (units, _pack_evaluation(units, vocabulary, plan, cap, selection_vocabulary))
+    return EvaluationSides(
+        validation=packed["validation"][1],
+        validation_units=packed["validation"][0],
+        test=packed["test"][1],
+        test_units=packed["test"][0],
+        selection_vocabulary=selection_vocabulary,
+    )
+
+
+def prepare_corpus(plan: ExperimentPlan) -> PreparedCorpus:
+    """Pin the corpus, split it once by document, and train both tokenizations on the training side only.
+
+    Raises:
+        CorpusDriftError: a manifest already recorded for this experiment pins different content than the
+            tracked files now hold, or the corpus this run was pointed at is not the one its directory
+            records.
+        CorpusError: the plan declares an expected corpus fingerprint and the corpus it resolved is not that
+            one — a study must not train on *a* pinned corpus once it has named the one it means.
+    """
+    started = time.perf_counter()
+    work = plan.work_dir
+    manifest, origin, snapshot, split = pin_and_split(plan)
+
     share_prefix, share = plan.share_group_prefix, plan.share_of_tokens
     training_units: tuple[Any, ...] = ()
     if share_prefix is None:
@@ -968,9 +1045,11 @@ def prepare_corpus(plan: ExperimentPlan) -> PreparedCorpus:
         )
     elif share is not None:
         _require_share_classes(split.train, share_prefix, share)
-    # The vocabulary is fitted on the whole training side whichever prefixes the run trains on: two arms of
-    # a mixture comparison must share one tokenizer, or the loss difference is partly a different alphabet.
+    # Two arms of a mixture comparison must share one tokenizer, or the loss difference is partly a different
+    # alphabet. Fitted after the share checks above, never before them.
     vocabulary, tokenizer_reused = _fit_or_reuse_vocabulary(plan, work, manifest, split)
+    char_vocabulary = CharVocabulary(tuple(unit.text for unit in split.train))
+
     composition: ShareSelection | None = None
     if share_prefix is not None and share is not None and plan.max_training_tokens is not None:
         # Needs the vocabulary: a quota is counted in identifiers, not characters.
@@ -983,21 +1062,14 @@ def prepare_corpus(plan: ExperimentPlan) -> PreparedCorpus:
             seed=plan.effective_split_seed,
         )
         training_units = composition.units
-    char_vocabulary = CharVocabulary(tuple(unit.text for unit in split.train))
+
+    sides = evaluation_sides(plan, split, vocabulary)
+    validation_units, test_units = sides.validation_units, sides.test_units
+    selection_vocabulary = sides.selection_vocabulary
 
     # One window per character position of every side: on the repository's own 780 KB that is affordable,
     # on a 14.5M-character corpus it is not, and the machine running the experiment has the last word. A
     # skipped baseline is recorded as skipped rather than quietly omitted.
-    validation_units = _sampled_units(
-        split.validation, plan.max_validation_tokens, plan.effective_split_seed
-    )
-    test_units = _sampled_units(split.test, plan.max_test_tokens, plan.effective_split_seed)
-    selection_vocabulary = (
-        None
-        if plan.evaluation_selection_tokenizer_file is None
-        else SubwordVocabulary.load(plan.evaluation_selection_tokenizer_file)
-    )
-
     char_windows: dict[str, tuple[Any, Any]] = {}
     if plan.character_baseline:
         char_windows = {
@@ -1023,12 +1095,8 @@ def prepare_corpus(plan: ExperimentPlan) -> PreparedCorpus:
             # interleaved order would drop the last documents and move the share it just established.
             max_tokens=None if composition is not None else plan.max_training_tokens,
         ),
-        validation=_pack_evaluation(
-            validation_units, vocabulary, plan, plan.max_validation_tokens, selection_vocabulary
-        ),
-        test=_pack_evaluation(
-            test_units, vocabulary, plan, plan.max_test_tokens, selection_vocabulary
-        ),
+        validation=sides.validation,
+        test=sides.test,
         char_windows=char_windows,
         timings={"prepare_seconds": round(time.perf_counter() - started, 2)},
         corpus_origin=origin,
@@ -1051,20 +1119,25 @@ def _pack_evaluation(
     With none, the cap is counted with ``vocabulary`` inside :func:`pack_units`, exactly as before. With one, the
     documents are the ones a pack capped under *that* vocabulary would hold, and they are packed uncapped, so every
     tokenizer given the same selection vocabulary is scored on the same text.
+
+    Document boundaries are tracked whatever the masking setting, because a held-out pack that does not know which
+    document each position came from can only be measured as a whole. Nothing reads the identifiers unless
+    ``document_masking`` is on, so the scored numbers are unchanged; what they buy is :func:`work_losses`, which
+    splits a published loss into the works a paired test resamples.
     """
     if selection_vocabulary is None or cap is None:
         return pack_units(
             units,
             vocabulary,
             context_length=plan.context_length,
-            track_documents=plan.document_masking,
+            track_documents=True,
             max_tokens=cap,
         )
     return pack_units(
         select_units_by_token_cap(units, selection_vocabulary, cap),
         vocabulary,
         context_length=plan.context_length,
-        track_documents=plan.document_masking,
+        track_documents=True,
     )
 
 
@@ -1400,6 +1473,101 @@ def score_artifacts(
             ),
         }
     return scored
+
+
+def work_losses(plan: ExperimentPlan, artifacts: Mapping[str, Path]) -> dict[str, Any]:
+    """Score each named artifact on the plan's own held-out pack, split into the works its documents came from.
+
+    :func:`score_artifacts` publishes the whole-pack and per-register numbers a run reports; this publishes the same
+    measurement at the unit a paired test needs. Two arms scored on identical documents differ document by document,
+    and the works — the units the whole-work split holds out — are what a cluster bootstrap may resample: the dozen
+    chapters of one held-out book are one observation of one prose style, not a dozen.
+
+    The pinning, the split, the vocabulary and the pack are the run's own code path, through
+    :func:`pin_and_split` and :func:`evaluation_sides`. That is not cosmetic. A reconstruction that took the test
+    side in split order rather than in the seeded sample the cap is applied to scores different documents: E2633
+    asked for 250,000 identifiers that way and got 256,256 positions and 483,895 characters where every committed
+    report records 254,976 and 535,282, and its pooled loss came out 1.2 bits per character worse on models that had
+    already published their number.
+
+    Raises:
+        CorpusError: an artifact was trained on a different corpus or carries a different vocabulary than the plan
+            pins — the same guards ``score_artifacts`` applies, for the same reason.
+    """
+    manifest, _origin, _snapshot, split = pin_and_split(plan)
+    # The cache lookup, not a refit: a measurement over existing artifacts must use the vocabulary the arms
+    # trained with, and refuse if it cannot find it.
+    vocabulary, _reused = _fit_or_reuse_vocabulary(plan, plan.work_dir, manifest, split)
+    sides = evaluation_sides(plan, split, vocabulary)
+    arms: dict[str, dict[str, Any]] = {}
+    for name, path in artifacts.items():
+        artifact = load_artifact(path)
+        if artifact.corpus_fingerprint != manifest.fingerprint:
+            message = (
+                f"{name} was trained on corpus {artifact.corpus_fingerprint}, but this plan pins "
+                f"{manifest.fingerprint}; its held-out numbers would not be comparable"
+            )
+            raise CorpusError(message)
+        if artifact.vocabulary.fingerprint != vocabulary.fingerprint:
+            message = (
+                f"{name} carries tokenizer {artifact.vocabulary.fingerprint}, but this plan pins "
+                f"{vocabulary.fingerprint}; encoding the same text differently changes the metric"
+            )
+            raise CorpusError(message)
+        losses = document_losses(
+            artifact.to_model(),
+            sides.test.examples,
+            artifact.vocabulary,
+            sides.test_units,
+            batch_size=plan.batch_size,
+            document_masking=plan.document_masking,
+        )
+        works: dict[str, dict[str, float]] = {}
+        for loss in losses:
+            key = loss.group or f"document-{loss.segment}"
+            row = works.setdefault(key, {"nats": 0.0, "characters": 0.0, "documents": 0.0})
+            row["nats"] = fsum([row["nats"], loss.nats])
+            row["characters"] += loss.characters
+            row["documents"] += 1
+        for row in works.values():
+            row["bits_per_character"] = (
+                log2(e) * row["nats"] / row["characters"] if row["characters"] else inf
+            )
+        nats_total = fsum(loss.nats for loss in losses)
+        characters_total = sum(loss.characters for loss in losses)
+        arms[name] = {
+            "path": Path(path).name,
+            "checksum": artifact.checksum(),
+            "step": artifact.step,
+            "corpus_fingerprint": artifact.corpus_fingerprint,
+            "tokenizer_fingerprint": artifact.vocabulary.fingerprint,
+            "positions_scored": sum(loss.positions for loss in losses),
+            "characters_scored": characters_total,
+            "documents": len(losses),
+            "pooled_bits_per_character": (
+                log2(e) * nats_total / characters_total if characters_total else inf
+            ),
+            "works": works,
+        }
+    return {
+        "pack": {
+            "corpus_fingerprint": manifest.fingerprint,
+            "corpus_name": manifest.name,
+            "split_fingerprint": split.fingerprint,
+            "vocabulary_fingerprint": vocabulary.fingerprint,
+            "selection_vocabulary_fingerprint": (
+                None
+                if sides.selection_vocabulary is None
+                else sides.selection_vocabulary.fingerprint
+            ),
+            "blocks": len(sides.test.examples),
+            "positions": sides.test.positions,
+            "documents": sides.test.document_count,
+            "works": len({unit.group for unit in sides.test_units}),
+            "document_masking": plan.document_masking,
+        },
+        "arms": arms,
+    }
 
 
 def _training_config(

@@ -31,7 +31,7 @@ from collections.abc import Mapping, Sequence
 from chakaso.training.errors import TrainingError
 from chakaso.training.paired_stats import sign_test_p_value
 
-__all__ = ["PairedLossError", "paired_document_test"]
+__all__ = ["PairedLossError", "jackknife", "paired_document_test"]
 
 
 class PairedLossError(TrainingError):
@@ -81,6 +81,49 @@ def _percentile(sorted_values: Sequence[float], quantile: float) -> float:
     lower = math.floor(position)
     upper = min(lower + 1, len(sorted_values) - 1)
     return sorted_values[lower] + (sorted_values[upper] - sorted_values[lower]) * (position - lower)
+
+
+def jackknife(
+    differences: Sequence[float], weights: Sequence[float]
+) -> dict[str, Sequence[float] | float]:
+    """The estimate with each cluster left out in turn, and the standard jackknife standard error.
+
+    A bootstrap interval says how much a resample of clusters moves the estimate; a leave-one-out table says
+    something a reader can check without trusting any resampling — **which single cluster, removed, moves the
+    headline number most**. A weighted mean over a handful of large documents can clear zero while resting on one
+    of them, and the widest leave-one-out gap is where that shows.
+
+    ``estimate_without`` is reported per input index in the caller's order, so a record can name the work it is
+    talking about rather than an anonymous rank. The standard error is the ordinary one for a mean of jackknife
+    replicates: ``sqrt((n - 1) / n * sum((theta_without_i - mean(theta_without)) ** 2))``.
+
+    Raises:
+        PairedLossError: fewer than two clusters are given — the whole point is to remove one and still have a
+            measurement, and removing the only cluster leaves nothing to estimate.
+    """
+    values = [float(value) for value in differences]
+    numeric_weights = [float(weight) for weight in weights]
+    _validate(values, numeric_weights)
+    if len(values) < 2:
+        message = "a leave-one-out estimate needs at least two clusters; removing the only one leaves no measurement"
+        raise PairedLossError(message)
+    weighted = [value * weight for value, weight in zip(values, numeric_weights, strict=True)]
+    without: list[float] = []
+    for index in range(len(values)):
+        rest = [position for position in range(len(values)) if position != index]
+        numerator = math.fsum(weighted[position] for position in rest)
+        denominator = math.fsum(numeric_weights[position] for position in rest)
+        without.append(numerator / denominator)
+    centre = math.fsum(without) / len(without)
+    standard_error = math.sqrt(
+        (len(without) - 1) / len(without) * math.fsum((value - centre) ** 2 for value in without)
+    )
+    return {
+        "estimate_without": without,
+        "minimum_without": min(without),
+        "maximum_without": max(without),
+        "standard_error": standard_error,
+    }
 
 
 def paired_document_test(

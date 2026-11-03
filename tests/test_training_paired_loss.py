@@ -10,7 +10,11 @@ from __future__ import annotations
 import pytest
 
 from chakaso.training.errors import TrainingError
-from chakaso.training.paired_loss import PairedLossError, paired_document_test
+from chakaso.training.paired_loss import (
+    PairedLossError,
+    jackknife,
+    paired_document_test,
+)
 
 
 def test_the_point_estimate_is_the_pooled_difference_not_a_mean_of_ratios() -> None:
@@ -131,3 +135,30 @@ def test_inputs_that_do_not_describe_the_same_documents_are_refused() -> None:
 
 def test_the_paired_error_is_the_package_error_type() -> None:
     assert issubclass(PairedLossError, TrainingError)
+
+
+def test_a_leave_one_out_table_is_the_estimate_over_what_is_left() -> None:
+    # Differences +0.10 and -0.30, equal weights: without the first the estimate is -0.30, without the second
+    # +0.10. Centre -0.10, squared deviations 0.04 and 0.04, SE = sqrt((1/2) x 0.08) = 0.2.
+    result = jackknife([0.10, -0.30], [1.0, 1.0])
+    assert result["estimate_without"] == pytest.approx([-0.30, 0.10])
+    assert (result["minimum_without"], result["maximum_without"]) == pytest.approx((-0.30, 0.10))
+    assert result["standard_error"] == pytest.approx(0.2, abs=1e-12)
+
+
+def test_the_table_shows_which_single_cluster_the_headline_number_rests_on() -> None:
+    # One cluster of 100 characters at +1.0 and two of 1 character at zero: the pooled estimate is 100/102 =
+    # 0.98039, and removing the big one gives exactly zero. A bootstrap interval on three clusters could still
+    # clear zero; this table says plainly that one document carries the whole claim.
+    result = jackknife([1.0, 0.0, 0.0], [100.0, 1.0, 1.0])
+    assert result["estimate_without"][0] == pytest.approx(0.0, abs=1e-15)
+    assert result["estimate_without"][1] == pytest.approx(100.0 / 101.0)
+    assert result["minimum_without"] == pytest.approx(0.0, abs=1e-15)
+    assert result["maximum_without"] == pytest.approx(100.0 / 101.0)
+
+
+def test_a_leave_one_out_table_needs_two_clusters_and_the_same_documents_as_the_test() -> None:
+    with pytest.raises(PairedLossError, match="at least two clusters"):
+        jackknife([0.1], [1.0])
+    with pytest.raises(PairedLossError, match="caller supplied 1 weights"):
+        jackknife([0.1, 0.2], [1.0])

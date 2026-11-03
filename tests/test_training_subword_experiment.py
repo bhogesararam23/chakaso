@@ -1827,3 +1827,55 @@ def test_partition_packs_reuse_scores_the_same_metrics_the_piggybacked_call_prod
     assert hoisted == _test_partition_metrics(model, prepared, plan)
     assert set(packs) == {"prose-", "science-"}
     assert baseline is not None and uniform_value > 0.0
+
+
+def test_work_losses_partitions_the_run_s_own_held_out_number_work_by_work(tmp_path: Path) -> None:
+    """The property E2633's paired test stands on: the works add back up to the published whole-pack metric.
+
+    A per-work table that did not sum to the number the run reported would be a second measurement of the held-out
+    text, and a paired test over it would compare two arithmetic rather than two models.
+    """
+    from math import log2
+
+    from chakaso.training.subword_experiment import work_losses
+
+    root = _root(tmp_path)
+    work = tmp_path / "work-worklosses"
+    plan = _plan(root, work, max_steps=4, eval_every=4)
+    report = run_experiment(plan)
+    final = work / checkpoint_filename("E2605", "transformer")
+
+    measured = work_losses(plan, {"final": final})
+    arm = measured["arms"]["final"]
+    published = report["transformer"]["test"]
+
+    assert arm["positions_scored"] == published["positions_scored"]
+    assert arm["characters_scored"] == published["characters_scored"]
+    assert arm["pooled_bits_per_character"] == pytest.approx(
+        published["bits_per_character"], abs=1e-9
+    )
+    assert arm["checksum"] == report["transformer"]["artifact"]["checksum"]
+    assert measured["pack"]["split_fingerprint"] == report["corpus"]["split_fingerprint"]
+    assert measured["pack"]["corpus_fingerprint"] == report["corpus"]["fingerprint"]
+
+    nats = sum(float(row["nats"]) for row in arm["works"].values())
+    characters = sum(int(row["characters"]) for row in arm["works"].values())
+    assert characters == arm["characters_scored"]
+    assert sum(int(row["documents"]) for row in arm["works"].values()) == arm["documents"]
+    assert log2(2.718281828459045) * nats / characters == pytest.approx(
+        arm["pooled_bits_per_character"], rel=1e-12
+    )
+
+
+def test_work_losses_refuses_a_model_trained_on_another_corpus(tmp_path: Path) -> None:
+    from chakaso.training.subword_experiment import work_losses
+
+    root = _root(tmp_path)
+    work = tmp_path / "work-mine3"
+    plan = _plan(root, work, max_steps=4, eval_every=4)
+    run_experiment(plan)
+    artifact = work / checkpoint_filename("E2605", "transformer")
+    other = _plan(_other_root(tmp_path), tmp_path / "work-other3", max_steps=4, eval_every=4)
+
+    with pytest.raises(CorpusError, match="was trained on corpus"):
+        work_losses(other, {"mine": artifact})
