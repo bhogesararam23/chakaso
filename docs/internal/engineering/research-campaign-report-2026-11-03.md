@@ -154,8 +154,9 @@ recorded the question instead of improvising a citation, per the project's rule 
 
 ## Commits
 
-**36 commits**, `a77ea4e` (07:02 IST) onward, all on `main`; the 34 that did the work run through `35c2504` (14:15 IST)
-and the last two carry this report. All were authored and committed by the configured
+**38 commits as measured at `80be853`**, `a77ea4e` (07:02 IST) onward, all on `main`; the 34 that did the work run
+through `35c2504` (14:15 IST) and the rest carry this report and its corrections. Counts in this section are pinned to
+`80be853` rather than to a date, so the commits that fix them cannot make them wrong. All were authored and committed by the configured
 identity (`bhogesararam23`); **no commit carries a co-author trailer, a generated-by notice, or any added attribution**,
 and no `docs/*.docx` private material is tracked (`git ls-files | grep -c docx` returns 0). Of the 34 that did the work:
 11 `feat:`, 9 `research:`, 7 `docs:`, 4 `fix:`, 2 `test:`, 1 `perf:`. Across `c498eb8..35c2504` that is
@@ -168,10 +169,9 @@ this phase's work was four experiments and three of them were gated by machine t
 E2628's arm 7,633 s, and E2629's three scoring passes over 215-item and 800-pair instruments took about ten
 minutes in total. The repository's own rule — one commit is one coherent change, and a single change is not split into several
 commits — means the remaining units were either real experiments or noise. Measured against the stretch target this is a
-miss; measured against what a reader can verify from `git log`, each of the 36 is a unit that stands alone, and every
-one of the four records was committed before the run or scoring it describes. For context, `main` carried **175 commits since 2026-11-01**
-as measured at `d690e1b`, of which these 36 are the last; the count is pinned to that commit rather than to a date so
-this report's own commits cannot make it wrong.
+miss; measured against what a reader can verify from `git log`, each of the 38 is a unit that stands alone, and every
+one of the four records was committed before the run or scoring it describes. For context, `main` carried **177 commits since 2026-11-01**
+as measured at `80be853`, of which these 38 are the last.
 
 Push verification: every batch was pushed as it landed and each push was confirmed — `775974c`, `35c2504`, `d690e1b`,
 `0446f5d` and `80be853` were each read back from the runner with **all eight jobs green** (the last as run
