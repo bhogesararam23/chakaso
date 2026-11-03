@@ -3,8 +3,8 @@
 Real problems with the current state, including the ones that are only
 inconvenient. An empty file here would mean nobody has looked.
 
-Last reviewed: 2026-11-03 (K-030's declaration half closed by ADR-0049 with its deciding arm still unrun, K-031 left
-open; K-001 unchanged by E2626, E2627 and E2628, which measure instruments and a tokenizer at a lower loss, not
+Last reviewed: 2026-11-03 (K-032 filed by E2629's deviation; K-030's declaration half closed by ADR-0049 with its deciding arm still unrun, K-031 left
+open; K-001 unchanged by E2626, E2627, E2628 and E2629, which measure instruments and a tokenizer at a lower loss, not
 capability); before that 2026-11-01 (K-024 through K-029 added by the research campaign; K-024 is closed for the
 pre-E2612 records by `cfdcd1a` and left open for its residue); before that 2026-10-30
 (K-020 and K-021 added by the E2610 diagnosis, K-022 by the data review); before that 2026-10-24, as the whole-documentation audit of every doc against the code and the committed
@@ -858,6 +858,33 @@ declare `ingested_sha256`, `ingest` refuses text that differs, `verify_raw` stil
 ingested text is identical, and the committed multiregister catalogue declares all 430. On the current bytes the classifier reports exactly
 `science-pg3489: ingested-text-identical`. *Second half open:* the raw bytes (156 MB, ~59.5 MB gzipped) still exist only on this host's
 `data/`; where an archive lives is the owner's decision (ADR-0047 part 2), and the original `pg3489` bytes are not recoverable.
+
+### K-032 — A committed probe extract cannot be re-paired: the extractor keeps the tables a record prints and drops the per-item array a McNemar test is computed from
+
+**Impact:** Medium for the capability records, and E2629 found it by being refused. `scripts/extract_report.py` compacts a run
+report or a probe result so a record's evidence fits in the repository, and its documented design is to keep every key
+`ALWAYS_KEEP` names whole while stubbing bulky leaves — which is what lets E2626's `minimal-pairs.json` sit at 38 KB instead
+of the 1.45 MB the same scoring run wrote (its continuation file is 1.55 MB whole against 30 KB committed). The leaf it stubs is
+`outcomes`, the per-item record: 800 rows of `(identifier, phenomenon, 1.0-or-0.0)` per model. The
+S-a…S-d verdicts and the discordant counts live on in each record's `results.json`, so a reader can check the arithmetic that was
+*reported*; what no reader can do from the committed files is recompute the paired test, or run a new pair test on models an old
+run already scored. E2629 tried exactly that — read E2627's committed same-region result at no cost — and `analyse_arm_pairs.py`
+named the missing reading and refused, which is the behaviour the check was written for.
+
+**Two constraints pull against each other and neither is wrong.** `tests/test_repository_hygiene.py` refuses tracked files above
+1 MiB, and the full multi-model probe results this campaign produced are 1.45 MB, 1.55 MB and 2.28 MB (E2626's pair file, its
+continuation file, and E2627's same-region file). The extractor's own test asserts the current design: a probe
+result keeps its tables and stubs its per-item arrays. Keeping `outcomes` for every model would put those three
+committed files over the bound and change the bytes of artifacts two measured records already cite.
+
+**Open.** The decision is which of three shapes to take, and it is a policy decision, not a bug fix: (a) keep `outcomes` and let
+the extractor trim the *model* list to the ones a named record compares, (b) write per-item outcomes as a separate companion file
+with its own digest cited by the extract, or (c) accept that a probe result's re-pairable life ends with its `results.json` and say
+so in the experiment README rather than in an issue. E2629 itself sidestepped the question by scoring only four models, so all
+three of its probe files fit whole in the bound and its own Z-verdict is recomputable from the repository; that is the pattern (a)
+would generalise.
+
+**Status:** open, filed 2026-11-03 by E2629's deviation.
 
 ## Resolved
 

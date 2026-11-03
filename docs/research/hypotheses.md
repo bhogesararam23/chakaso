@@ -290,4 +290,11 @@ continuation probe produced no contradiction; its failure is a different one —
 material pairs whose rungs both lie past update 800. *What this does not establish:* that the contradiction reproduces across seeds or between independently
 trained arms, which is the comparison the project actually makes; E2626's own limits section says rungs are not arms. *What would follow from confirming it:*
 held-out loss and grammatical preference are different measurements of this model at the 0.02-bit scale, so a loss improvement cannot be reported as a
-capability improvement without the capability number being measured on the arms themselves.
+capability improvement without the capability number being measured on the arms themselves. *Status 2026-11-03 (later):* **the arm case is measured, and it
+is worse than a contradiction** ([E2629](../../experiments/E2629/record.md)). On E2612's mixture against its prose-only control — matched arms, 0.108246 bits
+per character apart, one item set, exact McNemar under Holm — the minimal-pair probe separated nothing and ordered the three arms the opposite way to the loss
+(ρ = −0.866 on the usable phenomena, −1.000 across all 800 pairs; the uncorrected tendencies 13:20 and 4:14 against the criterion), so H18's *falsifier* was
+not reached between arms because no pair cleared the correction at all. That does not rehabilitate the assumption: the hypothesis was that a probe able to
+separate along a curve would keep separating as the gap grows, and the gap here is five times the smallest rung gap E2626 resolved while its separations went
+to zero. What E2626 established stands as a curve-local result; what E2629 establishes is that no capability probe in this repository has ever ranked two
+independently trained models that differ.

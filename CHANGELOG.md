@@ -29,6 +29,17 @@ capability is implemented or still planned.
   and it is the only kind to earn a usable verdict, S-b. **No kind separates any of the ten pairs among five independently trained seeds** (smallest
   p = 0.065), and E2623's near-ceiling number reproduced to the last digit (0.986046511627907) — so the ceiling is a property of a 24-identifier
   span after a 64-identifier passage at this scale, not of the distractor's topic cue. T-a on one kind.
+- **E2629: neither capability probe ranks two independently trained arms (Z-d).** The pair E2626 could not construct exists on this
+  host: E2612's mixture arm against its prose-only control — 0.108246 bits per character apart on the same held-out pack, same
+  vocabulary, same whole-work split, same seed, same budget, proven matched by the module E2613 used for that claim — with E2613's
+  half-prose arm (0.0045 from the control, inside the band) as a false-positive check rather than a case left out. Nothing ranked
+  it. On its three usable phenomena the grammatical probe **tied** the two arms at 0.89000 and put the worst model on top (0.90000),
+  ρ = −0.866 against the criterion and −1.000 across all 800 pairs; both continuation readings ordered all three arms correctly and
+  separated nothing, the closest p reaching 0.049 against Holm's 0.05/3 = 0.016667 step over three pairs. All eight instruments left
+  the inside-the-band pair alone, and no separation contradicted the criterion after correction either. E2626's figures were published
+  as upper bounds because rungs are not arms; between arms the same instrument does not resolve less, it inverts. **Every claim in
+  this repository of the form "this arm is better than that one" now rests on held-out loss and on nothing else measured here.** The
+  trained-versus-untrained gap E2621–E2623 found is untouched (untrained 0.36–0.50 against the arms' 0.83–0.99), and K-001 stands.
 - **E2628: H17's gain survives a second, independent initialisation, and grows (Y-a).** E2625's design — the control's own 2,400 updates over its
   own 2,756 training documents, so only the tokenizer and the number of passes differ — run at seed 11 on the Windows host against E2614's seed-11
   control on the same machine: **+0.0294 bits per character on the equal-weight register mean** (margin 0.02) and **+0.0349 on the whole pack**
@@ -56,6 +67,10 @@ capability is implemented or still planned.
   E2623 named as its own fix. Four distractors per passage — the document's text immediately before and immediately after, and the truth's
   identifiers permuted and reversed — so topic, register and hand are held fixed and only position and sequence remain. Its own digest; v1's
   unchanged, because a committed record cites it. Scored by the same pointwise mutual information, and it keeps the per-item record.
+- **`scripts/analyse_arm_pairs.py`** asks the probes to rank arms rather than rungs: it reads the criterion from the arms' own
+  reports, refuses the comparison through `chakaso.training.arm_comparison` when the arms differ in a condition no record declared,
+  tests every pair with exact McNemar under Holm, keeps the inside-the-band pair as a false-positive check, and reports the models
+  it left out by name. Dependency-free like the curve analysis it shares its readers with.
 - **`chakaso.training.subword_experiment.score_artifacts`** measures several models of one protocol over the
   same prepared held-out pack, refusing by name an artifact from another corpus or another tokenizer, and returns the blocks in the shapes a report
   writes. A test pins the property that matters: scored this way, a run's own final artifact reproduces its reported numbers exactly.

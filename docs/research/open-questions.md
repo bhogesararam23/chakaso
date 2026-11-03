@@ -280,8 +280,19 @@ same whole-work split `adf650435c3a9068`, 0.10824 apart, with E2613's half-prose
 a negative control 0.0045 from the prose arm. The tempting alternative — E2614's seed-11 control against E2628's
 seed-11 treatment, 0.0294 apart — is not usable for a paired test: the two arms are cut by different vocabularies, the
 runners refuse a foreign checkpoint, and two item sets would leave the comparison unpaired, which is the weaker test the
-paired statistics were written to replace. Whether the loss itself is the right criterion is still open: nothing here
-validates the loss against anything.
+paired statistics were written to replace.
+
+**Answered, 2026-11-03 ([E2629](../../experiments/E2629/record.md)): no, neither probe ranks two arms.** That pair was
+built, proved matched by `chakaso.training.arm_comparison` before any statistic was read, and tested with exact
+McNemar under Holm over three pairs. **Z-d — nothing separated either material pair.** The grammatical probe tied the
+mixture and prose arms at 0.89000 on its usable phenomena, ranked the worst-loss arm first at 0.90000, and ordered the
+three arms in the opposite direction to the loss (ρ = −0.866, and −1.000 across all 800 pairs). Both continuation
+readings ordered all three arms correctly (easy ρ = +1.000) and resolved nothing: the closest p was 0.049 against the
+0.016667 Holm step. The 0.0045 null pair was left alone by all eight instruments, which is the only part of the design
+that behaved as expected. **So the open question is no longer "can a probe see a real improvement" but "what is the
+resolution limit of an instrument over items rather than models"** — the models are scored, the gap is 32 seed
+standard deviations, and the binding constraint is 215 items. Still open and unchanged: whether the loss is the right
+criterion, which nothing here validates against anything.
 
 **Is archaic English the binding constraint, or 20M tokens?**
 Both records that could separate them are silent. E2612 says a result on this corpus "does not transfer to modern

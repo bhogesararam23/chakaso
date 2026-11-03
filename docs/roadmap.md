@@ -438,3 +438,32 @@ reference configuration is 4,991–8,902 s and a probe pass over twenty models i
 
 None of this is a capability claim. [K-001](agent/KNOWN_ISSUES.md) is unchanged by E2627 and E2628: one record measures an instrument's floor, the other
 measures a tokenizer at a lower loss, and every sample either run generated hit its token bound.
+
+## Next stage, 2026-11-03 (after E2629, later the same day)
+
+Item 1 above is measured and closed: [E2629](../experiments/E2629/record.md) handed both probes a matched pair of
+independently trained arms 0.108246 bits per character apart and neither ranked it (Z-d). That reorders what is worth
+doing next, because the cheap high-information experiment is now spent and what remains is either more items or more
+training.
+
+1. **More items on the pair that came closest, at no training cost.** `continuation_pmi_hard` reached p = 0.049 on
+   `E2612-T` against `E2612-P` and `continuation_pmi_easy` p = 0.031 on `E2612-T` against `E2613-H`, both pointing the
+   right way, both defeated by Holm's 0.05/3 = 0.016667 step. The binding limit is the number of items (215), not the
+   models, which are already scored. A 2× larger same-region/v1 item set on the same three checkpoints is a scoring
+   pass and a digest change, and it would say whether the continuation probe resolves arm-level differences at all.
+   Its record must declare the enlarged set and its digest before anything is scored, because E2626 and E2627 both had
+   to correct a claim about which items a number came from.
+2. **H17's decision, not its evidence.** Two seeds on two hosts exceed the separable margin; what stands between the
+   measurement and the default is [ADR-0048](decisions/ADR-0048-the-pre-tokenizer-is-a-named-part-of-a-vocabulary-s-identity.md)'s
+   own "does not decide" clause and a refit-sensitivity check on a second fitting sample. The check is cheap at the
+   sample sizes already fitted (6.6 s at 1.0M characters, measured) and it is the last thing the adoption record needs.
+3. **A ladder at a second seed** (item 4 of the previous list, still open): E2626's 1600-versus-1800 contradiction is
+   one pair on one trajectory. Costs one arm, ~1.5–2.5 h here. E2629 makes this *less* attractive than it looked, since
+   a rung contradiction between two nearly identical models is now known to say little about arms; it is worth doing
+   only as a reproduction of E2626's curve, not as evidence about the probes.
+4. **The prose share as a decision, the raw-bytes archive (K-031), K-032's policy shape, and scale** — unchanged in
+   order. E2612's rule 2 still gates the capacity step on a data weighting that is measured (25 %) and still not an
+   objective, and E2629 does not change that; it changes what an instrument is allowed to claim about the weighting.
+
+None of this is a capability claim. [K-001](agent/KNOWN_ISSUES.md) is untouched: E2629 measured instruments, and the
+models it scored are three checkpoints the repository had already trained and reported.

@@ -1137,3 +1137,59 @@ training cost on this host (E2612's mixture against its prose control, both on v
 bits per character apart, with E2613's half-prose arm 0.0045 from the control as a negative control); whether E2626's
 1600-versus-1800 contradiction reproduces on a second ladder; and what H17 needs before the default moves, which is
 ADR-0048's own "does not decide" clause plus a refit-sensitivity check rather than a third seed.
+
+## 2026-11-03 — two arms that really differ were handed to both probes, and neither probe ranked them
+
+**Type:** result + interpretation ([E2629](../../experiments/E2629/record.md), preregistered as `9277702` before any
+model was scored for it), with the tool that made it possible (`scripts/analyse_arm_pairs.py`, `378f5df`).
+
+**Observation.** E2626 measured instrument sensitivity against a training curve and said its own numbers were upper
+bounds, because rungs share an initialisation, a data order and nearly all their weights. E2627 tested five
+independently trained models of one configuration and found no separation — the correct answer where the true gap is
+zero. What had never been tried is the middle case the campaign's decisions actually turn on: two arms, trained
+independently on different data, whose held-out loss gap is already committed, scored on one item set with a paired
+test. The obstacle was a vocabulary, not an idea: E2614's seed-11 control and E2628's seed-11 treatment differ by
+0.0294 but are cut by different vocabularies, and two item sets would leave the comparison unpaired — which is the
+weaker test the paired statistics were written to replace. E2612's mixture against its prose-only control is the pair
+this host can actually compare.
+
+**Measured.** E2612-T 2.055447 whole-pack bits per character against E2612-P 2.163693, matched by
+`chakaso.training.arm_comparison` on corpus, split, vocabulary, seed, budget, architecture, parameter count and
+denominators, with E2613-H (2.168218) as the arm 0.004525 from the control — inside the band, kept in the analysis as
+a false-positive check rather than left out. Outcome **Z-d**: no decision-bearing instrument separated either material
+pair. The grammatical probe on its three usable phenomena tied the two arms at 0.89000 and ranked the worst model
+first at 0.90000 (ρ = −0.866; across all 800 pairs ρ = −1.000). Both continuation readings put all three arms in the
+criterion's order (easy ρ = +1.000) and reached no separation — the closest was p = 0.049 against Holm's 0.05/3 =
+0.016667. No instrument touched the inside-the-band pair, and nothing contradicted the criterion after correction.
+
+**Interpretation.** *Ordering is not resolution.* The continuation probe can rank three arms correctly and still be
+unable to say, item by item, that the difference is not noise — which is precisely the distinction a single McNemar
+comparison at one endpoint never had to make. And *rungs are not arms* is no longer a caveat but a measurement: the
+instrument that resolved 63 of 74 material rung pairs, down to 0.0218 bits, resolved neither of two material arm pairs
+at 0.108, and inverted the ordering while doing it. The consequence for the project's own practice is direct: from
+E2612 onward every sentence of the form "this arm is better than that one" rests on held-out bits per character and on
+nothing else measured in this repository. The trained-versus-untrained gap that E2621–E2623 published is untouched —
+untrained floors at 0.36–0.50 against the arms' 0.83–0.99 — but a floor comparison is not a ranking.
+
+**Two unplanned confirmations.** E2612-T scored 0.82500 across all 800 pairs and 0.89000 on the usable subset, equal
+to E2626's `step2400` rung to every digit, so the model E2614's seed 7 reproduced reads this probe identically a month
+and several code changes later. And the same-region items, re-scored rather than reused, came back with the digest
+E2627 fixed before it scored anything (`f49c128e…bcc1`) and the endpoint accuracies that record prints.
+
+**Limitation.** Three arms, one seed each, all at seed 7, differing in training composition — which is what E2612 and
+E2613 were measuring, not an architecture or tokenizer change. The material gap is ~32 of E2614's measured seed
+standard deviations and the null gap ~1.3, so the ordering is not noise, but neither gap's size is replicated here.
+Eight instruments on three pairs is a small family; Holm over three is a 0.016667 bar, and one test came within a
+factor of three of it. The criterion is loss, which nothing here validates against anything. The items are archaic
+English and the pairs are this project's own sentences. No statement about capability, and K-001 stands.
+
+**Deviation recorded.** E2629's plan was to read E2627's committed same-region result for free. That file is a compact
+extract, and the extractor stubs per-item arrays by design — so `outcomes`, the raw material a paired test computes
+from, is not in it, and the new script refused rather than working around it. Re-scoring four models cost minutes and
+reproduced E2627's numbers exactly. Filed as [K-032](../agent/KNOWN_ISSUES.md): the 1 MiB tracked-file bound and the
+re-pairable-evidence requirement pull against each other, and which of three shapes to take is a policy decision.
+
+**Open at this point.** Whether a larger item set would clear the 0.016667 bar on the pair that came closest — the
+models are already scored and the limitation is the number of items, not the number of models. Whether E2626's
+1600-versus-1800 contradiction reproduces on a second ladder. And what H17 needs before the default moves, which
+remains ADR-0048's own "does not decide" clause plus a refit-sensitivity check rather than a third seed.

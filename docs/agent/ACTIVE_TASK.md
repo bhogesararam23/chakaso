@@ -29,16 +29,19 @@ host; this machine holds E2605–E2615's.
 | U6 | **E2626 — probe sensitivity against the training curve** | U2, U3, U4 | preregistered before the run; P4 endpoint check; verdict per instrument | **measured** | [E2626](../../experiments/E2626/record.md): minimal-pairs ρ 0.951, 63/74 material pairs, one contradiction → **S-c**; continuation ρ 0.918, smallest resolved gap 0.294 → **S-b**; rung weights bit-identical to E2614 seed 7 |
 | U7 | **E2627 — the same-region probe against its own floor** | U5, U6 | floor per kind over seven initialisations; headroom; the ranking delegated to E2626's rule | **measured** | [E2627](../../experiments/E2627/record.md): **T-a on `prior_span` alone** (floor 0.4638, endpoint 0.9395, S-b); `permuted` fails its floor at 0.4425; no kind separates any of the ten pairs across five trained seeds; v1 reproduced 0.986046511627907 |
 | U8 | **E2628 — H17 at a second seed, on this host** | U1 | Y-a/b/c/d by E2614's margins; confound (seed and host move together) declared | **measured: Y-a** | [E2628](../../experiments/E2628/record.md): O1 +0.0294, whole pack +0.0349 at the control's 2,400 updates and documents, all five partitions improving; its step-400 validation loss 4.8488 against E2625's 4.8368, so the two seeds were on the same curve |
-| U9 | Documents reconciled, all four gates in every tier, history pushed and read back | U1–U8 | no stale claim, no unmeasured number, CI read from the runner | **in progress** | this commit; the `[train]` tier measured at 2,057 / 24 and the dependency-free at 1,970 / 34 on this tree |
+| U9 | **E2629 — can either instrument rank two independently trained arms?** | U6, U7 | arms proved matched before any statistic; every pair tested; the inside-the-band pair kept as a false-positive check | **measured: Z-d** | [E2629](../../experiments/E2629/record.md): E2612-T against E2612-P, 0.108246 bits per character apart, ranked by nothing. Grammatical usable subset ties them (0.89000) and puts the worst arm first (ρ −0.866, −1.000 over all 800); both continuation readings order the arms correctly and separate nothing, closest p 0.049 against Holm's 0.016667. Deviation: E2627's committed extract cannot be re-paired — its `outcomes` are stubbed — filed as K-032 |
+| U10 | Documents reconciled, all four gates in every tier, history pushed and read back | U1–U9 | no stale claim, no unmeasured number, CI read from the runner | **in progress** | dependency-free 1,982 / 34, `[train]` 2,061 / 24, `[train,nn]` 2,558 / 1, model-path mypy clean on 168 files; the eight CI jobs read back green from the runner at `775974c` |
 
-**What this unit found.** Two things, one about the models and one about the measuring. The mechanism claim: a run can
+**What this unit found.** Three things, one about the models and two about the measuring. The mechanism claim: a run can
 publish thirteen measurable points on its own curve and the curve is bit-for-bit the one it would have trained anyway —
-that is a permanent capability of the experiment path, bought for 15 % of wall clock. The instrument claim: the
-minimal-pair probe follows held-out loss along a learning curve and resolves gaps inside the project's own materiality
-band, while the continuation probe goes blind after update 800 and never resolves anything below 0.294 bits per
-character; and the minimal-pair probe contradicted the loss once, at 1600 versus 1800 updates, which is E2612's
-loss-versus-text disagreement reproduced with a p-value behind it. Neither instrument can yet be cited as evidence
-that an arm improved, because rungs are not arms.
+that is a permanent capability of the experiment path, bought for 15 % of wall clock. The instrument claim along a curve:
+the minimal-pair probe follows held-out loss and resolves gaps inside the project's own materiality band, while the
+continuation probe goes blind after update 800 and never resolves anything below 0.294 bits per character; and the
+minimal-pair probe contradicted the loss once, at 1600 versus 1800 updates. The instrument claim between arms, which is
+the one that matters: **neither probe ranked a 0.108-bit gap between two independently trained models** (E2629, Z-d),
+and the grammatical probe ordered the three arms the *opposite* way to the loss. Rungs are not arms was a caveat in E2626
+and is a measurement now — the bound is loose enough to invert. Nothing in this repository corroborates "this arm is
+better" except held-out bits per character.
 
 **Stop conditions, declared at the start.** Do not call a rung pair an arm pair. Do not read E2627's or E2628's numbers
 before their records are committed. Do not change a default — the space-prefixed pre-tokenizer stays a candidate until
