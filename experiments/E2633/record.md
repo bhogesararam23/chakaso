@@ -1,6 +1,7 @@
 # E2633 — the held-out loss tested as a paired difference, resampled by work
 
-**Status:** preregistered — written and committed before any arm was scored here.
+**Status:** measured — **L-a.** Preregistered at 2026-11-03T20:29:07Z (`da69e06`) and its four arms were scored here at
+21:38:47Z (`ad7147f`), so the rules were committed 69 minutes before the numbers.
 **Type:** Research experiment, **preregistered**. It measures a statistic on artifacts already on disk; it trains
 nothing.
 **Tool:** [`scripts/paired_loss_test.py`](../../scripts/paired_loss_test.py), built on
@@ -122,11 +123,10 @@ is scheduled between them.
 ```bash
 QPYTHON=.venv-nn/Scripts/python.exe
 "$QPYTHON" scripts/paired_loss_test.py \
+  --protocol configs/experiments/E2614-decoder-seed-spread.toml \
   --snapshot data/corpora/gutenberg-multiregister-v1/gutenberg-multiregister-v1-snapshot.json \
-  --vocabulary experiments/E2612/vocabulary-434debe82f949347.json \
   --expected-corpus-fingerprint 312571f9fa8351a8 \
-  --expected-split-fingerprint adf650435c3a9068 \
-  --split-seed 7 --context-length 256 --max-test-tokens 250000 \
+  --split-seed 7 \
   --arm "E2612-T=data/experiments/E2612/mixture/E2612-T-decoder.pt" \
   --arm "E2612-P=data/experiments/E2612/prose/E2612-P-decoder.pt" \
   --arm "E2613-H=data/experiments/E2613/half-prose-e2612-vocab/E2613-H-decoder.pt" \
@@ -139,6 +139,16 @@ QPYTHON=.venv-nn/Scripts/python.exe
   --pair E2612-T/E2614-s11 \
   --seed 20261104 --resamples 2000 --out experiments/E2633/results.json
 ```
+
+**Erratum, 2026-11-04.** The block as committed on 2026-11-03 could not run: it passed `--vocabulary`,
+`--expected-split-fingerprint`, `--context-length` and `--max-test-tokens`, which `scripts/paired_loss_test.py` has
+never accepted — the held-out pack comes from `--protocol`, which is required and was missing — so the four quantities
+were fixed by the protocol file rather than by the command line. The command above is the one that was executed, read
+back out of `results.json`, which records `"protocol": "configs\\experiments\\E2614-decoder-seed-spread.toml"`.
+It was re-executed on 2026-11-04T00:02:22Z and wrote a file **byte-identical** to the committed evidence
+(SHA-256 `03d8f17f1a41ecbb4909581acfe9554733b0f962eadd645bc65047a23e6eb345`, 38,034 bytes): same four pairings, same
+published and paired means, same 2,000-resample intervals, same sign-test p-values, same leave-one-out ranges. A record
+whose reproduction command cannot run is not reproducible whatever its numbers say, which is why this one says so.
 
 `E2614-s7` is the same artifact as `E2612-T` — E2626 proved all 43 tensors identical — so it is not scored twice, and
 the same-configuration pair is read as `E2612-T` against `E2614-s11`, whose committed control extract is also the
