@@ -395,7 +395,10 @@ def run_seed_study(
         directory.mkdir(parents=True, exist_ok=True)
         started = time.perf_counter()
         try:
-            resume_point = study.discover_resume_point(seed)
+            # ``reuse_completed=False`` is the operator declaring a rerun, and the guard above makes that
+            # declaration cost ``overwrite_artifacts=True`` as well. A declared rerun that quietly picked up the
+            # previous pass's checkpoint would be a different run from the one the operator asked for.
+            resume_point = study.discover_resume_point(seed) if reuse_completed else None
             if resume_point is not None and verbose:
                 print(  # noqa: T201 - operator-visible progress
                     f"seed {seed}: no report, but this seed's own checkpoint is on disk — continuing it",

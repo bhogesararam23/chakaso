@@ -71,6 +71,11 @@ value.
    never saw.
 5. **`resume_from` is machine-local.** It joins the plan fields `protocol_digest` ignores, on the same footing as the
    `resumed_from_step` that was already excluded as an observed outcome of one execution.
+6. **A declared rerun does not resume.** `run_seed_study(..., reuse_completed=False)` — which the guard at the top of
+   the pass already makes cost `overwrite_artifacts=True` — is the operator saying "train these seeds again", so
+   discovery is switched off for that pass. Silent continuation of a run the operator asked to repeat is a different
+   run from the one they asked for, and without this rule the only way to retrain a recovered seed would be to delete
+   its checkpoint by hand.
 
 ## Consequences
 

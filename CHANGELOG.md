@@ -46,6 +46,22 @@ what happens when a run is cut short.
   loop writes both fields only when its caller names them, so an artifact written by a run that was never told
   which experiment it was serialises — and keeps the checksum — exactly as before (ADR-0046's route again).
 
+- **A declared rerun no longer resumes.** `run_seed_study(..., reuse_completed=False)` is the operator saying "train
+  these seeds again", and automatic discovery would have quietly continued them from the previous pass's checkpoint
+  instead. That switch is now honoured: the seeds it runs start from step 0. Without it the only way to retrain a seed
+  that had been recovered once was to delete its checkpoint by hand.
+
+**Added**
+
+- **`tests/test_training_recovery.py` — the interruption and recovery suite**, eight tests over the real loop on a
+  synthetic fixture, and a table at the top of the file naming where each of the twelve scenarios a recovery has to
+  survive is covered: normal training, interruption after a checkpoint, single- and multi-seed recovery, reuse of a
+  completed seed, wrong-seed / wrong-corpus / wrong-model / wrong-experiment / wrong-split rejection, a corrupted file,
+  a missing moments block, repeated resumption, and a study in which one seed finished while another was cut off. The
+  repeated-resumption test interrupts a run at **every** evaluation point — six successive resumptions — and requires
+  the result to be bit-identical to the run that was never interrupted, because a single resume can pass on luck while
+  a drift in the moments or the batch index compounds.
+
 **Verified**
 
 - **A resumed run is the uninterrupted one, and that is now measured rather than asserted.**

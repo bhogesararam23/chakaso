@@ -12,6 +12,34 @@ function of seed, update index and data size, the architecture's dropout default
 generator mid-run, and initialization is seeded only when a model is built rather than resumed. What that buys is
 testable, so it is tested as an equivalence rather than asserted as a property.
 
+The twelve interruption and recovery scenarios the milestone was asked for, and where each one now lives. Two of them
+(scenario 3 and 4) are the same test because the study path does not distinguish a one-seed study from a several-seed
+one, and the rest are named here rather than duplicated below this line:
+
+1. normal uninterrupted training — `test_training_seed_study.py::test_a_seed_with_nothing_on_disk_starts_clean`, and
+   the uninterrupted comparator in every test in this file
+2. interruption after a checkpoint was created — `test_a_run_interrupted_at_every_evaluation_still_equals_the_one_never_interrupted`,
+   and `test_training_nn_engine.py::test_a_requested_stop_is_recorded_as_a_request_not_a_convergence`
+3. recovery from an interrupted single-seed run — `test_training_seed_study.py::test_an_interrupted_seed_continues_from_the_checkpoint_its_own_run_left`
+4. recovery from an interrupted multi-seed study — same test: it runs two seeds and recovers one
+5. reuse of an already completed seed — `test_training_seed_study.py::test_a_completed_seeds_report_beats_its_own_checkpoint`
+   and `::test_a_second_pass_reuses_completed_runs`
+6. rejection of a wrong-seed checkpoint — `test_training_seed_study.py::test_a_seed_cannot_continue_from_its_sibling_s_resume_point`
+7. rejection of an incompatible corpus — `test_training_subword_experiment.py::test_a_resume_from_another_corpus_is_refused_before_a_step_is_taken`
+   and `test_training_nn_engine.py::test_a_resume_point_from_another_corpus_is_named`
+8. rejection of incompatible model or tokenizer configuration — `test_training_nn_engine.py::test_a_resume_point_from_another_architecture_is_named`,
+   `::test_a_resume_point_from_another_tokenizer_is_named`, `::test_a_resume_point_from_a_changed_learning_rate_is_named`,
+   `::test_a_resume_point_from_another_experiment_is_named`, `::test_a_resume_point_from_another_document_split_is_named`
+9. corrupted checkpoint handling — `test_training_seed_study.py::test_an_unreadable_seed_checkpoint_fails_that_seed_and_names_itself`,
+   and the checksum/schema refusals in `test_training_nn_checkpoint.py`
+10. missing optimizer-state handling — `test_the_moments_are_what_make_a_continuation_the_same_run`,
+    `test_training_nn_training.py::test_resume_refuses_an_artifact_without_optimizer_moments`, and
+    `test_training_nn_engine.py::test_a_usable_model_is_refused_as_a_resume_point`
+11. repeated resume attempts — `test_a_run_interrupted_at_every_evaluation_still_equals_the_one_never_interrupted`
+    (engine) and `test_training_seed_study.py::test_a_second_recovery_pass_reuses_the_report_the_first_one_wrote`
+    (study, and the pass that must *not* resume: `::test_a_declared_rerun_does_not_resume_from_the_checkpoint_on_disk`)
+12. one seed completed while another was interrupted — `test_training_seed_study.py::test_a_recovered_seed_aggregates_with_the_sibling_that_never_stopped`
+
 Gated on the optional ``[nn]`` extra.
 """
 
@@ -258,3 +286,56 @@ def test_the_checkpoint_a_run_writes_is_the_step_that_run_reached(tmp_path: Path
     assert stored.optimizer_state is not None
     for name, tensor in _tensors(dict(outcome.optimizer_state)).items():
         assert torch.equal(_tensors(dict(stored.optimizer_state))[name], tensor), name
+
+
+def _resume(path: Path, config: TransformerTrainingConfig, **kwargs: Any) -> TrainingOutcome:
+    """The chain again, but with this pass able to be interrupted in its turn."""
+    point = verify_resume_compatibility(
+        load_artifact(path),
+        config=config,
+        corpus_fingerprint="fixture",
+        vocabulary=_VOCABULARY,
+        experiment="E2699",
+        split_fingerprint="split-fixture",
+    )
+    return _train(
+        config,
+        start_step=point.start_step,
+        resume_state=point.state,
+        resume_optimizer=point.optimizer_state,
+        **kwargs,
+    )
+
+
+def test_a_run_interrupted_at_every_evaluation_still_equals_the_one_never_interrupted(
+    tmp_path: Path,
+) -> None:
+    """Recovery is applied repeatedly, and six continuations have to equal one run just as one does.
+
+    A single resume can pass on luck. Each pass here stops at its first evaluation, so the curve is rebuilt
+    out of as many resumptions as the schedule has evaluation points, and a moment or a batch index that
+    drifted would compound instead of hiding.
+    """
+    config = _config(max_steps=12, eval_every=2)
+    checkpoint = tmp_path / "E2699-transformer-resumable.pt"
+
+    uninterrupted = _train(config)
+    step = 0
+    passes = 0
+    while step < config.max_steps and passes < 12:
+        passes += 1
+        if step == 0:
+            outcome = _train(config, should_stop=lambda: True, checkpoint_path=checkpoint)
+        else:
+            outcome = _resume(
+                checkpoint, config, should_stop=lambda: True, checkpoint_path=checkpoint
+            )
+        assert outcome.records[-1].step > step, "a resumption made no progress"
+        step = outcome.records[-1].step
+
+    assert step == config.max_steps, f"stuck at step {step} after {passes} resumptions"
+    assert passes == 6, f"expected one pass per evaluation point, got {passes}"
+    for name, tensor in uninterrupted.final_state.items():
+        assert torch.equal(outcome.final_state[name], tensor), name
+    for name, tensor in uninterrupted.state.items():
+        assert torch.equal(outcome.state[name], tensor), f"selected weights differ at {name}"

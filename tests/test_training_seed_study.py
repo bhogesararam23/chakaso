@@ -947,3 +947,54 @@ def test_discovery_ignores_a_checkpoint_another_experiment_wrote(tmp_path: Path)
     assert first["completed_seeds"] == [7]
     assert body["transformer"]["budget"]["resumed_from_step"] is None
     assert next(row["step"] for row in body["transformer"]["curve"]) == 0
+
+
+def test_a_second_recovery_pass_reuses_the_report_the_first_one_wrote(tmp_path: Path) -> None:
+    """Recovery has to terminate in a recorded run, not in a checkpoint that keeps being continued.
+
+    The second pass finds a report and reuses it; the recovered report is the file it reuses, byte for byte, so
+    a third pass cannot quietly disagree with the second about what this seed measured.
+    """
+    plan = _converging_plan(tmp_path)
+    study = SeedStudy(experiment="E2698", plan=plan, seeds=(7,))
+    run_seed_study(study)
+    (study.run_dir(7) / "report.json").unlink()
+
+    recovered = run_seed_study(SeedStudy(experiment="E2698", plan=plan, seeds=(7,)))
+    report = study.run_dir(7) / "report.json"
+    digest = sha256_hex(report.read_bytes().decode("utf-8"))
+    again = run_seed_study(SeedStudy(experiment="E2698", plan=plan, seeds=(7,)))
+
+    assert recovered["runs"][0]["reused"] is False
+    assert again["runs"][0]["reused"] is True
+    assert sha256_hex(report.read_bytes().decode("utf-8")) == digest
+    assert (
+        again["aggregate"]["transformer_bits_per_character"]["mean"]
+        == recovered["aggregate"]["transformer_bits_per_character"]["mean"]
+    )
+
+
+def test_a_declared_rerun_does_not_resume_from_the_checkpoint_on_disk(tmp_path: Path) -> None:
+    """``reuse_completed=False`` says "run it again", and a quiet continuation is not that.
+
+    The guard at the top of the pass already makes a declared rerun cost ``overwrite_artifacts=True``, so the
+    operator has said what they are doing to a recorded directory; discovery has to listen. Without this, the
+    only way to retrain a seed that had been recovered once would be to delete its checkpoint by hand.
+    """
+    plan = _converging_plan(tmp_path)
+    study = SeedStudy(experiment="E2698", plan=plan, seeds=(7,))
+    run_seed_study(study)
+    (study.run_dir(7) / "report.json").unlink()
+    run_seed_study(SeedStudy(experiment="E2698", plan=plan, seeds=(7,)))
+    recovered = json.loads((study.run_dir(7) / "report.json").read_text(encoding="utf-8"))
+    assert recovered["transformer"]["budget"]["resumed_from_step"] is not None
+
+    declared = SeedStudy(
+        experiment="E2698", plan=replace(plan, overwrite_artifacts=True), seeds=(7,)
+    )
+    rerun = run_seed_study(declared, reuse_completed=False)
+    body = json.loads((study.run_dir(7) / "report.json").read_text(encoding="utf-8"))
+
+    assert rerun["runs"][0]["reused"] is False
+    assert body["transformer"]["budget"]["resumed_from_step"] is None
+    assert next(row["step"] for row in body["transformer"]["curve"]) == 0
