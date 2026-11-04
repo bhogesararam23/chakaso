@@ -1,0 +1,203 @@
+{
+  "corpus": {
+    "fingerprint": "312571f9fa8351a8",
+    "name": "gutenberg-multiregister-v1"
+  },
+  "evaluation": {
+    "characters": 1015684,
+    "documents": 69
+  },
+  "fit_seeds": [
+    7,
+    11,
+    13,
+    17
+  ],
+  "fits": [
+    {
+      "compression": {
+        "default": {
+          "characters": 1015684,
+          "characters_per_identifier": 2.1284419819109965,
+          "documents": 69,
+          "identifiers": 477196
+        },
+        "space-prefixed": {
+          "characters": 1015684,
+          "characters_per_identifier": 2.9908333063407135,
+          "documents": 69,
+          "identifiers": 339599
+        }
+      },
+      "fingerprints": {
+        "default": "07da3628d43f4675",
+        "space-prefixed": "a88fe8383c421ce4"
+      },
+      "index": 0,
+      "ratio_space_over_default": 1.405174926899078,
+      "sample_characters": 4004829,
+      "sample_documents": 247,
+      "sizes": {
+        "default": 4096,
+        "space-prefixed": 4096
+      }
+    },
+    {
+      "compression": {
+        "default": {
+          "characters": 1015684,
+          "characters_per_identifier": 2.1352522946387653,
+          "documents": 69,
+          "identifiers": 475674
+        },
+        "space-prefixed": {
+          "characters": 1015684,
+          "characters_per_identifier": 3.009246832048969,
+          "documents": 69,
+          "identifiers": 337521
+        }
+      },
+      "fingerprints": {
+        "default": "2a170219f98f072e",
+        "space-prefixed": "5a9124949b304af5"
+      },
+      "index": 1,
+      "ratio_space_over_default": 1.4093167536242188,
+      "sample_characters": 4015399,
+      "sample_documents": 259,
+      "sizes": {
+        "default": 4096,
+        "space-prefixed": 4096
+      }
+    },
+    {
+      "compression": {
+        "default": {
+          "characters": 1015684,
+          "characters_per_identifier": 2.1389485566028994,
+          "documents": 69,
+          "identifiers": 474852
+        },
+        "space-prefixed": {
+          "characters": 1015684,
+          "characters_per_identifier": 3.013782851106634,
+          "documents": 69,
+          "identifiers": 337013
+        }
+      },
+      "fingerprints": {
+        "default": "274ff01cc398f64a",
+        "space-prefixed": "ba887a211e693671"
+      },
+      "index": 2,
+      "ratio_space_over_default": 1.409002026628053,
+      "sample_characters": 4009847,
+      "sample_documents": 259,
+      "sizes": {
+        "default": 4096,
+        "space-prefixed": 4096
+      }
+    },
+    {
+      "compression": {
+        "default": {
+          "characters": 1015684,
+          "characters_per_identifier": 2.12652132312453,
+          "documents": 69,
+          "identifiers": 477627
+        },
+        "space-prefixed": {
+          "characters": 1015684,
+          "characters_per_identifier": 2.987929832406179,
+          "documents": 69,
+          "identifiers": 339929
+        }
+      },
+      "fingerprints": {
+        "default": "8059b6dd44fce016",
+        "space-prefixed": "f61073c3050a0dd6"
+      },
+      "index": 3,
+      "ratio_space_over_default": 1.405078707612472,
+      "sample_characters": 4011877,
+      "sample_documents": 242,
+      "sizes": {
+        "default": 4096,
+        "space-prefixed": 4096
+      }
+    }
+  ],
+  "identifiers": 4096,
+  "merge_stability": {
+    "default": {
+      "jaccard_mean": 0.10922818531207229,
+      "jaccard_values": [
+        0.11130409610652772,
+        0.11210892236384705,
+        0.10427153746584208
+      ],
+      "rank_mean": 0.7409597532119258,
+      "rank_mean_text": "0.741",
+      "rank_values": [
+        0.7052720158580041,
+        0.735347860250962,
+        0.782259383526811
+      ]
+    },
+    "space-prefixed": {
+      "jaccard_mean": 0.10965490625968786,
+      "jaccard_values": [
+        0.11728754365541327,
+        0.11372207716855237,
+        0.09795509795509795
+      ],
+      "rank_mean": 0.8095581669509208,
+      "rank_mean_text": "0.810",
+      "rank_values": [
+        0.7978611429082498,
+        0.8089282041244642,
+        0.8218851538200485
+      ]
+    }
+  },
+  "min_frequency": 3,
+  "references": {
+    "committed-default": {
+      "compression": {
+        "characters": 1015684,
+        "characters_per_identifier": 2.126855295339565,
+        "documents": 69,
+        "identifiers": 477552
+      },
+      "fingerprint": "434debe82f949347",
+      "pre_tokenizer": "word-run|whitespace-run|single-symbol",
+      "size": 4096
+    },
+    "committed-space": {
+      "compression": {
+        "characters": 1015684,
+        "characters_per_identifier": 3.0055958168975323,
+        "documents": 69,
+        "identifiers": 337931
+      },
+      "fingerprint": "4a47f0281c81a9e5",
+      "pre_tokenizer": "space-prefixed-word|space-prefixed-symbol|whitespace-run",
+      "size": 4096
+    }
+  },
+  "rules": {
+    "default": "word-run|whitespace-run|single-symbol",
+    "space-prefixed": "space-prefixed-word|space-prefixed-symbol|whitespace-run"
+  },
+  "sample_characters": [
+    4004829,
+    4015399,
+    4009847,
+    4011877
+  ],
+  "snapshot": "data\\corpora\\gutenberg-multiregister-v1\\gutenberg-multiregister-v1-snapshot.json",
+  "split": {
+    "fingerprint": "adf650435c3a9068",
+    "seed": 7
+  }
+}

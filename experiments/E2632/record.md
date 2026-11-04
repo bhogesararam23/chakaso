@@ -1,6 +1,7 @@
 # E2632 — does the space-prefixed rule's compression advantage survive a different fitting sample?
 
-**Status:** preregistered — committed before the measurement runs.
+**Status:** measured — **R-a.** Preregistered at 2026-11-03T23:06Z (`9a1f186`) and the eight fits ran at
+23:39:24Z → 23:47:03Z, so the record is 33 minutes older than the numbers in it.
 **Type:** Research measurement, **preregistered**. It fits vocabularies and encodes text. Nothing is trained, no
 checkpoint is loaded, and no loss number is produced.
 **Tool:** [`scripts/measure_refit_sensitivity.py`](../../scripts/measure_refit_sensitivity.py).
@@ -115,3 +116,85 @@ time on this machine.
 The output is the record's evidence: every fit's fingerprint and size, the per-rule compression, the four ratios, the
 merge-stability tables and the committed files' figures, plus the corpus, split and evaluation identities it was
 measured under.
+
+## Results (added 2026-11-04)
+
+**Outcome: R-a — the advantage is the rule's.** Every within-sample ratio is far above 1.05 and their relative spread is
+0.30 %, five times inside the tightest branch. A second, third and fourth fit of the space-prefixed rule land at the
+same compression advantage as the first, so the gain E2630 measured cannot be a property of one merge history.
+
+### What was fitted
+
+Four samples of the training side at 4,004,829 / 4,015,399 / 4,009,847 / 4,011,877 characters over 247 / 259 / 259 /
+242 whole documents, each fitted twice — once per rule — at 4,096 identifiers and `min_frequency` 3. All eight vocabularies
+reached the requested 4,096 identifiers and all eight have **distinct fingerprints**:
+
+| Sample | default fit | space-prefixed fit | characters per identifier, default | space-prefixed | ratio |
+| --- | --- | --- | --- | --- | --- |
+| seed 7 | `07da3628d43f4675` | `a88fe8383c421ce4` | 2.1284 | 2.9908 | **1.405175** |
+| seed 11 | `2a170219f98f072e` | `5a9124949b304af5` | 2.1353 | 3.0092 | **1.409317** |
+| seed 13 | `274ff01cc398f64a` | `ba887a211e693671` | 2.1389 | 3.0138 | **1.409002** |
+| seed 17 | `8059b6dd44fce016` | `f61073c3050a0dd6` | 2.1265 | 2.9879 | **1.405079** |
+
+Every vocabulary encoded the same fixed text — 1,015,684 characters over 69 test-side documents, drawn once at seed
+20261104 before any fit existed — so the only thing that varies across a row is the rule and across the table the
+sample.
+
+Mean ratio **1.407143**, relative spread `s` **0.003012**. R-a's two conditions are `every r > 1.05` (the smallest is
+1.405079) and `s ≤ 0.05` (it is 0.0030). R-b and R-c do not fire.
+
+### The merge lists, which are not stable, and the compression, which is
+
+Two fits of one rule agree on **10.9 %** of their merges (default; 11.0 % for the space-prefixed rule) by Jaccard
+overlap, while their merge *orderings* agree at Spearman **0.741** and **0.810**. So the eight vocabularies are genuinely
+eight different artifacts — as their eight fingerprints say — and the quantity that moved between them is the third
+decimal place of characters per identifier.
+
+That contrast is the result. The frequent merges are the same ones in every sample; what differs is the tail, and the
+tail is where a rule's advantage does not live.
+
+### The committed pair on the same text
+
+`434debe82f949347` (E2612's, default rule, fitted at 12,000,000 characters) compresses to **2.126855** characters per
+identifier on this text and `4a47f0281c81a9e5` (E2620's, space-prefixed, 12M) to **3.005596**, a ratio of **1.413164**.
+Adding that pair to the four fits gives a five-value mean of 1.408347 and a spread of 0.005741 — still 0.57 %, still
+R-a — so the committed vocabularies the loss records cite behave like the small ones.
+
+### The three predictions
+
+* **P1 — held, and stronger than stated.** `s` came out at 0.30 % against "a few per cent", with Jaccard overlap at
+  0.109 as predicted: substantially different merge lists, essentially identical compression.
+* **P2 — failed on its first half, held on its second.** The committed files are *not* uniformly better than a 4M fit
+  of their own rule: `434debe82f949347` beats three of the four default fits and loses to the fourth (2.126855 against
+  2.126521), and `4a47f0281c81a9e5` beats two of the four space fits and loses to two (3.005596 against 3.009247 and
+  3.013783). Tripling the fitting text bought nothing measurable at 4,096 identifiers — the compression is saturated at
+  the identifier count, which is a fact about this vocabulary size rather than about the rule. The second half held:
+  3.0056 against 2.1269 on this text is E2620's 2.9 against 2.10, and the ratio rather than the absolutes is what the
+  record was reading.
+* **P3 — held.** The committed pair's ratio (1.413164) is positive and above every one of the four fit ratios, so the
+  direction the loss records depend on is the direction the mechanism shows.
+
+### What this removes, and what it leaves
+
+R-a removes the objection that a default change would ship one merge history along with one rule. It does **not**
+measure a trained arm against a re-fitted vocabulary: E2630's five seeds, E2625's update-matched pair and E2628's
+second host all score the *same two committed vocabularies*, and what this record establishes is that the mechanism
+those arms run on — characters per identifier under a rule — does not depend on the sample the rule was fitted from.
+The inference from mechanism to loss is stated in ADR-0048's terms, not made here.
+
+Nothing in this record moves a default. Adoption is a decision record's job, and the brief said plainly that it is not
+this record's to do silently.
+
+### Deviations
+
+1. **The Cost block over-budgeted by an order of magnitude, and the measurement says so.** Eight fits at 4M characters
+   plus ten encodings of a 1M-character text ran in **459 s** in one process, against the 65–75 minutes this record
+   declared from K-024's 494 s per 4.0M-character fit. K-024's figure came from the per-run corpus-preparation path,
+   which pays for reading and verifying the snapshot for each fit; this script reads it once and fits eight times. The
+   discrepancy is a fact about the tool, not the tokenizer, and it is recorded so the next person budgets eight minutes
+   rather than an hour and a half for the same eight fits.
+2. **The run was launched with `-Xutf8` on this Windows host.** The command in the Reproduction block does not carry it
+   and does not need it on Linux; the flag changes how the script's own progress lines encode to the terminal and
+   nothing that reaches `refit-sensitivity.json`.
+3. The evidence file was written to a scratch path and copied to the declared one, byte-for-byte, so the artifact this
+   record cites is at the path its Reproduction block names.
