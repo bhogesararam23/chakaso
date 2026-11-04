@@ -101,6 +101,11 @@ def main(argv: Sequence[str] | None = None) -> int:
     parser.add_argument("--split-seed", type=int, default=7)
     parser.add_argument("--expected-split-fingerprint")
     parser.add_argument(
+        "--expected-items-digest",
+        help="the digest a record declared before it scored; the run refuses if the items it built differ, "
+        "before any checkpoint is loaded",
+    )
+    parser.add_argument(
         "--registers",
         default=DEFAULT_REGISTERS,
         help="comma-separated work-group prefixes, each optionally PREFIX:COUNT to override --per-register",
@@ -122,10 +127,18 @@ def main(argv: Sequence[str] | None = None) -> int:
             expected_fingerprint=args.expected_split_fingerprint,
         )
         items = build(units, vocabulary, args.registers, args)
+        digest = context_items_digest(items)
+        if args.expected_items_digest is not None and digest != args.expected_items_digest:
+            message = (
+                f"the {len(items)} items these quotas build digest to {digest}, not the "
+                f"{args.expected_items_digest} this run was told to expect: the record would be scoring an "
+                "item set other than the one it declared"
+            )
+            raise ValueError(message)
         result: dict[str, Any] = {
             "items": {
                 "count": len(items),
-                "digest": context_items_digest(items),
+                "digest": digest,
                 "vocabulary_fingerprint": vocabulary.fingerprint,
                 "prefix_length": args.prefix_length,
                 "continuation_length": args.continuation_length,

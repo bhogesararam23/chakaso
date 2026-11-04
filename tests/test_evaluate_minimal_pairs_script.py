@@ -168,6 +168,40 @@ def test_a_missing_checkpoint_is_an_error_not_a_crash(tmp_path: Path) -> None:
     assert status == 1
 
 
+def test_a_declared_pair_set_digest_is_enforced_before_a_checkpoint_is_loaded(
+    tmp_path: Path, trained: Path
+) -> None:
+    """The same gate the continuation runners have: a record declares the instrument, and a run may not score
+    another one. Checked in both directions, and the refusal must cost nothing.
+    """
+    pairs = _pair_file(tmp_path / "p.json")
+    digest = json.loads(pairs.read_text(encoding="utf-8"))["digest"]
+    out = tmp_path / "out.json"
+    status = _script().main(  # type: ignore[attr-defined]
+        [
+            f"--pairs={pairs}",
+            f"--checkpoint=model={trained}",
+            f"--expected-pair-set-digest={digest}",
+            f"--out={out}",
+        ]
+    )
+    assert status == 0
+
+    refused = tmp_path / "refused.json"
+    assert (
+        _script().main(  # type: ignore[attr-defined]
+            [
+                f"--pairs={pairs}",
+                f"--checkpoint=model={trained}",
+                f"--expected-pair-set-digest={'0' * 64}",
+                f"--out={refused}",
+            ]
+        )
+        == 1
+    )
+    assert not refused.exists()
+
+
 def test_extra_control_seeds_add_untrained_models_that_differ_from_one_another(
     tmp_path: Path, trained: Path
 ) -> None:

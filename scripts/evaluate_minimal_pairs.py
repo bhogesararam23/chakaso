@@ -84,10 +84,25 @@ def main(argv: Sequence[str] | None = None) -> int:
         "--snapshot", type=Path, help="a corpus snapshot for the contamination screen"
     )
     parser.add_argument("--ngram", type=int, default=5)
+    parser.add_argument(
+        "--expected-pair-set-digest",
+        help="the digest a record declared before it scored; the run refuses a pair file that no longer "
+        "matches it, before any checkpoint is loaded",
+    )
     parser.add_argument("--out", type=Path)
     args = parser.parse_args(argv)
     try:
         pair_set = load_pair_set(args.pairs)
+        if (
+            args.expected_pair_set_digest is not None
+            and pair_set.digest != args.expected_pair_set_digest
+        ):
+            message = (
+                f"{args.pairs} loads as digest {pair_set.digest}, not the "
+                f"{args.expected_pair_set_digest} this run was told to expect: the record would be scoring a "
+                "pair set other than the one it declared"
+            )
+            raise ValueError(message)
         result: dict[str, Any] = {
             "pair_set": {
                 "name": pair_set.name,

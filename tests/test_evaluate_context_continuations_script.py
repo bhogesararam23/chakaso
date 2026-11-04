@@ -258,6 +258,40 @@ def test_the_rebuilt_split_matches_the_one_the_experiments_used(
     assert json.loads(out.read_text(encoding="utf-8"))["items"]["split_fingerprint"] == fingerprint
 
 
+def test_a_declared_item_digest_is_enforced_before_a_checkpoint_is_loaded(
+    snapshot: Path,
+    vocabulary_file: Path,
+    checkpoint: Path,
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    """The rule E2627 fixed by hand: a record declares the item set, and a run may not score another one.
+
+    Both halves are checked, because a gate that always refuses is as useless as one that never does — and the refusal
+    has to happen before the expensive part, so a mismatched run leaves no output file behind.
+    """
+    agreed = tmp_path / "agreed.json"
+    digest = _run(snapshot, vocabulary_file, checkpoint, tmp_path)["items"]["digest"]
+    argv = _argv(snapshot, vocabulary_file, checkpoint, agreed)
+
+    assert _script().main([*argv, "--expected-items-digest", digest]) == 0
+    assert agreed.is_file()
+
+    refused = tmp_path / "refused.json"
+    assert (
+        _script().main(
+            [
+                *_argv(snapshot, vocabulary_file, checkpoint, refused),
+                "--expected-items-digest",
+                "0" * 64,
+            ]
+        )
+        == 1
+    )
+    assert "item set other than the one it declared" in capsys.readouterr().err
+    assert not refused.exists()
+
+
 def test_a_checkpoint_cut_with_another_vocabulary_is_refused_by_name(
     snapshot: Path,
     checkpoint: Path,

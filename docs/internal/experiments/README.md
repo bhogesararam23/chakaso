@@ -181,5 +181,10 @@ The next experiment, or the decision this settles.
   `--aggregate NAME=prefix,…` pools by scored characters, and `--equal-aggregate NAME=prefix,…` is the equal-weight
   mean the records call O1. E2631 preregistered the first under the second's name and the two differed by 0.0011 in
   the arms' values, which is why the flag that means O1 now says so in its own output.
+- An instrument made of items declares the items. The continuation and minimal-pair runners take
+  `--expected-items-digest` / `--expected-pair-set-digest`, compute the digest of the set they are about to score, and
+  refuse before a checkpoint is loaded if it is not the one the record fixed. E2627 did this by hand — it wrote its
+  item digest into the record before scoring and re-derived it afterwards to prove the run had not moved — which is the
+  shape a rule should have: declared in advance, checked by the tool, not remembered by the author.
 - If a hypothesis is not being tested, the experiment is exploration. That is
   allowed; it should say so in `Motivation`.

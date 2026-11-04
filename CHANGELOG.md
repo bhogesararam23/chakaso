@@ -133,6 +133,13 @@ capability is implemented or still planned.
   arrived at by a tool that could not say which one it was giving. `--equal-aggregate NAME=prefix,…` is the new flag, and
   each block prints its own weighting — "equal weight over the named partitions (the O1 objective)" against
   "metrics.characters_scored" — so the mistake cannot be made quietly again.
+- **A probe runner can be told which item set its record declared, and refuses another one.**
+  `scripts/evaluate_continuations.py` and `scripts/evaluate_context_continuations.py` take
+  `--expected-items-digest`, `scripts/evaluate_minimal_pairs.py` takes `--expected-pair-set-digest`; each computes the
+  digest of the set it has just built and stops before loading a checkpoint if it differs. E2627 fixed an item digest in
+  its record and re-derived it afterwards by hand, which is the right discipline and the wrong place to put it: an
+  instrument whose identity rests on an author remembering to check is an instrument that will eventually not be
+  checked. Three tests cover both directions — the declared digest passes, a wrong one refuses and leaves no output file.
 - **Two documentation gates, both written after this session produced the failures by hand.** A numeric census count in
   an owner document is checked against the directories on disk and against the parser's own command list, and the owners
   are named (K-013's mechanism — it found two stale counts the same day it landed); and a record with a `## Results`

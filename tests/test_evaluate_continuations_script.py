@@ -209,6 +209,30 @@ def test_a_split_that_is_not_the_one_the_experiments_used_is_refused(
     assert status == 1
 
 
+def test_a_declared_item_digest_is_enforced_before_a_checkpoint_is_loaded(
+    tmp_path: Path, snapshot: Path, vocabulary_file: Path, checkpoint: Path
+) -> None:
+    """A record that declares its item set may not score a different one — and the refusal costs nothing.
+
+    The digest is the preregistration's only handle on the items themselves: E2627 fixed one before scoring and
+    re-derived it afterwards to prove the run had not moved. This makes the check mechanical, and checks both
+    directions, because a gate that always refuses protects nothing.
+    """
+    agreed, refused = tmp_path / "agreed.json", tmp_path / "refused.json"
+    assert _run(snapshot, vocabulary_file, checkpoint, agreed) == 0
+    digest = json.loads(agreed.read_text(encoding="utf-8"))["items"]["digest"]
+
+    assert (
+        _run(snapshot, vocabulary_file, checkpoint, agreed, f"--expected-items-digest={digest}")
+        == 0
+    )
+    assert (
+        _run(snapshot, vocabulary_file, checkpoint, refused, f"--expected-items-digest={'0' * 64}")
+        == 1
+    )
+    assert not refused.exists(), "the refusal happens before a model is loaded"
+
+
 def test_a_checkpoint_with_another_tokenizer_than_the_items_is_refused(
     tmp_path: Path, snapshot: Path, checkpoint: Path
 ) -> None:
