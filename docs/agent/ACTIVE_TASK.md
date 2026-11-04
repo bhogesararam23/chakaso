@@ -1,8 +1,54 @@
 # Active task
 
-# Active task
+## Current unit: close the evidence and decision items, and bound what the probes can see (2026-11-03/04, from `bf55e12`)
 
-## Current unit: make a run measurable along its own curve, and measure what the probes can see (2026-11-03, from `c498eb8`)
+**Goal.** Finish the four things the previous phase left half-done rather than open another subsystem: make committed
+evidence re-computable (K-032), settle the tokenizer question from both its open sides (H17 / ADR-0048: more seeds *and*
+refit sensitivity), run the optimizer arm ADR-0049 declared but never measured (K-030 item 3), preserve a pinned corpus's
+raw bytes (K-031), and turn a held-out loss difference into a test instead of a threshold beside a number. Then find out
+what a capability instrument can actually see between two independently trained models.
+
+**State at the start (measured).** `main` == `origin/main` == `bf55e12`; 32 experiment records on disk. Baseline on this
+machine at the session's first run: **2,085 pass / 34 skip** dependency-free. 18 logical CPUs, no CUDA device, 15.4 GB
+RAM, ~153 GB free on `D:`. One 3,413,760-parameter arm at 2,400 updates cost **3,353 s** here (E2631, measured this
+phase) and a vocabulary fit at 4.0M characters cost **~50 s**, not the 494 s K-024's per-run figure suggested.
+
+| Node | Task | Depends on | Acceptance | Status | Evidence |
+| --- | --- | --- | --- | --- | --- |
+| U0 | Audit the tree, the ledger and the resources before scheduling anything | — | the real state of K-030/031/032, H17 and the gates, written down | **done** | the campaign's opening audit; gates above |
+| U1 | K-032 — committed probe evidence that recomputes | U0 | the refused reading runs again from the committed bytes and returns the published rows | **done** | `chakaso.training.outcome_vectors`, `experiments/E2629/context-from-E2627-extract.json`, all eight rows byte-identical; K-032 closed |
+| U2 | A paired test on the held-out loss itself | U0 | an interval that resamples held-out *works*, refusing until each arm reproduces its own report | **done** | `chakaso.training.paired_loss`, `scripts/paired_loss_test.py`, [E2633](../../experiments/E2633/record.md) **L-a** |
+| U3 | H17's first open half — more seeds, same host | U0 | an interval over paired draws, and the treatment's own spread measured | **done** | [E2630](../../experiments/E2630/record.md) **Y2-a**: Δ(O1) +0.026431, 95 % t [+0.023212, +0.029650] |
+| U4 | H17's second open half — refit sensitivity | U0 | several fits of one rule on one corpus, compression compared within each sample | **done** | [E2632](../../experiments/E2632/record.md) **R-a**: four fits per rule, ratios 1.4051–1.4093, spread 0.30 % |
+| U5 | The adoption decision, without a silent default change | U3, U4 | a decision record; the artifact format's unrecorded-rule fallback pinned; no committed number, checksum or released artifact moving | **done** | [ADR-0051](../decisions/ADR-0051-the-space-prefixed-pre-tokenizer-is-adopted-and-a-run-stops-inheriting-one.md), `LEGACY_DEFAULT_PRE_TOKENIZER`, `load_plan`'s declaration gate; E2612/E2626/E2631 artifacts re-read at `434debe82f949347` |
+| U6 | K-030 item 3 — the vector-decay arm | U0 | one arm against its committed control, both inside or outside declared margins, stated before the run | **done** | [E2631](../../experiments/E2631/record.md) **N-b**; K-030 item 3 closed; the exemption stays off by default |
+| U7 | K-031 — the raw bytes a pinned corpus was downloaded from | U0 | a deterministic archive, a verification that re-hashes every member, refusal on drift | **mechanism done** | `chakaso.training.corpus_archive`, three `chakaso corpus` subcommands, 430 sources / 162,017,394 bytes, digest stable across two builds. **Open:** the 430-URL drift re-scan and where an archive is kept |
+| U8 | K-033 — the whole-pack number and the register table are different samples | U2 | every loss figure names its pack, and the run states its sample | **done** | `packing.sample_composition`, the report's `evaluation_sample`, the rule in `docs/internal/experiments/README.md`; E2612 arm T's pack recounted to 254,976 positions / 25 of 62 works / medicine 0 % |
+| U9 | What a capability instrument can see between two arms | U2 | the item count E2629's Z-d needed, measured rather than assumed | **done** | [E2634](../../experiments/E2634/record.md) **G-a** with its floor qualification; K-034 and K-035 filed from its deviations |
+| U10 | Documentation that cannot silently go stale | U0–U9 | a numeric census checked against the directories and the parser; a record's status checked against its own sections | **done** | two gates in `tests/test_repository_hygiene.py`; both found real drift the same day |
+| U11 | A run states the machine it ran on | U0 | the free-memory figure is in the report, not in an operator's recollection | **done, with a named limit** | `process_memory.available_memory()`, `resources.available_at_launch`. **Not built:** a declared memory floor that refuses a launch — deliberately, until the number behind it is measured rather than guessed |
+
+**What is next, in order.**
+
+1. **The first run under the adopted tokenizer that names it in its own protocol** — the reference configuration's band
+   was measured under the rule ADR-0051 replaced, and E2630 already has the adopted rule's own deviation (0.001595) to
+   quote.
+2. **A work-clustered statistic for paired verdicts** — the instrument E2633 built for loss, ported to binary item
+   outcomes, which is what would let a probe record say "separated" under clustering instead of assuming independence.
+   K-035's row identity has to land first or every such claim costs a rebuild.
+3. **K-031's residue** — the 430-source drift re-scan, and the owner's decision about where an archive lives.
+4. **K-001.** Everything above is a statement about loss or about an instrument. No model in this repository answers a
+   grounded question or produces useful text, and that is the gap the next *model* unit has to be measured against.
+
+**Gates at the end of this unit.** 2,103 pass / 34 skip dependency-free; 2,704 pass / 1 skip with `[train,nn]`; `mypy
+src` clean over 125 files and the model-path configuration clean over 171. 35 commits, pushed progressively and read
+back from the runner (`docs/internal/engineering/research-campaign-report-2026-11-04.md` carries the run identifiers).
+35 commits through `9c9f916`, which is 36 with the report that states it — the brief asked for at least 100, and §7 of
+that report says plainly why the number is short rather than how it could have been inflated.
+
+---
+
+## Previous unit: make a run measurable along its own curve, and measure what the probes can see (2026-11-03, from `c498eb8`)
 
 **Goal.** Answer the campaign's sharpest open question with a number instead of an adjective, and build the two things
 that made it answerable: a run that can publish its own training curve as loadable models, and an analysis that judges a

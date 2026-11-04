@@ -31,6 +31,7 @@ undocumented when this campaign began.
 | 11 | Reconciled state, task ledger and issues | [CURRENT_STATE](../agent/CURRENT_STATE.md), [ACTIVE_TASK](../agent/ACTIVE_TASK.md), [KNOWN_ISSUES](../agent/KNOWN_ISSUES.md) (K-024 to K-029 added) |
 | 12 | Final campaign report | [research-campaign-report-2026-11-01](../internal/engineering/research-campaign-report-2026-11-01.md) |
 | 13 | Closing report for the 2026-11-03 phase (E2626–E2629, ADR-0049/0050, the paired statistics) | [research-campaign-report-2026-11-03](../internal/engineering/research-campaign-report-2026-11-03.md) |
+| 14 | Closing report for the 2026-11-03/04 evidence-and-decision phase (E2630–E2634, K-030/032/033 closed, the raw-byte archive, ADR-0051) | [research-campaign-report-2026-11-04](../internal/engineering/research-campaign-report-2026-11-04.md) |
 
 **The trust layer is [the verification ledger](../internal/engineering/research-verification-ledger-2026-11-01.md)**,
 extended on the same day by [the citation audit](../internal/engineering/citation-audit-2026-11-01.md), which

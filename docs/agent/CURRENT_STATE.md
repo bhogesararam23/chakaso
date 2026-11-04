@@ -186,7 +186,9 @@ a 33-row verification ledger. Index, decision matrix and roadmap:
 [`chakaso-research-campaign-2026-11.md`](../research/chakaso-research-campaign-2026-11.md); closing report:
 [`research-campaign-report-2026-11-01.md`](../internal/engineering/research-campaign-report-2026-11-01.md); the 2026-11-03
 phase — ADR-0049 and ADR-0050, rung artifacts, the paired statistics, and E2626 through E2629 — closes in
-[`research-campaign-report-2026-11-03.md`](../internal/engineering/research-campaign-report-2026-11-03.md).
+[`research-campaign-report-2026-11-03.md`](../internal/engineering/research-campaign-report-2026-11-03.md), and the
+2026-11-03/04 evidence-and-decision phase — E2630 through E2634, K-032/K-033/K-030-closed, the raw-byte archive and
+ADR-0051's tokenizer adoption — in [`research-campaign-report-2026-11-04.md`](../internal/engineering/research-campaign-report-2026-11-04.md).
 The verdict on frontier architecture at this scale is **0 adopt, 1 adapt, 2 test, 8 reject**, on measured grounds:
 Llama 2's own Table 1 puts GQA at 70B, Meta states multi-token models "are worse than the baseline for small
 model sizes", Gemma 3 dropped Gemma 2's soft-capping a generation later, and Mistral's 4,096-token sliding window
