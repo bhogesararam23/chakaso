@@ -1,8 +1,9 @@
 # E2635 — does counting works instead of items change what E2634's separations meant?
 
-**Status:** preregistered — written and committed before the analysis ran. **Type:** Research measurement over
-committed evidence. It scores nothing, trains nothing and re-reads three probe files [E2634](../E2634/record.md)
-already published.
+**Status:** measured — **D-b: one of E2634's two separations does not survive the works behind its own items, and the
+other does.** Preregistered and committed on 2026-11-04 before the analysis ran; the Results section was added after.
+**Type:** Research measurement over committed evidence. It scores nothing, trains nothing and re-reads three probe files
+[E2634](../E2634/record.md) already published.
 
 ## Question
 
@@ -164,3 +165,155 @@ MODELS=(--model E2612-T --model E2612-P --model E2613-H --model untrained-contro
 
 The first two refuse if the re-cut set's digest differs from the one the probe file records. The third needs no
 snapshot: the authored probe's phenomenon is already in every row.
+
+The seed check re-runs the same analysis for one reading with a different draw:
+
+```bash
+"$QPYTHON" scripts/clustered_probe_verdicts.py \
+  --probe experiments/E2634/context-with-outcomes.json --reading pmi_permuted \
+  --clusters-from rebuild --builder context --prefix-length 64 --continuation-length 24 \
+  --snapshot "$SNAP" --vocabulary "$VOCAB" --split-seed 7 --expected-split-fingerprint adf650435c3a9068 \
+  "${QUOTAS[@]}" --model E2612-T --model E2612-P --model E2613-H \
+  --seed 11 --resamples 20000 --out experiments/E2635/context-permuted-seed11.json
+```
+
+with `--seed 13` for the second file. Three models, so the family is the three arm pairs — E2634's own — and the
+clustered p-values are read against its steps.
+
+## Results (added 2026-11-04)
+
+**Outcome: D-b — one of E2634's two separations was an artifact of counting passages as independent.** On the reading
+that separated anything, `context_pmi_permuted`, the pair `E2612-T` / `E2612-P` moves from p = 0.013718 under item-level
+McNemar to **p = 0.030985** under the work-clustered randomization test and stops being a separation; the pair
+`E2612-T` / `E2613-H` moves from 0.003658 to **0.008996** and stays one. No other continuation reading separates any
+arm pair under either reading, no pair gains a separation from clustering, and every direction stays as E2634 left it.
+
+The verdict does not turn on the choice of family: against E2634's own three-pair Holm steps (0.016667, 0.025, 0.05)
+the surviving 0.008996 clears the first step and the lost 0.030985 clears neither. It does not turn on the seed either: the same reading re-cut at seeds 11 and 13 with 20,000 draws each
+([`context-permuted-seed11.json`](context-permuted-seed11.json),
+[`context-permuted-seed13.json`](context-permuted-seed13.json)) gives 0.0331 and 0.0320 for the lost pair, 0.0102 and
+0.0109 for the surviving one — the p-values move in the third decimal, the verdicts do not move.
+
+### Every arm pair, both readings, same rows
+
+`items 745`, `clusters 61`, α = 0.05 over six pairs per reading. `disc` is McNemar's discordant split, `eff` the design
+effect, `works` how many works hold the disagreement, and the interval is the 95 % percentile interval of 2,000
+work-resamples. Full rows in [`context-clustered.json`](context-clustered.json),
+[`continuations-clustered.json`](continuations-clustered.json) and
+[`minimal-pairs-clustered.json`](minimal-pairs-clustered.json).
+
+| Reading | Pair | accuracy | difference | disc | p item-level | p clustered | eff | works | 95 % interval |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| `prior_span` | T / P | 0.9409 / 0.9208 | +0.02013 | 29:14 | 0.031539 | 0.073963 | 1.28 | 29 | [0.0012, 0.0391] |
+| `next_span` | T / P | 0.9597 / 0.9463 | +0.01342 | 25:15 | 0.15386 | 0.12694 | 0.83 | 29 | [−0.0014, 0.0279] |
+| **`permuted`** | **T / P** | **0.9664 / 0.9436** | **+0.02282** | **30:13** | **0.013718 sep** | **0.030985 —** | **1.41** | **24** | **[0.0050, 0.0441]** |
+| **`permuted`** | **T / H** | **0.9664 / 0.9396** | **+0.02685** | **32:12** | **0.003658 sep** | **0.008996 sep** | **1.16** | **26** | **[0.0088, 0.0456]** |
+| `reversed` | T / P | 0.9597 / 0.9463 | +0.01342 | 25:15 | 0.15386 | 0.26387 | 1.64 | 25 | [−0.0075, 0.0356] |
+| `prior_span` | P / H | 0.9208 / 0.9248 | −0.00403 | 17:20 | 0.74283 | 0.75712 | 1.04 | 27 | [−0.0209, 0.0121] |
+| `permuted` | P / H | 0.9436 / 0.9396 | +0.00403 | 23:20 | 0.76079 | 0.76312 | 0.89 | 25 | [−0.0122, 0.0199] |
+| v1 `easy` | T / P | 0.9879 / 0.9758 | +0.01208 | 14:5 | 0.063568 | 0.10495 | 1.17 | 15 | [0.0, 0.0249] |
+| v1 `easy` | T / H | 0.9879 / 0.9732 | +0.01477 | 15:4 | 0.019211 | 0.037981 | 1.03 | 15 | [0.0036, 0.0262] |
+| v1 `hard` | T / P | 0.9463 / 0.9342 | +0.01208 | 28:19 | 0.24296 | 0.14843 | 0.64 | 33 | [−0.0014, 0.0270] |
+
+The **positive control behaved as a control must**: every arm against `untrained-control` separates under both readings
+in all six continuation readings, with 372–448 discordant items spread over 58–60 works and clustered p-values at the
+resampling floor (deviation 3). The authored pair probe is the opposite case, and it is the finding of this record:
+
+| Instrument | items | clusters | separated item-level | separated clustered | design effect, arm vs control |
+| --- | --- | --- | --- | --- | --- |
+| same-region, four kinds | 745 | 61 works | 3 of 6 pairs (`permuted`: 5) | 3 of 6 (`permuted`: 4) | 0.85 – 1.41 |
+| v1 continuation, two kinds | 745 | 61 works | 3 of 3 controls | 3 of 3 controls | 0.83 – 1.45 |
+| authored minimal pairs | 800 | **8 phenomena** | 3 of 3 controls (p ≈ 2.8 × 10⁻³⁵) | **none** | **16.08 – 16.80** |
+
+Eight hundred hand-written pairs of eight phenomena are worth about **49 independent observations** under the cluster
+unit the artifact declares. The trained-versus-random contrast — the largest effect any instrument in this repository
+has ever measured, item-level p ≈ 10⁻³⁵ — falls to p = 0.0234 with eight clusters, against Holm's first step of
+0.008333, because a randomization test over eight units cannot produce a smaller p than 2/2⁸ = 0.0078. **A clustered
+reading that reports nothing must therefore be read with its cluster count next to it**: on the corpus probes the count
+is 61 and the floor is 2/2⁶¹, so the silence is the data's; on the authored probe the count is 8 and the silence is the
+design's.
+
+### The clustering the record promised, cross-checked
+
+E2634 rebuilt its item set by hand and published that the two separations' discordant items spread over **24 and 26**
+works with `mathematics-pg302` carrying **5 of 43 (11.6 %)**. This record's rebuild — a different code path, gated on
+the digest rather than on the author's reading of the flags — returns 24 and 26 works with the same largest work at the
+same 0.116 share. The hand figure was right, and the digest gate is what makes the new one reproducible: the re-cut
+set digested to `b48c01eb0e40a65f…` and `f5ae1effc9a97f27…`, exactly the digests the probe files record, so the clusters
+are paired to the 745 passages that were scored. The cluster listings themselves now have identities too —
+`1b2fa9e975c2…` (same-region) and `dc64cdffc7aa…` (v1) — which is what a future record needs instead of a rebuild.
+
+### The predictions
+
+* **P1 — held.** Both rebuilds reproduced the probe files' digests; the gate had nothing to refuse.
+* **P2 — held.** All 18 arm-versus-control continuation pairs separate under both readings.
+* **P3 — held, for one of the two.** `permuted` kept `T`/`H` and lost `T`/`P`. The predicted mechanism was right in
+  kind and wrong in size: the discordance is spread over 24–26 of 61 works, the design effect is 1.16–1.41, and the
+  p-value moved by a factor of ~2.3 — not enough to keep both separations.
+* **P4 — held as observed, wrong as stated.** No pair gained a separation from clustering. But the reason given — that
+  clustering can only shrink the effective sample — is contradicted by **seven of the eighteen** continuation arm-pair
+  readings, whose design effect is **below 1.0** (0.64 to 0.99). Deviation 2.
+* **P5 — held, and by arithmetic rather than by measurement.** With 8 phenomenon clusters the floor is 0.0078 against
+  a first Holm step of 0.008333, so the authored probe could separate nothing it had; at three usable phenomena the
+  floor is 0.25 and separation is impossible for any verdict pattern. Derived before the run, confirmed by it.
+
+### Deviations
+
+1. **The preregistration used the wrong denominator for the works.** P3 reads "745 items over ~25 works"; the item set
+   spans **61** held-out works, and the ~25 was E2634's count of works carrying the *discordant* items (and, by
+   coincidence of wording, the number of works in the whole-pack loss sample per K-033). The measured design effects
+   are the ones P3's argument needs and it survives; the stated count did not.
+2. **Negative within-work dependence is real here.** Design effects below 1.0 mean the paired differences of one work
+   *disagree with each other* more than chance would arrange, so clustering sharpens the estimate rather than blunting
+   it. It did not produce a single new separation in this run, but any future reading must expect both directions and
+   the module does not assume otherwise.
+3. **The control pairs' clustered p-values are floors, not measurements.** With 61 clusters the assignment count is
+   2⁶⁰, so the test is resampled and no draw was as extreme as the observed one: the printed 0.00049975 is
+   1/(2,000 + 1), the smallest value the resampled path can report. The honest statement is p ≤ 0.0005.
+4. **The authored pair probe loses even its unambiguous separation.** This was not among the four outcomes, because
+   D-a…D-d were scoped to the continuation readings and the pair probe was kept as E2634's non-scaling control. It is
+   recorded here as the clearest single number in the run: 800 pairs, 8 clusters, ~49 effective observations,
+   nothing separated, including a trained network against a random one.
+5. **Cost.** Declared 1–3 minutes per rebuild; measured **19 s** (same-region) and **29 s** (v1), the authored probe
+   needing no rebuild at all (**0.2 s**). The three robustness re-runs at 20,000 resamples cost ~40 s each. Peak
+   memory was one Python process holding the 149 MB snapshot's held-out side and a loaded vocabulary; no checkpoint
+   was loaded and no model was scored.
+
+## Interpretation
+
+E2634's G-a was already qualified — the one reading that separated anything has an untrained floor 0.119 below chance.
+This record qualifies the *other half* of that result, the half that was about statistics rather than about the probe:
+of its two separations, one does not survive the works behind its own items. What is now believed about the instrument
+is narrower than what E2634 published and stronger than what E2629 did: **at 745 passages from 61 held-out works, one
+continuation reading separates one arm pair under a test that counts works, and it is the reading this project already
+refused to use.** The remaining five readings separate nothing under either reading, and the authored probe separates
+nothing once its own template structure is admitted.
+
+The two uncertainty readings disagree on the lost pair, and that is a property rather than a defect: the bootstrap
+interval for `T`/`P` on `permuted` is [0.0050, 0.0441] — clear of zero — while the randomization test says 0.031.
+Resampling works answers "where is the difference, given that these are the works"; flipping a work's arm labels answers
+"could the works alone have produced this". A percentile interval is not the inverse of a randomization test and this
+record prints both rather than choosing the convenient one.
+
+Nothing here is about whether either model is good. A clustered separation is a statement about items, works and
+label swaps; the models' usefulness is K-001 and this run did not touch it.
+
+## Conclusion
+
+**Believed, at this strength:** the capability probes' arm-pair verdicts were optimistic, by a measurable but modest
+amount on the corpus probes (design effects 0.64–1.64 over 61 works) and by a large one on the authored probe (16× over
+8 phenomena). E2634's headline separation is now known to be one of two, and the surviving one belongs to the reading
+with the off-chance floor, so the series' position is unchanged in kind: **no probe reading this repository trusts
+separates two independently trained arms**, whether items are counted as items or as works. What changed is the
+standard of evidence — a separation claim now requires the clustered reading, and `scripts/clustered_probe_verdicts.py`
+is the command that produces it from committed rows.
+
+## Follow-up
+
+1. Any future probe record states both readings and declares which one its outcome letters are read on; a record that
+   declares neither has no separation claim to make.
+2. The next probe run writes its own cluster block (K-035), so this rebuild path becomes the compatibility path for
+   E2626–E2634's files rather than the normal one.
+3. The authored pair probe is not a candidate arm instrument at any item count this corpus and this template set
+   support: eight clusters bound the test before the data is consulted. Reading it as an instrument needs pairs written
+   to independent templates, which is an authoring task, not a scoring one.

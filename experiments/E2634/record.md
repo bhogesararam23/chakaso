@@ -317,3 +317,14 @@ rank independent initialisations — and spending the next measurement on the mo
    analysis under a second) with one model loaded at a time. 745 items over four models is a small amount of compute;
    the records' fear of scoring passes is not supported by the measurement.
 
+### Addendum (2026-11-04) — one of this record's two separations does not survive its own works
+
+Nothing above is edited. [E2635](../E2635/record.md) re-read this record's committed rows with the work-clustered
+paired-verdict test (`chakaso.training.paired_verdicts`, K-035) that this record's own limits section asked for. On the
+745 passages from **61** held-out works, `context_pmi_permuted` keeps its `E2612-T` / `E2613-H` separation
+(0.003658 → 0.008996, Holm's step cleared either way) and loses its `E2612-T` / `E2612-P` one (0.013718 → 0.030985).
+This record's clustering table is confirmed by an independent route — 24 and 26 works, `mathematics-pg302` at 11.6 %
+and 6.8 % — and its floor qualification is untouched: the reading that survives is still the one whose untrained floor
+is 0.119 below chance. G-a is therefore **G-a on one pair, with the second pair withdrawn under clustering**, and any
+later use of this record should read E2635 beside it rather than this table alone.
+

@@ -1042,8 +1042,9 @@ item-level exact McNemar beside it as the optimistic reading. It is the instrume
 binary verdicts, so it changes what "separated" means rather than what was sampled — and on one work it reports
 p = 1.0 and no interval, which is the statement McNemar cannot make.
 
-**Status:** closed 2026-11-04. The measured reading of a committed record's rows under the new statistic is the next
-thing written, and it will cite this entry rather than restate it.
+**Status:** closed 2026-11-04. [E2635](../../experiments/E2635/record.md) is the measured reading: rebuilt under the
+digest gate, it reproduced E2634's hand-computed clustering exactly (24 and 26 works, the same largest work at the same
+share) and took away one of that record's two separations.
 
 ## Resolved
 

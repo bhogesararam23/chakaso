@@ -1,0 +1,512 @@
+{
+  "alpha": 0.05,
+  "cluster_digest": "246a0c131e274e2b0ff395aad3c131a9d5d7ab0491c148103213b8c76300a92e",
+  "cluster_unit": "authored phenomenon",
+  "clusters": 8,
+  "items": 800,
+  "models": [
+    "E2612-T",
+    "E2612-P",
+    "E2613-H",
+    "untrained-control"
+  ],
+  "probability": 0.95,
+  "readings": {
+    "outcomes": {
+      "holm_thresholds": [
+        0.05,
+        0.025,
+        0.016666666666666666,
+        0.0125,
+        0.01,
+        0.008333333333333333
+      ],
+      "pairs": [
+        {
+          "clustered": {
+            "bootstrap": {
+              "resamples": 2000,
+              "seed": 7
+            },
+            "claim_limit": "a separation here says these two arms answered these items differently once the works behind them were counted as clusters; it is not evidence that either model is useful, and it is not a capability claim",
+            "cluster_sign_flip": {
+              "assignments": 128,
+              "method": "exact enumeration",
+              "note": "every sign assignment of the works was enumerated, so this p-value is exact for the null that the two arms are interchangeable within each work",
+              "p_value": 1.0,
+              "smallest_reportable_p": 0.0078125
+            },
+            "cluster_sizes": {
+              "maximum": 100,
+              "minimum": 100
+            },
+            "clusters": 8,
+            "counts": {
+              "both_tied": 0,
+              "first_passes": 660,
+              "items_first_ahead": 13,
+              "items_second_ahead": 20,
+              "second_passes": 667
+            },
+            "design_effect": {
+              "effective_items": 108.49613998970663,
+              "note": "1.0 is what independent items give; above it the items of one work move together and the item-level readings are optimistic by that factor",
+              "ratio": 7.3735342112253806
+            },
+            "excludes_zero": false,
+            "interval": [
+              -0.04625,
+              0.02875
+            ],
+            "interval_note": "",
+            "item_level_mcnemar": {
+              "assumption": "each discordant item is an independent coin \u2014 optimistic when a work's items move together, and it conditions on the discordant items rather than averaging every paired one",
+              "discordant": [
+                13,
+                20
+              ],
+              "n": 33,
+              "p_value": 0.296206368599087
+            },
+            "items": 800,
+            "leave_one_cluster_out": {
+              "estimate_without": {
+                "auxiliary_agreement": -0.024285714285714285,
+                "determiner_adjective_order": -1.2688263138573218e-18,
+                "determiner_noun_agreement": -0.010000000000000002,
+                "modal_takes_base_form": -0.010000000000000002,
+                "past_participle_form": -0.010000000000000002,
+                "reflexive_pronoun_agreement": 0.004285714285714284,
+                "subject_verb_agreement": -0.010000000000000002,
+                "subject_verb_agreement_with_attractor": -0.010000000000000002
+              },
+              "maximum": 0.004285714285714284,
+              "minimum": -0.024285714285714285,
+              "most_influential_difference": -0.015535714285714285,
+              "most_influential_work": "auxiliary_agreement"
+            },
+            "mean_accuracy_first": 0.825,
+            "mean_accuracy_second": 0.83375,
+            "mean_difference": -0.00875,
+            "probability": 0.95,
+            "signal_spread": {
+              "discordant_items": 33,
+              "largest_work": "reflexive_pronoun_agreement",
+              "largest_work_share": 0.42424242424242425,
+              "works_with_discordance": 3
+            },
+            "unit": "paired verdict difference, first minus second; 1.0 a pass, 0.5 a tie, 0.0 a fail"
+          },
+          "first": "E2612-T",
+          "second": "E2612-P",
+          "separated_clustered": false,
+          "separated_item_level": false
+        },
+        {
+          "clustered": {
+            "bootstrap": {
+              "resamples": 2000,
+              "seed": 7
+            },
+            "claim_limit": "a separation here says these two arms answered these items differently once the works behind them were counted as clusters; it is not evidence that either model is useful, and it is not a capability claim",
+            "cluster_sign_flip": {
+              "assignments": 128,
+              "method": "exact enumeration",
+              "note": "every sign assignment of the works was enumerated, so this p-value is exact for the null that the two arms are interchangeable within each work",
+              "p_value": 0.4375,
+              "smallest_reportable_p": 0.0078125
+            },
+            "cluster_sizes": {
+              "maximum": 100,
+              "minimum": 100
+            },
+            "clusters": 8,
+            "counts": {
+              "both_tied": 0,
+              "first_passes": 660,
+              "items_first_ahead": 4,
+              "items_second_ahead": 14,
+              "second_passes": 670
+            },
+            "design_effect": {
+              "effective_items": 218.32061068702288,
+              "note": "1.0 is what independent items give; above it the items of one work move together and the item-level readings are optimistic by that factor",
+              "ratio": 3.6643356643356646
+            },
+            "excludes_zero": false,
+            "interval": [
+              -0.035,
+              0.005
+            ],
+            "interval_note": "",
+            "item_level_mcnemar": {
+              "assumption": "each discordant item is an independent coin \u2014 optimistic when a work's items move together, and it conditions on the discordant items rather than averaging every paired one",
+              "discordant": [
+                4,
+                14
+              ],
+              "n": 18,
+              "p_value": 0.0308837890625
+            },
+            "items": 800,
+            "leave_one_cluster_out": {
+              "estimate_without": {
+                "auxiliary_agreement": -0.017142857142857144,
+                "determiner_adjective_order": -0.005714285714285714,
+                "determiner_noun_agreement": -0.015714285714285715,
+                "modal_takes_base_form": -0.014285714285714285,
+                "past_participle_form": -0.014285714285714285,
+                "reflexive_pronoun_agreement": -0.005714285714285714,
+                "subject_verb_agreement": -0.012857142857142857,
+                "subject_verb_agreement_with_attractor": -0.014285714285714285
+              },
+              "maximum": -0.005714285714285714,
+              "minimum": -0.017142857142857144,
+              "most_influential_difference": 0.006785714285714286,
+              "most_influential_work": "determiner_adjective_order"
+            },
+            "mean_accuracy_first": 0.825,
+            "mean_accuracy_second": 0.8375,
+            "mean_difference": -0.0125,
+            "probability": 0.95,
+            "signal_spread": {
+              "discordant_items": 18,
+              "largest_work": "reflexive_pronoun_agreement",
+              "largest_work_share": 0.4444444444444444,
+              "works_with_discordance": 5
+            },
+            "unit": "paired verdict difference, first minus second; 1.0 a pass, 0.5 a tie, 0.0 a fail"
+          },
+          "first": "E2612-T",
+          "second": "E2613-H",
+          "separated_clustered": false,
+          "separated_item_level": false
+        },
+        {
+          "clustered": {
+            "bootstrap": {
+              "resamples": 2000,
+              "seed": 7
+            },
+            "claim_limit": "a separation here says these two arms answered these items differently once the works behind them were counted as clusters; it is not evidence that either model is useful, and it is not a capability claim",
+            "cluster_sign_flip": {
+              "assignments": 128,
+              "method": "exact enumeration",
+              "note": "every sign assignment of the works was enumerated, so this p-value is exact for the null that the two arms are interchangeable within each work",
+              "p_value": 0.0234375,
+              "smallest_reportable_p": 0.0078125
+            },
+            "cluster_sizes": {
+              "maximum": 100,
+              "minimum": 100
+            },
+            "clusters": 8,
+            "counts": {
+              "both_tied": 0,
+              "first_passes": 660,
+              "items_first_ahead": 411,
+              "items_second_ahead": 129,
+              "second_passes": 378
+            },
+            "design_effect": {
+              "effective_items": 48.91763236416625,
+              "note": "1.0 is what independent items give; above it the items of one work move together and the item-level readings are optimistic by that factor",
+              "ratio": 16.354021266696176
+            },
+            "excludes_zero": true,
+            "interval": [
+              0.15746875000000005,
+              0.5575937499999994
+            ],
+            "interval_note": "",
+            "item_level_mcnemar": {
+              "assumption": "each discordant item is an independent coin \u2014 optimistic when a work's items move together, and it conditions on the discordant items rather than averaging every paired one",
+              "discordant": [
+                411,
+                129
+              ],
+              "n": 540,
+              "p_value": 2.8131970143554e-35
+            },
+            "items": 800,
+            "leave_one_cluster_out": {
+              "estimate_without": {
+                "auxiliary_agreement": 0.34,
+                "determiner_adjective_order": 0.3871428571428571,
+                "determiner_noun_agreement": 0.34,
+                "modal_takes_base_form": 0.27285714285714285,
+                "past_participle_form": 0.3142857142857143,
+                "reflexive_pronoun_agreement": 0.36,
+                "subject_verb_agreement": 0.4142857142857143,
+                "subject_verb_agreement_with_attractor": 0.3914285714285714
+              },
+              "maximum": 0.4142857142857143,
+              "minimum": 0.27285714285714285,
+              "most_influential_difference": -0.07964285714285713,
+              "most_influential_work": "modal_takes_base_form"
+            },
+            "mean_accuracy_first": 0.825,
+            "mean_accuracy_second": 0.4725,
+            "mean_difference": 0.3525,
+            "probability": 0.95,
+            "signal_spread": {
+              "discordant_items": 540,
+              "largest_work": "subject_verb_agreement",
+              "largest_work_share": 0.18518518518518517,
+              "works_with_discordance": 8
+            },
+            "unit": "paired verdict difference, first minus second; 1.0 a pass, 0.5 a tie, 0.0 a fail"
+          },
+          "first": "E2612-T",
+          "second": "untrained-control",
+          "separated_clustered": false,
+          "separated_item_level": true
+        },
+        {
+          "clustered": {
+            "bootstrap": {
+              "resamples": 2000,
+              "seed": 7
+            },
+            "claim_limit": "a separation here says these two arms answered these items differently once the works behind them were counted as clusters; it is not evidence that either model is useful, and it is not a capability claim",
+            "cluster_sign_flip": {
+              "assignments": 128,
+              "method": "exact enumeration",
+              "note": "every sign assignment of the works was enumerated, so this p-value is exact for the null that the two arms are interchangeable within each work",
+              "p_value": 0.9375,
+              "smallest_reportable_p": 0.0078125
+            },
+            "cluster_sizes": {
+              "maximum": 100,
+              "minimum": 100
+            },
+            "clusters": 8,
+            "counts": {
+              "both_tied": 0,
+              "first_passes": 667,
+              "items_first_ahead": 10,
+              "items_second_ahead": 13,
+              "second_passes": 670
+            },
+            "design_effect": {
+              "effective_items": 224.62290076335879,
+              "note": "1.0 is what independent items give; above it the items of one work move together and the item-level readings are optimistic by that factor",
+              "ratio": 3.5615246588005003
+            },
+            "excludes_zero": false,
+            "interval": [
+              -0.02875,
+              0.015
+            ],
+            "interval_note": "",
+            "item_level_mcnemar": {
+              "assumption": "each discordant item is an independent coin \u2014 optimistic when a work's items move together, and it conditions on the discordant items rather than averaging every paired one",
+              "discordant": [
+                10,
+                13
+              ],
+              "n": 23,
+              "p_value": 0.6776394844055176
+            },
+            "items": 800,
+            "leave_one_cluster_out": {
+              "estimate_without": {
+                "auxiliary_agreement": 0.007142857142857143,
+                "determiner_adjective_order": -0.005714285714285714,
+                "determiner_noun_agreement": -0.005714285714285714,
+                "modal_takes_base_form": -0.004285714285714286,
+                "past_participle_form": -0.004285714285714286,
+                "reflexive_pronoun_agreement": -0.01,
+                "subject_verb_agreement": -0.002857142857142857,
+                "subject_verb_agreement_with_attractor": -0.004285714285714286
+              },
+              "maximum": 0.007142857142857143,
+              "minimum": -0.01,
+              "most_influential_difference": 0.010892857142857142,
+              "most_influential_work": "auxiliary_agreement"
+            },
+            "mean_accuracy_first": 0.83375,
+            "mean_accuracy_second": 0.8375,
+            "mean_difference": -0.00375,
+            "probability": 0.95,
+            "signal_spread": {
+              "discordant_items": 23,
+              "largest_work": "auxiliary_agreement",
+              "largest_work_share": 0.6086956521739131,
+              "works_with_discordance": 5
+            },
+            "unit": "paired verdict difference, first minus second; 1.0 a pass, 0.5 a tie, 0.0 a fail"
+          },
+          "first": "E2612-P",
+          "second": "E2613-H",
+          "separated_clustered": false,
+          "separated_item_level": false
+        },
+        {
+          "clustered": {
+            "bootstrap": {
+              "resamples": 2000,
+              "seed": 7
+            },
+            "claim_limit": "a separation here says these two arms answered these items differently once the works behind them were counted as clusters; it is not evidence that either model is useful, and it is not a capability claim",
+            "cluster_sign_flip": {
+              "assignments": 128,
+              "method": "exact enumeration",
+              "note": "every sign assignment of the works was enumerated, so this p-value is exact for the null that the two arms are interchangeable within each work",
+              "p_value": 0.0234375,
+              "smallest_reportable_p": 0.0078125
+            },
+            "cluster_sizes": {
+              "maximum": 100,
+              "minimum": 100
+            },
+            "clusters": 8,
+            "counts": {
+              "both_tied": 0,
+              "first_passes": 667,
+              "items_first_ahead": 400,
+              "items_second_ahead": 111,
+              "second_passes": 378
+            },
+            "design_effect": {
+              "effective_items": 47.6328824293899,
+              "note": "1.0 is what independent items give; above it the items of one work move together and the item-level readings are optimistic by that factor",
+              "ratio": 16.79512049655834
+            },
+            "excludes_zero": true,
+            "interval": [
+              0.17,
+              0.56125
+            ],
+            "interval_note": "",
+            "item_level_mcnemar": {
+              "assumption": "each discordant item is an independent coin \u2014 optimistic when a work's items move together, and it conditions on the discordant items rather than averaging every paired one",
+              "discordant": [
+                400,
+                111
+              ],
+              "n": 511,
+              "p_value": 2.477680092221459e-39
+            },
+            "items": 800,
+            "leave_one_cluster_out": {
+              "estimate_without": {
+                "auxiliary_agreement": 0.36428571428571427,
+                "determiner_adjective_order": 0.3871428571428571,
+                "determiner_noun_agreement": 0.35,
+                "modal_takes_base_form": 0.28285714285714286,
+                "past_participle_form": 0.3242857142857143,
+                "reflexive_pronoun_agreement": 0.3557142857142857,
+                "subject_verb_agreement": 0.42428571428571427,
+                "subject_verb_agreement_with_attractor": 0.4014285714285714
+              },
+              "maximum": 0.42428571428571427,
+              "minimum": 0.28285714285714286,
+              "most_influential_difference": -0.07839285714285715,
+              "most_influential_work": "modal_takes_base_form"
+            },
+            "mean_accuracy_first": 0.83375,
+            "mean_accuracy_second": 0.4725,
+            "mean_difference": 0.36125,
+            "probability": 0.95,
+            "signal_spread": {
+              "discordant_items": 511,
+              "largest_work": "subject_verb_agreement",
+              "largest_work_share": 0.19569471624266144,
+              "works_with_discordance": 8
+            },
+            "unit": "paired verdict difference, first minus second; 1.0 a pass, 0.5 a tie, 0.0 a fail"
+          },
+          "first": "E2612-P",
+          "second": "untrained-control",
+          "separated_clustered": false,
+          "separated_item_level": true
+        },
+        {
+          "clustered": {
+            "bootstrap": {
+              "resamples": 2000,
+              "seed": 7
+            },
+            "claim_limit": "a separation here says these two arms answered these items differently once the works behind them were counted as clusters; it is not evidence that either model is useful, and it is not a capability claim",
+            "cluster_sign_flip": {
+              "assignments": 128,
+              "method": "exact enumeration",
+              "note": "every sign assignment of the works was enumerated, so this p-value is exact for the null that the two arms are interchangeable within each work",
+              "p_value": 0.015625,
+              "smallest_reportable_p": 0.0078125
+            },
+            "cluster_sizes": {
+              "maximum": 100,
+              "minimum": 100
+            },
+            "clusters": 8,
+            "counts": {
+              "both_tied": 0,
+              "first_passes": 670,
+              "items_first_ahead": 410,
+              "items_second_ahead": 118,
+              "second_passes": 378
+            },
+            "design_effect": {
+              "effective_items": 49.73974623782827,
+              "note": "1.0 is what independent items give; above it the items of one work move together and the item-level readings are optimistic by that factor",
+              "ratio": 16.083716956955055
+            },
+            "excludes_zero": true,
+            "interval": [
+              0.17375,
+              0.5625312499999998
+            ],
+            "interval_note": "",
+            "item_level_mcnemar": {
+              "assumption": "each discordant item is an independent coin \u2014 optimistic when a work's items move together, and it conditions on the discordant items rather than averaging every paired one",
+              "discordant": [
+                410,
+                118
+              ],
+              "n": 528,
+              "p_value": 8.917270674108481e-39
+            },
+            "items": 800,
+            "leave_one_cluster_out": {
+              "estimate_without": {
+                "auxiliary_agreement": 0.35714285714285715,
+                "determiner_adjective_order": 0.39285714285714285,
+                "determiner_noun_agreement": 0.3557142857142857,
+                "modal_takes_base_form": 0.28714285714285714,
+                "past_participle_form": 0.32857142857142857,
+                "reflexive_pronoun_agreement": 0.3657142857142857,
+                "subject_verb_agreement": 0.42714285714285716,
+                "subject_verb_agreement_with_attractor": 0.4057142857142857
+              },
+              "maximum": 0.42714285714285716,
+              "minimum": 0.28714285714285714,
+              "most_influential_difference": -0.07785714285714285,
+              "most_influential_work": "modal_takes_base_form"
+            },
+            "mean_accuracy_first": 0.8375,
+            "mean_accuracy_second": 0.4725,
+            "mean_difference": 0.365,
+            "probability": 0.95,
+            "signal_spread": {
+              "discordant_items": 528,
+              "largest_work": "subject_verb_agreement_with_attractor",
+              "largest_work_share": 0.1893939393939394,
+              "works_with_discordance": 8
+            },
+            "unit": "paired verdict difference, first minus second; 1.0 a pass, 0.5 a tie, 0.0 a fail"
+          },
+          "first": "E2613-H",
+          "second": "untrained-control",
+          "separated_clustered": false,
+          "separated_item_level": true
+        }
+      ],
+      "separated_clustered": 0,
+      "separated_item_level": 3
+    }
+  },
+  "resamples": 2000,
+  "seed": 7
+}
