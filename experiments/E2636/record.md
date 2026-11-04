@@ -3,11 +3,11 @@
 **Status:** preregistered, **not run**. Written and committed on 2026-11-04 before a single arm exists; no number in this
 file is a result, and the `## Results` section will be added by a later commit or not at all. **Type:** Research
 experiment, **preregistered**, training-budget class. It is the first record whose protocol pair names the adopted
-pre-tokenizer as a property of its own plan ([ADR-0051](../docs/decisions/ADR-0051-the-space-prefixed-pre-tokenizer-is-adopted-and-a-run-stops-inheriting-one.md)),
+pre-tokenizer as a property of its own plan ([ADR-0051](../../docs/decisions/ADR-0051-the-space-prefixed-pre-tokenizer-is-adopted-and-a-run-stops-inheriting-one.md)),
 and the first whose verdict band is derived from the adopted rule's own measured seed spread rather than inherited from
 the rule that rule replaced.
-**Protocol files:** [`configs/experiments/E2636-adopted-budget-2400.toml`](../configs/experiments/E2636-adopted-budget-2400.toml)
-and [`configs/experiments/E2636-adopted-budget-7200.toml`](../configs/experiments/E2636-adopted-budget-7200.toml),
+**Protocol files:** [`configs/experiments/E2636-adopted-budget-2400.toml`](../../configs/experiments/E2636-adopted-budget-2400.toml)
+and [`configs/experiments/E2636-adopted-budget-7200.toml`](../../configs/experiments/E2636-adopted-budget-7200.toml),
 read by `chakaso experiment study --protocol … --seeds N`. A test holds the pair to exactly one differing field.
 
 ## Motivation
@@ -28,8 +28,8 @@ first among the things that need a training arm rather than an afternoon. The de
 turn at three times the ceiling, then "longer" is not the lever this project should keep pulling, and the next unit is
 data or regularisation instead.**
 
-It tests no hypothesis in [`hypotheses.md`](../research/hypotheses.md). H17 is closed by
-[ADR-0051](../docs/decisions/ADR-0051-the-space-prefixed-pre-tokenizer-is-adopted-and-a-run-stops-inheriting-one.md)
+It tests no hypothesis in [`hypotheses.md`](../../docs/research/hypotheses.md). H17 is closed by
+[ADR-0051](../../docs/decisions/ADR-0051-the-space-prefixed-pre-tokenizer-is-adopted-and-a-run-stops-inheriting-one.md)
 and this record changes nothing about it: the vocabulary is a committed input, not a treatment. Nothing here is about
 capability either — see *Known limits*.
 
@@ -44,7 +44,7 @@ loss differ from the same run at 2,400 by more than the adopted rule's own band?
 Held fixed by both protocol files, field for field: corpus `gutenberg-multiregister-v1` 1.0.0 (`312571f9fa8351a8`); the
 whole-work split at split seed 7 (`adf650435c3a9068`); the 3,413,760-parameter rotary decoder at `vocab_size` 4096,
 `context_length` 256, `d_model` 256, 4 layers, 8 heads, 640 feedforward; AdamW 6e-4 with weight decay 0.01 and the
-recipe [ADR-0049](../docs/decisions/ADR-0049-a-runs-optimizer-settings-are-declared-not-inherited.md) declares, decay
+recipe [ADR-0049](../../docs/decisions/ADR-0049-a-runs-optimizer-settings-are-declared-not-inherited.md) declares, decay
 applied to every parameter (the exemption stays off, because E2631 measured it and it did not help);
 `effective_batch_size` 32 (batch 32 × grad accumulation 1); cosine to 0.1; `warmup_steps` 200; `eval_every` 400;
 `patience` 99, so **neither arm early-stops** and the curve is observed rather than truncated by a selector; the packed
@@ -54,7 +54,7 @@ identifiers per side; and the same five `test_partitions`.
 Moves: `max_steps` only, 2,400 → 7,200. Each pair shares its training `seed`, taken from the declared list.
 
 **Vocabulary: fitted by no run.** Both arms read `experiments/E2620/vocabulary-4a47f0281c81a9e5.json` as a committed
-input and check its fingerprint ([ADR-0044](../docs/decisions/ADR-0044-a-vocabulary-a-record-cites-is-committed-beside-it.md)),
+input and check its fingerprint ([ADR-0044](../../docs/decisions/ADR-0044-a-vocabulary-a-record-cites-is-committed-beside-it.md)),
 and both files declare its rule by name:
 
 ```toml
@@ -62,7 +62,7 @@ tokenizer_pre_tokenizer = "space-prefixed-word|space-prefixed-symbol|whitespace-
 ```
 
 which is `SPACE_PREFIXED_PRE_TOKENIZER`, the rule
-[ADR-0051](../docs/decisions/ADR-0051-the-space-prefixed-pre-tokenizer-is-adopted-and-a-run-stops-inheriting-one.md)
+[ADR-0051](../../docs/decisions/ADR-0051-the-space-prefixed-pre-tokenizer-is-adopted-and-a-run-stops-inheriting-one.md)
 adopted. It is declared rather than inherited — the loader refuses a protocol that fits its own vocabulary without
 naming a rule, and E2624 and E2625 already named theirs while pinning a file, which is the precedent this follows.
 Nothing is refitted: E2632 measured the rule's refit sensitivity (four fits, within-sample compression ratios
@@ -95,7 +95,7 @@ nats per token, and the train/validation gap at the endpoint.
 Two bands, both computed from committed evidence by the reading tool, neither typed into it:
 
 * **the adopted rule's own band, 0.005** — `1.96·√2·σ` over the adopted rule's measured seed spread σ(O1) = **0.001595**
-  from [E2630's committed `results.json`](E2630/results.json) `treatment_spread.o1`, which is 0.004418, rounded up to the
+  from [E2630's committed `results.json`](../E2630/results.json) `treatment_spread.o1`, which is 0.004418, rounded up to the
   next 0.005 by the replacement rule E2614 declared for a band it retires. E2630 measured that figure as the *treatment's*
   own spread — the number every earlier record in the series said it could not state — and it is smaller than the legacy
   rule's 0.002240, which is why a band built on it is tighter rather than looser.
@@ -119,8 +119,8 @@ over one draw is that draw, so a single surviving pair is reported as a shortfal
 
 Decision rules, checked in declaration order; **C-d is the declared residue** and is shadowed by every other letter,
 which the artifact reports in `also_matched` rather than hiding. The full conditions and the sentence each letter means
-are committed in [`configs/analyses/budget-extension-e2636-v1.json`](../configs/analyses/budget-extension-e2636-v1.json)
-([ADR-0052](../docs/decisions/ADR-0052-an-analysis-prints-the-verdict-its-record-declared-or-none-at-all.md)); a letter
+are committed in [`configs/analyses/budget-extension-e2636-v1.json`](../../configs/analyses/budget-extension-e2636-v1.json)
+([ADR-0052](../../docs/decisions/ADR-0052-an-analysis-prints-the-verdict-its-record-declared-or-none-at-all.md)); a letter
 is printed only when that file is handed to the tool, and `--statistics-only` prints none.
 
 * **C-a — the curve turned.** Every declared long arm's validation minimum falls strictly inside its own horizon, the
@@ -175,7 +175,7 @@ updates on archaic English.
 ## Cost, from measured runs on this configuration
 
 Measured, this host, the same configuration at 2,400 updates: **3,045–3,536 s** per arm
-([campaign report §1](../docs/internal/engineering/research-campaign-report-2026-11-04.md): "a 3,413,760-parameter arm at
+([campaign report §1](../../docs/internal/engineering/research-campaign-report-2026-11-04.md): "a 3,413,760-parameter arm at
 2,400 updates costs 3,045–3,536 s here when the machine is otherwise idle"), **5,834–6,759 positions per second**, peak
 resident **2,502–2,544 MB** per process, and `resources.available_at_launch` in each report. E2631 measured 3,353 s at
 the same shape; E2628's seed-11 arm cost 7,634 s on a busy host, which is why the arms run one at a time.
@@ -228,7 +228,7 @@ python scripts/read_budget_extension.py \
 
 The reader refuses a pair that differs in anything but `max_steps`, refuses an arm that did not finish at its own
 ceiling, and refuses a report whose `best_step` disagrees with the validation argmin it computes from the curve. `--bands`
-is [E2630's committed aggregate](E2630/results.json), so the band is read from the record that measured it instead of
+is [E2630's committed aggregate](../E2630/results.json), so the band is read from the record that measured it instead of
 being typed into a protocol. Running `--statistics-only` instead prints the numbers with no letter, which is what a
 record that has not declared its outcomes gets (ADR-0052).
 
