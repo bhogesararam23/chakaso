@@ -3,7 +3,18 @@
 Real problems with the current state, including the ones that are only
 inconvenient. An empty file here would mean nobody has looked.
 
-Last reviewed: 2026-11-04 (**K-033 filed** by E2633 — a record's whole-pack figure and its five-register table are measured over different
+Last reviewed: 2026-11-04, later in the day (**K-033 closed** — a run's report now states the sample its whole-pack figure
+is pooled over, verified by recounting E2612 arm T's held-out pack and matching E2633's manual read to the last digit, with
+medicine printed as an explicit zero row; **K-030 item 3 closed** by [E2631](../../experiments/E2631/record.md)'s **N-b** —
+the vector weight-decay exemption measured against its own control, Δ(O1) −0.003499 and Δ(whole pack) −0.003606, both inside
+their tie margins, so the option stays expressible and off by default on a measurement; **K-013 closed for the counts a test
+can check** — a hygiene gate fails a numeric census in an owner document that drifts from the directories or from the
+parser's own command list, and a record whose `## Results` section exists while its status still says preregistered fails;
+[E2630](../../experiments/E2630/record.md) **Y2-a** and [E2632](../../experiments/E2632/record.md) **R-a** measured, so the
+space-prefixed tokenizer now has five paired same-host seeds with an interval *and* a refit-stable mechanism, and still no
+adopted default — the format work that has to precede one is named in `CURRENT_STATE.md`'s next-step queue; K-031's archive
+mechanism built and checked on the real 430-source corpus, its drift re-scan and its storage decision still open; K-001
+unchanged by any of it); before that 2026-11-04, earlier (**K-033 filed** by E2633 — a record's whole-pack figure and its five-register table are measured over different
 held-out samples, and the whole-pack sample holds no medicine at all; **K-032 closed** — a committed probe extract keeps its per-item
 outcome arrays in a compact, digest-checked form, demonstrated by re-running E2629's refused reading from E2627's bytes and getting all
 eight instrument rows identical; K-001 unchanged, K-030's deciding arm and K-031's raw-byte archive still open); before that
@@ -353,7 +364,7 @@ interface change to the answer record and needs a decision record, not a rename.
 template version already reaches (`describe()`, the answer's `evaluation_provenance`, and an experiment
 report), with the existing records stating which label they ran under.
 
-### K-013 — Counts are copied into six documents and drift on the next commit
+### K-013 — Closed: counts copied into documents drift, and the ones a test can check now fail instead
 
 **Impact:** Medium, and it is how most of this audit's findings were produced.
 
@@ -374,10 +385,19 @@ re-reads before citing it.
 allowlists and the workflow document — a sentence can say "eight records" next to a directory holding nine and
 every gate stays green.
 
-**What would close it:** one owner per count (`CURRENT_STATE.md` for census figures, `--help` for the command
-list, the `experiments/` directory listing for records) with every other document linking rather than
-restating; optionally a hygiene check that a count stated in a document equals the thing counted, which is easy
-for records and commands and awkward for test totals, since those depend on which extras are installed.
+**Closed 2026-11-04 for the two counts a test can check — and the mechanism was always the point.**
+`test_each_census_owner_states_the_count_its_thing_actually_has` names its owners (`docs/agent/CURRENT_STATE.md` and
+`README.md` for experiment records, `README.md` for the command surface), counts the `experiments/*/record.md` files on
+disk and reads the commands out of `build_parser()`'s own action list rather than out of a document, then fails on any
+numeric statement in an owner that disagrees with what it counted. Dated prose in the register, the changelog and the
+research log is exempt on purpose: the entry argues that a historical sentence must not be rewritten when the world
+moves, so the gate checks the documents that claim to describe *now*. It found two stale counts the day it landed — a
+census that said thirty while 32 records existed, and four historical "12 commands" sentences — and `AGENTS.md` now
+links to the census instead of restating it, which is the one-owner-per-count rule applied to this file's own parent.
+
+**Not closed, and not by this test:** test totals. They depend on which extras are installed, so no count this working
+tree can assert is the number a reader wants; the authority for them is the per-tier read-back recorded in
+`CURRENT_STATE.md`, and the entry's own analysis said that half would be awkward.
 
 ### K-014 — This arc delivered straight to `main` while the conventions require a branch and a PR
 

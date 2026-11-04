@@ -67,6 +67,51 @@ capability is implemented or still planned.
   zero" claim. Nine published table values, a hand-derived interval and the exact binomial tails are pinned by tests; `sign_agreement` was already
   public and is now in `__all__` beside them.
 
+- **E2630: the space-prefixed tokenizer at E2614's own five seeds, on the host that holds every control — outcome Y2-a.**
+  Δ(O1) **+0.026431** with a 95 % Student-*t* interval of **[+0.023212, +0.029650]**, all five draws positive, and the
+  treatment's own seed deviation *smaller* than the control's (0.001595 against 0.002240), which is the first measurement
+  of the noise of the thing being adopted rather than of the thing being compared to it. H17 was two seeds on two hosts
+  before this; it is now five paired draws with an interval, on one machine, at one protocol.
+- **E2631: the vector weight-decay exemption, measured against its own control — outcome N-b, and K-030 item 3 closes.**
+  One arm, 55 m 53 s, differing from E2626 seed 7 in `weight_decay_excludes_vectors` and nothing else: Δ(O1) −0.003499
+  against a 0.0062 tie margin and Δ(whole pack) −0.003606 against 0.00933, both on the control's side. The declared
+  paired reading puts a 95 % work-clustered interval of [−0.014208, +0.001682] around that mean with a 13:12 sign test
+  (p = 0.50000) and a leave-one-out range that crosses zero when one mathematics book is dropped. ADR-0049's option stays
+  expressible and off by default, now on a measurement rather than on the 0.17 % of parameters it exempts. Two of the
+  record's own predictions failed and say so: the point estimates favour the control, not the exemption, and the
+  validation curves cross at steps 600 and 1,200.
+- **E2632: the refit-sensitivity half of the tokenizer question — outcome R-a.** Four ~4.01M-character fitting samples of
+  the training side, each fitted under both pre-tokenizer rules: eight vocabularies with eight distinct fingerprints,
+  within-sample compression ratios 1.405175 / 1.409317 / 1.409002 / 1.405079 and a relative spread of **0.30 %**, so the
+  space-prefixed advantage is the rule's and not a property of one merge history. Two fits of one rule agree on 10.9 % of
+  their merges, which is the other half of the same sentence: the lists move, the compression does not. The unexpected
+  reading is P2's failure — a 12,000,000-character fit does not beat a 4,000,000-character one at 4,096 identifiers
+  (2.126855 against the best small fit's 2.126521), so compression is saturated at the identifier count rather than at the
+  sample size. Nothing here moves a default; adoption is a decision record's job.
+- **E2633's reproduction block was corrected, and the corrected command was executed.** As committed it passed four
+  options `scripts/paired_loss_test.py` has never accepted and omitted the `--protocol` it requires, so the record's
+  promise that a reader could recompute its numbers was false while its numbers were right. Re-run on 2026-11-04 it wrote
+  a file byte-identical to the committed evidence (SHA-256 `03d8f17f1a41ecbb…`, 38,034 bytes).
+
+**Implemented**
+
+- **K-033 is closed, and a run now states the sample its headline number is pooled over.**
+  `chakaso.training.packing.target_segments` states the seam rule once — a target belongs to the document of the token
+  *after* its input, a block's last target to the next block's first document — and `sample_composition` counts the
+  documents, works and scored positions per register from those identifiers, listing every register the *side* holds and
+  printing an explicit zero row for the ones the cap never reached. It lands in the report's top-level `evaluation_sample`
+  block, deliberately outside `protocol_digest`: it describes text the hashed fields already fix, so stating it cannot make
+  a future run incomparable with the thirty measured ones. Recounting E2612 arm T's pack through the run's own code path
+  reproduces E2633's manual read (science 45.2 %, prose 41.9 %, mathematics 7.0 %, technology 5.8 %, **medicine 0.0 %** of
+  scored positions; 34 documents and **25 works against the side's 62**) and the published pooled loss to the last digit.
+  `work_losses` carries the same block and fixes the mislabel that caused E2633's deviation 2: `works` is what reached the
+  pack, `works_on_side` is what the side holds.
+- **Two documentation gates, both written after this session produced the failures by hand.** A numeric census count in
+  an owner document is checked against the directories on disk and against the parser's own command list, and the owners
+  are named (K-013's mechanism — it found two stale counts the same day it landed); and a record with a `## Results`
+  section whose status line still reads *preregistered* fails, which is the same drift one level down, caught three times
+  in one session.
+
 ### 2026-11-03 (this session) — a run declares its optimizer recipe, and can be measured along its own curve
 
 **Measured**
