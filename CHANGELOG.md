@@ -107,6 +107,18 @@ capability is implemented or still planned.
   reading is P2's failure — a 12,000,000-character fit does not beat a 4,000,000-character one at 4,096 identifiers
   (2.126855 against the best small fit's 2.126521), so compression is saturated at the identifier count rather than at the
   sample size. Nothing here moves a default; adoption is a decision record's job.
+- **E2634: four times the items on the arm pair E2629 could not rank — outcome G-a, and the qualification is the
+  finding.** 745 continuation passages per instrument, the most this corpus's held-out works support (the builder
+  refused 220 science items and yielded 172; 130 technology, 120). One of six readings separates both material pairs
+  under Holm — `context_pmi_permuted` at p = 0.013718 and 0.003658, discordant items spread over 24 and 26 works with no
+  work above 12 % — and it is the reading whose untrained floor is 0.3812, which E2627 disqualified because a permuted
+  span is off-limits to a random network for statistical reasons. Among the readings whose floor sits at chance the
+  closest p went from 0.049 to 0.031539 against a 0.016667 step: roughly the √n improvement theory predicts, still a
+  factor of two short, and clearing it would need 1,700–2,000 items the works cannot supply. `continuation_pmi_easy` is
+  separately shown to be **saturated rather than undersampled** (0.9879 against 0.9758 leaves 19 discordant items to
+  argue over), and the unchanged minimal-pair control reproduced E2629's inversion exactly (ρ = −0.866). No instrument
+  becomes an arm-ranking instrument on this evidence; what the campaign gains is the bound, and E2629's Z-d now has a
+  measured reason attached to it instead of a verdict.
 - **E2633's reproduction block was corrected, and the corrected command was executed.** As committed it passed four
   options `scripts/paired_loss_test.py` has never accepted and omitted the `--protocol` it requires, so the record's
   promise that a reader could recompute its numbers was false while its numbers were right. Re-run on 2026-11-04 it wrote

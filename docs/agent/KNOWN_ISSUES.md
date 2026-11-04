@@ -3,7 +3,13 @@
 Real problems with the current state, including the ones that are only
 inconvenient. An empty file here would mean nobody has looked.
 
-Last reviewed: 2026-11-04, later in the day (**K-033 closed** — a run's report now states the sample its whole-pack figure
+Last reviewed: 2026-11-04, latest (**E2634 measured — G-a, qualified**: at 745 items one continuation reading separates
+both material arm pairs under Holm and its untrained floor is 0.3812, so it is the disqualified reading; among the
+floor-passing ones the best p went 0.049 → 0.031539 against a 0.016667 step, and the corpus cannot supply the ~1,700
+items that would clear it — **K-034 and K-035 filed** from the two gaps that measurement exposed; **ADR-0051 adopted**
+the space-prefixed pre-tokenizer as the rule a new fit uses when its caller names none, pinned the artifact format's
+unrecorded-rule fallback to `LEGACY_DEFAULT_PRE_TOKENIZER`, and made a protocol that fits a vocabulary declare its
+rule); before that 2026-11-04, later in the day (**K-033 closed** — a run's report now states the sample its whole-pack figure
 is pooled over, verified by recounting E2612 arm T's held-out pack and matching E2633's manual read to the last digit, with
 medicine printed as an explicit zero row; **K-030 item 3 closed** by [E2631](../../experiments/E2631/record.md)'s **N-b** —
 the vector weight-decay exemption measured against its own control, Δ(O1) −0.003499 and Δ(whole pack) −0.003606, both inside
@@ -990,6 +996,41 @@ filed.
 
 **Status:** closed 2026-11-04. The disclosure rule lives in `docs/internal/experiments/README.md`; the field lives in
 the report.
+
+### K-034 — The arm-pair analysis prints outcome letters that belong to the records it was written for
+
+**Impact:** Medium for the records, low for the numbers. Found while writing E2634, which preregistered **G-a…G-d** and
+was reported a `Z-a` by the tool.
+
+`scripts/analyse_arm_pairs.py` and `scripts/analyse_probe_sensitivity.py` embed the outcome vocabulary of E2626, E2629
+and E2627 — per-instrument verdicts `S-a`/`S-b`/`S-c` and a family-level `Z-a`. Those letters are a record's property:
+the rules that produce them were declared in that record before its run. A shared tool printing them means a second
+record with different declared rules is reported under the first record's outcome space, and the mapping has to be
+explained in prose — which is exactly what E2634's deviation 1 does. The numbers themselves are unaffected; the labels
+are a contract, and a contract the tool owns is a contract the record did not sign.
+
+**What would close it:** the runners take the outcome vocabulary from the record (a declared list of letter → condition
+pairs, or no letter at all and only the statistics), and a test asserts the printed verdict names come from the
+declaration rather than from a constant in the script.
+
+**Status:** open, measured 2026-11-04 by E2634.
+
+### K-035 — A probe's per-item rows identify a document hash, not a work, so a clustering claim needs a rebuild
+
+**Impact:** Medium. Every "how much of this separation is one book?" question — the question E2633 showed is the right
+one to ask — currently costs a re-run of the item builder to answer.
+
+The outcome rows are `[identifier, verdict]`, and `identifier` for the same-region items is `ctx-<register>--<hash>`:
+the register is legible, the work is not. `ContextItem` knows its `document`, and the digest binds the whole set, so
+the mapping is recoverable — E2634 rebuilt it, matched the declared `b48c01eb…` digest, and reported that its two
+separations spread over 24 and 26 of the pack's works with no work carrying more than 12 % — but that is a second
+command over a 149 MB snapshot for a number that should fall out of the artifact itself.
+
+**Why the row layout was not simply changed:** it is the layout K-032's compact form encodes and three measured records
+cite, so a widened row is a format decision, not an edit. The candidate is one more shared per-item listing beside the
+existing one — the work of each identifier, digested like the rest — which leaves every committed extract readable.
+
+**Status:** open, measured 2026-11-04 by E2634.
 
 ## Resolved
 
