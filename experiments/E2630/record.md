@@ -1,6 +1,7 @@
 # E2630 — H17 at E2614's own seeds: does the space-prefixed gain survive more than one draw on this host?
 
-**Status:** preregistered — no number in this record was read before it was committed. **Type:** Research experiment,
+**Status:** measured — **Y2-a.** Preregistered at 2026-11-03T19:56:53Z (`94b1df4`) with no number read before it was
+committed; the five draws were scored and recorded at 2026-11-03T22:47:44Z (`08cfc76`). **Type:** Research experiment,
 **preregistered**. It trains the cell [E2625](../E2625/record.md) and [E2628](../E2628/record.md) measured at further
 seeds, on the machine that already holds every control.
 **Protocol file:** [`configs/experiments/E2625-space-prefixed-equal-updates-and-documents.toml`](../../configs/experiments/E2625-space-prefixed-equal-updates-and-documents.toml),

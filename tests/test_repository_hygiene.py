@@ -878,3 +878,36 @@ def test_each_census_owner_states_the_count_its_thing_actually_has(
                         f"{owner}:{number} says {stated} {kind}; counted {counts[kind]} ({examples[kind]})"
                     )
     assert not stale, "a census count in documentation has gone stale:\n  " + "\n  ".join(stale)
+
+
+def test_a_record_status_matches_whether_its_results_are_written(
+    tracked_files: list[Path],
+) -> None:
+    """A record's **Status:** line has to match the sections it actually carries.
+
+    The convention is that `## Results` is added by the commit that reads the run, and the status above it is the
+    promise about what was known before the record was committed. E2630, E2631 and E2633 each spent time in the
+    mismatch — results written, status still reading "preregistered" — which is the defect K-013 tracks for counts,
+    one level down: a document describing itself as something it has stopped being. Both spellings are read, because
+    the seven earliest records predate the bold form and use a list item.
+    """
+    mismatched: list[str] = []
+    for path in tracked_files:
+        if not path.match("experiments/*/record.md"):
+            continue
+        text = (REPO_ROOT / path).read_text(encoding="utf-8")
+        has_results = re.search(r"^## Results", text, re.MULTILINE) is not None
+        declared = re.search(r"^(?:\*\*Status:\*\*|- Status:)\s*([a-z][a-z-]*)", text, re.MULTILINE)
+        if declared is None:
+            mismatched.append(f"{path}: carries no Status line to check")
+            continue
+        state = declared.group(1)
+        if has_results and state == "preregistered":
+            mismatched.append(
+                f"{path}: has a ## Results section and still calls itself preregistered"
+            )
+        if not has_results and state != "preregistered":
+            mismatched.append(f"{path}: claims {state!r} but carries no ## Results section")
+    assert not mismatched, "a record's status disagrees with its own sections:\n  " + "\n  ".join(
+        mismatched
+    )
