@@ -1949,6 +1949,24 @@ def test_a_run_states_which_documents_its_held_out_sample_reached(tmp_path: Path
     assert sum(shares) == pytest.approx(1.0, abs=0.001)
 
 
+def test_a_report_carries_the_free_memory_the_machine_had_at_launch(tmp_path: Path) -> None:
+    """Cost paragraphs used to be typed from an operator's recollection of a `tasklist` window.
+
+    The report now carries the reading itself, with the interface that answered: bytes and mebibytes when the
+    platform speaks, and a named absence when it does not — never an estimate standing in for either.
+    """
+    plan = _plan(_root(tmp_path), tmp_path / "work-memory", max_steps=4, eval_every=4)
+    report = run_experiment(plan)
+
+    resources = report["resources"]
+    launch = resources["available_at_launch"]
+    assert launch["source"]
+    assert resources["source"]
+    if launch["available_bytes"] is not None:
+        assert 0 < launch["available_bytes"] <= launch["total_bytes"]
+        assert launch["available_mebibytes"] == round(launch["available_bytes"] / 1_048_576, 1)
+
+
 def test_the_stated_sample_does_not_move_the_protocol_digest(tmp_path: Path) -> None:
     """The field describes text the hashed conditions already fix, so it cannot make a new run incomparable.
 

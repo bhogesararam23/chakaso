@@ -9,6 +9,7 @@ rather than a crash or a fabricated zero.
 from __future__ import annotations
 
 import platform
+from pathlib import Path
 
 import pytest
 
@@ -108,3 +109,101 @@ def test_the_windows_reader_refuses_a_platform_that_has_no_win_dll(
 
     assert usage.source == "windows:not-a-windows-build"
     assert not usage.measured
+
+
+_MEMINFO = """MemTotal:       16374520 kB
+MemFree:          912340 kB
+MemAvailable:    5242880 kB
+Buffers:          262144 kB
+SwapCached:            0 kB
+HugePages_Total:       0
+Garbage:          not a number kB
+"""
+
+
+def test_meminfo_parsing_reads_kibibytes_as_bytes_and_skips_what_is_not_a_number() -> None:
+    values = process_memory._meminfo_values(_MEMINFO)
+
+    assert values["MemAvailable"] == 5242880 * 1024
+    assert values["MemTotal"] == 16374520 * 1024
+    assert values["MemFree"] == 912340 * 1024
+    # A line whose first token is not a number is skipped rather than read as zero, because "this field
+    # exists and is 0" and "this field did not parse" are different claims and the second one must not
+    # become a measurement. (The kB assumption is fine for the two fields this module reads; the
+    # HugePages_* counters are page counts, which is why nothing else asks for them.)
+    assert "Garbage" not in values
+    assert values["HugePages_Total"] == 0
+
+
+def test_the_available_reading_names_its_interface_and_serialises_both_units(
+    tmp_path: Path,
+) -> None:
+    path = tmp_path / "meminfo"
+    path.write_text(_MEMINFO, encoding="utf-8")
+
+    reading = process_memory._proc_meminfo_availability(path)
+
+    assert reading.measured
+    assert reading.available_bytes == 5242880 * 1024
+    assert reading.source == "linux:/proc/meminfo"
+    assert reading.as_dict()["available_mebibytes"] == 5120.0
+    assert reading.as_dict()["total_mebibytes"] == round(16374520 * 1024 / 1_048_576, 1)
+    # MemFree is not the figure a run needs: on a machine that has been up for a week it ignores what the
+    # kernel can reclaim, which is why this module asks for MemAvailable by name.
+    assert reading.available_bytes != 912340 * 1024
+
+
+def test_an_unreadable_meminfo_is_a_stated_absence(tmp_path: Path) -> None:
+    reading = process_memory._proc_meminfo_availability(tmp_path / "does-not-exist")
+
+    assert not reading.measured
+    assert reading.available_bytes is None
+    assert reading.source == "linux:meminfo-unreadable"
+
+
+def test_the_availability_reader_refuses_a_platform_with_no_win_dll(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(process_memory.sys, "platform", "linux")
+
+    reading = process_memory._windows_availability()
+
+    assert reading.source == "windows:not-a-windows-build"
+    assert not reading.measured
+
+
+def test_a_failing_availability_call_is_reported_as_a_failure_not_a_zero(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    def _no_kernel32() -> process_memory.MemoryAvailability:
+        message = "no kernel32"
+        raise OSError(message)
+
+    monkeypatch.setattr(process_memory, "_windows_availability_reading", _no_kernel32)
+
+    reading = process_memory._windows_availability()
+
+    assert reading.available_bytes is None
+    assert reading.source == "windows:call-failed:OSError"
+
+
+def test_an_unsupported_platform_answers_with_a_well_formed_absence(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr("chakaso.core.process_memory.platform.system", lambda: "Plan9")
+
+    reading = process_memory.available_memory()
+
+    assert not reading.measured
+    assert reading.source == "unsupported:Plan9"
+
+
+def test_the_running_machine_reports_a_sane_available_figure() -> None:
+    """On the two platforms this module asks, the figure has to exist and sit inside the machine."""
+    reading = process_memory.available_memory()
+
+    if platform.system() not in {"Linux", "Windows"}:
+        assert not reading.measured
+        return
+    assert reading.measured, f"the machine would not answer: {reading.source}"
+    assert 0 < reading.available_bytes <= reading.total_bytes

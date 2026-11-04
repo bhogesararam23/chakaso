@@ -1664,6 +1664,12 @@ def run_experiment(plan: ExperimentPlan, *, verbose: bool = False) -> dict[str, 
     Every value in the returned mapping was produced by this call: no field is a default, a target or an
     expectation. A missing dependency fails here with a named error rather than yielding a partial report.
     """
+    from chakaso.core.process_memory import available_memory
+
+    # Read before the corpus is materialised, because that is the moment the question is about. Records have
+    # been writing "this machine had 5.1 GB free" from the operator's recollection of a `tasklist` run; the
+    # report can carry the reading itself.
+    memory_at_launch = available_memory()
     work = plan.work_dir
     work.mkdir(parents=True, exist_ok=True)
     if not torch.cuda.is_available() and verbose:
@@ -1993,7 +1999,12 @@ def run_experiment(plan: ExperimentPlan, *, verbose: bool = False) -> dict[str, 
         "samples": samples,
         "generation": generation,
         "latency": latency,
-        "resources": memory.as_dict(),
+        "resources": {
+            **memory.as_dict(),
+            # Read before the corpus was packed, from the same call the peak uses, so a record's cost
+            # paragraph quotes a measurement. `source` says which interface answered, or that none did.
+            "available_at_launch": memory_at_launch.as_dict(),
+        },
         "timings": prepared.timings | {"transformer_wall_clock_s": round(wall, 2)},
         "environment": artifact.environment,
         "plan": {

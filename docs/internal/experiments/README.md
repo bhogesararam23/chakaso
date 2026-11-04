@@ -113,7 +113,10 @@ identifier), and tokenizer version.
 ## Environment
 
 Hardware, operating system, Python version, dependency versions, and whether
-accelerators were used.
+accelerators were used. A run's report also carries `resources.available_at_launch` — what the machine
+reported free before the corpus was packed, with the interface that answered — so a cost paragraph quotes a
+measurement instead of an operator's recollection, and says `not measured: <source>` when the platform
+would not answer. Neither number is ever filled in with an estimate.
 
 ## Reproducibility
 

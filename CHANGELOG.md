@@ -152,6 +152,14 @@ capability is implemented or still planned.
   its record and re-derived it afterwards by hand, which is the right discipline and the wrong place to put it: an
   instrument whose identity rests on an author remembering to check is an instrument that will eventually not be
   checked. Three tests cover both directions — the declared digest passes, a wrong one refuses and leaves no output file.
+- **A run records how much memory the machine had before it started spending.**
+  `chakaso.core.process_memory.available_memory()` reads `MemAvailable` on Linux and `ullAvailPhys` on
+  Windows — deliberately not `MemFree`, which on a machine that has been up for a week says nothing about whether a
+  run will fit — and `run_experiment` writes it into the report as `resources.available_at_launch`, bytes and
+  mebibytes with the interface that answered named beside it. Experiment records have been stating "this machine had
+  5.1 GB free when this record was written" from an operator's recollection of a task-manager window; from now on the
+  number is in the artifact a run writes. An unsupported platform is a well-formed absence with a named source, never
+  an estimate: seven tests cover the parse, both platform guards, both failure paths and the live reading.
 - **Two documentation gates, both written after this session produced the failures by hand.** A numeric census count in
   an owner document is checked against the directories on disk and against the parser's own command list, and the owners
   are named (K-013's mechanism — it found two stale counts the same day it landed); and a record with a `## Results`
