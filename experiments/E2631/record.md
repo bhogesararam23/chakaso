@@ -1,6 +1,7 @@
 # E2631 — does withholding weight decay from the norm scales and biases change anything?
 
-**Status:** preregistered — committed before the arm runs.
+**Status:** measured — **N-b.** Preregistered at 2026-11-03T22:41:57Z (`a5cde40`) and the arm started 38 seconds later
+at 22:42:35Z, so the rules were committed before the run existed.
 **Type:** Research experiment, **preregistered**. One training arm; its control is already on disk.
 **Protocol file:** [`configs/experiments/E2631-vector-decay-exemption.toml`](../../configs/experiments/E2631-vector-decay-exemption.toml),
 read by `chakaso experiment study --protocol … --seeds 7`. It differs from
@@ -127,3 +128,103 @@ QPYTHON=.venv-nn/Scripts/python.exe
 The second command is the descriptive reading: it refuses to compute anything until each arm reproduces the
 denominators and the pooled bits per character its own committed report publishes, so the interval it prints is
 measured on the text the runs were scored on.
+
+## Results (added 2026-11-04)
+
+**Outcome: N-b — nothing is measurable.** Both readings fall inside their own tie margins, on the same side, and the
+exemption stays off by default on a measurement rather than on the size of the tensor group. K-030 item 3 closes.
+
+The arm ran 2026-11-03T22:42:35Z → 23:38:28Z on this host — 3,353 s, inside the 3,081–3,536 s the three E2630 arms
+measured on this machine and well under E2626's 83 minutes, which ran alongside other work. It truncated at the
+2,400-update ceiling with validation still falling, exactly as its control did; both numbers are floors.
+
+| Reading | control (E2626 seed 7) | exemption (E2631 seed 7) | Δ = control − exemption | tie margin | verdict |
+| --- | --- | --- | --- | --- | --- |
+| **O1** — equal-weight mean of the five partitions (primary) | 2.021357 | 2.024857 | **−0.003499** | 0.0062 | inside |
+| **Whole pack** (secondary) | 2.055447 | 2.059054 | **−0.003606** | 0.00933 | inside |
+| Five-partition aggregate weighted by scored characters, which is what the declared `--aggregate o1=` computes | 2.049605 | 2.054224 | −0.004619 | — | descriptive; see deviation 1 |
+
+Both point estimates put the exemption *worse*, by about a third of the margin on each measure, and neither reaches
+its margin. N-b is the rule that fires, and it fires without needing the third rule: no measure is material, so
+nothing has to be weighed against anything.
+
+### Per partition, because the mean hides where the movement is
+
+| Partition | control | exemption | Δ (control − exemption) |
+| --- | --- | --- | --- |
+| mathematics | 2.577769 | 2.597970 | **−0.020200** |
+| medicine | 1.838141 | 1.834759 | +0.003383 |
+| prose | 1.839520 | 1.842023 | −0.002503 |
+| science | 1.948624 | 1.946925 | +0.001699 |
+| technology | 1.902732 | 1.902607 | +0.000125 |
+
+The entire O1 movement is carried by mathematics: −0.0202 there, with the other four inside ±0.0034 and two of them
+positive. 0.0202 is 1.64 times the 0.01232 seed deviation E2614 measured for the mathematics partition, so a single
+seed does not resolve it — but it is the only register where anything moved at all, and a future test of this option
+should be a test on mathematics rather than another reading of the mean.
+
+### The paired reading, declared descriptive
+
+The tool refused nothing: both arms reproduced their committed denominators (254,976 positions, 535,282 characters)
+and their pooled metric to better than 1e-9, and the pack is the runs' own — corpus `312571f9fa8351a8`, split
+`adf650435c3a9068`, vocabulary `434debe82f949347`, 996 blocks over 25 held-out works.
+
+Paired mean **−0.003606**, 95 % cluster interval over works **[−0.014208, +0.001682]** — includes zero. Thirteen of
+the 25 works favour the control and twelve the exemption, exact sign test **p = 0.50000**. Leave-one-out range
+**[−0.004653, +0.000460]** — removing one work flips the sign. The interval is four times the point estimate, and one
+book does most of the work: `mathematics-pg302` is 0.133149 bits per character better under the control, while the
+largest swing the other way is `science-pg39975` at +0.007572.
+
+That is the signature E2633 named for a difference that is a draw rather than a property of the arm: a pair separated
+by its data keeps its sign under every leave-one-out, and a pair separated by its initialisation does not. Two arms
+that differ by 5,888 exempted parameters behave like the second.
+
+### The four predictions
+
+* **P1 — held.** N-b fired, and not narrowly: 0.0035 and 0.0036 against margins of 0.0062 and 0.00933.
+* **P2 — failed.** The point estimates favour the *control*, not the exemption, on both readings and on the paired
+  mean. The mechanism P2 reached for — a decayed norm scale shrinks, and a smaller norm learns more slowly — is not
+  disproved at 0.17 % of the parameters, it is unmeasurable there, and the sign of what little moved runs the other
+  way.
+* **P3 — failed, twice.** Converted at the runs' own 2.0993 characters per identifier (identical in both reports,
+  because both score the same pack), the validation curves differ by more than ±0.01 bits per character at two of the
+  twelve evaluations — −0.010910 at step 400 and −0.010561 at step 2,200 — and the difference changes sign at step 600
+  (+0.001480) and step 1,200 (+0.003460). The curves cross, which is the result this record called interesting if it
+  happened. Step 0 is identical to the last digit (8.3717606 both), as it must be for one seed and one initialisation.
+* **P4 — held, with a caveat about the digest rather than the run.** The protocol digests differ
+  (`753cf5b64581` against `caa7db0a72ab`), and walking the digest's own input finds three differing keys: `experiment`
+  and `plan.experiment_id`, which are the record's *name* and are inside the digest, and then
+  `plan.weight_decay_excludes_vectors` with `transformer.budget.optimizer.decay_applied_to` — the exemption in its two
+  places. So the option is visible to the protocol identity, which is what ADR-0049 asked for. The first two say
+  something a reader comparing two records needs: a digest equality is only meaningful *within* one experiment id,
+  because the id is part of it.
+
+### What closes, and what does not
+
+K-030 item 3 closes with the exemption **left off by default**, on this measurement. The option is not removed and not
+recommended: `weight_decay_excludes_vectors` stays expressible and declared, for anyone training at a scale where the
+embedding and attention stack do not dwarf 5,888 parameters. ADR-0049's careful refusal to claim the exemption helps is
+now a claim tested once, at 3,413,760 parameters, and the test found nothing.
+
+The comparison itself required one change to the tool: `decay_applied_to` had to be moved into the list of conditions
+an arm is *allowed* to differ in (commit d970e8b). It had been in neither the matched list nor the declarable list, so
+before this record a comparison of two arms that differ in decay could only refuse or lie. With it declarable,
+`compare_arms` reports `all_conditions_matched: true` and names the single declared difference.
+
+### Deviations
+
+1. **The declared command's `--aggregate o1=` does not compute O1.** `compare_arms` weights a named aggregate by
+   scored characters — the rule K-027 established after a population-weighted aggregate moved an effect size by four
+   and a half margins — while O1 is the *equal-weight* mean of the five partition figures. The tool's aggregate gives
+   2.049605 and 2.054224, the declared objective gives 2.021357 and 2.024857; both are inside their margins, so the
+   outcome letter is unaffected, but the record named a quantity after a tool flag that computes a different one. The
+   verdict is read on O1 as the preregistration declared it. What should follow is an equal-weight aggregate in
+   `compare_arms`, so the primary objective of six records is computable from the reports rather than by hand.
+2. **The treatment's committed extract cannot state its sample.** `experiments/E2631/E2631-report.json` carries no
+   `evaluation_sample` block, because the arm was launched 90 minutes before that field landed in `prepare_corpus`. The
+   composition of this pack is E2633's measured read of the identical pack — science 46.6 %, prose 41.5 %, mathematics
+   6.0 %, technology 5.9 %, **medicine 0 %** — since both arms score vocabulary `434debe82f949347` over the same capped
+   sample at the same seed. It is recorded as a deviation rather than patched into a report that was not written by the
+   code that would write it.
+3. Nothing was substituted. The pair, the seed, the resample count, the denominators, the margins and the four rules
+   are the ones committed before the run; the arm ran the command in the Reproduction block and nothing else.

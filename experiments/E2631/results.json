@@ -1,0 +1,305 @@
+{
+  "aggregates": {
+    "o1": {
+      "difference_from_reference": {
+        "E2631": 0.004619
+      },
+      "partitions": [
+        "prose-",
+        "science-",
+        "technology-",
+        "medicine-",
+        "mathematics-"
+      ],
+      "values": {
+        "E2626": 2.049605,
+        "E2631": 2.054224
+      },
+      "weighting": "metrics.characters_scored"
+    }
+  },
+  "all_conditions_matched": true,
+  "arms": [
+    "E2626",
+    "E2631"
+  ],
+  "declared_differences": {
+    "decay_applied_to": {
+      "equal": false,
+      "field": "decay_applied_to",
+      "values": {
+        "E2626": "every parameter, norm scales included",
+        "E2631": "2-D parameters only; 1-D norm scales and biases exempt"
+      }
+    }
+  },
+  "matched_conditions": {
+    "architecture": {
+      "equal": true,
+      "field": "architecture",
+      "values": {
+        "E2626": {
+          "context_length": 256,
+          "d_model": 256,
+          "dropout": 0.0,
+          "feedforward_dim": 640,
+          "initialization_std": 0.02,
+          "num_heads": 8,
+          "num_layers": 4,
+          "rope_theta": 10000.0,
+          "tie_embeddings": true,
+          "vocab_size": 4096
+        },
+        "E2631": {
+          "context_length": 256,
+          "d_model": 256,
+          "dropout": 0.0,
+          "feedforward_dim": 640,
+          "initialization_std": 0.02,
+          "num_heads": 8,
+          "num_layers": 4,
+          "rope_theta": 10000.0,
+          "tie_embeddings": true,
+          "vocab_size": 4096
+        }
+      }
+    },
+    "corpus_fingerprint": {
+      "equal": true,
+      "field": "corpus_fingerprint",
+      "values": {
+        "E2626": "312571f9fa8351a8",
+        "E2631": "312571f9fa8351a8"
+      }
+    },
+    "effective_batch_size": {
+      "equal": true,
+      "field": "effective_batch_size",
+      "values": {
+        "E2626": 32,
+        "E2631": 32
+      }
+    },
+    "learning_rate": {
+      "equal": true,
+      "field": "learning_rate",
+      "values": {
+        "E2626": 0.0006,
+        "E2631": 0.0006
+      }
+    },
+    "max_steps": {
+      "equal": true,
+      "field": "max_steps",
+      "values": {
+        "E2626": 2400,
+        "E2631": 2400
+      }
+    },
+    "parameter_count": {
+      "equal": true,
+      "field": "parameter_count",
+      "values": {
+        "E2626": 3413760,
+        "E2631": 3413760
+      }
+    },
+    "per_partition_tokens_and_characters": {
+      "equal": true,
+      "field": "per_partition_tokens_and_characters",
+      "values": {
+        "mathematics-": {
+          "E2626": [
+            250624,
+            510290
+          ],
+          "E2631": [
+            250624,
+            510290
+          ]
+        },
+        "medicine-": {
+          "E2626": [
+            46592,
+            101008
+          ],
+          "E2631": [
+            46592,
+            101008
+          ]
+        },
+        "prose-": {
+          "E2626": [
+            252672,
+            539534
+          ],
+          "E2631": [
+            252672,
+            539534
+          ]
+        },
+        "science-": {
+          "E2626": [
+            251392,
+            538564
+          ],
+          "E2631": [
+            251392,
+            538564
+          ]
+        },
+        "technology-": {
+          "E2626": [
+            253184,
+            547586
+          ],
+          "E2631": [
+            253184,
+            547586
+          ]
+        }
+      }
+    },
+    "schedule": {
+      "equal": true,
+      "field": "schedule",
+      "values": {
+        "E2626": "cosine",
+        "E2631": "cosine"
+      }
+    },
+    "seed": {
+      "equal": true,
+      "field": "seed",
+      "values": {
+        "E2626": 7,
+        "E2631": 7
+      }
+    },
+    "split_fingerprint": {
+      "equal": true,
+      "field": "split_fingerprint",
+      "values": {
+        "E2626": "adf650435c3a9068",
+        "E2631": "adf650435c3a9068"
+      }
+    },
+    "split_seed": {
+      "equal": true,
+      "field": "split_seed",
+      "values": {
+        "E2626": 7,
+        "E2631": 7
+      }
+    },
+    "test_characters_scored": {
+      "equal": true,
+      "field": "test_characters_scored",
+      "values": {
+        "E2626": 535282,
+        "E2631": 535282
+      }
+    },
+    "test_positions_scored": {
+      "equal": true,
+      "field": "test_positions_scored",
+      "values": {
+        "E2626": 254976,
+        "E2631": 254976
+      }
+    },
+    "tokenizer_fingerprint": {
+      "equal": true,
+      "field": "tokenizer_fingerprint",
+      "values": {
+        "E2626": "434debe82f949347",
+        "E2631": "434debe82f949347"
+      }
+    },
+    "tokenizer_size": {
+      "equal": true,
+      "field": "tokenizer_size",
+      "values": {
+        "E2626": 4096,
+        "E2631": 4096
+      }
+    }
+  },
+  "partitions": {
+    "mathematics-": {
+      "difference_from_reference": {
+        "E2631": 0.0202
+      },
+      "scored_by": [
+        "E2626",
+        "E2631"
+      ],
+      "values": {
+        "E2626": 2.5777694767868824,
+        "E2631": 2.5979698180675257
+      }
+    },
+    "medicine-": {
+      "difference_from_reference": {
+        "E2631": -0.003383
+      },
+      "scored_by": [
+        "E2626",
+        "E2631"
+      ],
+      "values": {
+        "E2626": 1.8381413720270459,
+        "E2631": 1.8347587306750897
+      }
+    },
+    "prose-": {
+      "difference_from_reference": {
+        "E2631": 0.002503
+      },
+      "scored_by": [
+        "E2626",
+        "E2631"
+      ],
+      "values": {
+        "E2626": 1.839519816481525,
+        "E2631": 1.84202257853291
+      }
+    },
+    "science-": {
+      "difference_from_reference": {
+        "E2631": -0.001699
+      },
+      "scored_by": [
+        "E2626",
+        "E2631"
+      ],
+      "values": {
+        "E2626": 1.9486239051907785,
+        "E2631": 1.9469249119891685
+      }
+    },
+    "technology-": {
+      "difference_from_reference": {
+        "E2631": -0.000125
+      },
+      "scored_by": [
+        "E2626",
+        "E2631"
+      ],
+      "values": {
+        "E2626": 1.9027317680869595,
+        "E2631": 1.9026065462899033
+      }
+    }
+  },
+  "reference": "E2626",
+  "whole_pack_bits_per_character": {
+    "difference_from_reference": {
+      "E2631": 0.003606
+    },
+    "values": {
+      "E2626": 2.05544739454246,
+      "E2631": 2.0590538547637802
+    }
+  }
+}

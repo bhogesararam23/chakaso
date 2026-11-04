@@ -1,0 +1,468 @@
+{
+  "arms": {
+    "control": {
+      "characters_scored": 535282,
+      "checksum": "2d880a1601175f57df48a136d103c683865b2aee3b421fb78e54ed2b23dd69bb",
+      "corpus_fingerprint": "312571f9fa8351a8",
+      "documents": 34,
+      "path": "E2626-decoder.pt",
+      "pooled_bits_per_character": 2.0554473945424596,
+      "positions_scored": 254976,
+      "step": 2400,
+      "tokenizer_fingerprint": "434debe82f949347",
+      "works": {
+        "mathematics-pg22062": {
+          "bits_per_character": 2.563137835069489,
+          "characters": 15654.0,
+          "documents": 1.0,
+          "nats": 27811.393629976345
+        },
+        "mathematics-pg302": {
+          "bits_per_character": 4.183882009421494,
+          "characters": 16291.0,
+          "documents": 1.0,
+          "nats": 47244.64968943596
+        },
+        "prose-pg17981": {
+          "bits_per_character": 1.7997487685613363,
+          "characters": 16072.0,
+          "documents": 1.0,
+          "nats": 20049.671890806785
+        },
+        "prose-pg25971": {
+          "bits_per_character": 1.6639667960539808,
+          "characters": 16163.0,
+          "documents": 1.0,
+          "nats": 18641.982236279437
+        },
+        "prose-pg26088": {
+          "bits_per_character": 1.7287240296992465,
+          "characters": 16240.0,
+          "documents": 1.0,
+          "nats": 19459.7454393527
+        },
+        "prose-pg31935": {
+          "bits_per_character": 3.890996694507568,
+          "characters": 15572.0,
+          "documents": 1.0,
+          "nats": 41998.203923635156
+        },
+        "prose-pg35382": {
+          "bits_per_character": 1.7694755583172643,
+          "characters": 16163.0,
+          "documents": 1.0,
+          "nats": 19824.032549151278
+        },
+        "prose-pg36028": {
+          "bits_per_character": 1.8315394629162083,
+          "characters": 15978.0,
+          "documents": 1.0,
+          "nats": 20284.493055748637
+        },
+        "prose-pg3822": {
+          "bits_per_character": 1.8357540797815917,
+          "characters": 14337.0,
+          "documents": 1.0,
+          "nats": 18243.083601099264
+        },
+        "prose-pg47178": {
+          "bits_per_character": 1.683642619797409,
+          "characters": 16196.0,
+          "documents": 1.0,
+          "nats": 18900.92853818684
+        },
+        "prose-pg58791": {
+          "bits_per_character": 1.7178305238233218,
+          "characters": 15504.0,
+          "documents": 1.0,
+          "nats": 18460.75829369029
+        },
+        "prose-pg70101": {
+          "bits_per_character": 2.0322788344221085,
+          "characters": 16114.0,
+          "documents": 1.0,
+          "nats": 22699.281698299194
+        },
+        "prose-pg78424": {
+          "bits_per_character": 1.8630620554574229,
+          "characters": 47997.0,
+          "documents": 3.0,
+          "nats": 61982.18399689655
+        },
+        "prose-pg9403": {
+          "bits_per_character": 1.8959128011028477,
+          "characters": 15610.0,
+          "documents": 1.0,
+          "nats": 20513.828623809095
+        },
+        "science-pg36261": {
+          "bits_per_character": 1.9012164385057493,
+          "characters": 16248.0,
+          "documents": 1.0,
+          "nats": 21411.985081619845
+        },
+        "science-pg36504": {
+          "bits_per_character": 2.1836270741362487,
+          "characters": 15714.0,
+          "documents": 1.0,
+          "nats": 23784.316761658527
+        },
+        "science-pg37602": {
+          "bits_per_character": 2.3289308381514093,
+          "characters": 15252.0,
+          "documents": 1.0,
+          "nats": 24621.1792074907
+        },
+        "science-pg39975": {
+          "bits_per_character": 1.8174151535550986,
+          "characters": 31407.0,
+          "documents": 2.0,
+          "nats": 39564.53450656735
+        },
+        "science-pg44638": {
+          "bits_per_character": 2.004828574203275,
+          "characters": 29379.0,
+          "documents": 2.0,
+          "nats": 40826.27098047343
+        },
+        "science-pg46764": {
+          "bits_per_character": 2.144650940305786,
+          "characters": 64107.0,
+          "documents": 4.0,
+          "nats": 95298.82195024796
+        },
+        "science-pg54376": {
+          "bits_per_character": 1.539154849525957,
+          "characters": 14432.0,
+          "documents": 1.0,
+          "nats": 15396.935706295422
+        },
+        "science-pg58695": {
+          "bits_per_character": 1.8644183637161158,
+          "characters": 16239.0,
+          "documents": 1.0,
+          "nats": 20985.924918498567
+        },
+        "science-pg72936": {
+          "bits_per_character": 1.9005605080815788,
+          "characters": 46849.0,
+          "documents": 3.0,
+          "nats": 61717.3808182285
+        },
+        "technology-pg48826": {
+          "bits_per_character": 1.7536621630765146,
+          "characters": 15918.0,
+          "documents": 1.0,
+          "nats": 19349.060973170985
+        },
+        "technology-pg54193": {
+          "bits_per_character": 2.145048176663069,
+          "characters": 15846.0,
+          "documents": 1.0,
+          "nats": 23560.373082351958
+        }
+      }
+    },
+    "exemption": {
+      "characters_scored": 535282,
+      "checksum": "12eff83f358cb85fb1078dec672f8bae1530729b8500cd254de62b7752be628a",
+      "corpus_fingerprint": "312571f9fa8351a8",
+      "documents": 34,
+      "path": "E2631-decoder.pt",
+      "pooled_bits_per_character": 2.05905385476378,
+      "positions_scored": 254976,
+      "step": 2400,
+      "tokenizer_fingerprint": "434debe82f949347",
+      "works": {
+        "mathematics-pg22062": {
+          "bits_per_character": 2.5577289327378243,
+          "characters": 15654.0,
+          "documents": 1.0,
+          "nats": 27752.70419478725
+        },
+        "mathematics-pg302": {
+          "bits_per_character": 4.3170309985337525,
+          "characters": 16291.0,
+          "documents": 1.0,
+          "nats": 48748.176159098744
+        },
+        "prose-pg17981": {
+          "bits_per_character": 1.8059964076197736,
+          "characters": 16072.0,
+          "documents": 1.0,
+          "nats": 20119.27222358767
+        },
+        "prose-pg25971": {
+          "bits_per_character": 1.6682388238121002,
+          "characters": 16163.0,
+          "documents": 1.0,
+          "nats": 18689.843206683785
+        },
+        "prose-pg26088": {
+          "bits_per_character": 1.724272525296358,
+          "characters": 16240.0,
+          "documents": 1.0,
+          "nats": 19409.636144280637
+        },
+        "prose-pg31935": {
+          "bits_per_character": 3.8897090759455963,
+          "characters": 15572.0,
+          "documents": 1.0,
+          "nats": 41984.30577074856
+        },
+        "prose-pg35382": {
+          "bits_per_character": 1.770041516939998,
+          "characters": 16163.0,
+          "documents": 1.0,
+          "nats": 19830.373174827517
+        },
+        "prose-pg36028": {
+          "bits_per_character": 1.8405026481689968,
+          "characters": 15978.0,
+          "documents": 1.0,
+          "nats": 20383.76127939264
+        },
+        "prose-pg3822": {
+          "bits_per_character": 1.8352407651467724,
+          "characters": 14337.0,
+          "documents": 1.0,
+          "nats": 18237.98245933969
+        },
+        "prose-pg47178": {
+          "bits_per_character": 1.6804743433093192,
+          "characters": 16196.0,
+          "documents": 1.0,
+          "nats": 18865.360795492248
+        },
+        "prose-pg58791": {
+          "bits_per_character": 1.7188944853254515,
+          "characters": 15504.0,
+          "documents": 1.0,
+          "nats": 18472.192213307047
+        },
+        "prose-pg70101": {
+          "bits_per_character": 2.0344870158764756,
+          "characters": 16114.0,
+          "documents": 1.0,
+          "nats": 22723.945702088764
+        },
+        "prose-pg78424": {
+          "bits_per_character": 1.863133610845898,
+          "characters": 47997.0,
+          "documents": 3.0,
+          "nats": 61984.56457205853
+        },
+        "prose-pg9403": {
+          "bits_per_character": 1.8942227626727517,
+          "characters": 15610.0,
+          "documents": 1.0,
+          "nats": 20495.54236153877
+        },
+        "science-pg36261": {
+          "bits_per_character": 1.901932267466785,
+          "characters": 16248.0,
+          "documents": 1.0,
+          "nats": 21420.046930194396
+        },
+        "science-pg36504": {
+          "bits_per_character": 2.179709144022835,
+          "characters": 15714.0,
+          "documents": 1.0,
+          "nats": 23741.642217103188
+        },
+        "science-pg37602": {
+          "bits_per_character": 2.3345694634488714,
+          "characters": 15252.0,
+          "documents": 1.0,
+          "nats": 24680.790081999497
+        },
+        "science-pg39975": {
+          "bits_per_character": 1.8098435251767837,
+          "characters": 31407.0,
+          "documents": 2.0,
+          "nats": 39399.70262890926
+        },
+        "science-pg44638": {
+          "bits_per_character": 2.0078248064400848,
+          "characters": 29379.0,
+          "documents": 2.0,
+          "nats": 40887.28616690604
+        },
+        "science-pg46764": {
+          "bits_per_character": 2.140568460313989,
+          "characters": 64107.0,
+          "documents": 4.0,
+          "nats": 95117.41455823749
+        },
+        "science-pg54376": {
+          "bits_per_character": 1.535382008872502,
+          "characters": 14432.0,
+          "documents": 1.0,
+          "nats": 15359.19409440417
+        },
+        "science-pg58695": {
+          "bits_per_character": 1.8760965908778584,
+          "characters": 16239.0,
+          "documents": 1.0,
+          "nats": 21117.375242721406
+        },
+        "science-pg72936": {
+          "bits_per_character": 1.8993196186205983,
+          "characters": 46849.0,
+          "documents": 3.0,
+          "nats": 61677.08510173275
+        },
+        "technology-pg48826": {
+          "bits_per_character": 1.7486357378165165,
+          "characters": 15918.0,
+          "documents": 1.0,
+          "nats": 19293.601825519552
+        },
+        "technology-pg54193": {
+          "bits_per_character": 2.1465914806312445,
+          "characters": 15846.0,
+          "documents": 1.0,
+          "nats": 23577.324131594243
+        }
+      }
+    }
+  },
+  "bootstrap": {
+    "resamples": 2000,
+    "seed": 20261104
+  },
+  "metric_tolerance": 1e-09,
+  "pack": {
+    "blocks": 996,
+    "corpus_fingerprint": "312571f9fa8351a8",
+    "corpus_name": "gutenberg-multiregister-v1",
+    "document_masking": false,
+    "documents": 34,
+    "positions": 254976,
+    "selection_vocabulary_fingerprint": null,
+    "split_fingerprint": "adf650435c3a9068",
+    "vocabulary_fingerprint": "434debe82f949347",
+    "works": 62
+  },
+  "pairs": [
+    {
+      "leave_one_out": {
+        "estimate_without": [
+          -0.0038780516009305215,
+          0.00045984793847937564,
+          -0.0035247032708176688,
+          -0.0035857374812595256,
+          -0.003858581139274582,
+          -0.0037531008378431574,
+          -0.003701127585330541,
+          -0.0034416439430841918,
+          -0.0037198411197110095,
+          -0.0038178387515547525,
+          -0.0036822981754892057,
+          -0.003649860169025781,
+          -0.003954644194276053,
+          -0.0037655573902042935,
+          -0.003696949431500713,
+          -0.0038340305676843687,
+          -0.0035468586949821287,
+          -0.0043032009380623865,
+          -0.0036418976232661464,
+          -0.0046525999576008305,
+          -0.0038109299731191506,
+          -0.0033539234886298622,
+          -0.004071403182311444,
+          -0.003871049740600229,
+          -0.0036693992051162047
+        ],
+        "maximum_without": 0.00045984793847937564,
+        "minimum_without": -0.0046525999576008305,
+        "standard_error": 0.004269475366805989,
+        "works": [
+          "mathematics-pg22062",
+          "mathematics-pg302",
+          "prose-pg17981",
+          "prose-pg25971",
+          "prose-pg26088",
+          "prose-pg31935",
+          "prose-pg35382",
+          "prose-pg36028",
+          "prose-pg3822",
+          "prose-pg47178",
+          "prose-pg58791",
+          "prose-pg70101",
+          "prose-pg78424",
+          "prose-pg9403",
+          "science-pg36261",
+          "science-pg36504",
+          "science-pg37602",
+          "science-pg39975",
+          "science-pg44638",
+          "science-pg46764",
+          "science-pg54376",
+          "science-pg58695",
+          "science-pg72936",
+          "technology-pg48826",
+          "technology-pg54193"
+        ]
+      },
+      "pair": {
+        "first": "control",
+        "second": "exemption"
+      },
+      "published_difference": -0.0036064602213201624,
+      "test": {
+        "bootstrap": {
+          "resamples": 2000,
+          "seed": 20261104
+        },
+        "cluster_means": {
+          "mathematics-pg22062": 0.005408902331664578,
+          "mathematics-pg302": -0.13314898911225814,
+          "prose-pg17981": -0.006247639058437392,
+          "prose-pg25971": -0.004272027758119412,
+          "prose-pg26088": 0.004451504402888551,
+          "prose-pg31935": 0.0012876185619714595,
+          "prose-pg35382": -0.0005659586227335645,
+          "prose-pg36028": -0.008963185252788497,
+          "prose-pg3822": 0.0005133146348192952,
+          "prose-pg47178": 0.003168276488089816,
+          "prose-pg58791": -0.0010639615021297288,
+          "prose-pg70101": -0.0022081814543670752,
+          "prose-pg78424": -7.155538847514187e-05,
+          "prose-pg9403": 0.0016900384300959637,
+          "science-pg36261": -0.0007158289610356139,
+          "science-pg36504": 0.003917930113413792,
+          "science-pg37602": -0.005638625297462063,
+          "science-pg39975": 0.007571628378314932,
+          "science-pg44638": -0.0029962322368097816,
+          "science-pg46764": 0.004082479991796895,
+          "science-pg54376": 0.0037728406534549563,
+          "science-pg58695": -0.011678227161742605,
+          "science-pg72936": 0.0012408894609805543,
+          "technology-pg48826": 0.00502642525999808,
+          "technology-pg54193": -0.001543303968175369
+        },
+        "clusters": 25,
+        "documents": 25,
+        "excludes_zero": false,
+        "interval": [
+          -0.014208002122462201,
+          0.001681504260926044
+        ],
+        "mean_difference": -0.0036064602213196927,
+        "negative_documents": 13,
+        "positive_documents": 12,
+        "probability": 0.95,
+        "sign_test_assumption": "documents independent; the interval above is the reading that resamples works",
+        "sign_test_p_value": 0.5,
+        "total_weight": 535282.0,
+        "unit": "bits per character, first minus second"
+      }
+    }
+  ],
+  "protocol": "configs\\experiments\\E2631-vector-decay-exemption.toml",
+  "reports_checked": [
+    "control",
+    "exemption"
+  ]
+}
