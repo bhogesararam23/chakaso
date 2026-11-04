@@ -142,14 +142,16 @@ the model-path tier also running the strict typing configuration — and every c
 | `a004e70` | 41800134350 | success |
 | `d18c41f` | 41803174650 | success — core 3.13 2,102/35, train 3.13 2,191/25, model path 3.13 2,703/2 |
 | `00525e5` | 41805564655 | **failure** — all eight tiers, one cause: the closing report's five relative record links were one directory short (§5). Tests, lint, format and both typing configurations passed on every tier |
-| the commit that fixes it | read back after the push, and recorded in the commit that follows this table | — |
+| `4c63dae` | 41806985294 | success — the phase's final verified head; 36 commits through it, and the table that states this is that head's own successor |
 
 The runner reports one more skip and one fewer pass than the same head does locally on the dependency-free tier, and the
 difference is the documented hygiene test that skips where the private documentation pack does not exist at all.
 
 **Commits: 35**, from `c86c248` to `9c9f916` — the count is pinned to `9c9f916` so it cannot go stale as the report
-that states it lands, which makes **this report's own commit the 36th**. All on `main`, pushed as they landed (14 push
-operations; no force-push, no history rewrite, no rebase, author identity unchanged, no co-author added). By type:
+that states it lands, which makes **this report's own commit the 36th**, the commit that fixed its links the 37th, and
+the one recording this verification the 38th. All on `main`, each milestone pushed as it landed rather than held for the
+end (the `## Head` column above is the push sequence, and every row was read back from the runner); no force-push, no
+history rewrite, no rebase, author identity unchanged, no co-author added. By type through `9c9f916`:
 **13 feat, 12 research (5 preregistrations, 5 results, 2 evidence/research-log), 8 docs, 2 test**. Nothing was split to
 inflate a count and no documentation-only batch was padded: the eight `docs:` commits each carry a correction or a
 reconciliation of a real drift, and two of them (E2633's erratum, E2631's addendum) exist because a measurement
