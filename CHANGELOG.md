@@ -12,6 +12,36 @@ capability is implemented or still planned.
 
 ## Unreleased
 
+### 2026-11-05 — the delivery: ADR-0053, the recovery contract written where readers already look, and a Windows CI job that earned its keep on its first run
+
+**Documented**
+
+- **How recovery actually works, in the document a person running a study already has open.**
+  [`docs/training.md`](docs/training.md) now states what a run leaves on disk (usable artifact, resume point, curve
+  rungs — and which of the three can continue a run, and why only that one), the five cases a second pass of a seed
+  study distinguishes, the nine things a resume is refused for with the reason each protects, how to read a
+  checkpoint's own claims before trusting it, and the E2636 invocation rewritten for PowerShell. It replaces a list
+  of good intentions that had no corresponding behaviour.
+- **ADR-0053** records the decisions behind all of it — discovery by addressed path rather than by search, no second
+  validator, a checkpoint at the ceiling not being a run left to continue, run identity attested in the resume point,
+  `resume_from` outside the protocol digest, and a declared rerun switching recovery off — with the alternatives
+  rejected and the one compatibility cut stated plainly: **a resume point written before identity was recorded can no
+  longer be recovered automatically.** No committed record depends on that, and E2608's own sentence — neither arm
+  reported `resumed_from_step` — is what makes it safe to do.
+- **`docs/agent/CURRENT_STATE.md`'s census is what was measured this time.** 2,890 pass / 1 skip with `[train,nn]`,
+  2,346 / 25 with `[train]`, 2,257 / 35 dependency-free, all on Windows 11 and Python 3.13; the model-path type check
+  clean over 174 files on both `--platform win32` and `--platform linux`. The line that said resume was "covered by
+  unit tests only" is corrected to the narrower true one: the mechanism is built and tested through the file, and no
+  *measured run* has used it yet.
+
+**What the new CI job did immediately**
+
+Its first run failed the `Format` step — on every platform, because the defect was a Python fence in
+`docs/training.md` whose comments were aligned by hand rather than by `ruff format`, and `ruff format --check .`
+covers markdown fences. The Windows job caught it on the same day it was added. That is the mechanism working, not
+yet the Windows tier passing: **no claim that the nine-job matrix is green at this head is made here until the run
+has been read back**, per the rule AGENTS.md states about landed jobs and passed jobs.
+
 ### 2026-11-05 — the Windows audit: what was checked, what broke, and what did not
 
 **Audited rather than assumed.** The development machine is Windows 11 and every CI job was Linux, which is the

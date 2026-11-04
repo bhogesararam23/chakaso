@@ -171,9 +171,10 @@ bash:
 wheel for Windows is the CPU build, so a Windows install needs no index flag, and adding the Linux one would
 pull a wheel built for a different platform.
 
-Measured locally on this machine, 2026-11-05, Python 3.13: the dependency-free tier **2,256 passed / 35
-skipped**, the `[train]` tier **2,345 / 25**, the `[train,nn]` tier in progress at the time of writing, `mypy
-src` clean over 125 files and the model-path configuration clean over 174. `ruff format --check .` reports the
+Measured locally on this machine, 2026-11-05, Python 3.13: the dependency-free tier **2,257 passed / 35
+skipped**, the `[train]` tier **2,346 / 25**, the `[train,nn]` tier **2,890 / 1**, `mypy src` clean over 125
+files and the model-path configuration clean over 174 — including `mypy --platform linux` over the same 174,
+which is the check AGENTS.md's platform trap asks a Windows machine to run. `ruff format --check .` reports the
 whole tree formatted, so `eol=lf` in `.gitattributes` is doing its job on a machine that would otherwise write
 CRLF.
 
