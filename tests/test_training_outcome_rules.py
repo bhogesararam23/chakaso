@@ -264,7 +264,9 @@ def test_a_constraint_this_code_cannot_read_is_refused_by_shape(constraint: obje
     document = _arm_pair_document()
     document["outcomes"][0]["when"] = [constraint]
 
-    with pytest.raises(OutcomeRuleError, match=r"must be one of|needs a non-empty|must be a number"):
+    with pytest.raises(
+        OutcomeRuleError, match=r"must be one of|needs a non-empty|must be a number"
+    ):
         load_vocabulary(document, known_facts=FACT_NAMES)
 
 
