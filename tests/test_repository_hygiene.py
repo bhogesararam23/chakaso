@@ -704,12 +704,17 @@ def test_the_shipped_workflow_installs_exactly_the_documented_tiers() -> None:
 
     The workflow and pyproject are the two places this can drift, and a job that silently installs `.[dev]`
     while claiming to cover `[nn]` would make the coverage claim false without any test failing.
+
+    `windows` is not a fourth tier — nothing in the package declares a Windows-only extra. It is
+    `model-path`'s extras on the other platform, so it belongs in this table: a job that installs a set the
+    package does not declare is exactly the defect this test exists to catch, whatever runner it runs on.
     """
     package = tomllib.loads((REPO_ROOT / "pyproject.toml").read_text(encoding="utf-8"))["project"]
     tiers = {
         "checks": ["dev"],
         "train": ["dev", "train"],
         "model-path": ["dev", "train", "nn"],
+        "windows": ["dev", "train", "nn"],
     }
     jobs = _workflow_jobs()
     assert jobs, "the shipped workflow carries no job bodies to read"

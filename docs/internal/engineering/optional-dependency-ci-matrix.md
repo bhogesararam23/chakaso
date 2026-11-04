@@ -25,6 +25,7 @@ does not exist at all.
 | `checks` | 3.11, 3.12, 3.13 | `.[dev]` | `ruff format --check .`, `ruff check .`, `mypy src`, `pytest`, entry-point smoke |
 | `train` | 3.11, 3.12, 3.13 | `.[dev,train]` | `pytest`, `mypy src` |
 | `model-path` | 3.11, 3.13 | `.[dev,train,nn]` from the CPU wheel index | `pytest`, `mypy --config-file configs/mypy-model-path.toml` |
+| `windows` | 3.13 | `.[dev,train,nn]` from PyPI | `ruff format --check .`, `ruff check .`, `mypy --config-file configs/mypy-model-path.toml`, `pytest`, checkpoint-recovery and seed-study-recovery selections, entry-point smoke |
 
 Why this shape and not more:
 
@@ -43,6 +44,16 @@ Why this shape and not more:
   can rot. The reproducibility policy in [ADR-0030](../../decisions/ADR-0030-minimal-optional-training-dependency.md)
   is bounds, and a CI-only pin would be a second, untested dependency set.
 - **CPU wheels come from the index ADR-0034 names.** PyPI's default `torch` wheel is the CUDA build on Linux.
+- **`windows` is a platform, not a tier.** It installs exactly what `model-path` installs, and it exists
+  because the development machine is Windows 11 and the three tiers above are Linux. The project has already
+  been caught by this asymmetry once, in the other direction: `mypy --platform linux` found a
+  `ctypes.WinDLL` in `core/process_memory.py` on 2026-10-22 after every Windows gate on that machine had
+  passed it (row one of the table above), and AGENTS.md records that a green local matrix is not evidence
+  about the runner it does not share an OS with. The four things only a Windows runner can say something about
+  are path separators, `os.replace` onto a file another handle holds, non-ASCII output through a console code
+  page, and the torch wheel PyPI gives a Windows interpreter — none of which a Linux job can see fail.
+  It gets its own named steps for checkpoint restoration and seed-study recovery so a Windows-only defect in
+  either arrives as a line a reader can act on rather than as the tail of a full-suite block.
 - **Nothing is allowed to fail quietly.** No `continue-on-error`, no `|| true`, no marker that deselects a
   real test. `pytest -m 'not network'` is already the default in `pyproject.toml`, so these jobs run the
   documented commands, not a weaker subset of them.
@@ -52,8 +63,8 @@ Why this shape and not more:
 Five tests in [`tests/test_repository_hygiene.py`](../../../tests/test_repository_hygiene.py) read the shipped
 file rather than a copy of it:
 
-- the jobs are exactly `checks`, `train`, `model-path`, and each installs exactly the extras its name claims,
-  checked against `pyproject.toml` so a renamed extra fails loudly;
+- the jobs are exactly `checks`, `train`, `model-path`, `windows`, and each installs exactly the extras its
+  name claims, checked against `pyproject.toml` so a renamed extra fails loudly;
 - every `run: python -m …` command in `checks` is one that `AGENTS.md` and `CONTRIBUTING.md` tell a
   contributor to run, which is what stops CI from quietly becoming a weaker contract;
 - nothing in the file can hide a failure;
@@ -65,8 +76,10 @@ file rather than a copy of it:
 
 ## What this buys, and what it still does not prove
 
-Applied, the matrix runs 3 + 3 + 2 = 8 jobs: the dependency-free suite, the suite with numpy, the suite with
-torch, plus a strict type check over every source file in the `[nn]` environment. The local counts are
+Applied, the matrix runs 3 + 3 + 2 + 1 = 9 jobs: the dependency-free suite, the suite with numpy, the suite with
+torch, plus a strict type check over every source file in the `[nn]` environment, plus that same environment on a
+Windows runner. The counts in the table above stop at the eight-job matrix — they are what those runs did, and a row
+is not updated when the world moves, it is followed by another row. The local counts are
 measured and recorded in [K-009](../../agent/KNOWN_ISSUES.md), and the table above carries the counts the
 runners themselves reported, so the two are not conflated.
 

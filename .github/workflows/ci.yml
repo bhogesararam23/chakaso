@@ -8,6 +8,9 @@ name: CI
 # numerical library at all — the model-path tests skip there by design, which is why a second and third
 # job exist. `train` adds numpy and runs the character model's tests. `model-path` adds torch from the CPU
 # wheel index and type-checks every module, including the ones the base tier cannot resolve.
+#
+# A fourth job runs `model-path` on a Windows runner. It is not a tier: nothing in the package declares a
+# Windows-only extra. It is the same suite on the platform the project is developed on and CI did not test.
 on:
   push:
     branches: [main]
@@ -120,3 +123,70 @@ jobs:
 
       - name: Tests
         run: python -m pytest
+
+  windows:
+    name: windows model path python ${{ matrix.python-version }}
+    runs-on: windows-latest
+
+    # The development machine is Windows 11 and the three jobs above are Linux. A green matrix on one
+    # platform is not evidence about the other: AGENTS.md's own recorded trap is that `mypy --platform
+    # linux` found a `ctypes.WinDLL` that every Windows gate had passed. This job runs that check the other
+    # way round, so a Windows-only defect in path handling, file locking or the checkpoint loader fails a
+    # job instead of surprising the only machine that can see it.
+    #
+    # The full suite runs here as `model-path` runs it on Linux, and the two areas this milestone changed
+    # are then re-selected into their own steps — not because the whole run does not cover them, which it
+    # does, but so that a Windows-specific failure in recovery says "Seed-study recovery failed" rather than
+    # arriving as line 1,900 of one red block.
+    timeout-minutes: 45
+
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.13"]
+
+    defaults:
+      run:
+        shell: pwsh
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+          cache-dependency-path: pyproject.toml
+
+      - name: Install
+        # No --extra-index-url on purpose: PyPI's default `torch` wheel for Windows *is* the CPU build,
+        # which is the opposite of the Linux case ADR-0034 records.
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e ".[dev,train,nn]"
+
+      - name: Format
+        run: python -m ruff format --check .
+
+      - name: Lint
+        run: python -m ruff check .
+
+      - name: Types
+        run: python -m mypy --config-file configs/mypy-model-path.toml
+
+      - name: Tests
+        run: python -m pytest
+
+      - name: Checkpoint serialization and restoration
+        run: python -m pytest tests/test_training_nn_checkpoint.py tests/test_training_recovery.py
+
+      - name: Seed-study recovery
+        run: python -m pytest tests/test_training_seed_study.py tests/test_training_subword_experiment.py
+
+      - name: Verify the installed entry points
+        run: |
+          python -m chakaso --version
+          chakaso info
+          chakaso experiment model --help
+          chakaso experiment study --help
+          chakaso model inspect --help

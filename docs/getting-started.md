@@ -193,7 +193,9 @@ The skips are deliberate and are the same gate on every machine: `pytest.importo
 CI jobs — `core` with `.[dev]`, `train` with `.[dev,train]`, and `model path` with `.[dev,train,nn]` from the
 PyTorch CPU wheel index plus the strict type check over every module — so the extras tiers are verified on a
 runner as well as locally, and the dependency-free tier is the one that proves the default install needs
-nothing. See [`.github/workflows/ci.yml`](../.github/workflows/ci.yml) and
+nothing. A fourth job runs the `model path` tier's extras and type check on a **Windows** runner: it is not a tier,
+nothing in the package declares a Windows-only extra, and it exists because a green matrix on one platform is not
+evidence about the other. See [`.github/workflows/ci.yml`](../.github/workflows/ci.yml) and
 [`optional-dependency-ci-matrix.md`](internal/engineering/optional-dependency-ci-matrix.md).
 
 ## Load and use a trained checkpoint
