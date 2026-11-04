@@ -12,6 +12,84 @@ capability is implemented or still planned.
 
 ## Unreleased
 
+### 2026-11-04 (continued) — a pinned corpus's URLs were re-measured, and the first budget question was written down
+
+**No model was trained, no checkpoint was generated and no bulk data was acquired in this session.** One experiment
+record was preregistered for a later, separately approved compute session, and it has not run.
+
+**Fixed**
+
+- **`main` was red on the runner and is green again.** The head of the previous session, `1fd9f06`, landed a
+  97-character `pytest.raises` call, which the `Format` step refuses — and only the three `core` jobs have a `Format`
+  step, so the failure looked like a third of the matrix while it was a whole-tree one. Fixed forward in `e62f8fe`
+  rather than amended, and read back from the runner: eight jobs, all success (run 41852523571). The local gates had
+  passed at that head because the working tree already carried the wrap; a committed artifact and a checked-out tree
+  are not the same object, and the runner is the one that says which.
+
+**Added**
+
+- **`scripts/rescan_pinned_sources.py` — a bounded, deterministic drift re-scan of a pinned corpus's URLs** (K-031).
+  Ranking each register's sources by `sha256("rescan|" + slug)` and keeping four fixes the 20-URL sample as a function of
+  the catalogue before a single request is made, so what a re-scan finds cannot influence what it looked at. Every
+  request runs under declared limits (https only, 20 s timeout, at most three redirects, 8 MiB, 2 s apart); fetched bytes
+  go to a temporary directory that is deleted; the catalogue is opened read-only and its file digest is re-checked and
+  printed in the report, so "the pin was untouched" is a measurement rather than a promise. A source whose bytes moved is
+  classified by the catalogue's own ingested-text rule — header-only drift versus text drift — and a refused fetch is
+  `fetch-refused` with the policy's message attached, never `unchanged`. Sixteen tests run it against an injected
+  fetcher, so none of them touches the network. **This replaces nothing: it is the check, not the repair.**
+- **`scripts/read_budget_extension.py` — the reading a budget comparison needs, with the band derived instead of typed.**
+  `chakaso.training.arm_comparison` refuses arms whose update counts differ, correctly, because for every record in this
+  series that difference is a protocol change; loosening its table would weaken those records, so the new comparison
+  carries its own matchedness guard (corpus, split, vocabulary, architecture, parameter count, seed, the whole optimizer
+  recipe, the packed pool, both evaluation caps and the `evaluation_sample` block equal; `max_steps` at the declared
+  ratio; both arms finished at their own ceiling; `best_step` agreeing with the validation argmin computed from the
+  curve). It prints where the longer arm's validation series bottoms out and how fast its final quarter is still
+  moving, and it reads the loss difference against **two** bands: the adopted rule's own, derived on the spot as
+  1.96·√2·σ over [E2630](experiments/E2630/results.json)'s committed σ(O1) = 0.001595 → 0.004418 → 0.005 by
+  E2614's replacement rule, and the inherited 0.02, which is kept beside it because every older verdict was read on it.
+  It prints a letter only when handed a declared vocabulary, and loads that declaration against its own fact names, so a
+  mis-typed condition is refused rather than silently never firing. Thirty-two tests, all offline.
+
+**Preregistered (and explicitly not run)**
+
+- **[E2636](experiments/E2636/record.md) — does the reference configuration ever turn its validation curve over, at three
+  times the ceiling?** Every arm this project has trained reports `completion: budget_ceiling` with validation still
+  falling — E2607, E2608, E2611, and all four of E2630's arms — so every absolute held-out figure here is a floor of a
+  curve nobody has watched turn. Three same-host pairs at seeds 7, 13, 17, `max_steps` 2,400 against 7,200 and nothing
+  else moved ([`E2636-adopted-budget-2400.toml`](configs/experiments/E2636-adopted-budget-2400.toml) is E2625's plan
+  verbatim, and a test holds it to that), the adopted rule named in both files, and the pass/update confound declared
+  rather than glossed: 4.2 passes over the same 2,756 documents against 1.40, so a difference is a **budget** effect and
+  not an attribution to compute. Outcomes **C-a…C-d** are committed as a vocabulary
+  ([`configs/analyses/budget-extension-e2636-v1.json`](configs/analyses/budget-extension-e2636-v1.json)) with the
+  falsifier C-c defined by sign so precedence cannot decide it. Cost is arithmetic on measured clocks — 5,834–6,759
+  positions per second at 2,400 updates gives **8,727–10,110 s** per long arm and **9.8–11.4 hours** for the six — and
+  the record says what that means: preregistered for a separately approved session, not scheduled here.
+
+**Measured**
+
+- **K-031, on the URLs.** 20 of 430 sources, 8,968,096 bytes, **all 20 still serving the digest the catalogue declares**;
+  catalogue file digest `c2c9ee68eb39f730…` unchanged across the run. The stratified sample did not contain the one source
+  already known to have drifted, so `science-pg3489` was re-fetched by name: still a different raw digest (438,646 bytes),
+  still **`ingested-text-identical`** — the 2026-11-02 finding reproduced from the opposite direction. Both reports are
+  committed in [`docs/data/`](docs/data/). Twenty clean URLs bound nothing about the other 410, and drift here is judged by
+  content digest alone because the policy-enforcing fetcher returns bytes rather than response headers.
+- **E2635's D-b, re-executed.** `scripts/clustered_probe_verdicts.py` over the same committed probe rows, the same seed
+  and the same 2,000 resamples reproduced
+  [`experiments/E2635/context-clustered.json`](experiments/E2635/context-clustered.json) **byte for byte**
+  (`a7df2d04aeb1ef06…`), which is the evidence behind "reproducible from its committed evidence" rather than a re-reading
+  of the record's own table.
+
+**Still open**
+
+- **K-031's host.** Five technically reasonable destinations, each with its trade-off against the measured 59,220,202
+  archived bytes and the 3.5-second verification, are written out in
+  [artifact policy](docs/internal/engineering/artifact-policy.md). Whether the archive is published or kept private, whose
+  account and cost accept it, who re-verifies it and how often, and what licence statement travels with third-party text
+  are the owner's four decisions; none of them is a code change, and no further measurement unblocks them.
+- **K-001 is unmoved.** A corpus URL that still serves its pinned bytes, a statistic that counts works instead of items,
+  and a record describing six arms that have not run are all plumbing. No model in this repository answers a grounded
+  question or produces useful text.
+
 ### 2026-11-04 (this session) — the campaign continues: paired statistics, re-pairable evidence, a test on the loss itself
 
 **Changed (behavioural, and the reason it is not silent is [ADR-0051](docs/decisions/ADR-0051-the-space-prefixed-pre-tokenizer-is-adopted-and-a-run-stops-inheriting-one.md))**

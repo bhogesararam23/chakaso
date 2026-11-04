@@ -12,7 +12,10 @@ one does not survive the works behind its items, and the authored 800-pair probe
 phenomena are counted as the clusters they are; **K-031's drift re-scan measured**, 20 of 430 sampled URLs all still
 serving their pinned digest, with the known `pg3489` drift reproduced by name and its ingested text still identical, and
 its **storage decision still the owner's**, now written as five options with their costs in
-[artifact policy](../internal/engineering/artifact-policy.md); K-001 unchanged by any of it); before that 2026-11-04 (**E2634
+[artifact policy](../internal/engineering/artifact-policy.md); **[E2636](../../experiments/E2636/record.md)
+preregistered and not run** — the first record whose protocol pair names the adopted rule as its own and whose verdict
+band is derived from E2630's measured σ rather than inherited, written for a separately approved compute session; K-001
+unchanged by any of it); before that 2026-11-04 (**E2634
 measured — G-a,
 qualified**: at 745 items one continuation reading separates
 both material arm pairs under Holm and its untrained floor is 0.3812, so it is the disqualified reading; among the

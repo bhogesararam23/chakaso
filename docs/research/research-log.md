@@ -1244,3 +1244,64 @@ unanswered. Whether a *work-clustered* statistic for binary verdicts changes wha
 instrument exists for loss and not yet for items. What the first run under the adopted tokenizer costs, since E2614's
 band was measured under the rule it replaces. And K-001, unchanged by all of it: the model this campaign measured is
 still not useful text, and every number above is a statement about loss or about an instrument, not about capability.
+
+---
+
+## 2026-11-04 (continued) — the day the URLs were re-measured and the budget question was written down
+
+**Observation.** `main` at `1fd9f06` was red on the runner. The cause was one line: that commit's test file carried a
+97-character `pytest.raises` call and the `Format` step refuses it — and only the three `core` jobs have a `Format`
+step, so a whole-tree defect presented as a third of the matrix. The local gates at that head had passed because the
+working tree already held the wrap; the committed artifact and the checked-out tree are different objects, and only the
+runner says which one is real. Fixed forward, not amended (`e62f8fe`), read back green on all eight jobs.
+
+**Observation.** The same tree carried uncommitted work the ledger did not mention: a K-031 re-scan script, its sixteen
+tests, and two measured artifacts. The previous phase's report had written "the 430-URL drift re-scan has not been run",
+which was true when it was written and was not true of the tree its successor inherited.
+
+**Result (K-031, measured on 20 URLs).** A register-stratified sample of 20 of the 430 pinned sources — chosen by
+`sha256("rescan|" + slug)` before any request, fetched under declared limits — returned **20 unchanged digests**,
+8,968,096 bytes, the catalogue file digest identical before and after. The selection rule's blindness was immediately
+informative: it had not picked the one source already known to have drifted, so `science-pg3489` was re-fetched by name
+and still serves bytes whose raw digest differs from the pin while its **ingested text stays identical**. That is the
+2026-11-02 finding reproduced from the opposite direction, and it is the reason ADR-0047 part 1's ingested-text digest
+exists.
+
+**Limitation.** Twenty clean URLs bound nothing about the other 410; the drift rate is known not to be zero because one
+source already moved. Drift here is judged by content digest alone — `HttpFetcher` returns bytes, media type and a
+timestamp, not `Last-Modified` or `ETag` — so a metadata-only edit is invisible to this command by construction. A
+refused fetch is recorded as `fetch-refused` with the policy's own message, never as `unchanged`: the difference between
+a source that is stable and a source that is gone is the whole point of the measurement.
+
+**Result (verification, not new evidence).** E2635's **D-b** was re-executed from the committed probe rows at the same
+seed and resample count and reproduced `context-clustered.json` byte for byte (`a7df2d04aeb1ef06…`). The record's table
+and the artifact's contents are the same numbers, which is what a reader who wants to check a clustering claim needs.
+
+**Conclusion (K-031's remaining half is not a research question).** The archive exists, is deterministic, and verifies
+in 3.5 seconds against 24 seconds to build; what is missing is a host. Five technically reasonable destinations were
+written out with their trade-offs against the measured bytes, and the four decisions that belong to the repository
+owner — publish or keep private, whose account and cost, who re-verifies and how often, what licence statement travels
+with third-party text — were named as the owner's rather than chosen. Whether a pinned corpus's bytes survive an
+upstream edit is a hosting fact, not something more measurement of drift will answer.
+
+**Experiment (preregistered, not run).** [E2636](../../experiments/E2636/record.md) asks the one question every
+measured arm in this project has left open by stopping at it. E2607, E2608, E2611 and all four of E2630's arms report
+`completion: budget_ceiling` with validation still falling, so no validation minimum has ever been observed for a
+trained model here and every absolute held-out figure is a floor. Three same-host pairs, `max_steps` 2,400 against
+7,200 with nothing else moved, the adopted rule named in both protocol files, outcomes C-a…C-d declared before any
+arm, and the cost stated as arithmetic on measured throughput (9.8–11.4 hours single-process on this machine), which is
+why it is a preregistration for a separately approved session rather than a run.
+
+**Interpretation.** The band question this record had to settle is a quieter one than its loss numbers, and it is the
+part that could have been done badly in silence. E2614's 0.02-bit separable band was measured under the pre-tokenizer
+ADR-0051 replaced; E2630 measured the adopted rule's own σ(O1) at 0.001595, which makes 1.96·√2·σ = 0.004418 and, on
+E2614's own rounding rule, a band of 0.005 — one quarter of the inherited figure. Adopting it silently would have
+re-labelled every verdict already read against 0.02, so both bands are printed and the reading names the one it used.
+The whole pack keeps its inherited tie margin, because no whole-pack σ under the adopted rule exists in committed
+evidence and inventing one was the alternative.
+
+**Open.** Whether the curve turns at all — C-a through C-d are declared and unmeasured. Where the archive lives.
+Whether a *work-clustered* reading of the probes changes what they claim on a longer arm, which E2635's instrument is
+now ready for and no record has yet asked. And K-001, unmoved by every paragraph above: a corpus URL that still serves
+its digest, a test that counts works rather than passages, and a protocol nobody has trained are all plumbing, and no
+model in this repository answers a grounded question or produces useful text.

@@ -1,8 +1,61 @@
 # Current state
 
-Last updated: 2026-11-04 (the campaign's evidence-and-decision phase), after E2630–E2633, the closure of K-030 item 3,
-K-032 and K-033, the raw-byte archive mechanism for K-031, and the two documentation gates. The
+Last updated: 2026-11-04 (the campaign's continuation after the evidence-and-decision phase), after K-031's sampled drift
+re-scan, the closure of K-034 and K-035 with [E2635](../../experiments/E2635/record.md)'s measured **D-b**, and the
+preregistration of [E2636](../../experiments/E2636/record.md). The
 blocks below are dated and kept as the context each result was read in; this first block is the newest.
+
+**Update, 2026-11-04 (continued) — a pinned corpus's URLs were re-measured, and the first budget question was
+preregistered.** Nothing here is a capability claim; K-001 stands unchanged.
+
+* **K-031's drift re-scan, measured as a sample.** [`scripts/rescan_pinned_sources.py`](../../scripts/rescan_pinned_sources.py)
+  ranks each register's sources by `sha256("rescan|" + slug)` and takes four, so the 20-URL sample is fixed by the
+  catalogue before a request is made and cannot be chosen after seeing what moved; every request carries the declared
+  limits (https only, 20 s, ≤3 redirects, 8 MiB, 2 s apart) and nothing is written outside a temporary directory.
+  Measured at 14:18Z on 2026-11-04: **20 of 430 sources, 8,968,096 bytes, all 20 still serving their pinned digest**,
+  catalogue file digest `c2c9ee68eb39f730…` unchanged across the run. The rule's blindness is the finding: the sample did
+  not contain the one source already known to have drifted, so `science-pg3489` was re-fetched by name and still differs
+  at the raw digest while its ingested text stays **identical** — E2615's 2026-11-02 reading reproduced from the other
+  direction. Both reports are committed:
+  [`../data/gutenberg-multiregister-v1-rescan-2026-11-04.json`](../data/gutenberg-multiregister-v1-rescan-2026-11-04.json)
+  and
+  [`../data/gutenberg-multiregister-v1-rescan-science-pg3489-2026-11-04.json`](../data/gutenberg-multiregister-v1-rescan-science-pg3489-2026-11-04.json).
+  Twenty clean URLs bound nothing about the
+  other 410, drift is judged by content digest because the fetcher returns no response headers, and a refused fetch is
+  its own status and never an "unchanged". **Still open, and the owner's:** where an archive is kept — five candidate
+  hosts with their trade-offs against the measured 59,220,202 bytes and the 3.5-second verification are in
+  [artifact policy](../internal/engineering/artifact-policy.md), and the four choices that belong to the owner are named
+  as theirs rather than decided here.
+* **E2636 preregistered, and no arm has run.** [experiments/E2636/record.md](../../experiments/E2636/record.md) asks the
+  one budget question every measured arm left open by stopping at it — E2607, E2608, E2611 and E2630 all report
+  `completion: budget_ceiling` with validation still falling, so no validation minimum has ever been observed for a
+  trained model here. Three same-host pairs at seeds 7, 13, 17; `max_steps` 2,400 against 7,200 and nothing else
+  ([`configs/experiments/E2636-adopted-budget-2400.toml`](../../configs/experiments/E2636-adopted-budget-2400.toml) is
+  E2625's plan verbatim, and a test holds it to that); the adopted rule named in both files as
+  `SPACE_PREFIXED_PRE_TOKENIZER`; the verdict band derived from E2630's measured σ(O1) 0.001595 by E2614's
+  1.96·√2·σ rule (0.004418, rounded to **0.005**) with the inherited **0.02** printed beside it rather than retired. Cost
+  is arithmetic on measured clocks — **9.8–11.4 hours** single-process on this host — which is why it is preregistered
+  for a separately approved session and not scheduled here. **Status: preregistered. No number in it is a result.**
+* **The reading that record will need, implemented and tested now**
+  ([`scripts/read_budget_extension.py`](../../scripts/read_budget_extension.py), 32 tests). A budget comparison cannot go
+  through `chakaso.training.arm_comparison`, whose `_MATCHED` table deliberately refuses arms with different update
+  counts — for every other record that difference is a protocol change. So the record carries its own guard: corpus,
+  split, tokenizer, architecture, parameter count, seed, the whole optimizer recipe, the packed pool, both evaluation
+  caps and the `evaluation_sample` block must agree, the ratio must be the declared 3×, both arms must have finished at
+  their own ceiling, and a report whose `best_step` disagrees with the validation argmin computed from its curve is
+  refused. It reports where each long curve bottoms out, how fast its final quarter is still moving, and the paired
+  difference against both bands, and it prints a letter only when handed
+  [`configs/analyses/budget-extension-e2636-v1.json`](../../configs/analyses/budget-extension-e2636-v1.json) — the ADR-0052
+  contract, with the declaration loaded against the tool's own fact names so a typo cannot become a condition that never
+  fires. **Implemented and tested; not yet used on any measurement.**
+* **What the audit of the tree found, recorded because it is the kind of thing that hides.** `main` was **red on the
+  runner** at `1fd9f06`: that commit landed a 97-character `pytest.raises` line, and the `Format` step in each of the
+  three core jobs refuses it, while the train and model-path tiers do not run that step — so a partial-looking failure
+  was a whole-tree one. Fixed forward in `e62f8fe`, not amended, and CI read back green at that head (run 41852523571).
+  E2635's **D-b** was independently re-executed for this session: `scripts/clustered_probe_verdicts.py` over the same
+  committed probes at the same seed reproduced [`context-clustered.json`](../../experiments/E2635/context-clustered.json)
+  **byte for byte** (`a7df2d04aeb1ef06…`), which is what "reproducible from its committed evidence" has to mean.
+
 
 **Update, 2026-11-03/04 — what exists now that did not.** Nothing here is a capability claim; K-001 stands unchanged.
 
