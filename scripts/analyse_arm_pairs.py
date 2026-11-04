@@ -42,10 +42,29 @@ from analyse_probe_sensitivity import (
 )
 
 from chakaso.training.arm_comparison import compare_arms
+from chakaso.training.outcome_rules import (
+    OutcomeRuleError,
+    OutcomeVocabulary,
+    decide,
+    load_vocabulary,
+)
 from chakaso.training.outcome_vectors import is_compacted, restore_probe_result
-from chakaso.training.probe_sensitivity import compare_instruments
+from chakaso.training.probe_sensitivity import VERDICT_FACT_NAMES, compare_instruments
 
-__all__ = ["main", "read"]
+__all__ = ["FAMILY_FACT_NAMES", "arm_facts", "arm_outcome", "main", "read"]
+
+#: The facts a family-level outcome vocabulary may read from this analysis (K-034). What letter they mean is the
+#: record's declaration: E2629 wrote `Z-a`…`Z-d` and E2634 wrote `G-a`…`G-d` over facts of exactly this shape.
+FAMILY_FACT_NAMES = (
+    "every_material_pair_ranked",
+    "some_material_pair_ranked",
+    "any_contradiction",
+    "any_inside_band_separated",
+    "any_separation",
+    "any_ordering_inverted",
+    "material_pairs",
+    "decision_bearing_instruments",
+)
 
 #: The shared readers name the probe's untrained floor after a curve's rung 0, because that is what it is there.
 #: An arm comparison has no rungs, so a model left out of it is reported under the name the result file uses.
@@ -106,6 +125,8 @@ def read(
     materiality: float,
     decision_bearing: Sequence[str],
     context_result: Mapping[str, Any] | None = None,
+    instrument_verdicts: OutcomeVocabulary | None = None,
+    family_outcomes: OutcomeVocabulary | None = None,
 ) -> dict[str, Any]:
     """The arm pair, the criterion read from the reports, and each instrument's verdict on every pair."""
     comparison = matchedness(reports, reference=reference)
@@ -139,7 +160,9 @@ def read(
     criterion = {
         name: float(block["whole_pack_bits_per_character"]) for name, block in table.items()
     }
-    result = compare_instruments(criterion, instruments, materiality=materiality)
+    result = compare_instruments(
+        criterion, instruments, materiality=materiality, verdicts=instrument_verdicts
+    )
     result["arms"] = {
         name: {
             "experiment": report.get("experiment"),
@@ -158,25 +181,25 @@ def read(
     result["materiality"] = materiality
     result["decision_bearing"] = list(decision_bearing)
     result["usable_phenomena"] = list(usable_phenomena)
-    result["outcome"] = arm_outcome(result, decision_bearing)
+    result["outcome"] = (
+        arm_outcome(result, decision_bearing, family_outcomes)
+        if family_outcomes is not None
+        else arm_facts(result, decision_bearing)
+    )
     return result
 
 
-def arm_outcome(result: Mapping[str, Any], decision_bearing: Sequence[str]) -> dict[str, Any]:
-    """Z-a to Z-d, by the rules the record declares: rank the material pairs, leave the rest alone.
+def arm_facts(result: Mapping[str, Any], decision_bearing: Sequence[str]) -> dict[str, Any]:
+    """The facts a family-level outcome vocabulary reads, with the per-instrument table that supports them.
 
     ``compare_instruments`` gives the per-pair McNemar cells; this folds them into the one answer the record asked
-    for, over the instruments the record declared decision-bearing.
+    for, over the instruments the record declared decision-bearing. Which letter those facts mean — E2629's `Z-a`…
+    `Z-d`, E2634's `G-a`…`G-d`, or none — is the record's declaration, not this script's (K-034, ADR-0052).
 
     * A pair is **material** when the criterion band separates its arms. Ranking *every* material pair in the
-      criterion's direction is what the record asked an instrument to do.
+      criterion's direction is what a record asks an instrument to do.
     * A pair the band calls equal is a false-positive check: an instrument that "separates" it is reporting a
       difference the quality measure does not have.
-    * **Z-a** — some decision-bearing instrument ranks every material pair in the criterion's direction, and no
-      decision-bearing instrument contradicts the criterion or separates the pair inside the band.
-    * **Z-b** — some decision-bearing instrument ranks at least one material pair correctly, and none contradicts.
-    * **Z-c** — a decision-bearing instrument either contradicts the criterion or separates the inside-the-band pair.
-    * **Z-d** — none of the above, which on this design means no instrument separated anything.
     """
     rows = result["pairs"]
     per_instrument: dict[str, dict[str, Any]] = {}
@@ -201,43 +224,54 @@ def arm_outcome(result: Mapping[str, Any], decision_bearing: Sequence[str]) -> d
                 [row["first"], row["second"]] for row in false_positive
             ],
             "verdict": result["instruments"][name]["verdict"],
+            "verdict_facts": result["instruments"][name]["verdict_facts"],
         }
-    any_contradiction = any(block["contradicted_pairs"] for block in per_instrument.values())
-    any_false_positive = any(
-        block["inside_band_pairs_separated"] for block in per_instrument.values()
-    )
-    every_ranker = [
-        name for name, block in per_instrument.items() if block["ranks_every_material_pair"]
-    ]
-    any_ranker = [
-        name
-        for name, block in per_instrument.items()
-        if block["material_pairs_ranked_correctly"] > 0
-    ]
-    if every_ranker and not any_contradiction and not any_false_positive:
-        letter = "Z-a"
-        reading = (
-            f"{', '.join(every_ranker)} ranks every material pair in the criterion's direction"
-        )
-    elif any_ranker and not any_contradiction:
-        letter = "Z-b"
-        reading = (
-            f"{', '.join(any_ranker)} ranks at least one material pair correctly, none contradicts"
-        )
-    elif any_contradiction or any_false_positive:
-        letter = "Z-c"
-        reading = (
-            "an instrument ranked a pair the wrong way or separated a pair the band calls equal"
-        )
-    else:
-        letter = "Z-d"
-        reading = "no decision-bearing instrument separated a material pair"
     return {
-        "letter": letter,
-        "reading": reading,
         "per_instrument": per_instrument,
         "material_pairs": sum(1 for row in rows if row["material"]),
         "inside_band_pairs": sum(1 for row in rows if not row["material"]),
+        "facts": {
+            "every_material_pair_ranked": any(
+                block["ranks_every_material_pair"] for block in per_instrument.values()
+            ),
+            "some_material_pair_ranked": any(
+                block["material_pairs_ranked_correctly"] > 0 for block in per_instrument.values()
+            ),
+            "any_contradiction": any(
+                block["contradicted_pairs"] for block in per_instrument.values()
+            ),
+            "any_inside_band_separated": any(
+                block["inside_band_pairs_separated"] for block in per_instrument.values()
+            ),
+            "any_separation": any(
+                block["material_pairs_ranked_correctly"] > 0
+                or block["contradicted_pairs"]
+                or block["inside_band_pairs_separated"]
+                for block in per_instrument.values()
+            ),
+            "any_ordering_inverted": any(
+                float(block["verdict_facts"]["rho"]) <= 0.0 for block in per_instrument.values()
+            ),
+            "material_pairs": sum(1 for row in rows if row["material"]),
+            "decision_bearing_instruments": len(per_instrument),
+        },
+    }
+
+
+def arm_outcome(
+    result: Mapping[str, Any], decision_bearing: Sequence[str], outcomes: OutcomeVocabulary
+) -> dict[str, Any]:
+    """The record's own letter for these facts, read from the vocabulary the record declared."""
+    computed = arm_facts(result, decision_bearing)
+    decision = decide(computed["facts"], outcomes)
+    return {
+        **computed,
+        "letter": decision["letter"],
+        "reading": decision["reading"],
+        "vocabulary": decision["vocabulary"],
+        "precedence": decision["precedence"],
+        "also_matched": decision["also_matched"],
+        "letters_declared": decision["letters_declared"],
     }
 
 
@@ -264,7 +298,14 @@ def summarise(result: Mapping[str, Any]) -> str:
             f"smallest separated {block['smallest_separated_gap']}, "
             f"largest missed {block['largest_unseparated_material_gap']} -> {block['verdict']}"
         )
-    lines.append(f"outcome: {result['outcome']['letter']} — {result['outcome']['reading']}")
+    outcome = result["outcome"]
+    if outcome.get("letter"):
+        lines.append(f"outcome: {outcome['letter']} — {outcome['reading']}")
+    else:
+        lines.append(
+            "outcome: none declared — statistics only; pass --outcome-vocabulary to read these facts "
+            "against the letters this record declared"
+        )
     return "\n".join(lines)
 
 
@@ -297,9 +338,49 @@ def main(argv: Sequence[str] | None = None) -> int:
         default="minimal_pairs_usable,continuation_pmi_easy,continuation_pmi_hard",
         help="comma-separated instrument names whose verdicts decide the outcome",
     )
+    parser.add_argument(
+        "--outcome-vocabulary",
+        type=Path,
+        default=None,
+        help="the record's own family-level outcome declaration (configs/analyses/*.json); without it no "
+        "letter is printed, because a verdict is a record's contract and not this script's (K-034)",
+    )
+    parser.add_argument(
+        "--instrument-vocabulary",
+        type=Path,
+        default=None,
+        help="the record's per-instrument verdict declaration, the one E2626 wrote as S-a…S-d",
+    )
+    parser.add_argument(
+        "--statistics-only",
+        action="store_true",
+        help="print the facts and no letters at all; refuses either vocabulary being given",
+    )
     parser.add_argument("--out", type=Path, default=None)
     args = parser.parse_args(argv)
     try:
+        if args.statistics_only and (args.outcome_vocabulary or args.instrument_vocabulary):
+            message = "--statistics-only takes no outcome vocabulary; it is the flag that says none is read"
+            raise AnalysisError(message)
+        if not args.statistics_only and not (
+            args.outcome_vocabulary and args.instrument_vocabulary
+        ):
+            message = (
+                "this analysis prints no verdict it was not told: give --outcome-vocabulary and "
+                "--instrument-vocabulary (the declarations E2629 and E2626 ran on are committed under "
+                "configs/analyses/), or --statistics-only for the numbers alone"
+            )
+            raise AnalysisError(message)
+        instrument_verdicts = (
+            None
+            if args.statistics_only
+            else load_vocabulary(args.instrument_vocabulary, known_facts=VERDICT_FACT_NAMES)
+        )
+        family_outcomes = (
+            None
+            if args.statistics_only
+            else load_vocabulary(args.outcome_vocabulary, known_facts=FAMILY_FACT_NAMES)
+        )
         result = read(
             reports=arm_reports(args.arm),
             reference=args.reference,
@@ -309,8 +390,16 @@ def main(argv: Sequence[str] | None = None) -> int:
             materiality=args.materiality,
             decision_bearing=args.decision_bearing.split(","),
             context_result=_load(args.context) if args.context else None,
+            instrument_verdicts=instrument_verdicts,
+            family_outcomes=family_outcomes,
         )
-    except (AnalysisError, OSError, KeyError, ValueError) as error:
+    except (
+        AnalysisError,
+        OutcomeRuleError,
+        OSError,
+        KeyError,
+        ValueError,
+    ) as error:
         print(f"error: {error}", file=sys.stderr)
         return 2
     text = json.dumps(result, indent=2, sort_keys=True) + "\n"

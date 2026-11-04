@@ -124,6 +124,14 @@ blocks below are dated and kept as the context each result was read in; this fir
   a randomization test over eight clusters cannot report below 0.0078 at any item count. E2634's hand-computed
   clustering (24 and 26 works, `mathematics-pg302` at 11.6 %) reproduced exactly from the digest-gated rebuild, which
   is the K-035 mechanism working. No capability claim: K-001 is untouched by every number in that record.
+* **Outcome vocabularies (K-034, Implemented 2026-11-04, [ADR-0052](../decisions/ADR-0052-an-analysis-prints-the-verdict-its-record-declared-or-none-at-all.md))**:
+  `chakaso.training.outcome_rules` reads a record's declared letter → condition list, and `compare_instruments`,
+  `scripts/analyse_arm_pairs.py` and `scripts/analyse_probe_sensitivity.py` print **no verdict letter they were not
+  handed** — `--outcome-vocabulary`, or `--statistics-only` for the facts alone. The `S-a…S-d` constants, E2626's 0.9
+  bounds, and E2629's `Z-a…Z-d` moved into `configs/analyses/` as declarations; a vocabulary naming a fact the analysis
+  does not compute is refused at load, and facts no rule covers are refused rather than rounded into a catch-all. E2634's
+  analysis re-run under its own declaration returns **G-a** with a `pairs` array byte-identical to the `results.json`
+  the tool mislabelled `Z-a`, and E2629's returns **Z-d** with all eight verdicts identical.
 * **Arm-pair test of the instruments** ([E2629](../../experiments/E2629/record.md)): `scripts/analyse_arm_pairs.py` hands the probes two
   independently trained arms whose loss gap is already committed — E2612's mixture (2.055447 whole-pack bits per character) against its
   prose-only control (2.163693), matched by `chakaso.training.arm_comparison` on corpus, split, vocabulary, seed, budget and denominators —

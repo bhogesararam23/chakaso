@@ -1,0 +1,683 @@
+{
+  "arms": {
+    "E2612-P": {
+      "experiment": "E2612-P",
+      "max_steps": 2400,
+      "o1_equal_weight_mean": 2.218646,
+      "seed": 7,
+      "split_fingerprint": "adf650435c3a9068",
+      "vocabulary": "434debe82f949347",
+      "whole_pack_bits_per_character": 2.163693122795988
+    },
+    "E2612-T": {
+      "experiment": "E2612-T",
+      "max_steps": 2400,
+      "o1_equal_weight_mean": 2.021357,
+      "seed": 7,
+      "split_fingerprint": "adf650435c3a9068",
+      "vocabulary": "434debe82f949347",
+      "whole_pack_bits_per_character": 2.05544739454246
+    },
+    "E2613-H": {
+      "experiment": "E2613-H",
+      "max_steps": 2400,
+      "o1_equal_weight_mean": 2.232937,
+      "seed": 7,
+      "split_fingerprint": "adf650435c3a9068",
+      "vocabulary": "434debe82f949347",
+      "whole_pack_bits_per_character": 2.1682177974655765
+    }
+  },
+  "decision_bearing": [
+    "continuation_pmi_easy",
+    "continuation_pmi_hard",
+    "context_pmi_prior_span",
+    "context_pmi_next_span",
+    "context_pmi_permuted",
+    "context_pmi_reversed"
+  ],
+  "instruments": {
+    "context_pmi_next_span": {
+      "alpha": 0.05,
+      "contradicted_pairs": [],
+      "largest_unseparated_material_gap": 0.11277040292311646,
+      "material_coverage": 0.0,
+      "material_pairs": 2,
+      "material_pairs_separated": 0,
+      "pairs": 3,
+      "rho": 0.9999999999999998,
+      "smallest_separated_gap": null,
+      "verdict": "S-b",
+      "verdict_also_matched": [],
+      "verdict_facts": {
+        "contradicted_pairs": 0,
+        "has_material_pairs": true,
+        "material_coverage": 0.0,
+        "material_pairs": 2,
+        "material_pairs_separated": 0,
+        "rho": 0.9999999999999998
+      },
+      "verdict_precedence": "first match in declaration order",
+      "verdict_reading": "it tracks the criterion but resolves fewer of the material pairs than the record asked for",
+      "verdict_vocabulary": "E2626 instrument verdicts (S-a\u2026S-d, 0.9 coverage, 0.9 tracking)"
+    },
+    "context_pmi_permuted": {
+      "alpha": 0.05,
+      "contradicted_pairs": [],
+      "largest_unseparated_material_gap": null,
+      "material_coverage": 1.0,
+      "material_pairs": 2,
+      "material_pairs_separated": 2,
+      "pairs": 3,
+      "rho": 0.9999999999999998,
+      "smallest_separated_gap": 0.10824572825352785,
+      "verdict": "S-a",
+      "verdict_also_matched": [
+        "S-b"
+      ],
+      "verdict_facts": {
+        "contradicted_pairs": 0,
+        "has_material_pairs": true,
+        "material_coverage": 1.0,
+        "material_pairs": 2,
+        "material_pairs_separated": 2,
+        "rho": 0.9999999999999998
+      },
+      "verdict_precedence": "first match in declaration order",
+      "verdict_reading": "it tracks the criterion and separates at least nine tenths of the material pairs",
+      "verdict_vocabulary": "E2626 instrument verdicts (S-a\u2026S-d, 0.9 coverage, 0.9 tracking)"
+    },
+    "context_pmi_prior_span": {
+      "alpha": 0.05,
+      "contradicted_pairs": [],
+      "largest_unseparated_material_gap": 0.11277040292311646,
+      "material_coverage": 0.0,
+      "material_pairs": 2,
+      "material_pairs_separated": 0,
+      "pairs": 3,
+      "rho": 0.4999999999999999,
+      "smallest_separated_gap": null,
+      "verdict": "S-c",
+      "verdict_also_matched": [
+        "S-b"
+      ],
+      "verdict_facts": {
+        "contradicted_pairs": 0,
+        "has_material_pairs": true,
+        "material_coverage": 0.0,
+        "material_pairs": 2,
+        "material_pairs_separated": 0,
+        "rho": 0.4999999999999999
+      },
+      "verdict_precedence": "first match in declaration order",
+      "verdict_reading": "the instrument does not track the criterion, or it separates a pair the criterion contradicts",
+      "verdict_vocabulary": "E2626 instrument verdicts (S-a\u2026S-d, 0.9 coverage, 0.9 tracking)"
+    },
+    "context_pmi_reversed": {
+      "alpha": 0.05,
+      "contradicted_pairs": [],
+      "largest_unseparated_material_gap": 0.11277040292311646,
+      "material_coverage": 0.0,
+      "material_pairs": 2,
+      "material_pairs_separated": 0,
+      "pairs": 3,
+      "rho": 0.9999999999999998,
+      "smallest_separated_gap": null,
+      "verdict": "S-b",
+      "verdict_also_matched": [],
+      "verdict_facts": {
+        "contradicted_pairs": 0,
+        "has_material_pairs": true,
+        "material_coverage": 0.0,
+        "material_pairs": 2,
+        "material_pairs_separated": 0,
+        "rho": 0.9999999999999998
+      },
+      "verdict_precedence": "first match in declaration order",
+      "verdict_reading": "it tracks the criterion but resolves fewer of the material pairs than the record asked for",
+      "verdict_vocabulary": "E2626 instrument verdicts (S-a\u2026S-d, 0.9 coverage, 0.9 tracking)"
+    },
+    "continuation_pmi_easy": {
+      "alpha": 0.05,
+      "contradicted_pairs": [],
+      "largest_unseparated_material_gap": 0.11277040292311646,
+      "material_coverage": 0.0,
+      "material_pairs": 2,
+      "material_pairs_separated": 0,
+      "pairs": 3,
+      "rho": 0.9999999999999998,
+      "smallest_separated_gap": null,
+      "verdict": "S-b",
+      "verdict_also_matched": [],
+      "verdict_facts": {
+        "contradicted_pairs": 0,
+        "has_material_pairs": true,
+        "material_coverage": 0.0,
+        "material_pairs": 2,
+        "material_pairs_separated": 0,
+        "rho": 0.9999999999999998
+      },
+      "verdict_precedence": "first match in declaration order",
+      "verdict_reading": "it tracks the criterion but resolves fewer of the material pairs than the record asked for",
+      "verdict_vocabulary": "E2626 instrument verdicts (S-a\u2026S-d, 0.9 coverage, 0.9 tracking)"
+    },
+    "continuation_pmi_hard": {
+      "alpha": 0.05,
+      "contradicted_pairs": [],
+      "largest_unseparated_material_gap": 0.11277040292311646,
+      "material_coverage": 0.0,
+      "material_pairs": 2,
+      "material_pairs_separated": 0,
+      "pairs": 3,
+      "rho": 0.4999999999999999,
+      "smallest_separated_gap": null,
+      "verdict": "S-c",
+      "verdict_also_matched": [
+        "S-b"
+      ],
+      "verdict_facts": {
+        "contradicted_pairs": 0,
+        "has_material_pairs": true,
+        "material_coverage": 0.0,
+        "material_pairs": 2,
+        "material_pairs_separated": 0,
+        "rho": 0.4999999999999999
+      },
+      "verdict_precedence": "first match in declaration order",
+      "verdict_reading": "the instrument does not track the criterion, or it separates a pair the criterion contradicts",
+      "verdict_vocabulary": "E2626 instrument verdicts (S-a\u2026S-d, 0.9 coverage, 0.9 tracking)"
+    },
+    "minimal_pairs_all_800": {
+      "alpha": 0.05,
+      "contradicted_pairs": [],
+      "largest_unseparated_material_gap": 0.11277040292311646,
+      "material_coverage": 0.0,
+      "material_pairs": 2,
+      "material_pairs_separated": 0,
+      "pairs": 3,
+      "rho": -0.9999999999999998,
+      "smallest_separated_gap": null,
+      "verdict": "S-c",
+      "verdict_also_matched": [
+        "S-b"
+      ],
+      "verdict_facts": {
+        "contradicted_pairs": 0,
+        "has_material_pairs": true,
+        "material_coverage": 0.0,
+        "material_pairs": 2,
+        "material_pairs_separated": 0,
+        "rho": -0.9999999999999998
+      },
+      "verdict_precedence": "first match in declaration order",
+      "verdict_reading": "the instrument does not track the criterion, or it separates a pair the criterion contradicts",
+      "verdict_vocabulary": "E2626 instrument verdicts (S-a\u2026S-d, 0.9 coverage, 0.9 tracking)"
+    },
+    "minimal_pairs_usable": {
+      "alpha": 0.05,
+      "contradicted_pairs": [],
+      "largest_unseparated_material_gap": 0.11277040292311646,
+      "material_coverage": 0.0,
+      "material_pairs": 2,
+      "material_pairs_separated": 0,
+      "pairs": 3,
+      "rho": -0.8660254037844387,
+      "smallest_separated_gap": null,
+      "verdict": "S-c",
+      "verdict_also_matched": [
+        "S-b"
+      ],
+      "verdict_facts": {
+        "contradicted_pairs": 0,
+        "has_material_pairs": true,
+        "material_coverage": 0.0,
+        "material_pairs": 2,
+        "material_pairs_separated": 0,
+        "rho": -0.8660254037844387
+      },
+      "verdict_precedence": "first match in declaration order",
+      "verdict_reading": "the instrument does not track the criterion, or it separates a pair the criterion contradicts",
+      "verdict_vocabulary": "E2626 instrument verdicts (S-a\u2026S-d, 0.9 coverage, 0.9 tracking)"
+    }
+  },
+  "matchedness": {
+    "decay_applied_to": {
+      "equal": false,
+      "field": "decay_applied_to",
+      "values": {
+        "E2612-P": null,
+        "E2612-T": null,
+        "E2613-H": "every parameter, norm scales included"
+      }
+    },
+    "max_training_tokens": {
+      "equal": false,
+      "field": "max_training_tokens",
+      "values": {
+        "E2612-P": 20000000,
+        "E2612-T": 20000000,
+        "E2613-H": 10000000
+      }
+    },
+    "training_group_prefixes": {
+      "equal": false,
+      "field": "training_group_prefixes",
+      "values": {
+        "E2612-P": [
+          "prose-"
+        ],
+        "E2612-T": null,
+        "E2613-H": [
+          "prose-"
+        ]
+      }
+    },
+    "training_tokens_packed": {
+      "equal": false,
+      "field": "training_tokens_packed",
+      "values": {
+        "E2612-P": 20000402,
+        "E2612-T": 20000103,
+        "E2613-H": 10001764
+      }
+    }
+  },
+  "materiality": 0.02,
+  "models": [
+    "E2612-T",
+    "E2612-P",
+    "E2613-H"
+  ],
+  "models_scored_but_not_analysed": [
+    "untrained-control"
+  ],
+  "outcome": {
+    "also_matched": [],
+    "facts": {
+      "any_contradiction": false,
+      "any_inside_band_separated": false,
+      "any_ordering_inverted": false,
+      "any_separation": true,
+      "decision_bearing_instruments": 6,
+      "every_material_pair_ranked": true,
+      "material_pairs": 2,
+      "some_material_pair_ranked": true
+    },
+    "inside_band_pairs": 1,
+    "letter": "G-a",
+    "letters_declared": [
+      "G-a",
+      "G-b",
+      "G-c",
+      "G-d"
+    ],
+    "material_pairs": 2,
+    "per_instrument": {
+      "context_pmi_next_span": {
+        "contradicted_pairs": [],
+        "inside_band_pairs_separated": [],
+        "material_pairs": 2,
+        "material_pairs_ranked_correctly": 0,
+        "ranks_every_material_pair": false,
+        "verdict": "S-b",
+        "verdict_facts": {
+          "contradicted_pairs": 0,
+          "has_material_pairs": true,
+          "material_coverage": 0.0,
+          "material_pairs": 2,
+          "material_pairs_separated": 0,
+          "rho": 0.9999999999999998
+        }
+      },
+      "context_pmi_permuted": {
+        "contradicted_pairs": [],
+        "inside_band_pairs_separated": [],
+        "material_pairs": 2,
+        "material_pairs_ranked_correctly": 2,
+        "ranks_every_material_pair": true,
+        "verdict": "S-a",
+        "verdict_facts": {
+          "contradicted_pairs": 0,
+          "has_material_pairs": true,
+          "material_coverage": 1.0,
+          "material_pairs": 2,
+          "material_pairs_separated": 2,
+          "rho": 0.9999999999999998
+        }
+      },
+      "context_pmi_prior_span": {
+        "contradicted_pairs": [],
+        "inside_band_pairs_separated": [],
+        "material_pairs": 2,
+        "material_pairs_ranked_correctly": 0,
+        "ranks_every_material_pair": false,
+        "verdict": "S-c",
+        "verdict_facts": {
+          "contradicted_pairs": 0,
+          "has_material_pairs": true,
+          "material_coverage": 0.0,
+          "material_pairs": 2,
+          "material_pairs_separated": 0,
+          "rho": 0.4999999999999999
+        }
+      },
+      "context_pmi_reversed": {
+        "contradicted_pairs": [],
+        "inside_band_pairs_separated": [],
+        "material_pairs": 2,
+        "material_pairs_ranked_correctly": 0,
+        "ranks_every_material_pair": false,
+        "verdict": "S-b",
+        "verdict_facts": {
+          "contradicted_pairs": 0,
+          "has_material_pairs": true,
+          "material_coverage": 0.0,
+          "material_pairs": 2,
+          "material_pairs_separated": 0,
+          "rho": 0.9999999999999998
+        }
+      },
+      "continuation_pmi_easy": {
+        "contradicted_pairs": [],
+        "inside_band_pairs_separated": [],
+        "material_pairs": 2,
+        "material_pairs_ranked_correctly": 0,
+        "ranks_every_material_pair": false,
+        "verdict": "S-b",
+        "verdict_facts": {
+          "contradicted_pairs": 0,
+          "has_material_pairs": true,
+          "material_coverage": 0.0,
+          "material_pairs": 2,
+          "material_pairs_separated": 0,
+          "rho": 0.9999999999999998
+        }
+      },
+      "continuation_pmi_hard": {
+        "contradicted_pairs": [],
+        "inside_band_pairs_separated": [],
+        "material_pairs": 2,
+        "material_pairs_ranked_correctly": 0,
+        "ranks_every_material_pair": false,
+        "verdict": "S-c",
+        "verdict_facts": {
+          "contradicted_pairs": 0,
+          "has_material_pairs": true,
+          "material_coverage": 0.0,
+          "material_pairs": 2,
+          "material_pairs_separated": 0,
+          "rho": 0.4999999999999999
+        }
+      }
+    },
+    "precedence": "first match in declaration order",
+    "reading": "the shortage was power \u2014 at least one material pair is separated by Holm in at least one continuation instrument with the better-loss arm favoured, and no inside-the-band pair separates",
+    "vocabulary": "E2634 enlargement outcomes (G-a\u2026G-d)"
+  },
+  "pairs": [
+    {
+      "context_pmi_next_span": {
+        "direction": "agrees",
+        "discordant": [
+          25,
+          15
+        ],
+        "n": 40,
+        "p_value": 0.1538599441628321,
+        "separated": false
+      },
+      "context_pmi_permuted": {
+        "direction": "agrees",
+        "discordant": [
+          30,
+          13
+        ],
+        "n": 43,
+        "p_value": 0.0137181850586785,
+        "separated": true
+      },
+      "context_pmi_prior_span": {
+        "direction": "agrees",
+        "discordant": [
+          29,
+          14
+        ],
+        "n": 43,
+        "p_value": 0.03153949735315109,
+        "separated": false
+      },
+      "context_pmi_reversed": {
+        "direction": "agrees",
+        "discordant": [
+          25,
+          15
+        ],
+        "n": 40,
+        "p_value": 0.1538599441628321,
+        "separated": false
+      },
+      "continuation_pmi_easy": {
+        "direction": "agrees",
+        "discordant": [
+          14,
+          5
+        ],
+        "n": 19,
+        "p_value": 0.063568115234375,
+        "separated": false
+      },
+      "continuation_pmi_hard": {
+        "direction": "agrees",
+        "discordant": [
+          28,
+          19
+        ],
+        "n": 47,
+        "p_value": 0.24296021728332562,
+        "separated": false
+      },
+      "criterion_gap": -0.10824572825352785,
+      "first": "E2612-T",
+      "material": true,
+      "minimal_pairs_all_800": {
+        "direction": "contradicts",
+        "discordant": [
+          13,
+          20
+        ],
+        "n": 33,
+        "p_value": 0.296206368599087,
+        "separated": false
+      },
+      "minimal_pairs_usable": {
+        "direction": "none",
+        "discordant": [
+          13,
+          13
+        ],
+        "n": 26,
+        "p_value": 1.0,
+        "separated": false
+      },
+      "second": "E2612-P"
+    },
+    {
+      "context_pmi_next_span": {
+        "direction": "agrees",
+        "discordant": [
+          27,
+          14
+        ],
+        "n": 41,
+        "p_value": 0.05958388801809633,
+        "separated": false
+      },
+      "context_pmi_permuted": {
+        "direction": "agrees",
+        "discordant": [
+          32,
+          12
+        ],
+        "n": 44,
+        "p_value": 0.003657766827927844,
+        "separated": true
+      },
+      "context_pmi_prior_span": {
+        "direction": "agrees",
+        "discordant": [
+          30,
+          18
+        ],
+        "n": 48,
+        "p_value": 0.11140289106101875,
+        "separated": false
+      },
+      "context_pmi_reversed": {
+        "direction": "agrees",
+        "discordant": [
+          34,
+          17
+        ],
+        "n": 51,
+        "p_value": 0.024092907698449295,
+        "separated": false
+      },
+      "continuation_pmi_easy": {
+        "direction": "agrees",
+        "discordant": [
+          15,
+          4
+        ],
+        "n": 19,
+        "p_value": 0.0192108154296875,
+        "separated": false
+      },
+      "continuation_pmi_hard": {
+        "direction": "agrees",
+        "discordant": [
+          25,
+          22
+        ],
+        "n": 47,
+        "p_value": 0.7708669945730264,
+        "separated": false
+      },
+      "criterion_gap": -0.11277040292311646,
+      "first": "E2612-T",
+      "material": true,
+      "minimal_pairs_all_800": {
+        "direction": "contradicts",
+        "discordant": [
+          4,
+          14
+        ],
+        "n": 18,
+        "p_value": 0.0308837890625,
+        "separated": false
+      },
+      "minimal_pairs_usable": {
+        "direction": "contradicts",
+        "discordant": [
+          4,
+          7
+        ],
+        "n": 11,
+        "p_value": 0.548828125,
+        "separated": false
+      },
+      "second": "E2613-H"
+    },
+    {
+      "context_pmi_next_span": {
+        "direction": "agrees",
+        "discordant": [
+          19,
+          16
+        ],
+        "n": 35,
+        "p_value": 0.7358788008568808,
+        "separated": false
+      },
+      "context_pmi_permuted": {
+        "direction": "agrees",
+        "discordant": [
+          23,
+          20
+        ],
+        "n": 43,
+        "p_value": 0.7607916425613439,
+        "separated": false
+      },
+      "context_pmi_prior_span": {
+        "direction": "contradicts",
+        "discordant": [
+          17,
+          20
+        ],
+        "n": 37,
+        "p_value": 0.7428293587290682,
+        "separated": false
+      },
+      "context_pmi_reversed": {
+        "direction": "agrees",
+        "discordant": [
+          24,
+          17
+        ],
+        "n": 41,
+        "p_value": 0.34888887944907765,
+        "separated": false
+      },
+      "continuation_pmi_easy": {
+        "direction": "agrees",
+        "discordant": [
+          7,
+          5
+        ],
+        "n": 12,
+        "p_value": 0.7744140625,
+        "separated": false
+      },
+      "continuation_pmi_hard": {
+        "direction": "contradicts",
+        "discordant": [
+          15,
+          21
+        ],
+        "n": 36,
+        "p_value": 0.40503224614076316,
+        "separated": false
+      },
+      "criterion_gap": -0.004524674669588613,
+      "first": "E2612-P",
+      "material": false,
+      "minimal_pairs_all_800": {
+        "direction": "contradicts",
+        "discordant": [
+          10,
+          13
+        ],
+        "n": 23,
+        "p_value": 0.6776394844055176,
+        "separated": false
+      },
+      "minimal_pairs_usable": {
+        "direction": "contradicts",
+        "discordant": [
+          9,
+          12
+        ],
+        "n": 21,
+        "p_value": 0.6636238098144531,
+        "separated": false
+      },
+      "second": "E2613-H"
+    }
+  ],
+  "reference_arm": "E2612-T",
+  "usable_phenomena": [
+    "auxiliary_agreement",
+    "determiner_noun_agreement",
+    "reflexive_pronoun_agreement"
+  ]
+}

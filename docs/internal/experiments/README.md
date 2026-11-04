@@ -191,3 +191,22 @@ The next experiment, or the decision this settles.
   shape a rule should have: declared in advance, checked by the tool, not remembered by the author.
 - If a hypothesis is not being tested, the experiment is exploration. That is
   allowed; it should say so in `Motivation`.
+- **A record declares the letters its verdict can take.** An analysis tool computes facts and prints no outcome label
+  unless it is handed the record's vocabulary — a committed file under `configs/analyses/` in schema
+  `chakaso-outcome-vocabulary/1`, read by [`chakaso.training.outcome_rules`](../../../src/chakaso/training/outcome_rules.py)
+  — or is explicitly run `--statistics-only`. A letter is part of the pre-run declaration in the same sense as the seed
+  and the materiality band, so a shared script that embeds one reports *another record's* outcome space: E2634
+  preregistered `G-a…G-d` and was handed a `Z-a` by the tool (K-034,
+  [ADR-0052](../../decisions/ADR-0052-an-analysis-prints-the-verdict-its-record-declared-or-none-at-all.md)). A
+  vocabulary that names a fact the analysis does not compute is refused at load, and facts that no rule covers are
+  refused rather than rounded into a catch-all the author did not write.
+- **A probe result states which work each item came from.** The continuation and same-region runners write a
+  [`chakaso.training.item_clusters`](../../../src/chakaso/training/item_clusters.py) listing into the result — item
+  identifier to held-out work, digested — and the authored minimal-pair runner names its cluster unit as the
+  *phenomenon*, because no book lies behind a hand-written pair. A record that claims its separations are spread over
+  *n* works prints *n* from the artifact instead of re-cutting the item set from the corpus to obtain it (K-035;
+  E2634 rebuilt 745 items over a 149 MB snapshot for the number, and [E2635](../../../experiments/E2635/record.md)
+  reproduced it through the digest gate). A paired verdict claim is read from
+  [`chakaso.training.paired_verdicts`](../../../src/chakaso/training/paired_verdicts.py) — the work-clustered
+  randomization test — with exact McNemar beside it as the reading that assumes independent items; a record that reports
+  only the second is reporting the optimistic one.

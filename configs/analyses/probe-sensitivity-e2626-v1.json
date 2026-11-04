@@ -1,0 +1,34 @@
+{
+  "schema_version": "chakaso-outcome-vocabulary/1",
+  "name": "E2626 instrument verdicts (S-a…S-d, 0.9 coverage, 0.9 tracking)",
+  "exclusive": false,
+  "outcomes": [
+    {
+      "letter": "S-c",
+      "reading": "the instrument does not track the criterion, or it separates a pair the criterion contradicts",
+      "when": [
+        {
+          "any_of": [
+            {"fact": "contradicted_pairs", "at_least": 1},
+            {"fact": "rho", "less_than": 0.9}
+          ]
+        }
+      ]
+    },
+    {
+      "letter": "S-d",
+      "reading": "no pair was material, so there was nothing for the instrument to resolve",
+      "when": [{"not_flag": "has_material_pairs"}]
+    },
+    {
+      "letter": "S-a",
+      "reading": "it tracks the criterion and separates at least nine tenths of the material pairs",
+      "when": [{"fact": "material_coverage", "at_least": 0.9}]
+    },
+    {
+      "letter": "S-b",
+      "reading": "it tracks the criterion but resolves fewer of the material pairs than the record asked for",
+      "when": [{"always": true}]
+    }
+  ]
+}

@@ -1,0 +1,41 @@
+{
+  "schema_version": "chakaso-outcome-vocabulary/1",
+  "name": "E2629 arm-pair outcomes (Z-a…Z-d)",
+  "exclusive": false,
+  "outcomes": [
+    {
+      "letter": "Z-a",
+      "reading": "some decision-bearing instrument ranks every material pair in the criterion's direction, and none contradicts the criterion or separates the pair inside the band",
+      "when": [
+        {"flag": "every_material_pair_ranked"},
+        {"not_flag": "any_contradiction"},
+        {"not_flag": "any_inside_band_separated"}
+      ]
+    },
+    {
+      "letter": "Z-b",
+      "reading": "some decision-bearing instrument ranks at least one material pair correctly, and none contradicts the criterion",
+      "when": [
+        {"flag": "some_material_pair_ranked"},
+        {"not_flag": "any_contradiction"}
+      ]
+    },
+    {
+      "letter": "Z-c",
+      "reading": "a decision-bearing instrument either contradicts the criterion or separates the pair the band calls equal",
+      "when": [
+        {
+          "any_of": [
+            {"flag": "any_contradiction"},
+            {"flag": "any_inside_band_separated"}
+          ]
+        }
+      ]
+    },
+    {
+      "letter": "Z-d",
+      "reading": "no decision-bearing instrument separated a material pair",
+      "when": [{"not_flag": "any_separation"}]
+    }
+  ]
+}

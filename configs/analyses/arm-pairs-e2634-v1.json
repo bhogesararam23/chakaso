@@ -1,0 +1,30 @@
+{
+  "schema_version": "chakaso-outcome-vocabulary/1",
+  "name": "E2634 enlargement outcomes (G-a…G-d)",
+  "exclusive": false,
+  "outcomes": [
+    {
+      "letter": "G-a",
+      "reading": "the shortage was power — at least one material pair is separated by Holm in at least one continuation instrument with the better-loss arm favoured, and no inside-the-band pair separates",
+      "when": [
+        {"flag": "some_material_pair_ranked"},
+        {"not_flag": "any_inside_band_separated"}
+      ]
+    },
+    {
+      "letter": "G-b",
+      "reading": "the shortage was not power — every continuation instrument still separates nothing after the enlargement",
+      "when": [{"not_flag": "any_separation"}]
+    },
+    {
+      "letter": "G-c",
+      "reading": "the band is contradicted — the pair the materiality band calls equal separates",
+      "when": [{"flag": "any_inside_band_separated"}]
+    },
+    {
+      "letter": "G-d",
+      "reading": "the ordering inverts — some continuation instrument's rank correlation against the loss is at or below zero at the enlarged set",
+      "when": [{"flag": "any_ordering_inverted"}]
+    }
+  ]
+}

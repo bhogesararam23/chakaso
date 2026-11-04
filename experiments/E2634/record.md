@@ -328,3 +328,19 @@ and 6.8 % — and its floor qualification is untouched: the reading that survive
 is 0.119 below chance. G-a is therefore **G-a on one pair, with the second pair withdrawn under clustering**, and any
 later use of this record should read E2635 beside it rather than this table alone.
 
+
+### Addendum (2026-11-04) — deviation 1 is closed, and the record now gets its own letter
+
+Deviation 1 was this record being reported a `Z-a` by a tool that embedded E2629's outcome space. Under
+[ADR-0052](../../docs/decisions/ADR-0052-an-analysis-prints-the-verdict-its-record-declared-or-none-at-all.md) the
+rules this record declared before its run are committed at
+[`configs/analyses/arm-pairs-e2634-v1.json`](../../configs/analyses/arm-pairs-e2634-v1.json), and re-running its
+analysis with `--outcome-vocabulary` pointed at it — plus
+`--instrument-vocabulary configs/analyses/probe-sensitivity-e2626-v1.json` — returns **G-a**, which is this record's
+outcome on its own rules. That re-run is committed beside this record as
+[`results-under-declared-vocabulary.json`](results-under-declared-vocabulary.json); its `pairs` array is byte-identical
+to [`results.json`](results.json) and its instrument verdicts are identical, so the only thing the declaration moved is
+the letter. [`results.json`](results.json) is left exactly as the tool wrote it on the day of the run, because a
+measured artifact records what happened, not what should have happened.
+
+The qualification G-a carries is unchanged by all of this, and so is the floor of the reading that earned it.

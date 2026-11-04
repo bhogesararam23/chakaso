@@ -326,3 +326,21 @@ re-scoring of the same 215 items on the same item digest, item for item.
 5. **Nothing about the models moved.** The mixture is still the better arm by the criterion the project uses, E2612's
    trade-off stands as recorded, every arm is still truncated at the step ceiling, and no sample from any of them is
    usable text. [K-001](../../docs/agent/KNOWN_ISSUES.md) is untouched by this record.
+
+### Addendum (2026-11-04) — re-run under the record's own declaration, the verdict is unchanged
+
+Nothing above is edited. `scripts/analyse_arm_pairs.py` used to embed this record's `Z-a`…`Z-d` rules; under
+[ADR-0052](../../docs/decisions/ADR-0052-an-analysis-prints-the-verdict-its-record-declared-or-none-at-all.md) they
+live in [`configs/analyses/arm-pairs-e2629-v1.json`](../../configs/analyses/arm-pairs-e2629-v1.json) and the analysis
+prints no letter unless it is handed one (or told `--statistics-only`). The command above therefore needs two more
+flags:
+
+```bash
+  --instrument-vocabulary configs/analyses/probe-sensitivity-e2626-v1.json   --outcome-vocabulary configs/analyses/arm-pairs-e2629-v1.json
+```
+
+Re-run that way over the committed arm reports and the three probe files, the analysis returns **Z-d** with its `pairs`
+array byte-identical to [`results.json`](results.json) and all eight instrument verdicts identical. One block differs:
+`matchedness` now also reports `decay_applied_to` as an unequal condition, because `chakaso.training.arm_comparison`
+learned to track it after this record ran ([E2631](../E2631/record.md) is where the vector-decay arm was measured). That
+is the guard doing its job on a later schema, not a change to this record's arms or its verdict.

@@ -112,11 +112,42 @@ def _continuation_result(values: dict[str, list[float]]) -> dict[str, Any]:
     }
 
 
-def _read(**overrides: dict[str, list[float]]) -> dict[str, Any]:
-    """Run the analysis over the fixture arms with one instrument's per-item scores overridden."""
+def _vocabulary(name: str, known_facts: tuple[str, ...]):  # type: ignore[no-untyped-def]
+    """One of the declarations the records committed, read through the mechanism that replaced the constants."""
+    from chakaso.training.outcome_rules import load_vocabulary
+
+    return load_vocabulary(
+        Path(__file__).resolve().parents[1] / "configs/analyses" / name,
+        known_facts=known_facts,
+    )
+
+
+def _read(
+    *,
+    instrument_vocabulary: Any | None = "default",
+    family_outcomes: Any | None = "default",
+    **overrides: dict[str, list[float]],
+) -> dict[str, Any]:
+    """Run the analysis over the fixture arms with one instrument's per-item scores overridden.
+
+    The vocabularies are the ones E2629 and E2626 committed (K-034): the letters these tests assert are read from
+    those files, so a passing run says the declaration reproduces the record, not that a script still hard-codes it.
+    """
     script = _script()
+    from chakaso.training.probe_sensitivity import VERDICT_FACT_NAMES
+
     scores = {name: list(values) for name, values in _BEST_FIRST.items()}
     scores.update(overrides)
+    instruments = (
+        _vocabulary("probe-sensitivity-e2626-v1.json", VERDICT_FACT_NAMES)
+        if instrument_vocabulary == "default"
+        else instrument_vocabulary
+    )
+    family = (
+        _vocabulary("arm-pairs-e2629-v1.json", script.FAMILY_FACT_NAMES)
+        if family_outcomes == "default"
+        else family_outcomes
+    )
     return script.read(
         reports=_reports(),
         reference="mixture",
@@ -125,6 +156,8 @@ def _read(**overrides: dict[str, list[float]]) -> dict[str, Any]:
         usable_phenomena=_PHENOMENA,
         materiality=0.02,
         decision_bearing=("minimal_pairs_usable",),
+        instrument_verdicts=instruments,
+        family_outcomes=family,
     )
 
 
@@ -297,6 +330,8 @@ def test_a_compact_extract_of_a_probe_result_is_read_as_the_arrays_it_stands_for
 
     loaded = script._load(path)
     assert loaded == whole
+    from chakaso.training.probe_sensitivity import VERDICT_FACT_NAMES
+
     result = script.read(
         reports=_reports(),
         reference="mixture",
@@ -305,6 +340,8 @@ def test_a_compact_extract_of_a_probe_result_is_read_as_the_arrays_it_stands_for
         usable_phenomena=_PHENOMENA,
         materiality=0.02,
         decision_bearing=("minimal_pairs_usable",),
+        instrument_verdicts=_vocabulary("probe-sensitivity-e2626-v1.json", VERDICT_FACT_NAMES),
+        family_outcomes=_vocabulary("arm-pairs-e2629-v1.json", script.FAMILY_FACT_NAMES),
     )
     assert result["outcome"] == _read()["outcome"]
 
@@ -334,3 +371,88 @@ def test_an_extract_whose_array_was_stubbed_is_still_refused_by_name(tmp_path: P
             materiality=0.02,
             decision_bearing=("minimal_pairs_usable",),
         )
+
+
+def test_a_record_that_declared_its_own_letters_gets_them_from_the_same_facts() -> None:
+    """The defect K-034 was filed for, shown closed on the fixture: E2634's declaration, not E2629's.
+
+    One analysis, one set of facts, two vocabularies. The record that preregistered `G-a…G-d` was reported a `Z-a`
+    by the tool that embedded it; now the letter is whichever declaration the caller handed over, and the facts are
+    byte-identical between the two runs.
+    """
+    script = _script()
+    from chakaso.training.probe_sensitivity import VERDICT_FACT_NAMES
+
+    under_e2629 = _read()
+    under_e2634 = _read(
+        instrument_vocabulary=_vocabulary("probe-sensitivity-e2626-v1.json", VERDICT_FACT_NAMES),
+        family_outcomes=_vocabulary("arm-pairs-e2634-v1.json", script.FAMILY_FACT_NAMES),
+    )
+
+    assert under_e2629["outcome"]["letter"] == "Z-a"
+    assert under_e2634["outcome"]["letter"] == "G-a"
+    assert under_e2634["outcome"]["vocabulary"].startswith("E2634")
+    assert under_e2629["outcome"]["per_instrument"] == under_e2634["outcome"]["per_instrument"]
+
+
+def test_the_analysis_prints_no_letter_at_all_when_it_is_given_none() -> None:
+    """`--statistics-only` is a mode, not an accident: the facts are complete and the verdict slot is empty."""
+    result = _read(instrument_vocabulary=None, family_outcomes=None)
+
+    assert result["outcome"].get("letter") is None
+    assert result["outcome"]["facts"]["every_material_pair_ranked"] is True
+    for block in result["instruments"].values():
+        assert block["verdict"] is None
+        assert block["verdict_facts"]["material_pairs"] == 2
+
+
+def test_the_command_refuses_to_print_a_letter_nobody_declared(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """E2629's own command line predates the mechanism, and re-running it now stops here.
+
+    The refusal happens before any file is read, so a stale reproduction command fails with an instruction rather
+    than with a letter borrowed from another record.
+    """
+    argv = [
+        "--arm",
+        f"mixture={tmp_path / 'a.json'}",
+        "--arm",
+        f"prose={tmp_path / 'b.json'}",
+        "--reference",
+        "mixture",
+        "--pairs",
+        str(tmp_path / "pairs.json"),
+        "--continuations",
+        str(tmp_path / "continuations.json"),
+        "--usable-phenomena",
+        "agreement",
+    ]
+
+    assert _script().main(argv) == 2
+    assert "prints no verdict it was not told" in capsys.readouterr().err
+
+
+def test_statistics_only_and_a_vocabulary_are_mutually_exclusive(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    argv = [
+        "--arm",
+        f"mixture={tmp_path / 'a.json'}",
+        "--arm",
+        f"prose={tmp_path / 'b.json'}",
+        "--reference",
+        "mixture",
+        "--pairs",
+        str(tmp_path / "pairs.json"),
+        "--continuations",
+        str(tmp_path / "continuations.json"),
+        "--usable-phenomena",
+        "agreement",
+        "--statistics-only",
+        "--outcome-vocabulary",
+        "configs/analyses/arm-pairs-e2629-v1.json",
+    ]
+
+    assert _script().main(argv) == 2
+    assert "takes no outcome vocabulary" in capsys.readouterr().err

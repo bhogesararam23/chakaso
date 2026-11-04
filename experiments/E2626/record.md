@@ -282,3 +282,17 @@ No new item set, no new scoring rule, no per-register split of the verdict (the 
 definition for the multiplicity correction, and no second seed. The ordering criterion is one trajectory, so this record cannot say whether the 1600/1800
 contradiction reproduces across initialisations — that would need the same ladder at another seed. [E2627](../E2627/record.md) is the next instrument
 measurement and is already preregistered.
+
+### Addendum (2026-11-04) — the S-letters this record printed are now a declaration it owns
+
+Nothing above is edited. [ADR-0052](../../docs/decisions/ADR-0052-an-analysis-prints-the-verdict-its-record-declared-or-none-at-all.md)
+removed the `S-a`…`S-d` constants and the 0.9 bounds that were `MATERIAL_COVERAGE` and `TRACKING_THRESHOLD` from
+`chakaso.training.probe_sensitivity`, because this record declared them and later records did not. The declaration is
+committed at
+[`configs/analyses/probe-sensitivity-e2626-v1.json`](../../configs/analyses/probe-sensitivity-e2626-v1.json) — the same
+conditions, the same order, this record's thresholds — and re-running this analysis now requires
+`--outcome-vocabulary` pointing at it, or `--statistics-only` to read the numbers with no letter. The file was verified
+by re-running [E2629](../E2629/record.md)'s arm-pair analysis through it: all eight instrument verdicts came back
+identical to that record's committed `results.json`, so the declaration reproduces what the constants computed. This
+record's own rung-ladder command was not re-run here, because it re-scores thirteen artifacts for a check that the
+verdict table does not need.

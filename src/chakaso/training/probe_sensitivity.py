@@ -21,20 +21,23 @@ from collections.abc import Mapping, Sequence
 from typing import Any
 
 from chakaso.training.errors import TrainingError
+from chakaso.training.outcome_rules import OutcomeVocabulary, decide
 from chakaso.training.paired_stats import holm_rejections, mcnemar_exact, spearman_rho
 
-__all__ = ["SENSITIVITY_OUTCOMES", "compare_instruments", "ordered_models"]
+__all__ = ["VERDICT_FACT_NAMES", "compare_instruments", "ordered_models"]
 
-#: The four verdicts a record may report, named so a later reading cites a label and not a paragraph.
-SENSITIVITY_OUTCOMES = ("S-a", "S-b", "S-c", "S-d")
-
-#: Share of materially-different pairs an instrument must separate to be called able to detect a real
-#: improvement. Not a convention inherited from anywhere: it is stated here so the verdict is reproducible and
-#: so a reader can disagree with the number rather than with the arithmetic.
-MATERIAL_COVERAGE = 0.9
-
-#: A rank correlation at or above this is taken to mean the instrument and the criterion order the models alike.
-TRACKING_THRESHOLD = 0.9
+#: The facts an instrument contributes to an outcome vocabulary, and the only names a record's instrument-level
+#: declaration may reference (K-034). The verdict letters themselves are not here: E2626 declared `S-a`…`S-d` in its
+#: own record, with its own 0.9 coverage and 0.9 tracking bounds, and a shared module that prints those letters for
+#: every record is a module that reports another record's outcome space. A vocabulary file names these and decides.
+VERDICT_FACT_NAMES = (
+    "rho",
+    "material_pairs",
+    "material_pairs_separated",
+    "material_coverage",
+    "has_material_pairs",
+    "contradicted_pairs",
+)
 
 
 class SensitivityError(TrainingError):
@@ -125,6 +128,7 @@ def compare_instruments(
     *,
     materiality: float,
     alpha: float = 0.05,
+    verdicts: OutcomeVocabulary | None = None,
 ) -> dict[str, Any]:
     """Judge each instrument against the criterion over every model pair.
 
@@ -137,13 +141,19 @@ def compare_instruments(
     family of pairs within one instrument is corrected with Holm's step-down at ``alpha`` — a sweep of dozens of
     rung pairs is one family, not dozens of experiments.
 
-    The verdict per instrument follows :data:`SENSITIVITY_OUTCOMES`:
+    ``verdicts`` is the calling record's outcome vocabulary, and it is the only way a letter gets into the result.
+    Without it every instrument block carries its statistics and `"verdict": None`, because a verdict is declared
+    before a run and this module was not part of that declaration: see
+    [`ADR-0052`](../../../docs/decisions/ADR-0052-an-analysis-prints-the-verdict-its-record-declared-or-none-at-all.md)
+    and K-034. The numbers are the same either way; only the letter moves.
 
-    * **S-a** — at least :data:`MATERIAL_COVERAGE` of the material pairs separated, rank correlation at least
-      :data:`TRACKING_THRESHOLD`, and no separation contradicting the criterion;
-    * **S-b** — it tracks (same correlation, no contradiction) but resolves fewer of the material pairs;
-    * **S-c** — it does not track, or it separates a pair the wrong way;
-    * **S-d** — anything else, which is reported with its numbers rather than rounded into one of the three.
+    The facts a vocabulary may read are :data:`VERDICT_FACT_NAMES`: ``rho``, ``material_pairs``,
+    ``material_pairs_separated``, ``material_coverage`` (0.0 when there are no material pairs, which is what
+    ``has_material_pairs`` distinguishes), ``has_material_pairs`` and ``contradicted_pairs``.
+
+    Raises:
+        SensitivityError: the models, the criterion or an instrument's outcomes do not describe one analysis, or
+            ``materiality`` is not positive.
     """
     if materiality <= 0.0:
         message = f"materiality must be positive, got {materiality!r}"
@@ -191,18 +201,17 @@ def compare_instruments(
             if not row[instrument]["separated"]
         ]
         coverage = len(separated) / len(material_rows) if material_rows else None
-        tracks = rho >= TRACKING_THRESHOLD and not contradicted
-        if contradicted or rho < TRACKING_THRESHOLD:
-            verdict = "S-c"
-        elif coverage is None:
-            verdict = "S-d"
-        elif coverage >= MATERIAL_COVERAGE:
-            verdict = "S-a"
-        else:
-            verdict = "S-b"
-        outcome[instrument] = {
-            "verdict": verdict,
-            "tracks_the_criterion": tracks,
+        facts = {
+            "rho": rho,
+            "material_pairs": len(material_rows),
+            "material_pairs_separated": len(separated),
+            "material_coverage": coverage if coverage is not None else 0.0,
+            "has_material_pairs": bool(material_rows),
+            "contradicted_pairs": len(contradicted),
+        }
+        block: dict[str, Any] = {
+            "verdict": None,
+            "verdict_facts": facts,
             "rho": rho,
             "pairs": len(rows),
             "material_pairs": len(material_rows),
@@ -215,6 +224,14 @@ def compare_instruments(
             "largest_unseparated_material_gap": max(gaps_missed) if gaps_missed else None,
             "alpha": alpha,
         }
+        if verdicts is not None:
+            decision = decide(facts, verdicts)
+            block["verdict"] = decision["letter"]
+            block["verdict_reading"] = decision["reading"]
+            block["verdict_vocabulary"] = decision["vocabulary"]
+            block["verdict_precedence"] = decision["precedence"]
+            block["verdict_also_matched"] = decision["also_matched"]
+        outcome[instrument] = block
     return {
         "models": list(order),
         "materiality": materiality,

@@ -1013,7 +1013,22 @@ are a contract, and a contract the tool owns is a contract the record did not si
 pairs, or no letter at all and only the statistics), and a test asserts the printed verdict names come from the
 declaration rather than from a constant in the script.
 
-**Status:** open, measured 2026-11-04 by E2634.
+**Closed 2026-11-04 by [ADR-0052](../decisions/ADR-0052-an-analysis-prints-the-verdict-its-record-declared-or-none-at-all.md).**
+`chakaso.training.outcome_rules` reads a declared vocabulary — letters, conditions over the analysis's own facts, and
+the sentence each letter means — and both analyses now print a letter only when one is handed to them, or `null` under
+`--statistics-only`. The three declarations the series ran without are committed under `configs/analyses/`, including
+E2626's 0.9 coverage and 0.9 tracking bounds, which were constants in the library. The rule and the fact names a
+vocabulary may reference are in `docs/internal/experiments/README.md`, so a record can write one without reading code.
+
+**Verified on the case that filed it, not only in tests:** E2634's analysis re-run under
+[`arm-pairs-e2634-v1.json`](../../configs/analyses/arm-pairs-e2634-v1.json) returns **G-a** with a `pairs` array
+byte-identical to the `results.json` the tool gave it a `Z-a` in, and E2629's re-run under its own declaration returns
+**Z-d** with all eight instrument verdicts identical. A second vocabulary over the same facts is a test, not a story:
+`test_a_record_that_declared_its_own_letters_gets_them_from_the_same_facts` runs one analysis under two declarations and
+gets `Z-a` and `G-a`. Letters are read in declaration order with every shadowed letter reported, because E2629's `Z-a`
+implies its `Z-b` — `"exclusive": true` is for a record that wants its letters provably disjoint.
+
+**Status:** closed 2026-11-04, measured and re-run.
 
 ### K-035 — A probe's per-item rows identify a document hash, not a work, so a clustering claim needs a rebuild
 

@@ -310,6 +310,17 @@ def test_read_narrowes_an_instrument_to_the_curve_and_names_what_it_left_out() -
         assert row["first"] != "E2612-T" and row["second"] != "E2612-T"
 
 
+def _verdicts():  # type: ignore[no-untyped-def]
+    """The declaration E2626 committed, loaded through the mechanism K-034 put in its place."""
+    from chakaso.training.outcome_rules import load_vocabulary
+    from chakaso.training.probe_sensitivity import VERDICT_FACT_NAMES
+
+    return load_vocabulary(
+        Path(__file__).resolve().parents[1] / "configs/analyses/probe-sensitivity-e2626-v1.json",
+        known_facts=VERDICT_FACT_NAMES,
+    )
+
+
 def test_read_produces_a_verdict_per_instrument_from_the_assembled_tables() -> None:
     module = _script()
 
@@ -323,6 +334,7 @@ def test_read_produces_a_verdict_per_instrument_from_the_assembled_tables() -> N
         usable_phenomena=["agreement", "order"],
         materiality=0.02,
         endpoint="step800",
+        verdicts=_verdicts(),
     )
 
     assert sorted(result["instruments"]) == [
@@ -336,12 +348,16 @@ def test_read_produces_a_verdict_per_instrument_from_the_assembled_tables() -> N
     assert len(result["models"]) == 3
     # 3 models -> 3 pairs, and the untrained floor is 6.0 against 2.4/2.0: every pair is material here.
     assert all(row["material"] for row in result["pairs"])
-    assert result["instruments"]["minimal_pairs_all_800"]["verdict"] in {"S-a", "S-b", "S-c", "S-d"}
+    declared = set(result["instruments"]["minimal_pairs_all_800"]["verdict_also_matched"]) | {
+        result["instruments"]["minimal_pairs_all_800"]["verdict"]
+    }
+    assert declared <= {"S-a", "S-b", "S-c", "S-d"}
+    assert result["instruments"]["minimal_pairs_all_800"]["verdict_vocabulary"].startswith("E2626")
 
 
 def test_the_summary_names_the_gaps_rather_than_only_the_label() -> None:
     module = _script()
-    result = module.read(
+    result = module.read(  # statistics only: no vocabulary, so no letter is printed
         report=_report(),
         scored=_scored(),
         pairs_result=_pairs({"untrained-control": 1, "step400": 12, "step800": 20}),
@@ -358,3 +374,67 @@ def test_the_summary_names_the_gaps_rather_than_only_the_label() -> None:
     assert "materiality 0.02" in text
     for name in result["instruments"]:
         assert name in text
+
+
+def test_the_script_refuses_to_print_a_verdict_it_was_not_given(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """K-034's interface change, stated at the boundary a reader meets it at.
+
+    The command lines in E2626's record ran before the mechanism existed; re-running one now stops here rather
+    than printing a letter the record never declared. Nothing is read from disk before the refusal.
+    """
+    argv = [
+        "--report",
+        str(tmp_path / "report.json"),
+        "--protocol",
+        str(tmp_path / "plan.toml"),
+        "--work-dir",
+        str(tmp_path),
+        "--corpus-snapshot",
+        str(tmp_path / "snapshot.json"),
+        "--split-seed",
+        "7",
+        "--expected-corpus-fingerprint",
+        "312571f9fa8351a8",
+        "--pairs",
+        str(tmp_path / "pairs.json"),
+        "--continuations",
+        str(tmp_path / "continuations.json"),
+        "--usable-phenomena",
+        "agreement",
+        "--materiality",
+        "0.02",
+    ]
+
+    assert _script().main(argv) == 2
+    assert "no verdict it was not told" in capsys.readouterr().err
+
+
+def test_statistics_only_is_an_explicit_choice_and_excludes_a_vocabulary(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    argv = [
+        "--report",
+        str(tmp_path / "report.json"),
+        "--protocol",
+        str(tmp_path / "plan.toml"),
+        "--work-dir",
+        str(tmp_path),
+        "--corpus-snapshot",
+        str(tmp_path / "snapshot.json"),
+        "--split-seed",
+        "7",
+        "--expected-corpus-fingerprint",
+        "312571f9fa8351a8",
+        "--pairs",
+        str(tmp_path / "pairs.json"),
+        "--continuations",
+        str(tmp_path / "continuations.json"),
+        "--usable-phenomena",
+        "agreement",
+    ]
+    module = _script()
+
+    assert module.main([*argv, "--statistics-only", "--outcome-vocabulary", "x.json"]) == 2
+    assert "--statistics-only takes no outcome vocabulary" in capsys.readouterr().err

@@ -2,9 +2,11 @@
 
 The inputs are all files a run and the two probe scripts already produce: the run's report (which names its
 rungs and the held-out loss recorded for each), the rung artifacts themselves, and the two probe result files
-with their per-item outcomes. The output is the verdict preregistered in ``experiments/E2626/record.md``: for
-every pair of models whose held-out bits per character differ by more than the project's materiality band, does
-the probe separate them, in the right direction, and what is the smallest gap it can resolve at all.
+with their per-item outcomes. The output is the per-instrument statistics behind the verdict a record
+preregistered: for every pair of models whose held-out bits per character differ by more than the materiality
+band the caller declares, does the probe separate them, in the right direction, and what is the smallest gap it
+can resolve at all. The letters come from ``--outcome-vocabulary``, the declaration that record committed, or
+not at all under ``--statistics-only`` — a verdict is a record's contract, not this script's (K-034).
 
 Nothing is typed in. The bits per character of each rung are computed here from the rung's bytes through
 :func:`chakaso.training.subword_experiment.score_artifacts` — the same packing and the same arithmetic the run
@@ -19,7 +21,8 @@ Usage:
         --split-seed 7 --expected-corpus-fingerprint 312571f9fa8351a8 \\
         --pairs experiments/E2626/minimal-pairs.json --continuations experiments/E2626/continuations.json \\
         --usable-phenomena auxiliary_agreement,determiner_noun_agreement,reflexive_pronoun_agreement \\
-        --materiality 0.02 --out experiments/E2626/results.json
+        --materiality 0.02 --outcome-vocabulary configs/analyses/probe-sensitivity-e2626-v1.json \\
+        --out experiments/E2626/results.json
 """
 
 from __future__ import annotations
@@ -33,7 +36,9 @@ from typing import Any
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src"))
 
+from chakaso.training.outcome_rules import OutcomeRuleError, load_vocabulary
 from chakaso.training.outcome_vectors import is_compacted, restore_probe_result
+from chakaso.training.probe_sensitivity import VERDICT_FACT_NAMES
 
 PARTITIONS = ("prose-", "science-", "technology-", "medicine-", "mathematics-")
 #: The name ``evaluate_minimal_pairs.py`` and ``evaluate_continuations.py`` give their untrained floor.
@@ -254,8 +259,9 @@ def read(
     context_result: Mapping[str, Any] | None = None,
     criterion_override: Mapping[str, Mapping[str, Any]] | None = None,
     endpoint_check: str | None = None,
+    verdicts: Any | None = None,
 ) -> dict[str, Any]:
-    """Assemble the tables and hand them to the library that decides the verdict."""
+    """Assemble the tables and hand them to the library that computes the statistics."""
     from chakaso.training.probe_sensitivity import compare_instruments
 
     if criterion_override is not None:
@@ -282,11 +288,14 @@ def read(
     criterion = {
         name: float(block["whole_pack_bits_per_character"]) for name, block in table.items()
     }
-    result = compare_instruments(criterion, instruments, materiality=materiality)
+    result = compare_instruments(criterion, instruments, materiality=materiality, verdicts=verdicts)
     result["criterion"] = table
     result["models_scored_but_not_analysed"] = extras
     result["endpoint_check"] = endpoint_check or "recomputed here from every rung's bytes"
-    result["materiality_declared_in"] = "experiments/E2626/record.md"
+    result["materiality_source"] = (
+        f"{materiality} bits per character, given by the caller; the record that declared it as its band is "
+        "named in that record, not by this script"
+    )
     result["usable_phenomena"] = list(usable_phenomena)
     result["endpoint"] = {
         "rung": endpoint,
@@ -333,7 +342,7 @@ def summarise(result: Mapping[str, Any]) -> str:
         resolved = verdict["smallest_separated_gap"]
         missed = verdict["largest_unseparated_material_gap"]
         lines.append(
-            f"{name}: {verdict['verdict']} rho {verdict['rho']:+.3f}, "
+            f"{name}: {verdict['verdict'] or 'no verdict declared'} rho {verdict['rho']:+.3f}, "
             f"{verdict['material_pairs_separated']}/{verdict['material_pairs']} material pairs separated"
             + (f", smallest gap seen {resolved:.4f}" if resolved is not None else ", no gap seen")
             + (f", largest missed {missed:.4f}" if missed is not None else "")
@@ -432,8 +441,40 @@ def main(argv: Sequence[str] | None = None) -> int:
     parser.add_argument(
         "--endpoint", default=None, help="rung to check against the report (default: the last)"
     )
+    parser.add_argument(
+        "--outcome-vocabulary",
+        type=Path,
+        default=None,
+        help="the record's per-instrument verdict declaration (configs/analyses/*.json); without it the "
+        "result carries statistics and no letter, because a verdict is a record's contract (K-034)",
+    )
+    parser.add_argument(
+        "--statistics-only",
+        action="store_true",
+        help="print the statistics and no letters at all; refuses --outcome-vocabulary",
+    )
     parser.add_argument("--out", type=Path, default=None)
     args = parser.parse_args(argv)
+
+    try:
+        if args.statistics_only and args.outcome_vocabulary is not None:
+            message = "--statistics-only takes no outcome vocabulary; it is the flag that says none is read"
+            raise AnalysisError(message)
+        if not args.statistics_only and args.outcome_vocabulary is None:
+            message = (
+                "this analysis prints no verdict it was not told: give --outcome-vocabulary (E2626's "
+                "declaration is committed at configs/analyses/probe-sensitivity-e2626-v1.json) or "
+                "--statistics-only for the numbers alone"
+            )
+            raise AnalysisError(message)
+        verdicts = (
+            None
+            if args.statistics_only
+            else load_vocabulary(args.outcome_vocabulary, known_facts=VERDICT_FACT_NAMES)
+        )
+    except (AnalysisError, OutcomeRuleError) as error:
+        print(f"error: {error}", file=sys.stderr)
+        return 2
 
     report = _load(args.report)
     names = rung_names(report)
@@ -469,6 +510,7 @@ def main(argv: Sequence[str] | None = None) -> int:
             context_result=_load(args.context) if args.context else None,
             criterion_override=criterion_override,
             endpoint_check=endpoint_check,
+            verdicts=verdicts,
         )
     except (AnalysisError, OSError, KeyError, ValueError) as error:
         print(f"error: {error}", file=sys.stderr)

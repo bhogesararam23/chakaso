@@ -3,18 +3,35 @@
 The vectors here are small enough to count by hand: with twenty items and a model that passes all of them
 against a model that passes fifteen, the discordant items are 0 and 5, and McNemar's exact two-sided p-value is
 2/2**5 = 0.0625. Every expectation below is derived that way in the comment beside it.
+
+The letters are read from the declaration E2626 committed (`configs/analyses/probe-sensitivity-e2626-v1.json`),
+which is the point of K-034: the comparison produces facts, a record produces verdicts, and the two are only
+joined by a file the record wrote before it ran.
 """
 
 from __future__ import annotations
 
+from pathlib import Path
+
 import pytest
 
 from chakaso.training.errors import TrainingError
+from chakaso.training.outcome_rules import OutcomeVocabulary, load_vocabulary
 from chakaso.training.probe_sensitivity import (
+    VERDICT_FACT_NAMES,
     SensitivityError,
     compare_instruments,
     ordered_models,
 )
+
+_REPO = Path(__file__).resolve().parents[1]
+
+
+def _e2626_verdicts() -> OutcomeVocabulary:
+    return load_vocabulary(
+        _REPO / "configs/analyses/probe-sensitivity-e2626-v1.json",
+        known_facts=VERDICT_FACT_NAMES,
+    )
 
 
 def _vector(passes: int, total: int = 20) -> dict[str, float]:
@@ -28,7 +45,9 @@ def test_an_instrument_that_orders_the_models_as_the_criterion_does_is_measured_
     criterion = {"best": 1.0, "middle": 1.5, "worst": 3.0}
     instruments = {"probe": {"best": _vector(20), "middle": _vector(15), "worst": _vector(5)}}
 
-    result = compare_instruments(criterion, instruments, materiality=0.4)
+    result = compare_instruments(
+        criterion, instruments, materiality=0.4, verdicts=_e2626_verdicts()
+    )
 
     verdict = result["instruments"]["probe"]
     # Accuracy 1.0, 0.75, 0.25 against quality 1.0, 1.5, 3.0: the same order read two ways.
@@ -48,7 +67,9 @@ def test_an_instrument_that_resolves_every_material_pair_earns_the_strong_verdic
     criterion = {"best": 1.0, "middle": 1.5, "worst": 3.0}
     instruments = {"probe": {"best": _vector(20), "middle": _vector(10), "worst": _vector(0)}}
 
-    result = compare_instruments(criterion, instruments, materiality=0.4)
+    result = compare_instruments(
+        criterion, instruments, materiality=0.4, verdicts=_e2626_verdicts()
+    )
 
     verdict = result["instruments"]["probe"]
     # best-vs-middle (0, 10) p = 2/1024; middle-vs-worst (10, 0) same; best-vs-worst (20, 0) p = 2/1048576.
@@ -64,7 +85,9 @@ def test_a_separation_the_wrong_way_round_is_reported_and_costs_the_verdict() ->
     # The instrument prefers the model the criterion says is worse, on 15 items to 0.
     instruments = {"probe": {"better": _vector(5), "worse": _vector(20)}}
 
-    result = compare_instruments(criterion, instruments, materiality=0.4)
+    result = compare_instruments(
+        criterion, instruments, materiality=0.4, verdicts=_e2626_verdicts()
+    )
 
     verdict = result["instruments"]["probe"]
     row = result["pairs"][0]
@@ -98,7 +121,9 @@ def test_two_instruments_are_judged_separately_and_one_cannot_rescue_the_other()
         "flat": {"a": _vector(12), "b": _vector(12), "c": _vector(12)},
     }
 
-    result = compare_instruments(criterion, instruments, materiality=0.4)
+    result = compare_instruments(
+        criterion, instruments, materiality=0.4, verdicts=_e2626_verdicts()
+    )
 
     assert result["instruments"]["good"]["verdict"] == "S-a"
     # A constant instrument has no discordant item anywhere: p = 1.0, and rho is 0 because it never moves.
@@ -147,3 +172,60 @@ def test_ordered_models_sorts_by_the_criterion_and_not_by_name() -> None:
 
 def test_the_error_type_is_a_training_error() -> None:
     assert issubclass(SensitivityError, TrainingError)
+
+
+def test_the_comparison_prints_no_letter_it_was_not_given() -> None:
+    """K-034: the module's answer is a table of facts, and a verdict only ever comes from a declaration.
+
+    A caller that passes no vocabulary gets `None` and the same facts a vocabulary would have read, so the
+    statistics are never gated behind a letter — only the letter is.
+    """
+    criterion = {"best": 1.0, "middle": 1.5, "worst": 3.0}
+    instruments = {"probe": {"best": _vector(20), "middle": _vector(15), "worst": _vector(5)}}
+
+    undeclared = compare_instruments(criterion, instruments, materiality=0.4)
+    declared = compare_instruments(
+        criterion, instruments, materiality=0.4, verdicts=_e2626_verdicts()
+    )
+
+    assert undeclared["instruments"]["probe"]["verdict"] is None
+    assert declared["instruments"]["probe"]["verdict"] == "S-b"
+    assert (
+        undeclared["instruments"]["probe"]["verdict_facts"]
+        == declared["instruments"]["probe"]["verdict_facts"]
+    )
+    assert declared["instruments"]["probe"]["verdict_vocabulary"].startswith("E2626")
+
+
+def test_a_second_record_gets_its_own_letters_from_the_same_facts_without_a_code_change() -> None:
+    """The E2626 vocabulary says S-b on these facts; a record that declared T-letters gets T-letters.
+
+    This is the test K-034 asked for: nothing between the two calls is different except the file handed in.
+    """
+    criterion = {"best": 1.0, "middle": 1.5, "worst": 3.0}
+    instruments = {"probe": {"best": _vector(20), "middle": _vector(15), "worst": _vector(5)}}
+    other = load_vocabulary(
+        {
+            "schema_version": "chakaso-outcome-vocabulary/1",
+            "name": "a later record's instrument verdicts",
+            "outcomes": [
+                {
+                    "letter": "T-sees-something",
+                    "reading": "it separated at least one material pair",
+                    "when": [{"fact": "material_pairs_separated", "at_least": 1}],
+                },
+                {
+                    "letter": "T-sees-nothing",
+                    "reading": "it did not",
+                    "when": [{"always": True}],
+                },
+            ],
+        },
+        known_facts=VERDICT_FACT_NAMES,
+    )
+
+    result = compare_instruments(criterion, instruments, materiality=0.4, verdicts=other)
+
+    block = result["instruments"]["probe"]
+    assert block["verdict"] == "T-sees-something"
+    assert block["verdict_vocabulary"] == "a later record's instrument verdicts"
