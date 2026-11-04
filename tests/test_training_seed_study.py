@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import json
 import math
+import shutil
 from dataclasses import replace
 from pathlib import Path
 from typing import Any
@@ -753,28 +754,35 @@ def test_the_usable_artifact_and_the_resume_point_are_two_files_of_one_seed(tmp_
 
 
 def test_a_seed_cannot_continue_from_its_sibling_s_resume_point(tmp_path: Path) -> None:
-    """The seed is part of the optimization settings, so the existing configuration check already names it.
+    """The only field that separates two seeds is the seed, so the refusal has to name it.
 
     This is the guarantee Milestone B's discovery must not weaken: two seeds of one study share their corpus,
-    their split, their tokenizer and every budget number, and differ in nothing but the seed, so a
-    mis-associated checkpoint is a checkpoint that agrees with the run on everything except the one field that
-    says which run it is.
+    their split, their tokenizer, their experiment and every budget number, and differ in nothing but the seed.
+    A mis-associated checkpoint is therefore one that fits perfectly on everything except the field that says
+    which run it is — which is why the recovery also checks the experiment and the split, so that a checkpoint
+    from a sibling *experiment* is refused before the seed is even reached.
     """
     plan = _study_plan(tmp_path)
     study = SeedStudy(experiment="E2698", plan=plan, seeds=(7, 11))
     run_seed_study(study)
     point_7 = study.run_dir(7) / "E2698-transformer-resumable.pt"
 
-    with pytest.raises(TrainingScheduleError, match=r"\['seed'\]"):
+    with pytest.raises(TrainingScheduleError, match=r"\['seed'\]") as raised:
         run_experiment(
             replace(
                 plan,
                 seed=11,
+                experiment_id="E2698",
                 work_dir=tmp_path / "wrong-seed",
                 resume_from=point_7,
                 overwrite_artifacts=True,
             )
         )
+
+    message = str(raised.value)
+    assert "experiment:" not in message
+    assert "split:" not in message
+    assert "corpus:" not in message
 
 
 # ------------------------------------------------------------------ K-036: discovery of an interrupted seed
@@ -914,3 +922,28 @@ def test_an_unreadable_seed_checkpoint_fails_that_seed_and_names_itself(tmp_path
     assert "CorruptedCheckpointError" in failed["error"]
     assert result["failed_seeds"] == [7]
     assert result["completed_seeds"] == [11]
+
+
+def test_discovery_ignores_a_checkpoint_another_experiment_wrote(tmp_path: Path) -> None:
+    """The resume point has to be addressable as *this* run's, not merely present and well-formed.
+
+    A neighbour's file is a valid artifact with a plausible step and, for two arms that share a corpus and a
+    budget, nothing inside it says which experiment it belongs to until the run identity is attested — so the
+    name is the first line, and the attestation K-036's recovery now checks is the second.
+    """
+    plan = _converging_plan(tmp_path)
+    foreign = SeedStudy(experiment="E2697", plan=plan, seeds=(7,))
+    run_seed_study(foreign)
+    study = SeedStudy(experiment="E2698", plan=plan, seeds=(7,))
+    foreign_point = foreign.run_dir(7) / "E2697-transformer-resumable.pt"
+    study.run_dir(7).mkdir(parents=True, exist_ok=True)
+    shutil.copy(foreign_point, study.run_dir(7) / foreign_point.name)
+
+    assert study.discover_resume_point(7) is None
+
+    first = run_seed_study(study)
+    body = json.loads((study.run_dir(7) / "report.json").read_text(encoding="utf-8"))
+
+    assert first["completed_seeds"] == [7]
+    assert body["transformer"]["budget"]["resumed_from_step"] is None
+    assert next(row["step"] for row in body["transformer"]["curve"]) == 0

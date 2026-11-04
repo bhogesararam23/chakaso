@@ -34,6 +34,18 @@ what happens when a run is cut short.
   `resumed_from_step` it already drops. No committed digest moved — checked by reading every per-run report under
   `experiments/` and recomputing one.
 
+**Changed**
+
+- **A resume point now has to say which run wrote it.** `verify_resume_compatibility` compared the corpus
+  fingerprint, the architecture, the tokenizer and every optimization setting — which is everything two seeds of
+  one study agree on. It now also compares the **experiment** and the **document split**, both read from the
+  checkpoint's own metadata: two experiments on one corpus under one budget differ only in which record cites them,
+  and two runs of one experiment under different `split_seed`s train on the same bytes and hold out different
+  documents, so a curve continued across that boundary would be selected on a validation set it had never seen. A
+  checkpoint that attests neither is refused for automatic recovery, because it cannot show where it came from. The
+  loop writes both fields only when its caller names them, so an artifact written by a run that was never told
+  which experiment it was serialises — and keeps the checksum — exactly as before (ADR-0046's route again).
+
 **Also filed**
 
 - **K-038** — the ceiling a continued checkpoint was written under is still hashed as a condition rather than as an

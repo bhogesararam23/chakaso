@@ -651,6 +651,8 @@ def verify_resume_compatibility(
     config: TransformerTrainingConfig,
     corpus_fingerprint: str,
     vocabulary: SubwordVocabulary,
+    experiment: str | None = None,
+    split_fingerprint: str | None = None,
 ) -> ResumePoint:
     """Check that a saved resume point is the one *this* run may continue.
 
@@ -661,9 +663,18 @@ def verify_resume_compatibility(
     would leave no honest way to do it. Any other difference in the optimization settings is refused: the
     learning rate, the batch, the schedule or the seed would make the continuation a different protocol.
 
+    ``experiment`` and ``split_fingerprint`` are what a recovery declares about the run it is continuing, and
+    they close the two holes the fields above leave. Two seeds of one study share their corpus, their tokenizer
+    and every budget number, and differ in nothing but the seed, so a checkpoint that agrees on all of those is
+    not therefore the right one; and two runs of one experiment on one corpus with different ``split_seed``s see
+    different held-out documents, which a checkpoint that names only the corpus fingerprint cannot tell apart.
+    Both are refused when the artifact attests a value that disagrees, and when it attests nothing at all —
+    a resume point written before run identity was recorded cannot show which run it came from, and recovery of
+    an unattributable file is the silently-incompatible resume this check exists to prevent.
+
     Raises:
-        TrainingScheduleError: an identity field disagrees, the optimizer state is absent, or a setting
-            other than the step ceiling differs.
+        TrainingScheduleError: an identity field disagrees or is unattested, the optimizer state is absent, or a
+            setting other than the step ceiling differs.
     """
     if artifact.optimizer_state is None:
         message = (
@@ -686,6 +697,25 @@ def verify_resume_compatibility(
             f"tokenizer: resumed from {artifact.vocabulary.fingerprint}, this run trained "
             f"{vocabulary.fingerprint}"
         )
+
+    def _require_attested(key: str, wanted: str, label: str) -> None:
+        """Require the checkpoint to name one identity field, and to name the value this run declares."""
+        recorded_value = artifact.run_metadata.get(key)
+        if recorded_value is None:
+            disagreements.append(
+                f"{label}: this checkpoint records no {key}, so it cannot be shown to belong to "
+                f"{wanted!r} rather than to some other run; a resume point that does not attest itself "
+                "has to be named by the operator who knows where it came from, not recovered"
+            )
+        elif recorded_value != wanted:
+            disagreements.append(
+                f"{label}: resumed from {recorded_value!r}, this run is {wanted!r}"
+            )
+
+    if experiment is not None:
+        _require_attested("experiment", experiment, "experiment")
+    if split_fingerprint is not None:
+        _require_attested("split_fingerprint", split_fingerprint, "split")
 
     extended: int | None = None
     recorded = artifact.run_metadata.get("training")
@@ -724,6 +754,8 @@ def train_transformer(
     vocabulary: SubwordVocabulary,
     config: TransformerTrainingConfig,
     corpus_fingerprint: str,
+    experiment: str | None = None,
+    split_fingerprint: str | None = None,
     model: Any | None = None,
     resume_state: Mapping[str, torch.Tensor] | None = None,
     resume_optimizer: Mapping[str, Any] | None = None,
@@ -742,6 +774,11 @@ def train_transformer(
     the batch plan and the learning-rate schedule line up with the original run (see :func:`plan_batch` and
     :func:`_learning_rate`). Supplying one without the other continues the run but not the schedule, and is
     the caller's documented choice, not a default.
+
+    ``experiment`` and ``split_fingerprint`` are the run's own identity, and a checkpoint that carries them can
+    be verified rather than trusted. Each is written into the resumable artifact only when the caller names it,
+    so a loop run without them — a unit test, or a caller that has no experiment to attribute — serialises
+    exactly as it did before the fields existed and keeps the checksum its record cites.
 
     ``should_stop`` is consulted at every evaluation; when it answers yes the run ends early, writes its
     resume point and reports :data:`COMPLETED_STOP_REQUESTED` — an interruption a caller asked for is not a
@@ -935,6 +972,8 @@ def train_transformer(
                         config=config,
                         vocabulary=vocabulary,
                         corpus_fingerprint=corpus_fingerprint,
+                        experiment=experiment,
+                        split_fingerprint=split_fingerprint,
                         step=step,
                         best_step=best_step,
                         best_validation=best_validation,
@@ -1060,6 +1099,8 @@ def _interim_artifact(
     config: TransformerTrainingConfig,
     vocabulary: SubwordVocabulary,
     corpus_fingerprint: str,
+    experiment: str | None = None,
+    split_fingerprint: str | None = None,
     step: int,
     best_step: int,
     best_validation: float,
@@ -1067,7 +1108,15 @@ def _interim_artifact(
     validation_positions: int,
     optimizer_state: Mapping[str, Any],
 ) -> ModelArtifact:
-    """A resume point: the *current* parameters, the moments, and the step — not the selected weights."""
+    """A resume point: the *current* parameters, the moments, the step, and the run that wrote them."""
+    attested: dict[str, Any] = {}
+    # Written only when named, on ADR-0046's reasoning: a field that appears at its default would re-digest
+    # every artifact a loop written without it produces, and the key's absence then reads as "this loop was
+    # not told which run it belongs to" rather than as a value to compare against.
+    if experiment is not None:
+        attested["experiment"] = experiment
+    if split_fingerprint is not None:
+        attested["split_fingerprint"] = split_fingerprint
     return ModelArtifact(
         config=config.architecture,
         state=_snapshot(model),
@@ -1076,6 +1125,7 @@ def _interim_artifact(
         run_metadata={
             "kind": "resumable",
             "current_step": step,
+            **attested,
             "best_step": best_step,
             "best_validation_loss_nats": best_validation,
             "train_positions": train_positions,

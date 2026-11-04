@@ -361,18 +361,139 @@ def test_a_usable_model_is_refused_as_a_resume_point() -> None:
         )
 
 
-def resumable_artifact(config: TransformerTrainingConfig) -> ModelArtifact:
+def resumable_artifact(
+    config: TransformerTrainingConfig, *, attests: dict[str, Any] | None = None
+) -> ModelArtifact:
     """The resume point a run wrote, rebuilt as the artifact type the check expects."""
     outcome = _run(config)
+    run_metadata: dict[str, Any] = {"kind": "resumable", "training": config.as_dict()}
+    if attests is not None:
+        run_metadata.update(attests)
     return ModelArtifact(
         config=config.architecture,
         state=outcome.final_state,
         vocabulary=outcome.vocabulary,
         corpus_fingerprint=outcome.corpus_fingerprint,
-        run_metadata={"kind": "resumable", "training": config.as_dict()},
+        run_metadata=run_metadata,
         step=outcome.records[-1].step,
         optimizer_state=outcome.optimizer_state,
     )
+
+
+def test_a_resume_point_from_another_experiment_is_named() -> None:
+    """Corpus, architecture, tokenizer and every budget number can match and this still be the wrong file.
+
+    Two experiments on one corpus with one protocol differ only in which record cites them, so without an
+    attested experiment a checkpoint from one is a perfectly credible resume point for the other.
+    """
+    config = _config(max_steps=2, eval_every=1)
+    artifact = resumable_artifact(
+        config, attests={"experiment": "E2697", "split_fingerprint": "s1"}
+    )
+
+    with pytest.raises(TrainingScheduleError, match="experiment:"):
+        verify_resume_compatibility(
+            artifact,
+            config=config,
+            corpus_fingerprint="fixture",
+            vocabulary=_VOCABULARY,
+            experiment="E2698",
+            split_fingerprint="s1",
+        )
+
+
+def test_a_resume_point_from_another_document_split_is_named() -> None:
+    """The corpus fingerprint says which bytes a run trained on, not which documents it held out.
+
+    A run continued across a changed ``split_seed`` would select on a validation set the curve it is
+    continuing never saw, and nothing the check compared before this field existed would have noticed.
+    """
+    config = _config(max_steps=2, eval_every=1)
+    artifact = resumable_artifact(
+        config, attests={"experiment": "E2698", "split_fingerprint": "s1"}
+    )
+
+    with pytest.raises(TrainingScheduleError, match="split:"):
+        verify_resume_compatibility(
+            artifact,
+            config=config,
+            corpus_fingerprint="fixture",
+            vocabulary=_VOCABULARY,
+            experiment="E2698",
+            split_fingerprint="s2",
+        )
+
+
+def test_a_resume_point_that_attests_nothing_cannot_be_recovered() -> None:
+    """A checkpoint written before run identity was recorded is not unverifiable-but-probably-right.
+
+    Recovery is the case that has to refuse: nobody was there to know which run the file came from. An
+    operator who does know still has the explicit ``--resume-from`` path, which names the fields it was
+    checked against in the report it writes.
+    """
+    config = _config(max_steps=2, eval_every=1)
+    unattested = resumable_artifact(config)
+
+    with pytest.raises(TrainingScheduleError, match="records no experiment"):
+        verify_resume_compatibility(
+            unattested,
+            config=config,
+            corpus_fingerprint="fixture",
+            vocabulary=_VOCABULARY,
+            experiment="E2698",
+        )
+
+    verified = verify_resume_compatibility(
+        unattested, config=config, corpus_fingerprint="fixture", vocabulary=_VOCABULARY
+    )
+    assert verified.start_step == unattested.step
+
+
+def test_a_resume_point_that_names_its_own_run_is_continued() -> None:
+    config = _config(max_steps=2, eval_every=1)
+    artifact = resumable_artifact(
+        config, attests={"experiment": "E2698", "split_fingerprint": "s1"}
+    )
+
+    verified = verify_resume_compatibility(
+        artifact,
+        config=config,
+        corpus_fingerprint="fixture",
+        vocabulary=_VOCABULARY,
+        experiment="E2698",
+        split_fingerprint="s1",
+    )
+
+    assert verified.start_step == artifact.step
+    assert verified.optimizer_state == artifact.optimizer_state
+
+
+def test_a_loop_that_was_not_told_which_run_it_is_writes_the_artifact_it_always_wrote(
+    tmp_path: Path,
+) -> None:
+    """The two identity fields are written only when named, so no existing artifact's checksum moves.
+
+    ``TransformerTrainingConfig.as_dict`` elides its defaults for the same reason (ADR-0046): a key that
+    appears at its default re-digests every file the code that predates it wrote, and a record cites that
+    digest.
+    """
+    named = tmp_path / "named.pt"
+    unnamed = tmp_path / "unnamed.pt"
+    config = _config(max_steps=2, eval_every=2)
+
+    _run(
+        config,
+        experiment="E2698",
+        split_fingerprint="s1",
+        checkpoint_path=named,
+    )
+    _run(config, checkpoint_path=unnamed)
+
+    assert load_resumable(named).run_metadata["experiment"] == "E2698"
+    assert load_resumable(named).run_metadata["split_fingerprint"] == "s1"
+    assert load_resumable(unnamed).run_metadata["kind"] == "resumable"
+    assert "experiment" not in load_resumable(unnamed).run_metadata
+    assert "split_fingerprint" not in load_resumable(unnamed).run_metadata
 
 
 def test_build_model_makes_the_family_each_configuration_names() -> None:

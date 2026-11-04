@@ -1742,6 +1742,8 @@ def run_experiment(plan: ExperimentPlan, *, verbose: bool = False) -> dict[str, 
             config=config,
             corpus_fingerprint=prepared.manifest.fingerprint,
             vocabulary=prepared.vocabulary,
+            experiment=plan.experiment_id,
+            split_fingerprint=prepared.split.fingerprint,
         )
         budget_extended_from = verified.budget_extended_from
         resume = {
@@ -1756,6 +1758,8 @@ def run_experiment(plan: ExperimentPlan, *, verbose: bool = False) -> dict[str, 
         **resume,
         config=config,
         corpus_fingerprint=prepared.manifest.fingerprint,
+        experiment=plan.experiment_id,
+        split_fingerprint=prepared.split.fingerprint,
         on_step=on_step,
         curve_artifact_writer=write_rung if plan.curve_artifact_steps else None,
         checkpoint_path=work / resumable_checkpoint_filename(plan.experiment_id, plan.model_family),
