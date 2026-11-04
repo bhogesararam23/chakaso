@@ -75,6 +75,7 @@ def compare_arms(
     *,
     reference: str,
     aggregate: Mapping[str, Sequence[str]] | None = None,
+    equal_weight_aggregates: Mapping[str, Sequence[str]] | None = None,
 ) -> dict[str, Any]:
     """Tabulate ``arms`` against ``reference`` after checking they were matched.
 
@@ -86,6 +87,10 @@ def compare_arms(
             (``metrics.characters_scored``), the denominator the metric is defined over — not by the partition's
             population, which is 23 times larger in E2612 and moves the effect size by up to 4.5 times the materiality band
             (K-027).
+        equal_weight_aggregates: Named groups averaged with **equal weight over the partitions**, which is the
+            objective the records call O1. It is a separate argument rather than a flag because the two quantities
+            differ by more than the margins they are read against, and a caller should choose which one it is asking
+            for (E2631's deviation 1).
 
     Raises:
         ArmComparisonError: fewer than two arms, an unknown reference, a report missing a field the comparison
@@ -120,8 +125,13 @@ def compare_arms(
     }
     if aggregate:
         result["aggregates"] = {
-            group: _weighted_aggregate(arms, reference, group, prefixes)
+            group: _aggregate(arms, reference, group, prefixes, weighting="characters")
             for group, prefixes in aggregate.items()
+        }
+    if equal_weight_aggregates:
+        result["equal_weight_aggregates"] = {
+            group: _aggregate(arms, reference, group, prefixes, weighting="equal")
+            for group, prefixes in equal_weight_aggregates.items()
         }
     return result
 
@@ -220,10 +230,23 @@ def _partition_table(arms: Mapping[str, Mapping[str, Any]], reference: str) -> d
     return table
 
 
-def _weighted_aggregate(
-    arms: Mapping[str, Mapping[str, Any]], reference: str, group: str, prefixes: Sequence[str]
+def _aggregate(
+    arms: Mapping[str, Mapping[str, Any]],
+    reference: str,
+    group: str,
+    prefixes: Sequence[str],
+    *,
+    weighting: str,
 ) -> dict[str, Any]:
-    """Characters-scored-weighted mean of bits per character over ``prefixes``, per arm."""
+    """A mean of the partition bits-per-character over ``prefixes``, per arm, weighted as ``weighting`` says.
+
+    Two weightings exist because the campaign has been misled by the difference. K-027 found that weighting a
+    five-register aggregate by each partition's *population* moved an effect size by up to 4.5 times the materiality
+    band, so the character-weighted reading was added as the honest pooled number. And **O1** — the objective six
+    records declare as primary — is the *equal-weight* mean, which the character-weighted reading is not: E2631
+    preregistered `--aggregate o1=` and got 2.049605 against the objective's 2.021357, because prose and science carry
+    the characters and medicine carries a fifth of O1's weight. Both are reported here, each named for what it is.
+    """
     if not prefixes:
         message = f"aggregate {group!r} names no partitions"
         raise ArmComparisonError(message)
@@ -236,13 +259,21 @@ def _weighted_aggregate(
             if block is None or "metrics" not in block:
                 message = f"aggregate {group!r}: arm {arm!r} did not score partition {prefix!r}"
                 raise ArmComparisonError(message)
-            characters = float(block["metrics"]["characters_scored"])
-            weight += characters
-            total += characters * float(block["metrics"]["bits_per_character"])
+            if weighting == "equal":
+                weight += 1.0
+                total += float(block["metrics"]["bits_per_character"])
+            else:
+                characters = float(block["metrics"]["characters_scored"])
+                weight += characters
+                total += characters * float(block["metrics"]["bits_per_character"])
         values[arm] = round(total / weight, 6)
     return {
         "partitions": list(prefixes),
-        "weighting": "metrics.characters_scored",
+        "weighting": (
+            "equal weight over the named partitions (the O1 objective)"
+            if weighting == "equal"
+            else "metrics.characters_scored"
+        ),
         "values": values,
         "difference_from_reference": {
             arm: round(value - values[reference], 6)

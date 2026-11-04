@@ -45,6 +45,13 @@ def main(argv: Sequence[str] | None = None) -> int:
         default=[],
         help="NAME=prefix,prefix,... : a scored-characters-weighted aggregate over partitions",
     )
+    parser.add_argument(
+        "--equal-aggregate",
+        action="append",
+        default=[],
+        metavar="NAME=prefix,prefix,...",
+        help="the same partitions averaged with equal weight, which is what the records call O1",
+    )
     parser.add_argument("--out", type=Path, help="write the comparison here as deterministic JSON")
     args = parser.parse_args(argv)
 
@@ -57,7 +64,16 @@ def main(argv: Sequence[str] | None = None) -> int:
             name: [prefix for prefix in rest.split(",") if prefix]
             for name, rest in (_pair(item, "--aggregate") for item in args.aggregate)
         }
-        result = compare_arms(arms, reference=args.reference, aggregate=aggregate or None)
+        equal_weight = {
+            name: [prefix for prefix in rest.split(",") if prefix]
+            for name, rest in (_pair(item, "--equal-aggregate") for item in args.equal_aggregate)
+        }
+        result = compare_arms(
+            arms,
+            reference=args.reference,
+            aggregate=aggregate or None,
+            equal_weight_aggregates=equal_weight or None,
+        )
     except (OSError, ValueError, ArmComparisonError, argparse.ArgumentTypeError) as error:
         print(f"compare_arms: {error}", file=sys.stderr)
         return 1

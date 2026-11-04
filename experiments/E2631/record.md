@@ -110,7 +110,8 @@ QPYTHON=.venv-nn/Scripts/python.exe
 # E2626's committed report, and the paired secondary reading.
 "$QPYTHON" scripts/compare_arms.py --arm "E2626=experiments/E2626/E2626-report.json" \
   --arm "E2631=experiments/E2631/E2631-report.json" --reference E2626 \
-  --aggregate "o1=prose-,science-,technology-,medicine-,mathematics-" \
+  --aggregate "chars=prose-,science-,technology-,medicine-,mathematics-" \
+  --equal-aggregate "o1=prose-,science-,technology-,medicine-,mathematics-" \
   --out experiments/E2631/results.json
 "$QPYTHON" scripts/paired_loss_test.py \
   --protocol configs/experiments/E2631-vector-decay-exemption.toml \
@@ -124,6 +125,10 @@ QPYTHON=.venv-nn/Scripts/python.exe
   --pair control/exemption --seed 20261104 --resamples 2000 \
   --out experiments/E2631/paired-loss.json
 ```
+
+The first command differs from the one preregistered above in its aggregate flags only, corrected on 2026-11-04 for the
+reason deviation 1 gives: `--aggregate` names the character-weighted reading `chars`, and the objective O1 is asked for
+with `--equal-aggregate`.
 
 The second command is the descriptive reading: it refuses to compute anything until each arm reproduces the
 denominators and the pooled bits per character its own committed report publishes, so the interval it prints is
@@ -142,7 +147,7 @@ measured on this machine and well under E2626's 83 minutes, which ran alongside 
 | --- | --- | --- | --- | --- | --- |
 | **O1** — equal-weight mean of the five partitions (primary) | 2.021357 | 2.024857 | **−0.003499** | 0.0062 | inside |
 | **Whole pack** (secondary) | 2.055447 | 2.059054 | **−0.003606** | 0.00933 | inside |
-| Five-partition aggregate weighted by scored characters, which is what the declared `--aggregate o1=` computes | 2.049605 | 2.054224 | −0.004619 | — | descriptive; see deviation 1 |
+| Five-partition aggregate weighted by scored characters, which is what the declared `--aggregate o1=` computes | 2.049605 | 2.054224 | −0.004619 | — | descriptive; see deviation 1 and the addendum below |
 
 Both point estimates put the exemption *worse*, by about a third of the margin on each measure, and neither reaches
 its margin. N-b is the rule that fires, and it fires without needing the third rule: no measure is material, so
@@ -220,6 +225,14 @@ before this record a comparison of two arms that differ in decay could only refu
    outcome letter is unaffected, but the record named a quantity after a tool flag that computes a different one. The
    verdict is read on O1 as the preregistration declared it. What should follow is an equal-weight aggregate in
    `compare_arms`, so the primary objective of six records is computable from the reports rather than by hand.
+
+   **Addendum, same day.** The follow-up landed: `compare_arms` now takes `--equal-aggregate`, which averages the named
+   partitions with equal weight and labels its output `"equal weight over the named partitions (the O1 objective)"`,
+   while `--aggregate` keeps the character-weighted reading and says so. `results.json` was regenerated with both —
+   `o1` = 2.021357 and 2.024857 with a difference of 0.0035, `chars` = 2.049605 and 2.054224 with 0.004619 — so the
+   primary objective is now computed by the tool rather than by hand, and the two quantities sit beside each other in
+   the same file with their weightings named. The numbers this record quotes are unchanged by the regeneration; the
+   preregistration's error is left in the text above because it is the finding.
 2. **The treatment's committed extract cannot state its sample.** `experiments/E2631/E2631-report.json` carries no
    `evaluation_sample` block, because the arm was launched 90 minutes before that field landed in `prepare_corpus`. The
    composition of this pack is E2633's measured read of the identical pack — science 46.6 %, prose 41.5 %, mathematics

@@ -131,6 +131,35 @@ def test_an_aggregate_is_weighted_by_scored_characters_not_by_an_equal_split() -
     assert both["values"]["P"] != pytest.approx((1.80 + 2.00) / 2)
 
 
+def test_an_equal_weight_aggregate_is_the_mean_the_o1_objective_defines() -> None:
+    """O1 is the equal-weight mean of the register figures, and on this fixture it differs from the pooled reading by
+    exactly the materiality band (E2631's deviation 1).
+
+    A record that preregisters O1 and reads the character-weighted number has changed its primary objective without
+    changing a printed figure, which is why the two are separate arguments rather than one argument and a flag.
+    """
+    result = compare_arms(
+        _three_arms(),
+        reference="P",
+        equal_weight_aggregates={"o1": ["prose-", "science-"]},
+    )
+
+    o1 = result["equal_weight_aggregates"]["o1"]
+    assert o1["values"]["P"] == pytest.approx((1.80 + 2.00) / 2, abs=1e-6)
+    assert o1["values"]["T"] == pytest.approx((1.84 + 1.90) / 2, abs=1e-6)
+    assert o1["difference_from_reference"]["T"] == pytest.approx(-0.03, abs=1e-6)
+    assert "equal weight" in o1["weighting"]
+
+    pooled = compare_arms(_three_arms(), reference="P", aggregate={"both": ["prose-", "science-"]})
+    assert pooled["aggregates"]["both"]["values"]["P"] == pytest.approx(1.88, abs=1e-6)
+    assert o1["values"]["P"] != pytest.approx(pooled["aggregates"]["both"]["values"]["P"])
+
+
+def test_an_equal_weight_aggregate_refuses_a_partition_an_arm_never_scored() -> None:
+    with pytest.raises(ArmComparisonError, match="did not score partition"):
+        compare_arms(_three_arms(), reference="P", equal_weight_aggregates={"g": ["math-"]})
+
+
 @pytest.mark.parametrize(
     ("mutate", "match"),
     [
@@ -192,13 +221,22 @@ def test_the_script_rebuilds_the_comparison_from_report_files_and_signals_a_mism
     arguments = [f"--arm={name}={path}" for name, path in paths.items()]
 
     status = _script().main(
-        [*arguments, "--reference=P", "--aggregate=g=prose-,science-", f"--out={out}"]
+        [
+            *arguments,
+            "--reference=P",
+            "--aggregate=g=prose-,science-",
+            "--equal-aggregate=o1=prose-,science-",
+            f"--out={out}",
+        ]
     )
 
     assert status == 0
     written = json.loads(out.read_text(encoding="utf-8"))
     assert written["all_conditions_matched"] is True
     assert written["aggregates"]["g"]["weighting"] == "metrics.characters_scored"
+    # The two weightings are both available from the CLI and both say which one they are (E2631's deviation 1).
+    assert "equal weight" in written["equal_weight_aggregates"]["o1"]["weighting"]
+    assert written["equal_weight_aggregates"]["o1"]["values"]["P"] == pytest.approx(1.90, abs=1e-6)
     assert "all conditions matched" in capsys.readouterr().err
 
     arms["H"]["tokenizer"]["fingerprint"] = "x" * 16

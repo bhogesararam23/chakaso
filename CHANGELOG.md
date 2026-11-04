@@ -125,6 +125,14 @@ capability is implemented or still planned.
   scored positions; 34 documents and **25 works against the side's 62**) and the published pooled loss to the last digit.
   `work_losses` carries the same block and fixes the mislabel that caused E2633's deviation 2: `works` is what reached the
   pack, `works_on_side` is what the side holds.
+- **`compare_arms` can now compute the objective the records actually declare.** `--aggregate` has always pooled a group
+  of register partitions by scored characters — the honest pooled number, and the fix K-027 demanded after a
+  population-weighted aggregate moved an effect size by 4.5 margins. **O1**, the primary objective of six records, is
+  instead the *equal-weight* mean of those partitions, and E2631 preregistered the character-weighted flag under O1's
+  name: its five registers read 2.049605 pooled against 2.021357 equal-weight, a 0.0011 difference in the arms' values
+  arrived at by a tool that could not say which one it was giving. `--equal-aggregate NAME=prefix,…` is the new flag, and
+  each block prints its own weighting — "equal weight over the named partitions (the O1 objective)" against
+  "metrics.characters_scored" — so the mistake cannot be made quietly again.
 - **Two documentation gates, both written after this session produced the failures by hand.** A numeric census count in
   an owner document is checked against the directories on disk and against the parser's own command list, and the owners
   are named (K-013's mechanism — it found two stale counts the same day it landed); and a record with a `## Results`

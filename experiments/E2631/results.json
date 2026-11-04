@@ -1,6 +1,6 @@
 {
   "aggregates": {
-    "o1": {
+    "chars": {
       "difference_from_reference": {
         "E2631": 0.004619
       },
@@ -31,6 +31,25 @@
         "E2626": "every parameter, norm scales included",
         "E2631": "2-D parameters only; 1-D norm scales and biases exempt"
       }
+    }
+  },
+  "equal_weight_aggregates": {
+    "o1": {
+      "difference_from_reference": {
+        "E2631": 0.0035
+      },
+      "partitions": [
+        "prose-",
+        "science-",
+        "technology-",
+        "medicine-",
+        "mathematics-"
+      ],
+      "values": {
+        "E2626": 2.021357,
+        "E2631": 2.024857
+      },
+      "weighting": "equal weight over the named partitions (the O1 objective)"
     }
   },
   "matched_conditions": {

@@ -177,6 +177,9 @@ The next experiment, or the decision this settles.
   cap never reached. A record that declares both figures prints them in separate tables and says which one its verdict
   reads. A pooled figure over the partitions, if a record wants one, is computed from the partition packs and labelled
   as such — never confused with the whole-pack number, and never weighted by population when the objective is
-  equal-weight (K-027).
+  equal-weight (K-027). `chakaso.training.arm_comparison.compare_arms` offers both readings and labels each:
+  `--aggregate NAME=prefix,…` pools by scored characters, and `--equal-aggregate NAME=prefix,…` is the equal-weight
+  mean the records call O1. E2631 preregistered the first under the second's name and the two differed by 0.0011 in
+  the arms' values, which is why the flag that means O1 now says so in its own output.
 - If a hypothesis is not being tested, the experiment is exploration. That is
   allowed; it should say so in `Motivation`.
