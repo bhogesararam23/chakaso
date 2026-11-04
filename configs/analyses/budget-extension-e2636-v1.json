@@ -1,0 +1,36 @@
+{
+  "schema_version": "chakaso-outcome-vocabulary/1",
+  "name": "E2636 budget-extension outcomes (C-a to C-d)",
+  "exclusive": false,
+  "outcomes": [
+    {
+      "letter": "C-a",
+      "reading": "the curve turned inside the horizon - every declared long arm's validation minimum falls strictly before its own ceiling, and the longer budget lowers O1 by at least the adopted rule's own band with an interval that excludes zero. Consequence: this configuration has a converged budget, the 2,400-update figures in the series are not floors of an unfinished curve, and a later record can select by validation.",
+      "when": [
+        {"flag": "all_declared_pairs_present"},
+        {"flag": "every_long_arm_turned_up"},
+        {"flag": "mean_delta_clears_derived_band"},
+        {"flag": "mean_delta_excludes_zero"}
+      ]
+    },
+    {
+      "letter": "C-b",
+      "reading": "the ceiling is still binding at three times the budget - no declared long arm bottomed out, and the longer budget lowers O1 by at least the adopted rule's own band. Consequence: the series' absolute numbers stay floors, the budget question is a scaling question rather than a run, and the next figure on this curve is not comparable with this one.",
+      "when": [
+        {"flag": "all_declared_pairs_present"},
+        {"flag": "every_long_arm_still_falling"},
+        {"flag": "mean_delta_clears_derived_band"}
+      ]
+    },
+    {
+      "letter": "C-c",
+      "reading": "more compute cost held-out loss - the mean paired difference is at or below minus the adopted band, so the shorter arm was the better model. Consequence: the step ceiling was never the binding constraint at this scale, and the next unit on the model path is data or regularisation rather than budget.",
+      "when": [{"flag": "regression_beyond_band"}]
+    },
+    {
+      "letter": "C-d",
+      "reading": "the residue - a turn in some arms and not others, a gain that sits inside the adopted band, or a declared set that did not complete. Every paired difference, every interval and every curve is reported and no mechanism is claimed.",
+      "when": [{"always": true}]
+    }
+  ]
+}

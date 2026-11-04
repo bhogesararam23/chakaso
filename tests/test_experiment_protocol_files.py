@@ -232,3 +232,58 @@ def test_the_decay_exemption_protocol_differs_from_the_ladder_in_one_declared_fi
         "test_partitions",
     ):
         assert arm[key] == ladder[key], key
+
+
+def test_the_budget_extension_short_arm_is_e2625_verbatim() -> None:
+    """E2636's control is not a new configuration: it is the run the adopted rule already made.
+
+    The pair's whole claim is that one field moved, so the short arm has to be identical to a measured run
+    rather than merely similar to one. Anything else would make the budget comparison a comparison of two
+    protocols, which is the defect the `_MATCHED` guard in `chakaso.training.arm_comparison` exists to refuse.
+    """
+    directory = Path(__file__).resolve().parent.parent / "configs" / "experiments"
+    e2625 = tomllib.loads(
+        (directory / "E2625-space-prefixed-equal-updates-and-documents.toml").read_text("utf-8")
+    )["plan"]
+    short = tomllib.loads((directory / "E2636-adopted-budget-2400.toml").read_text("utf-8"))["plan"]
+
+    assert short == e2625
+    assert short["tokenizer_pre_tokenizer"].startswith("space-prefixed")
+    assert short["max_steps"] == 2400
+
+
+def test_the_budget_extension_pair_differs_in_exactly_the_declared_update_count() -> None:
+    directory = Path(__file__).resolve().parent.parent / "configs" / "experiments"
+    short = tomllib.loads((directory / "E2636-adopted-budget-2400.toml").read_text("utf-8"))["plan"]
+    long_ = tomllib.loads((directory / "E2636-adopted-budget-7200.toml").read_text("utf-8"))["plan"]
+
+    changed = {key for key in {*short, *long_} if short.get(key) != long_.get(key)}
+
+    assert changed == {"max_steps"}
+    assert long_["max_steps"] == 3 * short["max_steps"] == 7200
+    # The recipe the pair shares, named rather than assumed: ADR-0049's declaration holds across both arms.
+    for key in (
+        "learning_rate",
+        "weight_decay",
+        "warmup_steps",
+        "schedule",
+        "decay_to",
+        "eval_every",
+        "batch_size",
+        "max_training_tokens",
+        "expected_corpus_fingerprint",
+        "expected_tokenizer_fingerprint",
+        "tokenizer_pre_tokenizer",
+        "split_seed",
+        "test_partitions",
+        "evaluation_selection_tokenizer_file",
+        "patience",
+    ):
+        assert short[key] == long_[key], key
+    # Both arms read the same document pool, so the passes each makes is the ratio of its own positions to it.
+    for plan, expected in ((short, 1.40), (long_, 4.2)):
+        positions = plan["max_steps"] * plan["batch_size"] * plan["context_length"]
+        assert round(positions / plan["max_training_tokens"], 2) == expected
+    # Every rung of the evaluation grid both arms share: the same cadence, so the curves land on the same steps.
+    assert long_["max_steps"] % long_["eval_every"] == 0
+    assert long_["max_steps"] // long_["eval_every"] == 18

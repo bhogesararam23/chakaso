@@ -1,0 +1,58 @@
+# E2636 protocol, SHORT arm - the E2625 run at its own 2,400-update ceiling, unchanged in every field.
+#
+# Read by `chakaso experiment study --protocol` with `--seeds N`. Declared before any run
+# (experiments/E2636/record.md). This file is E2625's protocol verbatim: the point is that the short arm *is*
+# the run the adopted pre-tokenizer already made at this budget, re-made here so that both arms of every pair
+# come from one host and one session.
+#
+# A test (tests/test_experiment_protocol_files.py) holds this file to that one fact: every plan field equals
+# E2625's. It names its pre-tokenizer because ADR-0051 requires a protocol that fits a vocabulary to say what it
+# fits with, and E2624 and E2625 already did the same while pinning a file - this record inherits that precedent,
+# it does not introduce it. What is new here is only the reading: the bands this run's verdict is measured
+# against are derived from the adopted rule's own seed spread (E2630) instead of the inherited 0.02.
+
+[plan]
+model_family = "decoder"
+
+# Architecture and optimisation (E2608 arm A, the reference configuration).
+vocab_size = 4096
+context_length = 256
+d_model = 256
+num_layers = 4
+num_heads = 8
+feedforward_dim = 640
+batch_size = 32
+grad_accum_steps = 1
+learning_rate = 0.0006
+weight_decay = 0.01
+warmup_steps = 200
+schedule = "cosine"
+decay_to = 0.1
+max_steps = 2400
+eval_every = 400
+patience = 99
+
+# Data: the pinned multi-register corpus, held out by whole work, all five registers in training.
+split_seed = 7
+expected_corpus_fingerprint = "312571f9fa8351a8"
+whole_work_splits = true
+shuffle_training_units = true
+max_training_tokens = 14033424
+max_validation_tokens = 250000
+max_test_tokens = 250000
+test_partitions = ["prose-", "science-", "technology-", "medicine-", "mathematics-"]
+character_baseline = false
+
+# Tokenizer: the space-prefixed vocabulary E2620 fitted, read as a committed input (ADR-0044) and checked by
+# fingerprint. The rule is named anyway, because ADR-0051's gate is about a record saying what it runs under
+# even when the artifact already fixes it - and because this record's whole framing is that the adopted rule is
+# now a declared property of the protocol instead of an ambient default.
+tokenizer_min_frequency = 3
+tokenizer_sample_characters = 12000000
+tokenizer_pre_tokenizer = "space-prefixed-word|space-prefixed-symbol|whitespace-run"
+tokenizer_file = "experiments/E2620/vocabulary-4a47f0281c81a9e5.json"
+expected_tokenizer_fingerprint = "4a47f0281c81a9e5"
+evaluation_selection_tokenizer_file = "experiments/E2612/vocabulary-434debe82f949347.json"
+
+# Generation: continuations of held-out openings, never the repository's own headings (K-026).
+sample_prompts = "held_out"

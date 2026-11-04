@@ -1,0 +1,62 @@
+# E2636 protocol, LONG arm - the SHORT arm's run for three times the updates, and nothing else.
+#
+# Read by `chakaso experiment study --protocol` with `--seeds N`. Declared before any run
+# (experiments/E2636/record.md). Exactly one plan field moves from E2636-adopted-budget-2400.toml beside it:
+# `max_steps` 2400 -> 7200. The corpus, the whole-work split, the committed vocabulary, the architecture, the
+# optimizer recipe ADR-0049 declares, the packed document pool, the evaluation caps and the generation prompts are
+# the short arm's, because a paired difference in held-out loss is only a budget effect if it is nothing else.
+#
+# Two consequences of that single field are declared rather than hidden. The cosine horizon is the run's own
+# `max_steps`, so at any given step the two arms are at different learning rates - this is a longer *run*, not the
+# same run observed later, and warmup stays 200 updates (8.3 % of the short arm's horizon, 2.8 % of this one).
+# And 7,200 updates x 8,192 positions reads 58,982,400 identifiers out of the same 14,033,424-document pool: about
+# 4.2 passes where the short arm reads 1.40, so what moves is compute *and* exposure together. E2619 and E2624
+# separate those two axes; this record does not, and says so.
+#
+# A test holds this file to those facts: one field differs from the short arm, the ratio is exactly three, and the
+# pool cap is unchanged.
+
+[plan]
+model_family = "decoder"
+
+# Architecture and optimisation (E2608 arm A, the reference configuration) - the short arm's, verbatim.
+vocab_size = 4096
+context_length = 256
+d_model = 256
+num_layers = 4
+num_heads = 8
+feedforward_dim = 640
+batch_size = 32
+grad_accum_steps = 1
+learning_rate = 0.0006
+weight_decay = 0.01
+warmup_steps = 200
+schedule = "cosine"
+decay_to = 0.1
+# The one field that moves: three times the ceiling every arm in this series has stopped at.
+max_steps = 7200
+eval_every = 400
+patience = 99
+
+# Data: the pinned multi-register corpus, held out by whole work, all five registers in training.
+split_seed = 7
+expected_corpus_fingerprint = "312571f9fa8351a8"
+whole_work_splits = true
+shuffle_training_units = true
+max_training_tokens = 14033424
+max_validation_tokens = 250000
+max_test_tokens = 250000
+test_partitions = ["prose-", "science-", "technology-", "medicine-", "mathematics-"]
+character_baseline = false
+
+# Tokenizer: the space-prefixed vocabulary E2620 fitted, read as a committed input (ADR-0044) and checked by
+# fingerprint, with its rule named because ADR-0051 says a protocol states the rule it runs under.
+tokenizer_min_frequency = 3
+tokenizer_sample_characters = 12000000
+tokenizer_pre_tokenizer = "space-prefixed-word|space-prefixed-symbol|whitespace-run"
+tokenizer_file = "experiments/E2620/vocabulary-4a47f0281c81a9e5.json"
+expected_tokenizer_fingerprint = "4a47f0281c81a9e5"
+evaluation_selection_tokenizer_file = "experiments/E2612/vocabulary-434debe82f949347.json"
+
+# Generation: continuations of held-out openings, never the repository's own headings (K-026).
+sample_prompts = "held_out"
