@@ -1500,22 +1500,32 @@ def test_two_shares_of_one_protocol_have_different_protocol_digests(tmp_path: Pa
 # ------------------------------------------------ the plan names a pre-tokenizer (ADR-0048, H17)
 
 
-def test_a_plan_fits_under_the_pre_tokenizer_it_names_and_the_default_is_the_default(
+def test_a_plan_fits_under_the_rule_it_names_and_an_unnamed_plan_gets_the_adopted_one(
     tmp_path: Path,
 ) -> None:
-    from chakaso.training.subword import DEFAULT_PRE_TOKENIZER, SPACE_PREFIXED_PRE_TOKENIZER
+    """The rule a plan names is an identity, not a style (ADR-0048), and since ADR-0051 the rule it does not
+    name is the adopted one rather than the historical default.
 
-    root = _root(tmp_path)
-    default = prepare_corpus(_plan(root, tmp_path / "work-default"))
-    prefixed = prepare_corpus(
-        _plan(
-            root, tmp_path / "work-prefixed", tokenizer_pre_tokenizer=SPACE_PREFIXED_PRE_TOKENIZER
-        )
+    Both halves matter: the same text under two rules is two vocabularies, so a comparison across rules is a
+    comparison across alphabets; and a plan that names nothing now means the space-prefixed rule, which is the
+    decision this test exists to make visible.
+    """
+    from chakaso.training.subword import (
+        DEFAULT_PRE_TOKENIZER,
+        LEGACY_DEFAULT_PRE_TOKENIZER,
+        SPACE_PREFIXED_PRE_TOKENIZER,
     )
 
-    assert default.vocabulary.pre_tokenizer == DEFAULT_PRE_TOKENIZER
-    assert prefixed.vocabulary.pre_tokenizer == SPACE_PREFIXED_PRE_TOKENIZER
-    assert prefixed.vocabulary.fingerprint != default.vocabulary.fingerprint
+    root = _root(tmp_path)
+    unnamed = prepare_corpus(_plan(root, tmp_path / "work-unnamed"))
+    legacy = prepare_corpus(
+        _plan(root, tmp_path / "work-legacy", tokenizer_pre_tokenizer=LEGACY_DEFAULT_PRE_TOKENIZER)
+    )
+
+    assert unnamed.vocabulary.pre_tokenizer == DEFAULT_PRE_TOKENIZER
+    assert DEFAULT_PRE_TOKENIZER == SPACE_PREFIXED_PRE_TOKENIZER
+    assert legacy.vocabulary.pre_tokenizer == LEGACY_DEFAULT_PRE_TOKENIZER
+    assert legacy.vocabulary.fingerprint != unnamed.vocabulary.fingerprint
 
 
 def test_a_plan_naming_an_unknown_pre_tokenizer_is_refused_on_construction(tmp_path: Path) -> None:
@@ -1559,7 +1569,10 @@ def test_the_identity_of_a_default_plans_tokenizer_is_what_it_was_before_the_opt
 
 
 def test_a_stored_tokenizer_under_another_rule_than_the_plans_is_refused(tmp_path: Path) -> None:
-    from chakaso.training.subword import SPACE_PREFIXED_PRE_TOKENIZER
+    from chakaso.training.subword import (
+        LEGACY_DEFAULT_PRE_TOKENIZER,
+        SPACE_PREFIXED_PRE_TOKENIZER,
+    )
 
     root = _root(tmp_path)
     supplied = tmp_path / "prefixed.json"
@@ -1568,27 +1581,46 @@ def test_a_stored_tokenizer_under_another_rule_than_the_plans_is_refused(tmp_pat
     )
     prepared.vocabulary.save(supplied)
 
+    # The plan has to *name* the other rule: an unnamed plan means the adopted one now (ADR-0051), and against a
+    # space-prefixed file that is not a mismatch but the ordinary case.
     with pytest.raises(CorpusError, match="pre-tokenizer"):
-        prepare_corpus(_plan(root, tmp_path / "w2", tokenizer_file=supplied))
+        prepare_corpus(
+            _plan(
+                root,
+                tmp_path / "w2",
+                tokenizer_file=supplied,
+                tokenizer_pre_tokenizer=LEGACY_DEFAULT_PRE_TOKENIZER,
+            )
+        )
 
 
-def test_a_report_names_a_non_default_rule_and_a_default_report_is_unchanged(
+def test_a_report_names_the_rule_it_fitted_under_and_leaves_the_formats_one_unnamed(
     tmp_path: Path,
 ) -> None:
-    from chakaso.training.subword import SPACE_PREFIXED_PRE_TOKENIZER
+    """The two halves of ADR-0051 in the report: the adopted rule is written out, the format's legacy rule keeps
+    the shape every committed report has.
 
-    root = _root(tmp_path)
-    default = run_experiment(_plan(root, tmp_path / "w-default"))
-    prefixed = run_experiment(
-        _plan(root, tmp_path / "w-prefixed", tokenizer_pre_tokenizer=SPACE_PREFIXED_PRE_TOKENIZER)
+    A report whose vocabulary was fitted under `LEGACY_DEFAULT_PRE_TOKENIZER` carries no `pre_tokenizer` key, which is
+    what the thirty measured runs look like and what an old reader expects. A run under the adopted default is *not*
+    the same case any more — it names its rule, because after the move "no key" can no longer be read as "the default".
+    """
+    from chakaso.training.subword import (
+        LEGACY_DEFAULT_PRE_TOKENIZER,
+        SPACE_PREFIXED_PRE_TOKENIZER,
     )
 
-    assert "pre_tokenizer" not in default["tokenizer"]
-    assert "tokenizer_pre_tokenizer" not in default["plan"]
+    root = _root(tmp_path)
+    prefixed = run_experiment(_plan(root, tmp_path / "w-prefixed"))
+    legacy = run_experiment(
+        _plan(root, tmp_path / "w-legacy", tokenizer_pre_tokenizer=LEGACY_DEFAULT_PRE_TOKENIZER)
+    )
+
     assert prefixed["tokenizer"]["pre_tokenizer"] == SPACE_PREFIXED_PRE_TOKENIZER
-    assert prefixed["plan"]["tokenizer_pre_tokenizer"] == SPACE_PREFIXED_PRE_TOKENIZER
+    assert "tokenizer_pre_tokenizer" not in prefixed["plan"]
+    assert "pre_tokenizer" not in legacy["tokenizer"]
+    assert legacy["plan"]["tokenizer_pre_tokenizer"] == LEGACY_DEFAULT_PRE_TOKENIZER
     # A different rule is a different protocol, so the digests differ.
-    assert protocol_digest(default) != protocol_digest(prefixed)
+    assert protocol_digest(prefixed) != protocol_digest(legacy)
 
 
 # ------------------------------------------------ held-out documents chosen by a reference vocabulary (H17 control)

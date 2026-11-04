@@ -22,9 +22,17 @@ from pathlib import Path
 from typing import Any
 
 from chakaso.training.errors import TrainingError
+from chakaso.training.subword import (
+    LEGACY_DEFAULT_PRE_TOKENIZER,
+    SPACE_PREFIXED_PRE_TOKENIZER,
+)
 from chakaso.training.subword_experiment import ExperimentPlan
 
 __all__ = ["ProtocolError", "load_plan"]
+
+#: The rules a protocol may name, in the order an operator is most likely to want them: the adopted one first
+#: (ADR-0051), then the one the committed vocabularies were fitted with.
+_PRE_TOKENIZER_NAMES = (SPACE_PREFIXED_PRE_TOKENIZER, LEGACY_DEFAULT_PRE_TOKENIZER)
 
 #: Fields a protocol file may not set: where the run lives, the corpus spec a snapshot supplies, and the
 #: permission to replace an artifact, which is an operator's decision at run time and not part of what is measured.
@@ -46,7 +54,9 @@ def load_plan(
 
     Raises:
         ProtocolError: the file cannot be read or parsed, has no ``[plan]`` table, sets a field a protocol may
-            not set, names an unknown field, gives a value of the wrong type, or disagrees with ``fixed``.
+            not set, names an unknown field, gives a value of the wrong type, disagrees with ``fixed``, or fits a
+            vocabulary without naming the pre-tokenizer it fits with (ADR-0051 — a rule a run inherits is a rule a
+            re-run cannot control).
     """
     try:
         document = tomllib.loads(Path(path).read_text(encoding="utf-8"))
@@ -85,7 +95,16 @@ def load_plan(
             )
             raise ProtocolError(message)
         values[name] = value
-    return ExperimentPlan(root=Path(root), work_dir=Path(work_dir), **values)
+    plan = ExperimentPlan(root=Path(root), work_dir=Path(work_dir), **values)
+    # After the plan's own validation, so a malformed protocol is refused for the reason it is malformed.
+    if plan.tokenizer_file is None and plan.tokenizer_pre_tokenizer is None:
+        message = (
+            "the protocol fits its own vocabulary but names no tokenizer_pre_tokenizer: a pre-tokenizer the run "
+            "inherits is one its re-run does not control (ADR-0051). Pin a tokenizer_file, or declare the rule "
+            f"the vocabulary is to be learned with — known: {list(_PRE_TOKENIZER_NAMES)}"
+        )
+        raise ProtocolError(message)
+    return plan
 
 
 def _coerce(name: str, value: Any, hint: Any) -> Any:

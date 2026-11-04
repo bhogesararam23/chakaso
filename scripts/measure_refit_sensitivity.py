@@ -45,14 +45,20 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src"))
 from chakaso.training.errors import CorpusError, TrainingError
 from chakaso.training.manifest import read_snapshot
 from chakaso.training.subword import (
-    DEFAULT_PRE_TOKENIZER,
+    LEGACY_DEFAULT_PRE_TOKENIZER,
     SPACE_PREFIXED_PRE_TOKENIZER,
     SubwordVocabulary,
     train_subword_vocabulary,
 )
 
-#: The two rules, named as the vocabularies name them.
-RULES = {"default": DEFAULT_PRE_TOKENIZER, "space-prefixed": SPACE_PREFIXED_PRE_TOKENIZER}
+#: The two rules, named as the record names them. "default" is the rule that was in force when the committed
+#: vocabularies were fitted — `LEGACY_DEFAULT_PRE_TOKENIZER`, a format constant — and deliberately not the library's
+#: ambient default, which ADR-0051 is free to move: a measurement whose arm labels followed the ambient default would
+#: relabel its own arms without changing a byte of text.
+RULES = {
+    "default": LEGACY_DEFAULT_PRE_TOKENIZER,
+    "space-prefixed": SPACE_PREFIXED_PRE_TOKENIZER,
+}
 
 
 class AnalysisError(RuntimeError):

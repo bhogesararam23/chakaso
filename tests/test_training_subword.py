@@ -51,13 +51,15 @@ def test_pre_tokenize_keeps_every_character_of_the_input() -> None:
     assert pieces
 
 
-def test_pre_tokenize_separates_runs_and_single_symbols() -> None:
-    assert pre_tokenize("quiet town.") == ("quiet", " ", "town", ".")
-    assert pre_tokenize("a  b") == ("a", "  ", "b")
+def test_the_word_run_rule_separates_runs_and_single_symbols() -> None:
+    # Named explicitly rather than left to the default: the default is the adopted rule now (ADR-0051), and this
+    # sentence is about the rule every committed vocabulary was fitted with.
+    assert pre_tokenize("quiet town.", _WORD_RUN) == ("quiet", " ", "town", ".")
+    assert pre_tokenize("a  b", _WORD_RUN) == ("a", "  ", "b")
     # An underscore stays inside the word it belongs to, so a code identifier segments as one piece
     # rather than three — the choice a reader would otherwise have to reverse-engineer from the regex.
-    assert pre_tokenize("more_words here") == ("more_words", " ", "here")
-    assert pre_tokenize("a_b") == ("a_b",)
+    assert pre_tokenize("more_words here", _WORD_RUN) == ("more_words", " ", "here")
+    assert pre_tokenize("a_b", _WORD_RUN) == ("a_b",)
 
 
 # ------------------------------------------------------------------ training
@@ -581,6 +583,9 @@ def test_the_committed_english_vocabulary_has_no_merge_for_four_non_latin_script
 # ------------------------------------------------ a named alternative pre-tokenizer (ADR-0048, H17)
 
 _SPACE_PREFIXED = "space-prefixed-word|space-prefixed-symbol|whitespace-run"
+#: Pinned as a literal, like the rule above, because this file is where "the default moved and the format did not"
+#: (ADR-0051) has to be caught: a test that asked for the default would silently follow it.
+_WORD_RUN = "word-run|whitespace-run|single-symbol"
 _SAMPLES = [
     "the quick red fox",
     "a  b",  # two spaces: one stays a piece, the other prefixes the word
@@ -616,9 +621,22 @@ def test_punctuation_takes_a_preceding_space_and_a_paragraph_break_stays_one_pie
     )
 
 
-def test_the_default_pre_tokenizer_is_unchanged_and_still_the_default() -> None:
-    assert pre_tokenize("the quick  red") == ("the", " ", "quick", "  ", "red")
-    assert SubwordVocabulary(merges=()).pre_tokenizer == "word-run|whitespace-run|single-symbol"
+def test_the_adopted_rule_is_the_default_and_the_legacy_rule_is_still_implemented() -> None:
+    """The two halves of ADR-0051, pinned against each other.
+
+    Moving the default is the decision; keeping the old rule *loadable* is the compatibility requirement. A registry
+    keyed on "the default and the other one" collapses to a single entry when the default moves and every committed
+    word-run vocabulary stops loading, so this asserts the adopted rule is what an unnamed construction gets, the
+    legacy rule is what an unnamed artifact means, and both are still implemented.
+    """
+    from chakaso.training.subword import DEFAULT_PRE_TOKENIZER, LEGACY_DEFAULT_PRE_TOKENIZER
+
+    assert DEFAULT_PRE_TOKENIZER == _SPACE_PREFIXED
+    assert LEGACY_DEFAULT_PRE_TOKENIZER == _WORD_RUN
+    assert pre_tokenize("the quick  red", _WORD_RUN) == ("the", " ", "quick", "  ", "red")
+    assert pre_tokenize("the quick  red") == ("the", " quick", " ", " red")
+    assert SubwordVocabulary(merges=()).pre_tokenizer == _SPACE_PREFIXED
+    assert SubwordVocabulary(merges=(), pre_tokenizer=_WORD_RUN).pre_tokenizer == _WORD_RUN
 
 
 def test_an_unknown_pre_tokenizer_is_refused() -> None:
@@ -642,24 +660,27 @@ def test_a_space_prefixed_vocabulary_round_trips_and_is_total() -> None:
 
 
 def test_folding_the_space_into_the_word_spends_fewer_identifiers_on_the_same_text() -> None:
-    text, default = _fit(None)
+    # Both rules named: the comparison is between the committed rule and the adopted one, and "the default" is no
+    # longer a stable third party in it (ADR-0051).
+    text, word_run = _fit(_WORD_RUN)
     _, prefixed = _fit(_SPACE_PREFIXED)
 
-    assert prefixed.token_count(text) < default.token_count(text)
-    assert prefixed.compression_ratio(text) > default.compression_ratio(text)
+    assert prefixed.token_count(text) < word_run.token_count(text)
+    assert prefixed.compression_ratio(text) > word_run.compression_ratio(text)
 
 
 def test_the_same_merge_table_under_another_pre_tokenizer_is_a_different_tokenizer() -> None:
-    _, default = _fit(None)
+    _, word_run = _fit(_WORD_RUN)
     renamed = SubwordVocabulary(
-        merges=default.merges, min_frequency=default.min_frequency, pre_tokenizer=_SPACE_PREFIXED
+        merges=word_run.merges, min_frequency=word_run.min_frequency, pre_tokenizer=_SPACE_PREFIXED
     )
 
-    assert renamed.fingerprint != default.fingerprint
-    assert renamed.checksum() != default.checksum()
+    assert renamed.fingerprint != word_run.fingerprint
+    assert renamed.checksum() != word_run.checksum()
 
 
-def test_a_default_vocabulary_keeps_the_fingerprint_it_had_before_the_option_existed() -> None:
+def test_the_committed_word_run_vocabulary_still_loads_after_the_default_moves() -> None:
+    """`434debe82f949347` is cited by a dozen records; the rule it declares is a fact about it, not about today."""
     path = (
         Path(__file__).resolve().parent.parent
         / "experiments"
@@ -667,7 +688,10 @@ def test_a_default_vocabulary_keeps_the_fingerprint_it_had_before_the_option_exi
         / "vocabulary-434debe82f949347.json"
     )
 
-    assert SubwordVocabulary.load(path).fingerprint == "434debe82f949347"
+    loaded = SubwordVocabulary.load(path)
+
+    assert loaded.fingerprint == "434debe82f949347"
+    assert loaded.pre_tokenizer == _WORD_RUN
 
 
 def test_the_pre_tokenizer_survives_a_save_and_load(tmp_path: Path) -> None:

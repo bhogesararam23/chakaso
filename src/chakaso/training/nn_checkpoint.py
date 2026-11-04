@@ -42,7 +42,7 @@ from chakaso.training.errors import (
     CorruptedCheckpointError,
     IncompatibleCheckpointError,
 )
-from chakaso.training.subword import DEFAULT_PRE_TOKENIZER, SubwordVocabulary
+from chakaso.training.subword import LEGACY_DEFAULT_PRE_TOKENIZER, SubwordVocabulary
 from chakaso.training.transformer import CausalTransformer, TransformerConfig
 
 __all__ = [
@@ -170,10 +170,12 @@ class ModelArtifact:
         }
         if self.tokenizer_min_frequency is not None:
             document["tokenizer_min_frequency"] = self.tokenizer_min_frequency
-        if self.vocabulary.pre_tokenizer != DEFAULT_PRE_TOKENIZER:
-            # Written only for a non-default rule (ADR-0048), so every artifact made under the default one serialises
-            # exactly as before. A reader that does not know the key rebuilds a default-rule vocabulary, whose
-            # fingerprint then differs from the recorded one, and refuses the file instead of mis-encoding with it.
+        if self.vocabulary.pre_tokenizer != LEGACY_DEFAULT_PRE_TOKENIZER:
+            # Written only for a rule other than the format's legacy default (ADR-0048), so every artifact made
+            # under that rule serialises exactly as before — and the key's absence means the day the artifact was
+            # written, not whatever the library's ambient default is now. A reader that does not know the key
+            # rebuilds a legacy-rule vocabulary, whose fingerprint then differs from the recorded one, and refuses
+            # the file instead of mis-encoding with it.
             document["tokenizer_pre_tokenizer"] = self.vocabulary.pre_tokenizer
         return json.dumps(document, sort_keys=True, separators=(",", ":"))
 
@@ -359,7 +361,7 @@ def load_artifact(path: Path) -> ModelArtifact:
         )
         raise IncompatibleCheckpointError(message)
 
-    rule = recorded.get("tokenizer_pre_tokenizer", DEFAULT_PRE_TOKENIZER)
+    rule = recorded.get("tokenizer_pre_tokenizer", LEGACY_DEFAULT_PRE_TOKENIZER)
     try:
         SubwordVocabulary(merges=(), pre_tokenizer=rule)
     except (TypeError, ValueError) as exc:

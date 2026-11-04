@@ -32,6 +32,13 @@ max_training_tokens = 20000000
 """
 
 
+#: A protocol that fits its own vocabulary has to name the rule it fits with (ADR-0051), so the minimal fixtures
+#: below carry it. One line, so the requirement is visible in every test that has to satisfy it.
+_DECLARES_RULE = (
+    'tokenizer_pre_tokenizer = "space-prefixed-word|space-prefixed-symbol|whitespace-run"\n'
+)
+
+
 def _write(tmp_path: Path, text: str = _PROTOCOL) -> Path:
     path = tmp_path / "protocol.toml"
     path.write_text(text, encoding="utf-8")
@@ -57,7 +64,7 @@ def test_a_protocol_file_declares_the_plan_with_every_type_restored(tmp_path: Pa
 
 
 def test_an_integer_is_accepted_where_the_plan_wants_a_float(tmp_path: Path) -> None:
-    plan = _load(_write(tmp_path, "[plan]\nlearning_rate = 1\n"))
+    plan = _load(_write(tmp_path, f"[plan]\nlearning_rate = 1\n{_DECLARES_RULE}"))
 
     assert plan.learning_rate == 1.0 and isinstance(plan.learning_rate, float)
 
@@ -89,7 +96,7 @@ def test_a_missing_protocol_file_is_a_named_error(tmp_path: Path) -> None:
 
 
 def test_a_quantity_declared_in_both_places_must_agree(tmp_path: Path) -> None:
-    path = _write(tmp_path, "[plan]\nmax_steps = 2400\nsplit_seed = 7\n")
+    path = _write(tmp_path, f"[plan]\nmax_steps = 2400\nsplit_seed = 7\n{_DECLARES_RULE}")
 
     assert _load(path, split_seed=7, max_steps=2400).split_seed == 7
     with pytest.raises(ProtocolError, match="declares each quantity once"):
@@ -112,6 +119,28 @@ def test_the_plans_own_validation_still_runs_on_a_protocol(tmp_path: Path) -> No
         _load(_write(tmp_path, '[plan]\nexpected_tokenizer_fingerprint = "abc"\n'))
 
 
+def test_a_protocol_that_fits_a_vocabulary_without_naming_its_rule_is_refused(
+    tmp_path: Path,
+) -> None:
+    """ADR-0051's third decision, read from both sides.
+
+    A run that *learns* a tokenizer must say how: the pre-tokenizer is part of the vocabulary's identity (ADR-0048), so
+    a protocol that inherits one publishes a plan its re-run cannot reproduce. A protocol that pins a committed
+    vocabulary is exempt, because nothing is left to fit — and the refusal comes after the plan's own validation, so a
+    malformed protocol is still refused for the reason it is malformed.
+    """
+    with pytest.raises(ProtocolError, match="names no tokenizer_pre_tokenizer"):
+        _load(_write(tmp_path, "[plan]\nmax_steps = 100\n"))
+
+    pinned = _load(_write(tmp_path, '[plan]\nmax_steps = 100\ntokenizer_file = "v.json"\n'))
+    assert pinned.tokenizer_pre_tokenizer is None
+
+    declared = _load(_write(tmp_path, f"[plan]\nmax_steps = 100\n{_DECLARES_RULE}"))
+    assert declared.tokenizer_pre_tokenizer == (
+        "space-prefixed-word|space-prefixed-symbol|whitespace-run"
+    )
+
+
 def test_every_committed_protocol_still_loads_into_a_valid_plan() -> None:
     """A renamed plan field would otherwise break a preregistered protocol only at launch time."""
     directory = Path(__file__).resolve().parent.parent / "configs" / "experiments"
@@ -131,6 +160,7 @@ def test_a_share_declaration_loads_as_a_string_and_a_float(tmp_path: Path) -> No
         "shuffle_training_units = true\n"
         'share_group_prefix = "prose-"\n'
         "share_of_tokens = 1\n"
+        f"{_DECLARES_RULE}"
     )
 
     plan = _load(_write(tmp_path, text))
@@ -149,6 +179,7 @@ def test_the_rung_and_decay_fields_are_nameable_in_a_protocol(tmp_path: Path) ->
         "eval_every = 200\n"
         "curve_artifact_steps = [200, 400, 2400]\n"
         "weight_decay_excludes_vectors = true\n"
+        f"{_DECLARES_RULE}"
     )
 
     plan = _load(_write(tmp_path, text))

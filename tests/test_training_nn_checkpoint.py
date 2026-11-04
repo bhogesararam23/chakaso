@@ -557,10 +557,19 @@ def _write_as_written_before_adr_0046(artifact: ModelArtifact, path: Path) -> di
 
 
 def _fitted_at(floor: int):  # type: ignore[no-untyped-def]
+    """A vocabulary fitted under the rule an artifact from before ADR-0048 would have used.
+
+    Named explicitly, not left to the default: these fixtures exist to prove that an artifact which names **no** rule
+    still loads and re-saves byte for byte, and under the adopted default (ADR-0051) a freshly fitted vocabulary does
+    name one, which would make the fixture describe a different artifact than the one the test is about.
+    """
+    from chakaso.training.subword import LEGACY_DEFAULT_PRE_TOKENIZER
+
     return train_subword_vocabulary(
         ["the quick red fox ran over the dry sand and slept"] * 3,
         target_size=260,
         min_frequency=floor,
+        pre_tokenizer=LEGACY_DEFAULT_PRE_TOKENIZER,
     )
 
 
@@ -716,23 +725,55 @@ def test_a_non_default_pre_tokenizer_is_recorded_and_survives_a_round_trip(tmp_p
     assert loaded.vocabulary.encode("the quick fox") == artifact.vocabulary.encode("the quick fox")
 
 
-def test_the_default_pre_tokenizer_writes_no_key() -> None:
-    from chakaso.training.subword import DEFAULT_PRE_TOKENIZER
+def test_the_legacy_default_pre_tokenizer_writes_no_key() -> None:
+    from chakaso.training.subword import LEGACY_DEFAULT_PRE_TOKENIZER
 
-    document = json.loads(_with_rule(DEFAULT_PRE_TOKENIZER).metadata_document())
+    document = json.loads(_with_rule(LEGACY_DEFAULT_PRE_TOKENIZER).metadata_document())
 
     assert "tokenizer_pre_tokenizer" not in document
 
 
+def test_an_artifact_that_names_no_rule_is_read_as_the_word_run_rule(tmp_path: Path) -> None:
+    """The absence of the key records a **date**, not a choice, so it cannot track the ambient default.
+
+    `DEFAULT_PRE_TOKENIZER` is the rule a new fit uses when its caller names none, and ADR-0051 is the record that would
+    move it. The format's own constant is a different name, and it is pinned here to its literal value so that an edit
+    swapping the fallback back onto the ambient default fails in this test rather than silently re-tokenising the text a
+    released artifact was trained on.
+    """
+    from chakaso.training import nn_checkpoint
+    from chakaso.training.subword import LEGACY_DEFAULT_PRE_TOKENIZER
+
+    assert nn_checkpoint.LEGACY_DEFAULT_PRE_TOKENIZER == "word-run|whitespace-run|single-symbol"
+    assert LEGACY_DEFAULT_PRE_TOKENIZER == nn_checkpoint.LEGACY_DEFAULT_PRE_TOKENIZER
+
+    target = tmp_path / "unrecorded-rule.pt"
+    artifact = _with_rule(LEGACY_DEFAULT_PRE_TOKENIZER)
+    save_artifact(artifact, target)
+
+    loaded = load_artifact(target)
+
+    assert "tokenizer_pre_tokenizer" not in json.loads(artifact.metadata_document())
+    assert loaded.vocabulary.pre_tokenizer == "word-run|whitespace-run|single-symbol"
+    assert loaded.vocabulary.fingerprint == artifact.vocabulary.fingerprint
+
+
 def test_a_reader_that_does_not_know_the_key_refuses_the_file_instead_of_mis_encoding() -> None:
-    from chakaso.training.subword import SPACE_PREFIXED_PRE_TOKENIZER, SubwordVocabulary
+    from chakaso.training.subword import (
+        LEGACY_DEFAULT_PRE_TOKENIZER,
+        SPACE_PREFIXED_PRE_TOKENIZER,
+        SubwordVocabulary,
+    )
 
     artifact = _with_rule(SPACE_PREFIXED_PRE_TOKENIZER)
     recorded = json.loads(artifact.metadata_document())
 
-    # What a reader built before the key existed does: rebuild the vocabulary from the merge table alone.
+    # What a reader built before the key existed does: rebuild the vocabulary from the merge table alone, under the
+    # rule that was the only one there was. Named explicitly, because the ambient default is a *choice about the
+    # next fit* (ADR-0051) and this sentence is about a reader from the past.
     as_the_old_reader_sees_it = SubwordVocabulary(
-        merges=tuple((int(a), int(b)) for a, b in recorded["tokenizer_merges"])
+        merges=tuple((int(a), int(b)) for a, b in recorded["tokenizer_merges"]),
+        pre_tokenizer=LEGACY_DEFAULT_PRE_TOKENIZER,
     )
 
     assert as_the_old_reader_sees_it.fingerprint != recorded["tokenizer_fingerprint"]

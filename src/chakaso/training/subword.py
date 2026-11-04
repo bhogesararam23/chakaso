@@ -56,6 +56,7 @@ __all__ = [
     "DEFAULT_PRE_TOKENIZER",
     "DOCUMENT_END",
     "FIRST_MERGED_ID",
+    "LEGACY_DEFAULT_PRE_TOKENIZER",
     "RESERVED_DOCUMENT_END_ID",
     "SPACE_PREFIXED_PRE_TOKENIZER",
     "IncrementalDecoder",
@@ -83,8 +84,12 @@ _BASE = "utf-8-bytes"
 # symbol. A test asserts the join of the pieces equals the input, which is what proves nothing is dropped.
 PIECE_PATTERN = re.compile(r"\w+|\s+|[^\w\s]", re.UNICODE)
 
-#: The pre-tokenizer every vocabulary written before the option existed uses, and the default.
-DEFAULT_PRE_TOKENIZER = _PRE_TOKENIZER
+#: The rule an artifact that **names no rule** was written under, and the rule every committed vocabulary except the
+#: space-prefixed ones was fitted with. This is a format constant, not a recommendation: it says what a missing key
+#: meant on the day the artifact was written, and it must not move when :data:`DEFAULT_PRE_TOKENIZER` does, or a
+#: released checkpoint's weights would be read through a vocabulary that encodes their text differently from the one
+#: that trained them. ``tests/test_training_nn_checkpoint.py`` pins its value literally for that reason (ADR-0051).
+LEGACY_DEFAULT_PRE_TOKENIZER = _PRE_TOKENIZER
 
 #: A word or a single other symbol carries one preceding U+0020, as in GPT-2's byte-level BPE, so a word gap is no
 #: longer an identifier of its own (ADR-0048, H17). Whitespace that ends in a newline, tab or other non-space
@@ -94,8 +99,18 @@ DEFAULT_PRE_TOKENIZER = _PRE_TOKENIZER
 SPACE_PREFIXED_PRE_TOKENIZER = "space-prefixed-word|space-prefixed-symbol|whitespace-run"
 _SPACE_PREFIXED_PATTERN = re.compile(r"[ ]?\w+|[ ]?[^\w\s]|\s*[^\S ]|\s+(?!\S)|\s+", re.UNICODE)
 
+#: The rule a caller gets when it names none: the space-prefixed rule, adopted by ADR-0051 on five paired seeds
+#: (E2630, Δ(O1) +0.026431 with a 95 % interval of [+0.023212, +0.029650]), a reproduction on a second host (E2628) and
+#: four independent refits (E2632, ratio spread 0.30 %). It is **not** what the absence of a rule key in an artifact
+#: means — that is :data:`LEGACY_DEFAULT_PRE_TOKENIZER`, a format constant that does not move.
+DEFAULT_PRE_TOKENIZER = SPACE_PREFIXED_PRE_TOKENIZER
+
+#: Every rule this code can pre-tokenize with, keyed by the name a vocabulary declares. Both keys are named
+#: constants rather than "the default and the other one", because those two collapse into a single entry the moment the
+#: default moves (ADR-0051) and every committed word-run vocabulary would then refuse to load — which is exactly what
+#: the test suite caught on the first run after the move.
 _PRE_TOKENIZERS: dict[str, re.Pattern[str]] = {
-    DEFAULT_PRE_TOKENIZER: PIECE_PATTERN,
+    LEGACY_DEFAULT_PRE_TOKENIZER: PIECE_PATTERN,
     SPACE_PREFIXED_PRE_TOKENIZER: _SPACE_PREFIXED_PATTERN,
 }
 

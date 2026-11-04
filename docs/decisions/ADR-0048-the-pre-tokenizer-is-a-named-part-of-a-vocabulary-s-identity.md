@@ -43,10 +43,18 @@ The constraint is the same as ADR-0046's: nothing already on disk or already cit
 ## What this does not decide
 
 * Whether the new rule is better. That is H17's experiment, preregistered separately.
+  **Superseded 2026-11-04 by [ADR-0051](ADR-0051-the-space-prefixed-pre-tokenizer-is-adopted-and-a-run-stops-inheriting-one.md)**,
+  which measured it (E2620, E2624, E2625, E2628, E2630's five paired seeds with an interval, E2632's four refits) and
+  adopted the rule as the one a new fit uses when its caller names none. What this record decided — that the rule is
+  part of a vocabulary's identity, recorded, fingerprinted and refused when unknown — is unchanged and is what made
+  that adoption safe.
 * Anything about the checkpoint or the experiment plan, which are the next two layers: a checkpoint written under the non-default rule must record it (an
   optional metadata key, written only when non-default, as ADR-0046 did for the frequency floor) and an older reader must fail rather than mis-encode. The
   fingerprint check already guarantees the latter: a reader that does not know the key rebuilds a default-rule vocabulary, whose fingerprint differs from the
   recorded one, and refuses the file.
+  **One correction, made by ADR-0051:** "a default-rule vocabulary" here meant the rule that was the default *then*.
+  Once the default can move, the fallback for a missing key has to be a named constant that does not — so the reader
+  now rebuilds under `LEGACY_DEFAULT_PRE_TOKENIZER`, and the sentence above stays true for the reason it was written.
 
 ## Consequences
 

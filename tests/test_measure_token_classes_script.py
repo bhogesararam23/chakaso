@@ -39,7 +39,20 @@ def test_the_classes_partition_every_identifier() -> None:
 
 
 def test_a_text_of_single_spaces_between_letters_has_whitespace_tokens_for_each_gap() -> None:
-    vocabulary = train_subword_vocabulary(["a b c d e f g h"] * 4, target_size=270, min_frequency=2)
+    """A property of the **word-run** rule, so it names that rule rather than the default.
+
+    Under the adopted rule (ADR-0051) a single space is folded into the word it precedes and there are no whitespace
+    identifiers to count — which is the whole reason the rule buys 41 % more characters per identifier. The sentence
+    this test states is about the old rule, and it stays true only if the fixture says which rule it means.
+    """
+    from chakaso.training.subword import LEGACY_DEFAULT_PRE_TOKENIZER
+
+    vocabulary = train_subword_vocabulary(
+        ["a b c d e f g h"] * 4,
+        target_size=270,
+        min_frequency=2,
+        pre_tokenizer=LEGACY_DEFAULT_PRE_TOKENIZER,
+    )
 
     result = _script().token_classes(vocabulary, "a b c d e f g h")  # type: ignore[attr-defined]
 

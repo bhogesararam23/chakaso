@@ -40,7 +40,16 @@ from chakaso.training.nn_checkpoint import (  # noqa: E402
 )
 from chakaso.training.nn_training import TransformerTrainingConfig, train_transformer  # noqa: E402
 from chakaso.training.packing import pack_units  # noqa: E402
-from chakaso.training.subword import DOCUMENT_END, train_subword_vocabulary  # noqa: E402
+from chakaso.training.subword import (  # noqa: E402
+    DOCUMENT_END,
+    LEGACY_DEFAULT_PRE_TOKENIZER,
+    train_subword_vocabulary,
+)
+
+#: The fixtures below count identifiers by hand ("the labelled transcript is 9 tokens, so it overflows an 8-token
+#: window"), so they name the rule their vocabulary was fitted with instead of following the library's default, which
+#: ADR-0051 is free to move. A fixture whose counts depend on an ambient default is a fixture that fails on a Tuesday.
+_FIXTURE_RULE = LEGACY_DEFAULT_PRE_TOKENIZER
 from chakaso.training.transformer import TransformerConfig  # noqa: E402
 
 _TEXT = (
@@ -66,7 +75,9 @@ def _checkpoint(directory: Path) -> Path:
         TextUnit(identifier=f"doc-{index}", text=f"{_TEXT} line {index}\n") for index in range(6)
     )
     split = split_text_units(documents, validation_fraction=0.2, test_fraction=0.2, seed=3)
-    vocabulary = train_subword_vocabulary([unit.text for unit in split.train], target_size=280)
+    vocabulary = train_subword_vocabulary(
+        [unit.text for unit in split.train], target_size=280, pre_tokenizer=_FIXTURE_RULE
+    )
     architecture = TransformerConfig(
         vocab_size=vocabulary.size,
         context_length=_CONTEXT,
@@ -151,7 +162,9 @@ def decoder_checkpoint(tmp_path_factory: pytest.TempPathFactory) -> Path:
         TextUnit(identifier=f"doc-{index}", text=f"{_TEXT} line {index}\n") for index in range(6)
     )
     split = split_text_units(documents, validation_fraction=0.2, test_fraction=0.2, seed=3)
-    vocabulary = train_subword_vocabulary([unit.text for unit in split.train], target_size=280)
+    vocabulary = train_subword_vocabulary(
+        [unit.text for unit in split.train], target_size=280, pre_tokenizer=_FIXTURE_RULE
+    )
     config = DecoderConfig(
         vocab_size=vocabulary.size,
         context_length=_CONTEXT,

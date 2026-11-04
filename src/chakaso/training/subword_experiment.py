@@ -85,6 +85,7 @@ from chakaso.training.packing import (
 )
 from chakaso.training.subword import (
     DEFAULT_PRE_TOKENIZER,
+    LEGACY_DEFAULT_PRE_TOKENIZER,
     SubwordVocabulary,
     pre_tokenize,
     train_subword_vocabulary,
@@ -1888,7 +1889,7 @@ def run_experiment(plan: ExperimentPlan, *, verbose: bool = False) -> dict[str, 
             "min_frequency": prepared.vocabulary.min_frequency,
             **(
                 {}
-                if prepared.vocabulary.pre_tokenizer == DEFAULT_PRE_TOKENIZER
+                if prepared.vocabulary.pre_tokenizer == LEGACY_DEFAULT_PRE_TOKENIZER
                 else {"pre_tokenizer": prepared.vocabulary.pre_tokenizer}
             ),
             "sample_characters": plan.tokenizer_sample_characters,

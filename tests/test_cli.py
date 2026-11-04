@@ -922,7 +922,9 @@ def test_experiment_study_reads_its_plan_from_a_protocol_file_and_refuses_a_bad_
     assert "declares each quantity once" in capsys.readouterr().err
 
     protocol.write_text(
-        "[plan]\nmodel_family = 'decoder'\nd_model = 16\nnum_heads = 2\nfeedforward_dim = 32\n",
+        "[plan]\nmodel_family = 'decoder'\nd_model = 16\nnum_heads = 2\nfeedforward_dim = 32\n"
+        # A protocol that fits its own vocabulary names its rule (ADR-0051); this one has no tokenizer_file.
+        "tokenizer_pre_tokenizer = 'space-prefixed-word|space-prefixed-symbol|whitespace-run'\n",
         encoding="utf-8",
     )
     assert main(arguments) == 0
