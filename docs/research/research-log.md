@@ -1193,3 +1193,54 @@ re-pairable-evidence requirement pull against each other, and which of three sha
 models are already scored and the limitation is the number of items, not the number of models. Whether E2626's
 1600-versus-1800 contradiction reproduces on a second ladder. And what H17 needs before the default moves, which
 remains ADR-0048's own "does not decide" clause plus a refit-sensitivity check rather than a third seed.
+
+## 2026-11-04 — the loss difference became a test, the tokenizer question got its last half, and a probe's ceiling got a number
+
+**Type:** result + interpretation ([E2630](../../experiments/E2630/record.md) **Y2-a**,
+[E2631](../../experiments/E2631/record.md) **N-b**, [E2632](../../experiments/E2632/record.md) **R-a**,
+[E2633](../../experiments/E2633/record.md) **L-a**, [E2634](../../experiments/E2634/record.md) **G-a**), each
+preregistered and committed before the run it reports.
+
+**Observation.** Three of the campaign's open questions were answerable without training anything, and the day went to
+them. E2633 asked whether a difference in held-out loss is *known* on the held-out text, not whether it exceeds a
+threshold: four checkpoints, the runs' own pack, 2,000 bootstrap resamples of 25 works. Both material pairs separated
+— [−0.209, −0.037] and [−0.217, −0.039] — the inside-the-band pair did not, and a pure seed difference of −0.0033 did
+not either, which is the first time the repository has had a statistic that distinguishes "a different model" from "a
+different draw" instead of asserting it. Removing one mathematics book moves the mixture's −0.108 to −0.072: a third of
+a headline effect is one held-out volume. E2634 then took the other half of that lesson to the probes and grew the
+continuation item sets to 745 passages, the most this corpus's held-out works yield. One reading separated both
+material pairs, and it is the reading whose untrained floor is 0.3812 — the one E2627 disqualified — while the
+floor-passing readings moved from p = 0.049 to 0.031539 against a 0.016667 step, roughly the √n improvement theory
+allows and still a factor of two short of a separation. E2630 and E2632 closed the tokenizer question from its two
+open sides: five paired same-host seeds gave Δ(O1) +0.026431 with a 95 % Student-*t* interval of
+[+0.023212, +0.029650] and a treatment deviation *smaller* than the control's, and four independent refits of the rule
+landed within 0.30 % of each other, so the advantage is the rule's. E2631 ran the arm ADR-0049 had left unrun and found
+nothing: −0.003499 on O1 against a 0.0062 tie margin, which closes the vector-decay question by measurement rather
+than by the size of the exempt group.
+
+**Interpretation.** Three things are now known that were asserted before. A band and an interval answer different
+questions — the 0.02-bit band is about re-initialising the protocol, an interval is about re-drawing the text, and on
+E2633's numbers the band is *wider* than the interval for small differences and *narrower* for large ones, so quoting
+one where the other is asked is wrong in a way neither figure shows. Second, the probe limit is not sample size alone:
+at a discordance rate of 6 % the works cannot supply the items, and `continuation_pmi_easy` is at 98 % agreement rather
+than starved — a saturated instrument and an undersampled one look identical until someone counts the discordants.
+Third, the tokenizer decision was blocked by a format fact rather than by evidence: `DEFAULT_PRE_TOKENIZER` is what a
+checkpoint with no rule key means, so moving the default without pinning that fallback would have silently
+re-tokenised every released artifact. [ADR-0051](../decisions/ADR-0051-the-space-prefixed-pre-tokenizer-is-adopted-and-a-run-stops-inheriting-one.md)
+adopts the rule, pins `LEGACY_DEFAULT_PRE_TOKENIZER` to the word-run rule, and stops a protocol inheriting either.
+
+**Deviation recorded.** Two of the day's own errors were caught by the machinery this session built rather than by
+review. E2633's first reconstruction of the held-out pack scored 256,256 positions where every committed report says
+254,976 — because `max_test_tokens` caps a *seeded sample* of a side, not its prefix — and the refusal it hit became
+`work_losses`, then the `evaluation_sample` block that closes K-033. E2631 preregistered `--aggregate o1=` and the tool
+returned the character-weighted aggregate: the two differ by 0.0011 in the arms' values, both were inside their margins,
+and `compare_arms` now has an `--equal-aggregate` that prints which weighting it used. Two gaps the records opened are
+filed rather than smoothed: [K-034](../agent/KNOWN_ISSUES.md) (a shared analysis script prints outcome letters that
+belong to the record it was written for) and [K-035](../agent/KNOWN_ISSUES.md) (a probe's per-item rows carry no work
+identity, so every clustering question costs a rebuild).
+
+**Open at this point.** Whether E2626's 1600-versus-1800 contradiction reproduces on a second ladder — unchanged, still
+unanswered. Whether a *work-clustered* statistic for binary verdicts changes what "separated" means for the probes; the
+instrument exists for loss and not yet for items. What the first run under the adopted tokenizer costs, since E2614's
+band was measured under the rule it replaces. And K-001, unchanged by all of it: the model this campaign measured is
+still not useful text, and every number above is a statement about loss or about an instrument, not about capability.
