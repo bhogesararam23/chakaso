@@ -142,7 +142,8 @@ the model-path tier also running the strict typing configuration — and every c
 | `a004e70` | 41800134350 | success |
 | `d18c41f` | 41803174650 | success — core 3.13 2,102/35, train 3.13 2,191/25, model path 3.13 2,703/2 |
 | `00525e5` | 41805564655 | **failure** — all eight tiers, one cause: the closing report's five relative record links were one directory short (§5). Tests, lint, format and both typing configurations passed on every tier |
-| `4c63dae` | 41806985294 | success — the phase's final verified head; 36 commits through it, and the table that states this is that head's own successor |
+| `4c63dae` | 41806985294 | success |
+| `76f2c4b` | 41807838058 | success — the phase's last verified head, 38 commits through it; the commit adding this row is the 39th and is verified after it lands rather than claimed by it |
 
 The runner reports one more skip and one fewer pass than the same head does locally on the dependency-free tier, and the
 difference is the documented hygiene test that skips where the private documentation pack does not exist at all.
