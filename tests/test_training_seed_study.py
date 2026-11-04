@@ -23,7 +23,9 @@ from tests.test_training_subword_experiment import _plan, _root
 
 from chakaso.core.hashing import sha256_hex
 from chakaso.training import seed_study
-from chakaso.training.errors import StudyProtocolError
+from chakaso.training.errors import StudyProtocolError, TrainingScheduleError
+from chakaso.training.nn_checkpoint import load_artifact
+from chakaso.training.nn_training import verify_resume_compatibility
 from chakaso.training.seed_study import (
     DEFAULT_METRICS,
     REPRODUCTION_TOLERANCES,
@@ -42,6 +44,7 @@ from chakaso.training.seed_study import (
 from chakaso.training.subword_experiment import (
     REPO_TEXT_CORPUS,
     ExperimentPlan,
+    _training_config,
     prepare_corpus,
     run_experiment,
 )
@@ -692,3 +695,83 @@ def test_a_reproduction_of_a_run_without_a_character_baseline_compares_what_both
     drifted = _decoder_report(7, prose=1.80, science=2.0)
     drifted["transformer"]["test"]["bits_per_character"] += 0.01
     assert compare_with_reference(drifted, recorded)["verdict"] == "deviated"
+
+
+# ------------------------------------------------------------------ what recovery can address on disk
+#
+# The audit that filed K-036 established the layout a per-seed resume has to be able to rely on. These pin
+# the parts of it that hold today, so the discovery that closes K-036 is built on a stated contract rather
+# than on the same directory arrangement by luck.
+
+
+def test_each_seed_writes_its_resume_point_inside_its_own_directory(tmp_path: Path) -> None:
+    plan = _study_plan(tmp_path)
+    study = SeedStudy(experiment="E2698", plan=plan, seeds=(7, 11))
+
+    run_seed_study(study)
+
+    for seed in (7, 11):
+        resumable = study.run_dir(seed) / "E2698-transformer-resumable.pt"
+        assert resumable.is_file(), (
+            f"seed {seed} left no resume point where only seed {seed} writes"
+        )
+        point = load_artifact(resumable)
+        assert point.run_metadata["kind"] == "resumable"
+        assert point.optimizer_state is not None
+        assert point.run_metadata["training"]["seed"] == seed
+    # The study shares one tokenizer cache across its seeds because the study fixes the corpus and the split,
+    # and it shares nothing else: a resume point at the top level would belong to no seed and be discoverable
+    # by all of them.
+    assert not list(plan.work_dir.glob("*-resumable.pt"))
+
+
+def test_the_usable_artifact_and_the_resume_point_are_two_files_of_one_seed(tmp_path: Path) -> None:
+    """A finished seed holds both a model and the moments that built it, and only one continues a run.
+
+    Discovery has to reach for the resumable name specifically. The usable artifact carries the
+    validation-selected parameters rather than the last step's, so continuing from it would resume Adam's
+    moments against weights they were never computed for.
+    """
+    plan = _study_plan(tmp_path)
+    study = SeedStudy(experiment="E2698", plan=plan, seeds=(7,))
+
+    run_seed_study(study)
+
+    usable = load_artifact(study.run_dir(7) / "E2698-transformer.pt")
+    resumable = load_artifact(study.run_dir(7) / "E2698-transformer-resumable.pt")
+    assert usable.run_metadata["kind"] == "usable"
+    assert usable.optimizer_state is None
+    assert resumable.step == plan.max_steps
+
+    with pytest.raises(TrainingScheduleError, match="no optimizer state"):
+        verify_resume_compatibility(
+            usable,
+            config=_training_config(study.plan_for(7), usable.config),
+            corpus_fingerprint=usable.corpus_fingerprint,
+            vocabulary=usable.vocabulary,
+        )
+
+
+def test_a_seed_cannot_continue_from_its_sibling_s_resume_point(tmp_path: Path) -> None:
+    """The seed is part of the optimization settings, so the existing configuration check already names it.
+
+    This is the guarantee Milestone B's discovery must not weaken: two seeds of one study share their corpus,
+    their split, their tokenizer and every budget number, and differ in nothing but the seed, so a
+    mis-associated checkpoint is a checkpoint that agrees with the run on everything except the one field that
+    says which run it is.
+    """
+    plan = _study_plan(tmp_path)
+    study = SeedStudy(experiment="E2698", plan=plan, seeds=(7, 11))
+    run_seed_study(study)
+    point_7 = study.run_dir(7) / "E2698-transformer-resumable.pt"
+
+    with pytest.raises(TrainingScheduleError, match=r"\['seed'\]"):
+        run_experiment(
+            replace(
+                plan,
+                seed=11,
+                work_dir=tmp_path / "wrong-seed",
+                resume_from=point_7,
+                overwrite_artifacts=True,
+            )
+        )

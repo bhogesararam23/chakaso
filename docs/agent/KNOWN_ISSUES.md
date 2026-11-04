@@ -3,7 +3,12 @@
 Real problems with the current state, including the ones that are only
 inconvenient. An empty file here would mean nobody has looked.
 
-Last reviewed: 2026-11-04, latest (**K-035 closed** — the probe runners write the work each item came from and
+Last reviewed: 2026-11-05, latest (**K-036 and K-037 filed** by the training-recovery audit — a seed study re-trains an
+interrupted seed from step 0 while that seed's own resumable artifact sits in its directory, and the plan's
+`resume_from` path is hashed into `protocol_digest` as a condition rather than as an observation, so a recovered seed
+would not aggregate with its siblings even once the first is fixed; both are measured against the synthetic study
+fixture, not reasoned about); before that 2026-11-04, latest (**K-035 closed** — the probe runners write the work each
+item came from and
 `chakaso.training.paired_verdicts` tests paired verdicts over those works; **K-034 closed** by
 [ADR-0052](../decisions/ADR-0052-an-analysis-prints-the-verdict-its-record-declared-or-none-at-all.md), so an analysis
 prints the verdict its record declared or none at all, verified by re-running E2634 under its own `G-a…G-d` and getting
@@ -1099,6 +1104,49 @@ p = 1.0 and no interval, which is the statement McNemar cannot make.
 **Status:** closed 2026-11-04. [E2635](../../experiments/E2635/record.md) is the measured reading: rebuilt under the
 digest gate, it reproduced E2634's hand-computed clustering exactly (24 and 26 works, the same largest work at the same
 share) and took away one of that record's two separations.
+
+### K-036 — A seed study re-trains an interrupted seed from step 0 while its own resume point sits in that seed's directory
+
+**Impact:** High for the model path. E2636 is preregistered at three times the step ceiling of the runs that preceded
+it; a five-seed study that dies on the fourth seed currently costs the first three seeds' remaining time again, and
+nothing in the output says so.
+
+`run_seed_study` treats `report.json` as the only evidence a seed produced, and it is right that the report is what
+makes a run recorded — but when the report is absent it calls `run_experiment(study.plan_for(seed))`, and
+`plan_for` never sets `resume_from`. So the seed restarts at step 0 with a clean initialization even though
+`train_transformer` wrote `<experiment>-<family>-resumable.pt` into that same seed directory at every checkpoint
+interval, and `ExperimentPlan` already carries a verified resume field. The single-run path is fine: `chakaso
+experiment model --resume-from` works and E2608's record names the checks it makes. What is missing is the study
+looking for the file its own run would have written.
+
+Measured on 2026-11-05 against the synthetic study fixture (`max_steps=12`, `eval_every=4`): seed 7 ran to completion,
+its `report.json` was deleted to reproduce the state an interruption leaves, and the resumable artifact was still on
+disk. The recovery pass reported `resumed_from_step: None` and a curve of `[0, 4, 8, 12]` — the same twelve steps it had
+just thrown away.
+
+**Why the fix is not a one-liner:** see K-037. Setting `resume_from` per seed makes the study's own aggregate refuse to
+form.
+
+**Status:** open. Filed by the 2026-11-05 training-recovery audit.
+
+### K-037 — A resumed run gets a different `protocol_digest` than the uninterrupted run it reproduces, so a recovered seed cannot be aggregated with its siblings
+
+**Impact:** High, and latent: it does not bite today only because K-036 means no study ever resumes.
+
+`report["plan"]` holds every scalar field of the plan, and `protocol_digest` removes
+`_MACHINE_LOCAL_PLAN_FIELDS` from it. `resume_from` is not in that set, so an absolute path into one operator's working
+directory is hashed as a *condition the run was measured under*. A resume is the opposite of a condition: it exists so
+that a run reaches the numbers the uninterrupted run would have reached, drawing the same batches from the same update
+index, and `resumed_from_step` is already excluded from the digest as an observed field for exactly that reason.
+
+Measured on 2026-11-05: one fixture run to `max_steps=4`, a second over the same plan to `max_steps=8` resumed from the
+first's artifact, and a third clean at `max_steps=8`. `protocol_digest(resumed, include_seed=False) !=
+protocol_digest(clean)`. Inside a study the consequence is `protocol_agreement` reporting
+`{"protocol_digest": [<the recovered seed>]}` and `build_study_report` raising `StudyProtocolError` — the aggregate
+would be missing a seed the run had just paid for.
+
+**Status:** open. Filed by the 2026-11-05 training-recovery audit; closes with K-036, in the same change, because the
+second fix is inert without the first.
 
 ## Resolved
 
