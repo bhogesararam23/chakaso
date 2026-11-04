@@ -32,7 +32,11 @@ from chakaso.training.errors import (
     CorpusError,
     CorruptedCorpusArtifactError,
 )
-from chakaso.training.nn_checkpoint import checkpoint_filename, load_artifact
+from chakaso.training.nn_checkpoint import (
+    checkpoint_filename,
+    load_artifact,
+    resumable_checkpoint_filename,
+)
 from chakaso.training.nn_training import TrainingScheduleError
 from chakaso.training.subword_experiment import (
     CorpusSpec,
@@ -625,6 +629,48 @@ def test_a_verified_resume_continues_from_the_step_it_stopped_at(tmp_path: Path)
     assert curve[0]["step"] == 8
     assert curve[-1]["step"] == 12
     assert report["transformer"]["budget"]["records"] == len(curve)
+
+
+def test_a_resumed_run_shares_the_digest_of_the_run_it_continues(tmp_path: Path) -> None:
+    """Whether this invocation continued from a file is not a condition the numbers were measured under.
+
+    The resume mechanism exists so that a run reaches the numbers the uninterrupted run would have reached,
+    drawing the same batches to the same ceiling from the same seed — so its ``protocol_digest`` has to equal
+    that run's. Left hashed, the plan's ``resume_from`` would put one operator's absolute path into the digest
+    and a recovered seed would refuse to aggregate with its siblings (K-037). It is excluded for the same reason
+    ``resumed_from_step`` already is: both say how the run was executed, not what it was measured against.
+
+    The exclusion is from the digest, not from the record — the report still names the file it continued from.
+    """
+    root = _root(tmp_path)
+    work = tmp_path / "digest-resume"
+    # A ceiling the declared patience rule stops short of, so the checkpoint lands mid-curve and the continuation
+    # is onto the same max_steps rather than a raised one: an extension is a protocol change by design, and it
+    # has to stay visible for this to be the resume-equality property and not a claim about the budget.
+    settings: dict[str, object] = {
+        "max_steps": 12,
+        "eval_every": 4,
+        "patience": 1,
+        "min_delta": 9.0,
+        "character_baseline": False,
+    }
+
+    stopped = run_experiment(_plan(root, work, **settings))
+    point = work / resumable_checkpoint_filename("E2605", "transformer")
+    resumed = run_experiment(
+        _plan(root, work, overwrite_artifacts=True, resume_from=point, **settings)
+    )
+    uninterrupted = run_experiment(_plan(root, tmp_path / "digest-clean", **settings))
+
+    start = resumed["transformer"]["budget"]["resumed_from_step"]
+    assert start == stopped["transformer"]["curve"][-1]["step"]
+    assert 0 < start < 12
+    assert resumed["plan"]["resume_from"] == str(point)
+    assert "resume_from" not in uninterrupted["plan"]
+    assert protocol_digest(resumed) == protocol_digest(uninterrupted)
+    assert protocol_digest(resumed, include_seed=False) == protocol_digest(
+        uninterrupted, include_seed=False
+    )
 
 
 def test_a_second_run_reuses_the_tokenizer_a_previous_run_fitted(tmp_path: Path) -> None:

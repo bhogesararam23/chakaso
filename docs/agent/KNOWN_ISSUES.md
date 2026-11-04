@@ -3,12 +3,13 @@
 Real problems with the current state, including the ones that are only
 inconvenient. An empty file here would mean nobody has looked.
 
-Last reviewed: 2026-11-05, latest (**K-036 and K-037 filed** by the training-recovery audit — a seed study re-trains an
-interrupted seed from step 0 while that seed's own resumable artifact sits in its directory, and the plan's
-`resume_from` path is hashed into `protocol_digest` as a condition rather than as an observation, so a recovered seed
-would not aggregate with its siblings even once the first is fixed; both are measured against the synthetic study
-fixture, not reasoned about); before that 2026-11-04, latest (**K-035 closed** — the probe runners write the work each
-item came from and
+Last reviewed: 2026-11-05, latest (**K-036 and K-037 filed and closed by the training-recovery work** — a seed study now
+discovers the interrupted seed's own checkpoint by the path that seed would have written it to and continues it through
+the existing verifier, and the plan's `resume_from` path is excluded from `protocol_digest` so a recovered seed
+aggregates with the siblings that never stopped; **K-038 filed** — the ceiling a continued checkpoint declared is still
+hashed as a condition, and cannot be un-hash without re-baselining four records' literal digests. Both recovery fixes
+were measured against the synthetic study fixture, not reasoned about); before that 2026-11-04 (**K-035 closed** — the
+probe runners write the work each item came from and
 `chakaso.training.paired_verdicts` tests paired verdicts over those works; **K-034 closed** by
 [ADR-0052](../decisions/ADR-0052-an-analysis-prints-the-verdict-its-record-declared-or-none-at-all.md), so an analysis
 prints the verdict its record declared or none at all, verified by re-running E2634 under its own `G-a…G-d` and getting
@@ -1127,7 +1128,11 @@ just thrown away.
 **Why the fix is not a one-liner:** see K-037. Setting `resume_from` per seed makes the study's own aggregate refuse to
 form.
 
-**Status:** open. Filed by the 2026-11-05 training-recovery audit.
+**Status:** closed 2026-11-05. `SeedStudy.discover_resume_point` names the path this run would itself have written —
+this experiment, this family, this seed's directory — reads only its step, and hands it to the existing
+`verify_resume_compatibility`; `train_transformer` is unchanged. A checkpoint at or beyond the plan's ceiling is not
+a run left to continue, so that seed starts clean. Tested end to end on the synthetic study fixture, including the
+mixed case of one recovered seed and one sibling that never stopped.
 
 ### K-037 — A resumed run gets a different `protocol_digest` than the uninterrupted run it reproduces, so a recovered seed cannot be aggregated with its siblings
 
@@ -1145,8 +1150,29 @@ protocol_digest(clean)`. Inside a study the consequence is `protocol_agreement` 
 `{"protocol_digest": [<the recovered seed>]}` and `build_study_report` raising `StudyProtocolError` — the aggregate
 would be missing a seed the run had just paid for.
 
-**Status:** open. Filed by the 2026-11-05 training-recovery audit; closes with K-036, in the same change, because the
-second fix is inert without the first.
+**Status:** closed 2026-11-05, in the same change as K-036, which is inert without it. `resume_from` joins
+`_MACHINE_LOCAL_PLAN_FIELDS`. It moves no committed digest, and that was checked rather than argued: the report's plan
+block keeps only `int`, `float`, `str` and `Path` values, so a run that did not resume never wrote the key — every
+committed per-run report under `experiments/` was read and none carries it, and recomputing
+`protocol_digest(experiments/E2615/reports/E2615-s00.json)` gives the identical value with and without the exclusion.
+
+### K-038 — A study whose seeds continued from checkpoints written under an older, smaller ceiling still cannot aggregate
+
+**Impact:** Low, and narrow — it needs one seed resumed after a ceiling change and another run clean under the new one.
+
+`budget_extended_from` sits in the report's budget block and is not in `_OBSERVED_BUDGET_FIELDS`, so it is hashed as a
+condition. It belongs with `resumed_from_step`: what ceiling the file a run continued from declared is a fact about how
+the invocation was executed, and the ceiling the run was measured against is already in the digest as `max_steps`. The
+reason it stayed is the same one that keeps `budget_extended_from` visible at all: committed reports carry the key with
+value `None` (`experiments/E2615/reports/*.json`, `E2616`, `E2617`, `E2618`), so excluding it now moves digests that
+[E2613's](../../experiments/E2613/results.json) and [E2614's](../../experiments/E2614/results.json) `results.json`
+state as literals. Closing it needs the digest to be re-baselined, which is a decision record, not an edit.
+
+The workaround until then is the one that keeps the aggregate honest: recover every seed of a study from the same older
+ceiling, so they all report the same `budget_extended_from` and agree.
+
+**Status:** open. Filed 2026-11-05 while fixing K-036; the mixed-recovery test in
+`tests/test_training_seed_study.py` is written at a single ceiling so it does not depend on this.
 
 ## Resolved
 

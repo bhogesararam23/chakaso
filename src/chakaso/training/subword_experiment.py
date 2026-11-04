@@ -66,6 +66,7 @@ from chakaso.training.nn_checkpoint import (
     TrainedModel,
     checkpoint_filename,
     load_artifact,
+    resumable_checkpoint_filename,
     save_artifact,
     schema_of,
 )
@@ -1757,7 +1758,7 @@ def run_experiment(plan: ExperimentPlan, *, verbose: bool = False) -> dict[str, 
         corpus_fingerprint=prepared.manifest.fingerprint,
         on_step=on_step,
         curve_artifact_writer=write_rung if plan.curve_artifact_steps else None,
-        checkpoint_path=work / f"{plan.experiment_id}-{plan.model_family}-resumable.pt",
+        checkpoint_path=work / resumable_checkpoint_filename(plan.experiment_id, plan.model_family),
     )
     wall = time.perf_counter() - started
 
@@ -2077,6 +2078,16 @@ _MACHINE_LOCAL_PLAN_FIELDS = frozenset(
         "tokenizer_file",
         "evaluation_selection_tokenizer_file",
         "overwrite_artifacts",
+        # Which file this invocation continued from is a fact about how the run was executed, not a condition
+        # it was measured under: a resumed run is meant to be the uninterrupted one, drawing the same batches
+        # to the same ceiling. It belongs beside ``resumed_from_step``, which ``_OBSERVED_BUDGET_FIELDS``
+        # already excludes for the same reason. Left in, an absolute path into one operator's working
+        # directory would make a recovered seed's digest differ from its siblings', and the study would
+        # refuse to aggregate the runs it had just paid for (K-037).
+        #
+        # This moves no existing digest: the report's plan block keeps only int, float, str and Path values, so
+        # a run that did not resume never wrote the key and never hashed it.
+        "resume_from",
     }
 )
 #: Budget fields that are results or observed conditions of one execution, not conditions it was run under: the

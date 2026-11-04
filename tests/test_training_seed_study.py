@@ -775,3 +775,142 @@ def test_a_seed_cannot_continue_from_its_sibling_s_resume_point(tmp_path: Path) 
                 overwrite_artifacts=True,
             )
         )
+
+
+# ------------------------------------------------------------------ K-036: discovery of an interrupted seed
+
+
+def _converging_plan(tmp_path: Path) -> ExperimentPlan:
+    """A protocol that stops by its own rule before its ceiling, so a checkpoint lands mid-curve.
+
+    A run that reaches ``max_steps`` leaves a resume point the study has nothing to continue, so the
+    interruption K-036 is about cannot be reproduced with the default budget. ``min_delta`` above any real
+    improvement makes the declared patience rule stop the run at its second evaluation while the ceiling is
+    still four steps away.
+    """
+    return replace(_study_plan(tmp_path), patience=1, min_delta=9.0)
+
+
+def _resume_point(study: SeedStudy, seed: int) -> Path:
+    return study.run_dir(seed) / "E2698-transformer-resumable.pt"
+
+
+def test_an_interrupted_seed_continues_from_the_checkpoint_its_own_run_left(
+    tmp_path: Path,
+) -> None:
+    plan = _converging_plan(tmp_path)
+    study = SeedStudy(experiment="E2698", plan=plan, seeds=(7, 11))
+    run_seed_study(study)
+
+    stopped_at = load_artifact(_resume_point(study, 7)).step
+    assert 0 < stopped_at < plan.max_steps
+    (study.run_dir(7) / "report.json").unlink()
+
+    recovered = run_seed_study(SeedStudy(experiment="E2698", plan=plan, seeds=(7, 11)))
+    body = json.loads((study.run_dir(7) / "report.json").read_text(encoding="utf-8"))
+
+    assert recovered["runs"][0]["status"] == "completed"
+    assert recovered["runs"][0]["reused"] is False
+    assert recovered["runs"][1]["reused"] is True
+    assert body["transformer"]["budget"]["resumed_from_step"] == stopped_at
+    # The curve opens at the step the interrupted run reached: a clean start always opens at 0, so this is the
+    # statement that the first eight steps were not trained a second time.
+    assert next(row["step"] for row in body["transformer"]["curve"]) == stopped_at
+    assert body["transformer"]["curve"][-1]["step"] == plan.max_steps
+
+
+def test_a_recovered_seed_aggregates_with_the_sibling_that_never_stopped(
+    tmp_path: Path,
+) -> None:
+    """K-037: the study has to form, not just the run.
+
+    One seed resumed from its own checkpoint and one that ran uninterrupted are the same protocol by
+    construction — that is the entire property the resume mechanism exists to give — so their reports must
+    share a ``protocol_digest``. With the plan's ``resume_from`` path hashed as a condition, this is where the
+    recovery died: ``StudyProtocolError`` naming the digest, and the aggregate missing a seed that had just
+    been paid for.
+    """
+    plan = _converging_plan(tmp_path)
+    study = SeedStudy(experiment="E2698", plan=plan, seeds=(7, 11))
+    run_seed_study(study)
+    (study.run_dir(7) / "report.json").unlink()
+
+    recovered = run_seed_study(SeedStudy(experiment="E2698", plan=plan, seeds=(7, 11)))
+
+    assert recovered["completed_seeds"] == [7, 11]
+    assert recovered["missing_seeds"] == []
+    assert recovered["protocol"]["protocol_digest"]
+
+
+def test_a_seed_with_nothing_on_disk_starts_clean(tmp_path: Path) -> None:
+    plan = _converging_plan(tmp_path)
+    study = SeedStudy(experiment="E2698", plan=plan, seeds=(7,))
+
+    assert study.discover_resume_point(7) is None
+    first = run_seed_study(study)
+    body = json.loads((study.run_dir(7) / "report.json").read_text(encoding="utf-8"))
+
+    assert first["runs"][0]["reused"] is False
+    assert body["transformer"]["budget"]["resumed_from_step"] is None
+    assert body["transformer"]["curve"][0]["step"] == 0
+
+
+def test_a_checkpoint_at_the_ceiling_is_not_a_run_left_to_continue(tmp_path: Path) -> None:
+    """A seed that trained to its ceiling and recorded nothing has no step to resume onto.
+
+    ``train_transformer`` refuses a ``start_step`` already at ``max_steps``, and it is right to: continuing
+    past the ceiling would train a schedule the configuration does not describe. Discovery reads that as
+    "nothing left to continue" and starts clean, which reproduces the same curve from the same fixed seed,
+    split and batch plan rather than a different one.
+    """
+    plan = _study_plan(tmp_path)
+    study = SeedStudy(experiment="E2698", plan=plan, seeds=(7,))
+    run_seed_study(study)
+
+    assert load_artifact(_resume_point(study, 7)).step == plan.max_steps
+    (study.run_dir(7) / "report.json").unlink()
+    assert study.discover_resume_point(7) is None
+
+    rerun = run_seed_study(SeedStudy(experiment="E2698", plan=plan, seeds=(7,)))
+    body = json.loads((study.run_dir(7) / "report.json").read_text(encoding="utf-8"))
+
+    assert rerun["completed_seeds"] == [7]
+    assert body["transformer"]["budget"]["resumed_from_step"] is None
+
+
+def test_a_completed_seeds_report_beats_its_own_checkpoint(tmp_path: Path) -> None:
+    """The report is what makes a run recorded, and it wins over anything else in the directory."""
+    plan = _study_plan(tmp_path)
+    study = SeedStudy(experiment="E2698", plan=plan, seeds=(7,))
+    run_seed_study(study)
+    digest_before = sha256_hex((study.run_dir(7) / "report.json").read_bytes().decode("utf-8"))
+
+    again = run_seed_study(study)
+
+    assert again["runs"][0]["reused"] is True
+    assert _resume_point(study, 7).is_file()
+    assert sha256_hex((study.run_dir(7) / "report.json").read_bytes().decode("utf-8")) == (
+        digest_before
+    )
+
+
+def test_an_unreadable_seed_checkpoint_fails_that_seed_and_names_itself(tmp_path: Path) -> None:
+    """Recovery refuses rather than retraining over evidence the operator can still look at.
+
+    A staged swap leaves either the whole file or the previous one, so a resume point that will not load was
+    altered after the run wrote it. Silently starting clean would discard bytes nobody can explain; this
+    records the seed as failed with the loader's reason, and still runs the seeds that are fine.
+    """
+    plan = _converging_plan(tmp_path)
+    study = SeedStudy(experiment="E2698", plan=plan, seeds=(7, 11))
+    run_seed_study(study)
+    (study.run_dir(7) / "report.json").unlink()
+    _resume_point(study, 7).write_bytes(b"not an artifact")
+
+    result = run_seed_study(SeedStudy(experiment="E2698", plan=plan, seeds=(7, 11)))
+
+    failed = next(run for run in result["runs"] if run["seed"] == 7)
+    assert failed["status"] == "failed"
+    assert "CorruptedCheckpointError" in failed["error"]
+    assert result["failed_seeds"] == [7]
+    assert result["completed_seeds"] == [11]

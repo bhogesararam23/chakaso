@@ -51,6 +51,7 @@ __all__ = [
     "checkpoint_filename",
     "describe_environment",
     "load_artifact",
+    "resumable_checkpoint_filename",
     "save_artifact",
     "schema_of",
 ]
@@ -85,14 +86,31 @@ def schema_of(config: Architecture) -> str:
     return _SCHEMA_BY_FAMILY[family_of(config)]
 
 
-def checkpoint_filename(experiment_id: str, family: str = "transformer") -> str:
-    """The conventional file name for one experiment's artifact of one family."""
+def _require_family(family: str) -> None:
+    """Refuse a family this format cannot carry, rather than naming a file no loader reads."""
     if family not in _SCHEMA_BY_FAMILY:
         message = (
             f"no artifact family named {family!r}; known families: {sorted(_SCHEMA_BY_FAMILY)}"
         )
         raise IncompatibleCheckpointError(message)
+
+
+def checkpoint_filename(experiment_id: str, family: str = "transformer") -> str:
+    """The conventional file name for one experiment's artifact of one family."""
+    _require_family(family)
     return f"{experiment_id}-{family}.pt"
+
+
+def resumable_checkpoint_filename(experiment_id: str, family: str = "transformer") -> str:
+    """The name of the resume point one run rewrites, as distinct from the model it finishes with.
+
+    The writer in :func:`chakaso.training.nn_training.train_transformer` and the reader that discovers an
+    interrupted run have to agree on this string exactly, and neither should build it from a f-string the
+    other has to guess: a recovery that looks for the wrong name silently retrains, which is the failure
+    K-036 was filed for.
+    """
+    _require_family(family)
+    return f"{experiment_id}-{family}-resumable.pt"
 
 
 @dataclass(frozen=True, slots=True)

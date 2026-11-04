@@ -12,6 +12,34 @@ capability is implemented or still planned.
 
 ## Unreleased
 
+### 2026-11-05 — an interrupted seed study now continues where it stopped
+
+**No new measured experiment was produced in this work, and no committed record's numbers moved.** What changed is
+what happens when a run is cut short.
+
+**Fixed**
+
+- **A seed study re-ran an interrupted seed from step 0** (K-036). Each run already rewrote a *resumable* artifact —
+  current weights, Adam moments, the step — into its own seed directory at every checkpoint interval, and
+  `ExperimentPlan` already carried a verified `resume_from`, but nothing between the two looked for it: `report.json`
+  was the only file the study consulted, and a directory with no report was simply re-trained. `SeedStudy` now
+  discovers the checkpoint by the path this run would itself have written it to — this experiment, this architecture
+  family, this seed's own directory — so no seed can be handed a sibling's moments, and passes it to the existing
+  `verify_resume_compatibility`. A checkpoint at or beyond the plan's ceiling is not a run left to continue, so that
+  seed starts clean; a checkpoint that will not load fails its own seed with the loader's reason rather than silently
+  retraining over bytes nobody can explain.
+- **A resumed run hashed a different protocol than the uninterrupted run it reproduces** (K-037), so the first fix
+  alone would have made every recovered study refuse to aggregate. The plan's `resume_from` is an absolute path into
+  one operator's working directory; it joins the fields the digest ignores, on the same footing as the
+  `resumed_from_step` it already drops. No committed digest moved — checked by reading every per-run report under
+  `experiments/` and recomputing one.
+
+**Also filed**
+
+- **K-038** — the ceiling a continued checkpoint was written under is still hashed as a condition rather than as an
+  observation. It narrows recovery across a budget change, and un-hashing it means re-baselining the four records
+  that state a `protocol_digest` as a literal, which is a decision record and not an edit.
+
 ### 2026-11-04 (continued) — a pinned corpus's URLs were re-measured, and the first budget question was written down
 
 **No model was trained, no checkpoint was generated and no bulk data was acquired in this session.** One experiment

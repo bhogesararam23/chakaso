@@ -35,6 +35,7 @@ from typing import Any
 from chakaso.core.atomic import write_text_atomically
 from chakaso.core.hashing import sha256_hex
 from chakaso.training.errors import StudyProtocolError
+from chakaso.training.nn_checkpoint import load_artifact, resumable_checkpoint_filename
 from chakaso.training.subword_experiment import (
     ExperimentPlan,
     protocol_digest,
@@ -203,7 +204,7 @@ class SeedStudy:
         """This run's own directory, so no seed can overwrite another's artifacts."""
         return self.plan.work_dir / self.experiment / f"seed-{seed}"
 
-    def plan_for(self, seed: int) -> ExperimentPlan:
+    def plan_for(self, seed: int, *, resume_from: Path | None = None) -> ExperimentPlan:
         """The protocol with one seed applied and its own output directory.
 
         ``overwrite_artifacts`` is forced on inside a seed's own directory, because the report — not the
@@ -211,6 +212,10 @@ class SeedStudy:
         and a rerun that refuses to write over its own half-finished checkpoint would make the preregistered
         retry policy impossible. A run that *does* have a report is never reached here; it is reused, or the
         operator has declared a rerun with ``overwrite_artifacts``.
+
+        Args:
+            resume_from: the checkpoint this seed's own interrupted run left, when
+                :meth:`discover_resume_point` found one. ``None`` starts the seed from step 0.
         """
         return replace(
             self.plan,
@@ -222,7 +227,41 @@ class SeedStudy:
             tokenizer_cache_dir=self.plan.work_dir,
             experiment_id=self.experiment,
             overwrite_artifacts=True,
+            resume_from=resume_from,
         )
+
+    def discover_resume_point(self, seed: int) -> Path | None:
+        """The unfinished checkpoint this seed's own run left, when there is a run left to continue.
+
+        The path is not searched for: it is the path :func:`chakaso.training.subword_experiment.run_experiment`
+        writes for this plan — this experiment, this architecture family, this seed's own directory — so a
+        recovery cannot be handed a sibling seed's moments and cannot pick up an artifact from another study
+        that shares the directory (K-036).
+
+        The file is read only for its step. Whether it is the same protocol is
+        :func:`chakaso.training.nn_training.verify_resume_compatibility`'s decision, made inside the run before
+        its first update; a second validator here would only be a second system that can disagree with the
+        first.
+
+        A checkpoint at or beyond this plan's ceiling is not an incomplete run — there is no step left to
+        continue, and what is missing is the report. Returning ``None`` starts the seed clean, which is the
+        honest reading: with the seed, the split and the batch plan all fixed, the re-run reproduces the curve
+        it replaces instead of a different one.
+
+        Raises:
+            CorruptedCheckpointError: the file this seed wrote will not load. Its write is staged, so the
+                bytes are whole unless something altered them after the fact, and recovery names that rather
+                than quietly retraining over evidence.
+        """
+        path = self.run_dir(seed) / resumable_checkpoint_filename(
+            self.experiment, self.plan.model_family
+        )
+        if not path.is_file():
+            return None
+        step = load_artifact(path).step
+        if not 0 < step < self.plan.max_steps:
+            return None
+        return path
 
 
 @dataclass(frozen=True, slots=True)
@@ -356,7 +395,13 @@ def run_seed_study(
         directory.mkdir(parents=True, exist_ok=True)
         started = time.perf_counter()
         try:
-            report = run_experiment(study.plan_for(seed), verbose=verbose)
+            resume_point = study.discover_resume_point(seed)
+            if resume_point is not None and verbose:
+                print(  # noqa: T201 - operator-visible progress
+                    f"seed {seed}: no report, but this seed's own checkpoint is on disk — continuing it",
+                    flush=True,
+                )
+            report = run_experiment(study.plan_for(seed, resume_from=resume_point), verbose=verbose)
         except (
             Exception
         ) as exc:  # recorded, never swallowed: the aggregate has to show this seed failed
