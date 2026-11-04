@@ -114,6 +114,23 @@ def test_building_twice_gives_identical_items_and_digest() -> None:
     assert items_digest(_items()) == items_digest(_items())
 
 
+def test_carrying_the_work_on_the_item_does_not_move_the_item_set_digest() -> None:
+    """``ed21d50c…`` is what this fixture digested before ``work`` became a field, read off the committed code.
+
+    E2623's 215-item set is cited by three records, so the hash must not move when an analysis-only field is added;
+    the field is excluded because it follows from the hashed ``document``.
+    """
+    assert items_digest(_items()) == (
+        "ed21d50cd322c41e626ad361550909c414b8860811a9bd76f0ab4bef520ea726"
+    )
+
+
+def test_every_item_names_the_work_its_passage_was_cut_from() -> None:
+    for item in _items():
+        assert item.work == item.document.split("/", 1)[0]
+        assert item.easy_source != item.document
+
+
 def test_the_digest_changes_when_anything_in_an_item_changes() -> None:
     items = _items()
     changed = (replace(items[0], true_continuation=(0,) * 6), *items[1:])

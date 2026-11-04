@@ -13,6 +13,11 @@ import pytest
 torch = pytest.importorskip("torch")
 
 from chakaso.training.data import TextUnit  # noqa: E402
+from chakaso.training.item_clusters import (  # noqa: E402
+    PHENOMENON_CLUSTER_UNIT,
+    keys_for_items,
+    load_cluster_block,
+)
 from chakaso.training.minimal_pairs import MinimalPair, PairSet  # noqa: E402
 from chakaso.training.nn_checkpoint import load_artifact, save_artifact  # noqa: E402
 from chakaso.training.nn_training import TransformerTrainingConfig, train_transformer  # noqa: E402
@@ -238,3 +243,34 @@ def test_a_different_seed_gives_a_different_untrained_model(trained: Path) -> No
             first.state_dict().items(), second.state_dict().items(), strict=True
         )
     )
+
+
+def test_the_pair_probe_names_its_cluster_unit_because_no_work_lies_behind_a_pair(
+    tmp_path: Path, trained: Path
+) -> None:
+    """The authored probe gets a cluster listing too, and says plainly that its unit is a template, not a book.
+
+    The check that matters is agreement with the rows themselves: every pair's cluster is the phenomenon its row
+    already carries, so a clustered statistic and the reported per-phenomenon table cannot be reading two different
+    groupings of the same items.
+    """
+    out = tmp_path / "out.json"
+    script = _script()
+
+    assert (
+        script.main(  # type: ignore[attr-defined]
+            [
+                f"--pairs={_pair_file(tmp_path / 'pairs.json')}",
+                f"--checkpoint=trained={trained}",
+                f"--out={out}",
+            ]
+        )
+        == 0
+    )
+    result = json.loads(out.read_text(encoding="utf-8"))
+    listing = load_cluster_block(result["pair_set"]["clusters"])
+
+    assert listing.unit == PHENOMENON_CLUSTER_UNIT
+    assert len(listing.rows) == len(_PAIRS)
+    rows = result["models"]["trained"]["result"]["outcomes"]
+    assert keys_for_items(listing, [str(row[0]) for row in rows]) == [str(row[1]) for row in rows]

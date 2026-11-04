@@ -226,6 +226,41 @@ def test_an_extract_of_a_probe_result_keeps_the_per_item_arrays_compact(tmp_path
     assert extract_canonical < probe_canonical / 3
 
 
+def test_an_extract_keeps_the_cluster_listing_whole_because_a_clustering_claim_needs_its_rows(
+    tmp_path: Path,
+) -> None:
+    """K-035: the pairing a clustered statistic is computed from has to stay in the committed file.
+
+    An 800-row listing is exactly the kind of bulky block this script replaces with a digest stub, and stubbing it
+    would recreate K-032 one level over — the extract would state that its separations spread over 24 works and no
+    reader could check the count. The block is kept whole and its own digest is what proves it.
+    """
+    from chakaso.training.item_clusters import (
+        CLUSTER_BLOCK_SCHEMA,
+        WORK_CLUSTER_UNIT,
+        ClusterListing,
+        load_cluster_block,
+    )
+
+    module = _script()
+    listing = ClusterListing(
+        unit=WORK_CLUSTER_UNIT,
+        rows=tuple((f"p{index}", f"prose-w{index % 40}") for index in range(800)),
+    )
+    probe = _probe_result()
+    probe["pair_set"]["clusters"] = listing.as_dict()
+    source = tmp_path / "probe.json"
+    source.write_text(json.dumps(probe), encoding="utf-8")
+    out = tmp_path / "extract.json"
+
+    assert module.main([f"--report={source}", f"--out={out}"]) == 0
+    block = json.loads(out.read_text(encoding="utf-8"))["pair_set"]["clusters"]
+
+    assert block["schema_version"] == CLUSTER_BLOCK_SCHEMA
+    assert "omitted_from_extract" not in block
+    assert load_cluster_block(block) == listing
+
+
 def test_the_stub_form_a_committed_extract_was_written_in_is_still_reachable(
     tmp_path: Path,
 ) -> None:

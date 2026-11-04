@@ -97,6 +97,13 @@ blocks below are dated and kept as the context each result was read in; this fir
   (0.4638/0.4684/0.4678); `permuted` fails its floor at 0.4425. Only `prior_span` has headroom (endpoint 0.9395) and it is the one kind that
   earns a usable verdict, S-b. **No kind separates any of the ten pairs among five independently trained seeds**, and E2623's v1 number
   reproduced to the last digit (0.986046511627907) — so the ceiling is the span construction at this scale, not the distractor's topic cue.
+* **Probe item clusters (K-035, Implemented 2026-11-04)**: `chakaso.training.item_clusters` gives every probe item a
+  cluster — the held-out **work** its passage was cut from for the two corpus probes, the **phenomenon** whose template
+  it follows for the authored pair probe — and the three `scripts/evaluate_*.py` runners write that pairing into the
+  result with a digest of its own, which `scripts/extract_report.py` keeps whole. A clustering claim therefore costs a
+  reader nothing: E2634 had to rebuild 745 items from a 149 MB snapshot to say its separations spread over 24 works.
+  The item-set digests do not move (the cluster follows from the already-hashed `document`), pinned by tests against
+  the values the committed code produced.
 * **Arm-pair test of the instruments** ([E2629](../../experiments/E2629/record.md)): `scripts/analyse_arm_pairs.py` hands the probes two
   independently trained arms whose loss gap is already committed — E2612's mixture (2.055447 whole-pack bits per character) against its
   prose-only control (2.163693), matched by `chakaso.training.arm_comparison` on corpus, split, vocabulary, seed, budget and denominators —

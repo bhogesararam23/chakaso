@@ -5,6 +5,7 @@ from __future__ import annotations
 import hashlib
 import importlib.util
 import json
+import re
 import sys
 from pathlib import Path
 from types import ModuleType
@@ -14,6 +15,11 @@ import pytest
 torch = pytest.importorskip("torch")
 
 from chakaso.training.data import split_text_units  # noqa: E402
+from chakaso.training.item_clusters import (  # noqa: E402
+    WORK_CLUSTER_UNIT,
+    keys_for_items,
+    load_cluster_block,
+)
 from chakaso.training.manifest import read_snapshot, write_snapshot  # noqa: E402
 from chakaso.training.nn_checkpoint import save_artifact  # noqa: E402
 from chakaso.training.nn_training import TransformerTrainingConfig, train_transformer  # noqa: E402
@@ -162,6 +168,31 @@ def test_the_runner_scores_a_checkpoint_and_reports_the_item_digest(
     reading = result["models"]["model"]["result"]
     assert reading["items"] == 6
     assert set(reading["by_register"]) == {"prose", "science"}
+
+
+def test_the_runner_records_the_work_behind_every_scored_item(
+    tmp_path: Path, snapshot: Path, vocabulary_file: Path, checkpoint: Path
+) -> None:
+    """K-035: a clustering claim must be readable from the artifact, not rebuilt from the corpus.
+
+    The v1 probe names its item identifiers by register and hash, so without this listing the work behind a verdict
+    is only recoverable by re-running the builder over the held-out side.
+    """
+    out = tmp_path / "clusters.json"
+
+    status = _run(snapshot, vocabulary_file, checkpoint, out, "--control")
+
+    assert status == 0
+    result = json.loads(out.read_text(encoding="utf-8"))
+    listing = load_cluster_block(result["items"]["clusters"])
+
+    assert listing.unit == WORK_CLUSTER_UNIT
+    assert len(listing.rows) == result["items"]["count"] == 6
+    assert len(listing.clusters) <= len(listing.rows)
+    readings = result["models"]["model"]["result"]
+    for name, rows in readings["outcomes"].items():
+        keys = keys_for_items(listing, [str(row[0]) for row in rows])
+        assert all(re.fullmatch(r"(prose|science)-w\d+", key) for key in keys), name
 
 
 def test_the_items_do_not_depend_on_the_model_scored(

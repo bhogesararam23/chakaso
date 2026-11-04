@@ -65,11 +65,18 @@ class ContextItem:
     Every distractor is exactly ``continuation_length`` identifiers long — the same as the truth — and carries
     the position in its own document it was cut from, so a reader can check that no span overlaps the passage or
     the truth.
+
+    ``work`` is the split group the document was cut from — the unit the whole-work split held out, and therefore the
+    unit a reader should treat as one observation when the verdicts are clustered (K-035). It is carried on the item
+    rather than re-derived from ``document`` at analysis time, and it is deliberately *not* one of the fields
+    :func:`context_items_digest` hashes: it is a function of the document, which is already in the digest, and a
+    committed record's item identity has to keep recomputing.
     """
 
     identifier: str
     register: str
     document: str
+    work: str
     offset: int
     prefix: tuple[int, ...]
     true_continuation: tuple[int, ...]
@@ -81,7 +88,12 @@ class ContextItem:
 
 
 def context_items_digest(items: Sequence[ContextItem]) -> str:
-    """SHA-256 over every field of every item, each distractor's kind, position and identifiers included.
+    """SHA-256 over each item's identifier, register, document, offset and every distractor's kind, position
+    and identifiers.
+
+    The item's ``work`` is not among the hashed fields: it is a function of ``document``, which is hashed, and two
+    committed records cite digests computed before the field existed. A reader who wants the clustering does not need
+    the digest to carry it — the probe result's cluster block does, with its own digest.
 
     This is a separate digest from v1's :func:`~chakaso.training.continuation_items.items_digest` and the
     function that produced ``9557a327bfe61e2d747a826777b748ebe285b2dd352ba6a769aca0262cfacdcd`` is untouched:
@@ -214,6 +226,7 @@ def build_context_items(
                     identifier=f"ctx-{register}-{_rank('item', unit.identifier, offset)[:8]}",
                     register=register,
                     document=unit.identifier,
+                    work=unit.group,
                     offset=offset,
                     prefix=ids[offset:anchor],
                     true_continuation=truth,

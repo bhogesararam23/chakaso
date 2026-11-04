@@ -42,11 +42,18 @@ Scorer = Callable[[tuple[int, ...], tuple[int, ...]], float]
 
 @dataclass(frozen=True, slots=True)
 class ContinuationItem:
-    """One passage prefix with its true continuation and two distractors, all in identifiers."""
+    """One passage prefix with its true continuation and two distractors, all in identifiers.
+
+    ``work`` is the split group the passage's document was cut from — the unit a clustered reading treats as one
+    observation (K-035). The easy distractor comes from a *different* work by construction, which is why the item's
+    cluster is its own document's and not the distractor's. Like the same-region probe's, it is not a hashed field of
+    :func:`items_digest`: it follows from ``document``, and committed records cite digests computed before it existed.
+    """
 
     identifier: str
     register: str
     document: str
+    work: str
     offset: int
     prefix: tuple[int, ...]
     true_continuation: tuple[int, ...]
@@ -62,7 +69,12 @@ def _rank(*parts: object) -> str:
 
 
 def items_digest(items: Sequence[ContinuationItem]) -> str:
-    """SHA-256 over every item's content, in order: the identity a result cites."""
+    """SHA-256 over every item's content, in order: the identity a result cites.
+
+    ``work`` is excluded because it follows from ``document``, which is hashed, and because E2623's 215-item digest
+    ``9557a327…`` is cited by three measured records; the probe result's cluster block carries the pairing with its
+    own digest instead.
+    """
     canonical = json.dumps(
         [
             [
@@ -174,6 +186,7 @@ def build_items(
                     identifier=f"{register}-{_rank('item', unit.identifier, offset)[:8]}",
                     register=register,
                     document=unit.identifier,
+                    work=unit.group,
                     offset=offset,
                     prefix=ids[offset:anchor],
                     true_continuation=truth,

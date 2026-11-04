@@ -120,6 +120,24 @@ def test_rebuilding_the_set_reproduces_its_digest_and_a_changed_span_moves_it() 
     assert first != context_items_digest([changed, *items[1:]])
 
 
+def test_carrying_the_work_on_the_item_does_not_move_the_item_set_digest() -> None:
+    """The digest a record cites has to keep recomputing.
+
+    ``a3f0c956…`` is what this fixture computed before ``work`` was a field of :class:`ContextItem`, read off the
+    committed code on 2026-11-04. The field is excluded from the hash on purpose: it follows from ``document``,
+    which is hashed, and E2634 cites an item digest produced by the version that had no ``work``.
+    """
+    assert context_items_digest(_items()) == (
+        "a3f0c956bdfa9161f847808004418ef337bf34303f52d610f3f441c003dfa644"
+    )
+
+
+def test_every_item_names_the_work_its_passage_was_cut_from() -> None:
+    for item in _items():
+        assert item.work == item.document.split("/", 1)[0]
+        assert item.work.startswith(item.register)
+
+
 def test_at_most_max_per_work_items_come_from_one_work() -> None:
     items = _items(per_register=6, max_per_work=2)
 

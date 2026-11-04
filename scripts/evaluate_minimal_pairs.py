@@ -6,6 +6,11 @@ lies inside the interval, the length-only reading, and the number of pairs flagg
 corpus snapshot. ``--control`` adds an untrained model of the first checkpoint's architecture (seed 7) as the instrument's
 floor: a probe that cannot tell a trained model from a random one is not a measurement of what the model learned.
 
+The result carries a cluster listing (K-035) whose unit is the **phenomenon**, not a held-out work: these pairs are
+self-authored, so no book stands behind them and the largest shared cause a pair has is the template its phenomenon
+follows. A clustered reading of this probe is a statement about templates, which is why the unit is named in the
+artifact rather than inferred by a reader.
+
 Usage:
     python scripts/evaluate_minimal_pairs.py --pairs configs/probes/grammatical-minimal-pairs-v1.json \\
         --checkpoint E2617=data/experiments/E2617/seed-7/E2617-decoder.pt --control \\
@@ -26,6 +31,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src"))
 
 
 from chakaso.training.errors import TrainingError
+from chakaso.training.item_clusters import PHENOMENON_CLUSTER_UNIT, ClusterListing
 from chakaso.training.minimal_pairs import PairSet, contaminated_pairs, load_pair_set, score_pairs
 from chakaso.training.nn_checkpoint import ModelArtifact, load_artifact
 from chakaso.training.nn_evaluation import sequence_log_probabilities, untrained_model_like
@@ -103,11 +109,16 @@ def main(argv: Sequence[str] | None = None) -> int:
                 "pair set other than the one it declared"
             )
             raise ValueError(message)
+        clusters = ClusterListing(
+            unit=PHENOMENON_CLUSTER_UNIT,
+            rows=tuple((pair.identifier, pair.phenomenon) for pair in pair_set.pairs),
+        )
         result: dict[str, Any] = {
             "pair_set": {
                 "name": pair_set.name,
                 "version": pair_set.version,
                 "digest": pair_set.digest,
+                "clusters": clusters.as_dict(),
             },
             "models": {},
         }

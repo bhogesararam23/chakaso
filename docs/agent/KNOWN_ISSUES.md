@@ -1030,7 +1030,15 @@ command over a 149 MB snapshot for a number that should fall out of the artifact
 cite, so a widened row is a format decision, not an edit. The candidate is one more shared per-item listing beside the
 existing one — the work of each identifier, digested like the rest — which leaves every committed extract readable.
 
-**Status:** open, measured 2026-11-04 by E2634.
+**Identity half landed 2026-11-04:** `chakaso.training.item_clusters` is that listing — one per probe result, each item
+identifier paired with the work the whole-work split held out, carrying its own digest, written by all three
+`scripts/evaluate_*.py` runners and kept whole by `scripts/extract_report.py`. The authored minimal-pair probe names its
+cluster unit as the *phenomenon* instead, because no book lies behind a hand-written pair and a clustered reading of it
+is a statement about templates. The item-set digests are unchanged and pinned by test: `work` follows from the already
+hashed `document`, and three records cite digests written before the field existed. **What is left:** a work-clustered
+statistic for paired binary verdicts, which is the reason the listing exists.
+
+**Status:** identity implemented 2026-11-04; the clustered statistic is the open half.
 
 ## Resolved
 

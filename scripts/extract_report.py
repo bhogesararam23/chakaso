@@ -30,6 +30,7 @@ from typing import Any
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src"))
 
+from chakaso.training.item_clusters import CLUSTER_BLOCK_SCHEMA
 from chakaso.training.outcome_vectors import ITEMS_KEY, compact_probe_result
 
 MAX_ENTRIES = 6
@@ -38,6 +39,16 @@ MAX_BYTES = 2048
 #: The two blocks the outcome compaction writes. They are the array, in its compacted form, with the digest that
 #: proves a reader can rebuild it — so the walk stops at them rather than stubbing them as bulky.
 COMPACT_KEYS = frozenset({"compact_v1", ITEMS_KEY})
+
+
+def _is_cluster_block(value: Any) -> bool:
+    """Whether a mapping is a probe's cluster listing, which is kept whole by its schema rather than by its name.
+
+    The listing is the pairing a clustered statistic is computed from (K-035) and carries its own digest, so stubbing
+    its rows would recreate K-032 one level over: the extract would state a clustering claim it could not recompute.
+    """
+    return isinstance(value, Mapping) and value.get("schema_version") == CLUSTER_BLOCK_SCHEMA
+
 
 #: The keys the series' extracts keep whole whatever their size: the numbers a record's tables are read from.
 #: A kept key is descended into and only the bulky leaf inside it becomes a stub, which is what lets the same
@@ -107,7 +118,10 @@ def _holds_kept_numbers(value: Any) -> bool:
         return False
     if any(str(name) in ALWAYS_KEEP or str(name) in COMPACT_KEYS for name in value):
         return True
-    return any(isinstance(item, Mapping) and "compact_v1" in item for item in value.values())
+    return any(
+        isinstance(item, Mapping) and ("compact_v1" in item or _is_cluster_block(item))
+        for item in value.values()
+    )
 
 
 def compact(
@@ -119,9 +133,14 @@ def compact(
     while a 6,500-entry group listing inside ``corpus`` does not — and a bulky block nested inside a kept key is
     still replaced, because what is being bounded is the file, not the field's name. A compact outcome block and the
     shared item listing beside it end the walk: they are already the compacted array, each with its own digest, and
-    stubbing one would put the array back out of a reader's reach — the defect K-032 was filed about.
+    stubbing one would put the array back out of a reader's reach — the defect K-032 was filed about. A cluster
+    listing is kept for the same reason with the same machinery: it is the pairing, digested.
     """
-    if key in COMPACT_KEYS or (isinstance(value, Mapping) and "compact_v1" in value):
+    if (
+        key in COMPACT_KEYS
+        or (isinstance(value, Mapping) and "compact_v1" in value)
+        or _is_cluster_block(value)
+    ):
         return json.loads(json.dumps(value))
     if (
         key not in ALWAYS_KEEP

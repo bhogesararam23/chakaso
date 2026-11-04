@@ -13,6 +13,7 @@ from __future__ import annotations
 import hashlib
 import importlib.util
 import json
+import re
 import sys
 from pathlib import Path
 from types import ModuleType
@@ -23,6 +24,11 @@ import pytest
 torch = pytest.importorskip("torch")
 
 from chakaso.training.data import split_text_units  # noqa: E402
+from chakaso.training.item_clusters import (  # noqa: E402
+    WORK_CLUSTER_UNIT,
+    keys_for_items,
+    load_cluster_block,
+)
 from chakaso.training.manifest import read_snapshot, write_snapshot  # noqa: E402
 from chakaso.training.nn_checkpoint import save_artifact  # noqa: E402
 from chakaso.training.nn_training import (  # noqa: E402
@@ -189,6 +195,37 @@ def test_the_runner_scores_every_kind_for_every_model_and_keeps_the_per_item_rec
         assert set(readings["outcomes"]) == {f"pmi_{kind}" for kind in _KINDS}
         for kind in _KINDS:
             assert len(readings["outcomes"][f"pmi_{kind}"]) == 10, kind
+
+
+def test_the_runner_records_which_work_every_scored_item_was_cut_from(
+    snapshot: Path, vocabulary_file: Path, checkpoint: Path, tmp_path: Path
+) -> None:
+    """K-035: the clustering a record claims has to be readable out of the artifact it wrote.
+
+    Every reading of one probe result asks the same items in the same order, so one listing serves all of them; what
+    is checked here is that each reading's own per-item rows align to it, which is the property a paired clustered
+    statistic depends on.
+    """
+    result = _run(snapshot, vocabulary_file, checkpoint, tmp_path)
+    listing = load_cluster_block(result["items"]["clusters"])
+
+    assert listing.unit == WORK_CLUSTER_UNIT
+    assert len(listing.rows) == result["items"]["count"] == 10
+    assert len(listing.clusters) < len(listing.rows), "ten items from 60 works is not a cluster"
+    for name, entry in result["models"].items():
+        for reading, rows in entry["result"]["outcomes"].items():
+            keys = keys_for_items(listing, [str(row[0]) for row in rows])
+            assert all(re.fullmatch(r"(prose|science)-w\d+", key) for key in keys), (name, reading)
+
+
+def test_the_cluster_listing_is_the_same_pairing_on_every_run(
+    snapshot: Path, vocabulary_file: Path, checkpoint: Path, tmp_path: Path
+) -> None:
+    first = _run(snapshot, vocabulary_file, checkpoint, tmp_path)["items"]["clusters"]
+    second = _run(snapshot, vocabulary_file, checkpoint, tmp_path / "b")["items"]["clusters"]
+
+    assert first["digest"] == second["digest"]
+    assert first["rows"] == second["rows"]
 
 
 def test_an_untrained_networks_floor_is_reported_per_kind_and_covers_chance(

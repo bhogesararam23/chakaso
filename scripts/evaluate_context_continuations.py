@@ -40,6 +40,7 @@ from chakaso.training.context_continuations import (
 )
 from chakaso.training.data import TextUnit
 from chakaso.training.errors import CorpusError, TrainingError
+from chakaso.training.item_clusters import WORK_CLUSTER_UNIT, cluster_block
 from chakaso.training.nn_checkpoint import ModelArtifact, load_artifact
 from chakaso.training.nn_evaluation import (
     continuation_log_probabilities,
@@ -151,6 +152,7 @@ def main(argv: Sequence[str] | None = None) -> int:
                 "max_per_work": args.max_per_work,
                 "split_fingerprint": args.expected_split_fingerprint,
                 "test_documents": len(units),
+                "clusters": cluster_block(items, unit=WORK_CLUSTER_UNIT),
             },
             "models": {},
         }
