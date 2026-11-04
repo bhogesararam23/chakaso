@@ -3,7 +3,18 @@
 Real problems with the current state, including the ones that are only
 inconvenient. An empty file here would mean nobody has looked.
 
-Last reviewed: 2026-11-04, latest (**E2634 measured — G-a, qualified**: at 745 items one continuation reading separates
+Last reviewed: 2026-11-04, latest (**K-035 closed** — the probe runners write the work each item came from and
+`chakaso.training.paired_verdicts` tests paired verdicts over those works; **K-034 closed** by
+[ADR-0052](../decisions/ADR-0052-an-analysis-prints-the-verdict-its-record-declared-or-none-at-all.md), so an analysis
+prints the verdict its record declared or none at all, verified by re-running E2634 under its own `G-a…G-d` and getting
+`G-a` over byte-identical pairs; **[E2635](../../experiments/E2635/record.md) measured D-b** — of E2634's two separations
+one does not survive the works behind its items, and the authored 800-pair probe separates nothing once its eight
+phenomena are counted as the clusters they are; **K-031's drift re-scan measured**, 20 of 430 sampled URLs all still
+serving their pinned digest, with the known `pg3489` drift reproduced by name and its ingested text still identical, and
+its **storage decision still the owner's**, now written as five options with their costs in
+[artifact policy](../internal/engineering/artifact-policy.md); K-001 unchanged by any of it); before that 2026-11-04 (**E2634
+measured — G-a,
+qualified**: at 745 items one continuation reading separates
 both material arm pairs under Holm and its untrained floor is 0.3812, so it is the disqualified reading; among the
 floor-passing ones the best p went 0.049 → 0.031539 against a 0.016667 step, and the corpus cannot supply the ~1,700
 items that would clear it — **K-034 and K-035 filed** from the two gaps that measurement exposed; **ADR-0051 adopted**
@@ -902,6 +913,31 @@ Measured on the multiregister corpus: 430 sources, 162,017,394 raw bytes into 59
 digest. That fixes the loss of future pins — the bytes behind everything pinned now are held and checkable — and it does not recover the
 original `pg3489` bytes, which are gone. Where an archive is *kept* stays ADR-0047 part 2's open question: `data/` on one machine is not
 preservation, and publishing third-party text at scale is a hosting decision.
+
+*Drift re-scan measured 2026-11-04, as a sample rather than as a sweep.* Re-fetching all 430 URLs is the act that found the
+`pg3489` drift and it is too expensive to repeat, so the check would have become an assumption.
+`scripts/rescan_pinned_sources.py` takes the repeatable form: it ranks each register's sources by `sha256("rescan|" + slug)`
+and keeps the first four, so the 20-URL sample is a function of the catalogue fixed before any request is made and cannot be
+chosen after seeing what moved; every request carries the declared limits (https only, 20 s, ≤3 redirects, 8 MiB, 2 s apart);
+fetched bytes go to a temporary directory that is deleted, and the report re-reads and prints the catalogue file's digest so
+"the pin was untouched" is in the artifact. Measured at 14:18Z on 430 sources / **20 sampled / 8,968,096 bytes**: **20
+unchanged**, no refusal, no redirect. The rule's blindness showed immediately — the stratified sample did not contain the one
+source already known to have drifted — so it was also re-fetched by name: still a different raw digest, 438,646 bytes, still
+classified **`ingested-text-identical`**, which reproduces the 2026-11-02 finding from a different direction. Both reports are
+committed ([`../../docs/data/gutenberg-multiregister-v1-rescan-2026-11-04.json`](../../docs/data/gutenberg-multiregister-v1-rescan-2026-11-04.json)
+for the sample,
+[`…/gutenberg-multiregister-v1-rescan-science-pg3489-2026-11-04.json`](../../docs/data/gutenberg-multiregister-v1-rescan-science-pg3489-2026-11-04.json)
+for the named follow-up).
+
+Three limits of that result are part of it, not footnotes. Twenty clean URLs bound nothing about the other 410, and the drift
+rate is known not to be zero. Drift is judged by content digest alone, because `HttpFetcher` returns bytes and a timestamp
+rather than `Last-Modified` or `ETag`, so a metadata-only move is invisible here by construction. And a refused fetch is
+recorded as `fetch-refused` with the policy's message attached — it is never read as unchanged, which is the difference between
+a source that is stable and a source that is gone. **What remains: the host.** The five technically reasonable destinations,
+what each buys and what each costs against the measured 59,220,202 bytes and the 3.5-second verification, are in
+[artifact policy](../internal/engineering/artifact-policy.md); whether the archive is published or kept private, whose account and cost
+accepts it, who re-verifies it and how often, and what licence statement travels with third-party text are the owner's four
+decisions, and none of them is a code change.
 
 ### K-032 — Closed: a committed probe extract keeps its per-item arrays, in a compact form a reader can rebuild
 

@@ -1,0 +1,51 @@
+{
+  "catalog": {
+    "licence": "Public domain in the United States; distributed by Project Gutenberg under the Project Gutenberg License, which permits copying, giving away and re-use; users outside the United States must check local law before use",
+    "name": "gutenberg-multiregister-v1",
+    "provider": "Project Gutenberg (cache/epub text files, selection rule in scripts/acquire_gutenberg_corpus.py)",
+    "sources": 430,
+    "version": "1.0.0"
+  },
+  "catalog_file_sha256": "c2c9ee68eb39f73036e81955e667ee27903041546de31ff2b067d428d2623b88",
+  "catalog_retrieved": "2026-10-30",
+  "catalog_untouched": true,
+  "counts": {
+    "drifted-ingested-text-identical": 1
+  },
+  "limitations": "a sample of URLs cannot bound the drift of the whole catalogue, and an unchanged sample is not an all-clear over the pinned corpus. A URL that now 404s, redirects or serves different bytes does not invalidate the pin: the archive holds the pinned bytes and the catalogue's raw digest still selects them. Drift is judged by content digest, because the policy-enforcing fetcher returns bytes rather than response headers, so Last-Modified and ETag moves are invisible here by construction. The classification of a moved source is computed from the bytes fetched today, and this command opens the catalogue read-only and writes nothing outside a temporary directory.",
+  "policy": {
+    "allowed_schemes": [
+      "https"
+    ],
+    "max_redirects": 3,
+    "max_response_bytes": 8388608,
+    "request_spacing_seconds": 2.0,
+    "timeout_seconds": 20.0,
+    "user_agent": "chakaso-corpus-drift-rescan/1.0 (language-model research; verifying pinned corpus digests)"
+  },
+  "rescanned_at": "2026-11-04T14:19:29.862877+00:00",
+  "rows": [
+    {
+      "bytes_fetched": 438646,
+      "detail": null,
+      "ebook_number": 3489,
+      "expected_sha256": "0725e404f69f95e2be56bab4c51d9c40583efd44f080b3c70c105573d09ef9c8",
+      "final_url": "https://www.gutenberg.org/cache/epub/3489/pg3489.txt",
+      "media_type": "text/plain",
+      "observed_sha256": "f6b780d47591d9cc3a8726c1745e51ac928b92a2e6b4eb46ebb4a1ef4b5cd746",
+      "redirected": false,
+      "retrieved_at": "2026-11-04T14:19:29.848227+00:00",
+      "slug": "science-pg3489",
+      "status": "drifted-ingested-text-identical",
+      "url": "https://www.gutenberg.org/cache/epub/3489/pg3489.txt"
+    }
+  ],
+  "selection": {
+    "per_register": 1,
+    "registers": [
+      "science"
+    ],
+    "rule": "sha256(\"rescan|\" + slug) per register, lowest ranks first",
+    "sampled": 1
+  }
+}

@@ -890,6 +890,49 @@
 ## Provenance
 
 - Corpus snapshot checksum: `236c8d5a8e4eb6f2820a5feea1fd8edcf2d0311c9ff9b7281771015a975df61a`
+- Catalogue file SHA-256: `c2c9ee68eb39f73036e81955e667ee27903041546de31ff2b067d428d2623b88` — the same value the
+  drift re-scan below recorded before it fetched anything and re-checked after it had fetched everything, which is how
+  "the pin was not touched" is a measurement rather than a promise.
+- Raw-byte archive (`chakaso corpus archive` over the 430 files, 2026-11-04): **162,017,394 bytes in, 59,220,202 out**,
+  SHA-256 `1b3979ba13a8f35bd15f22c5a4e30128d94c1ead416d63a47a16aa076687532d`, reproduced character-for-character by a
+  second build. It sits in `data/` on one machine beside the raw directory it was built from; where a second copy is
+  kept, and whether one is published at all, is the owner's open hosting question in
+  [artifact policy](../internal/engineering/artifact-policy.md), not a fact about this corpus.
+
+## Whether the pinned URLs still serve the pinned bytes (sampled 2026-11-04)
+
+The digests in the table above prove the bytes on this machine are the bytes that were pinned on 2026-10-30. They say
+nothing about what each URL serves now, and the whole catalogue was re-fetched exactly once — on 2026-11-02, when
+`science-pg3489` was found edited upstream the day after the pin. That is too expensive to repeat, which is how a check
+becomes an assumption. `scripts/rescan_pinned_sources.py` is the repeatable form: it ranks each register's sources by
+`sha256("rescan|" + slug)` and takes the first four, so the sample is a function of the catalogue alone and cannot be
+influenced by what a rescan finds; every request runs under the declared limits (https only, 20 s timeout, at most three
+redirects, 8 MiB response, 2 s between requests) and nothing is written outside a temporary directory.
+
+**Measured on 2026-11-04T14:18Z, 20 of 430 sources** — mathematics, medicine, prose, science and technology at four each,
+8,968,096 bytes fetched (45,113 to 1,368,643 per source): **all 20 served the digest the catalogue declares.** No
+redirect, no refusal, no moved bytes.
+Full rows in [`gutenberg-multiregister-v1-rescan-2026-11-04.json`](gutenberg-multiregister-v1-rescan-2026-11-04.json).
+
+**The known drift, followed up in the same hour.** The stratified sample did not happen to include `science-pg3489` — the
+selection rule is blind to what drifted — so that source was re-fetched by name
+([`…-rescan-science-pg3489-2026-11-04.json`](gutenberg-multiregister-v1-rescan-science-pg3489-2026-11-04.json)): it still
+serves bytes whose raw digest differs from the pin, and the catalogue's own classifier still reports
+**`ingested-text-identical`**. That is the 2026-11-02 finding reproduced from a different direction — the upstream file is
+still the edited one, still 438,646 bytes, still the same text after the header.
+
+What this does **not** establish, stated because a clean sample invites the reading:
+
+- 20 unchanged URLs bound nothing about the other 410. The known drifted source was found in the 430, so the drift rate is
+  not zero, and one quarter of one register's head of the queue is not a bound on it.
+- Drift here is judged by **content digest alone**. `HttpFetcher` returns bytes, media type and a timestamp, not
+  `Last-Modified` or `ETag`, so a header that moved while the bytes stayed is invisible to this command — which is the
+  stronger test in one direction (bytes are what a re-pin would consume) and blind in another (a metadata change that
+  signals an editorial change is not seen).
+- A refused request is recorded as `fetch-refused` with the policy's own message and is **never** counted as unchanged. A
+  404 says the URL is gone, not that the source is stable.
+- The re-scan cannot restore what is lost. `pg3489`'s original bytes are still unrecoverable; what the archive holds is
+  the bytes since the pin, and the ingested-text digest is the only evidence about the original text.
 
 ## How this corpus was prepared
 

@@ -82,9 +82,29 @@ built in 24 seconds and read back by `corpus verify-archive` in 3.5 seconds — 
 trusting the manifest it checks. A second build of the same directory, run minutes later, produced the same digest to the character, so two
 holders of an archive can establish they hold the same artifact and not merely similar files.
 
-What remains undecided is where it is *kept*: `data/` on one machine is not preservation, and publishing third-party text at scale is a
-hosting and licensing act, not a code change. Until someone chooses, the archive is reproducible from the raw directory the corpus was built
-from, and the digest above is what a future copy is checked against.
+What remains undecided is where it is *kept*. `data/` on one machine is not preservation, and publishing 59 MB of
+third-party text is a hosting and licensing act, not a code change. The measured inputs are fixed, so the trade-offs below
+are arithmetic rather than guesswork: one file of **59,220,202 bytes** holding **162,017,394** of raw text across **430
+sources**, identified by SHA-256 `1b3979ba13a8f35bd15f22c5a4e30128d94c1ead416d63a47a16aa076687532d`, which
+`chakaso corpus verify-archive` re-reads member by member in **3.5 s** — so verifying a copy is cheaper than making one
+(24 s), and a candidate host does not have to be trusted, only reachable.
+
+| Option | What it buys | What it costs |
+| --- | --- | --- |
+| **A release asset on this repository** | No new service, no new account, no credentials to rotate; the asset name can carry the catalogue name and version, so the archive and the catalogue that cites its digest live together; GitHub's per-asset bound is far above 59 MB | Publishes the text from a repository whose own licence is Apache-2.0, with the Gutenberg terms applying to the payload rather than to the code; release assets are a distribution mechanism, not an archival promise, and can be deleted with the release |
+| **A research-data repository (a DOI-minting service such as Zenodo)** | Built for exactly this: versioned deposit, a citable identifier, explicit licence fields — which is where "public domain in the United States; check local law elsewhere" belongs as metadata rather than as a footnote — and a party independent of this repository | A deposit is a permanent public act and cannot be withdrawn quietly; the identifier is a promise someone else keeps; there is no automated path from `corpus archive` to a deposit, so the loop is manual and its staleness is invisible |
+| **Object storage the owner controls (a versioned bucket)** | Private by default, so no publishing decision is forced; versioning plus lifecycle rules; cheapest at this size; the digest fits in object metadata, and a cron that re-downloads and re-verifies is a real option here in a way it is not on a release page | Cost and credential management for one file; a bucket nobody checks is a copy that can silently disappear, taking the preservation benefit with it; it is a backup, not a public artifact, so a reader still cannot obtain the bytes |
+| **A general web archive (an Internet Archive item)** | Redundancy and preservation engineering this project will never build; consistent with public-domain content | Third-party hosting with third-party moderation; no control over how the item is described or whether it survives; like a release asset it is public |
+| **Nothing external: a second local disk, and reproducibility from upstream** | Zero licensing act, zero new service, and the bytes behind everything pinned since are on this machine already. The upstream case is partly re-measurable: all 430 URLs were fetched on 2026-11-02 and 429 served their pinned digest, and a 20-URL stratified sample on 2026-11-04 found all 20 still serving it | Precisely the failure K-031 recorded for `pg3489`: one fire and the bytes are gone. Twenty clean URLs are evidence about twenty URLs, not a bound on the other 410, so this option bets the corpus on that gap |
+
+**Whichever is chosen, four things are the owner's and are not decided here:** whether the archive is published at all or
+kept as a private backup; which account, credentials and recurring cost accept it; who re-runs `corpus verify-archive`
+against the stored copy and how often (CI cannot — it is offline by [ADR-0001](../../decisions/ADR-0001-local-first-runtime.md),
+and a fetch of this size would be a load event on a public archive); and what licence statement travels with the payload
+when the code's licence is not the text's. Until someone chooses, the archive is reproducible from the raw directory the
+corpus was built from, the digest above is what a future copy is checked against, and
+[`scripts/rescan_pinned_sources.py`](../../../scripts/rescan_pinned_sources.py) is how the "still fetchable" half of that
+claim gets re-measured instead of inherited.
 
 ### Which dataset artifacts are redistributable?
 
