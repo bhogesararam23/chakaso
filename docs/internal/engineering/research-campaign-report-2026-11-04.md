@@ -210,7 +210,7 @@ known when it closed, and one of them is a failure of the kind §5 exists to rec
    notch sharper: an uncommitted change does not merely escape a gate, it makes the gate report on a different object
    than the one that gets pushed.
 2. **This report's §7 statement about K-031 was overtaken by uncommitted work.** It says the 430-URL re-scan "has not
-   been run" — correct when written. The tree also carried `scripts/rescan_pinned_sources.py`, its sixteen offline
+   been run" — correct when written. The tree also carried `scripts/rescan_pinned_sources.py`, its eighteen offline
    tests and two measured artifacts that no document cited. They landed as `02c230b` and `7c8f992`: **20 of 430 URLs,
    all serving their pinned digest**, and `science-pg3489` re-fetched by name still differing at the raw digest with
    its ingested text identical. The bounded sample replaced the "430 fetches" framing §7 rejected; the host question

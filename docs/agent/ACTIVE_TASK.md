@@ -9,7 +9,7 @@ ledger say what is actually true: what has been measured, what has only been dec
 **State at the start (measured).** `main` == `origin/main` == `1fd9f06` and **red on the runner**: run 41842884480 failed
 the `Format` step in all three core jobs, because that commit landed a 97-character `pytest.raises` call and only `core`
 runs formatting (`.github/workflows/ci.yml` gives `train` and `model path` Types and Tests, no Format). The working tree
-carried five uncommitted files — a K-031 re-scan script, its 16 tests, two measured re-scan artifacts, and exactly the
+carried five uncommitted files — a K-031 re-scan script, its 18 tests, two measured re-scan artifacts, and exactly the
 formatting change CI wanted. 34 experiment records on disk. After the tree was landed the baseline here was
 **2,222 pass / 34 skip** dependency-free, **2,859 pass / 1 skip** with `[train,nn]`, `mypy src` clean over 125 files.
 18 logical CPUs, no CUDA device, 15.4 GB RAM; a 3,413,760-parameter arm at 2,400 updates costs 3,045–3,536 s.
@@ -18,7 +18,7 @@ formatting change CI wanted. 34 experiment records on disk. After the tree was l
 | --- | --- | --- | --- | --- | --- |
 | V0 | Audit the tree, the runner and the ledger before scheduling anything | — | head, CI state, uncommitted work and the four gates written down | **done** | the opening audit; the red run read from the runner; E2635 re-executed byte-identically (`a7df2d04…`) |
 | V1 | Land the formatting fix that turns `main` green | V0 | the Format step passes on the runner at the new head, fixed forward rather than amended | **done** | `e62f8fe`, run 41852523571 success on all eight jobs |
-| V2 | K-031's drift re-scan, as a sample rather than a sweep | V0 | deterministic selection declared before fetching, strict limits, per-source digests, offline tests, nothing replaced | **done** | `02c230b`, `scripts/rescan_pinned_sources.py`, 16 tests; **20 of 430 URLs, all unchanged**, `pg3489` still drifted-raw / ingested-identical |
+| V2 | K-031's drift re-scan, as a sample rather than a sweep | V0 | deterministic selection declared before fetching, strict limits, per-source digests, offline tests, nothing replaced | **done** | `02c230b`, `scripts/rescan_pinned_sources.py`, 18 tests; **20 of 430 URLs, all unchanged**, `pg3489` still drifted-raw / ingested-identical |
 | V3 | What an archive host costs, without choosing one | V2 | every technically reasonable destination, its trade-off against the measured bytes, and the owner's decision listed as theirs | **done** | `docs/internal/engineering/artifact-policy.md`, K-031's addendum |
 | V4 | The first record under the adopted tokenizer — prepared, not trained | V0 | protocol pair differing in one field, bands derived from committed evidence, cost from measured clocks, preregistered before any arm | **done, not run** | [E2636](../../experiments/E2636/record.md), two `configs/experiments/E2636-*.toml`, `scripts/read_budget_extension.py` + 32 tests, `configs/analyses/budget-extension-e2636-v1.json` |
 | V5 | The ledger reconciled against the tree | V1–V4 | census counts, record statuses, issue entries and the changelog matching what exists | **done** | `docs/agent/`, CHANGELOG, two hygiene gates green at 35 records |

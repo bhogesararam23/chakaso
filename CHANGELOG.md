@@ -35,7 +35,7 @@ record was preregistered for a later, separately approved compute session, and i
   go to a temporary directory that is deleted; the catalogue is opened read-only and its file digest is re-checked and
   printed in the report, so "the pin was untouched" is a measurement rather than a promise. A source whose bytes moved is
   classified by the catalogue's own ingested-text rule — header-only drift versus text drift — and a refused fetch is
-  `fetch-refused` with the policy's message attached, never `unchanged`. Sixteen tests run it against an injected
+  `fetch-refused` with the policy's message attached, never `unchanged`. Eighteen tests run it against an injected
   fetcher, so none of them touches the network. **This replaces nothing: it is the check, not the repair.**
 - **`scripts/read_budget_extension.py` — the reading a budget comparison needs, with the band derived instead of typed.**
   `chakaso.training.arm_comparison` refuses arms whose update counts differ, correctly, because for every record in this

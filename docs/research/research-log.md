@@ -1255,7 +1255,7 @@ step, so a whole-tree defect presented as a third of the matrix. The local gates
 working tree already held the wrap; the committed artifact and the checked-out tree are different objects, and only the
 runner says which one is real. Fixed forward, not amended (`e62f8fe`), read back green on all eight jobs.
 
-**Observation.** The same tree carried uncommitted work the ledger did not mention: a K-031 re-scan script, its sixteen
+**Observation.** The same tree carried uncommitted work the ledger did not mention: a K-031 re-scan script, its eighteen
 tests, and two measured artifacts. The previous phase's report had written "the 430-URL drift re-scan has not been run",
 which was true when it was written and was not true of the tree its successor inherited.
 
