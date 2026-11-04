@@ -22,6 +22,9 @@ vectors; :func:`chakaso.training.minimal_pairs.score_pairs` and
   factor, and what E2630 needs to say whether a mean difference clears zero.
 * :func:`sign_test_p_value` - the exact probability of a run of same-signed draws under a fair coin, which is
   the only test a difference can pass when each draw is one number and nothing per-item is shared.
+* :func:`percentile` - the quantile a bootstrap interval is read off its sorted draws, used by both resamplings in
+  the series (:mod:`chakaso.training.paired_loss` for loss, :mod:`chakaso.training.paired_verdicts` for verdicts),
+  so that an interval in one record and an interval in another mean the same thing by construction.
 """
 
 from __future__ import annotations
@@ -36,6 +39,7 @@ __all__ = [
     "holm_rejections",
     "mcnemar_exact",
     "mean_confidence_interval",
+    "percentile",
     "sign_agreement",
     "sign_test_p_value",
     "spearman_rho",
@@ -180,6 +184,24 @@ def sign_agreement(first: Sequence[float], second: Sequence[float]) -> float:
         if a == d:
             same += 1
     return same / answered if answered else 1.0
+
+
+def percentile(sorted_values: Sequence[float], quantile: float) -> float:
+    """A linear-interpolated quantile of an already-sorted sequence.
+
+    The bootstrap intervals in :mod:`chakaso.training.paired_loss` and :mod:`chakaso.training.paired_verdicts` read
+    their bounds off the sorted draws with this, so the two resamplings state their intervals the same way: one
+    function, not two that a reader has to compare.
+    """
+    if not sorted_values:
+        message = "a percentile of no draws is not a bound"
+        raise PairedStatsError(message)
+    if len(sorted_values) == 1:
+        return sorted_values[0]
+    position = quantile * (len(sorted_values) - 1)
+    lower = math.floor(position)
+    upper = min(lower + 1, len(sorted_values) - 1)
+    return sorted_values[lower] + (sorted_values[upper] - sorted_values[lower]) * (position - lower)
 
 
 def _beta_continued_fraction(a: float, b: float, x: float) -> float:

@@ -16,6 +16,7 @@ from chakaso.training.paired_stats import (
     holm_rejections,
     mcnemar_exact,
     mean_confidence_interval,
+    percentile,
     sign_agreement,
     sign_test_p_value,
     spearman_rho,
@@ -215,3 +216,21 @@ def test_the_sign_test_refuses_a_count_outside_its_sample() -> None:
 
 def test_the_paired_error_is_the_package_error_type() -> None:
     assert issubclass(PairedStatsError, TrainingError)
+
+
+def test_the_percentile_interpolates_between_draws_rather_than_choosing_one() -> None:
+    """Hand-derived on ``[0, 1, 2, 3]``: the median is the midpoint of the two middle draws, the 95th is 2.85."""
+    assert percentile([0.0, 1.0, 2.0, 3.0], 0.5) == 1.5
+    assert percentile([0.0, 1.0, 2.0, 3.0], 0.95) == pytest.approx(2.85)
+    assert percentile([0.0, 1.0, 2.0, 3.0], 0.0) == 0.0
+    assert percentile([0.0, 1.0, 2.0, 3.0], 1.0) == 3.0
+
+
+def test_one_draw_is_its_own_percentile_because_a_bootstrap_of_one_cannot_spread() -> None:
+    assert percentile([4.0], 0.025) == 4.0
+    assert percentile([4.0], 0.975) == 4.0
+
+
+def test_no_draws_is_refused_rather_than_reported_as_an_interval_at_zero() -> None:
+    with pytest.raises(PairedStatsError, match="no draws"):
+        percentile([], 0.5)

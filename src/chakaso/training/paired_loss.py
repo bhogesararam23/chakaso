@@ -29,7 +29,7 @@ import random
 from collections.abc import Mapping, Sequence
 
 from chakaso.training.errors import TrainingError
-from chakaso.training.paired_stats import sign_test_p_value
+from chakaso.training.paired_stats import percentile, sign_test_p_value
 
 __all__ = ["PairedLossError", "jackknife", "paired_document_test"]
 
@@ -71,16 +71,6 @@ def _clusters(
     for index, key in enumerate(groups):
         out.setdefault(str(key), []).append(index)
     return out
-
-
-def _percentile(sorted_values: Sequence[float], quantile: float) -> float:
-    """A linear-interpolated quantile of an already-sorted sequence."""
-    if len(sorted_values) == 1:
-        return sorted_values[0]
-    position = quantile * (len(sorted_values) - 1)
-    lower = math.floor(position)
-    upper = min(lower + 1, len(sorted_values) - 1)
-    return sorted_values[lower] + (sorted_values[upper] - sorted_values[lower]) * (position - lower)
 
 
 def jackknife(
@@ -178,7 +168,7 @@ def paired_document_test(
         draws.append(numerator / denominator)
     draws.sort()
     tail = (1.0 - probability) / 2.0
-    interval = [_percentile(draws, tail), _percentile(draws, 1.0 - tail)]
+    interval = [percentile(draws, tail), percentile(draws, 1.0 - tail)]
 
     positive = sum(1 for value in numeric_differences if value > 0.0)
     return {

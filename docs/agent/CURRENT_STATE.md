@@ -104,6 +104,15 @@ blocks below are dated and kept as the context each result was read in; this fir
   reader nothing: E2634 had to rebuild 745 items from a 149 MB snapshot to say its separations spread over 24 works.
   The item-set digests do not move (the cluster follows from the already-hashed `document`), pinned by tests against
   the values the committed code produced.
+* **Work-clustered paired verdict test (Implemented 2026-11-04)**: `chakaso.training.paired_verdicts` is E2633's
+  reading ported from loss to binary item outcomes — the paired difference of two arms' per-item verdicts, with a
+  **sign-flip randomization p-value over the works** (enumerated exactly up to 16 works, resampled beyond that, seed
+  reported), a cluster bootstrap interval on the same difference, a design effect, a leave-one-work-out table, and the
+  item-level exact McNemar p beside it labelled as the optimistic reading. With one item per work it reproduces
+  McNemar's p to the bit (asserted against `paired_stats.mcnemar_exact`); with every item in one work it reports
+  p = 1.0 and no interval, because a single cluster cannot be resampled into a difference. **It changes what
+  "separated" means, not what was sampled, and it is not a capability claim** — K-001 is untouched by whatever it
+  reports.
 * **Arm-pair test of the instruments** ([E2629](../../experiments/E2629/record.md)): `scripts/analyse_arm_pairs.py` hands the probes two
   independently trained arms whose loss gap is already committed — E2612's mixture (2.055447 whole-pack bits per character) against its
   prose-only control (2.163693), matched by `chakaso.training.arm_comparison` on corpus, split, vocabulary, seed, budget and denominators —

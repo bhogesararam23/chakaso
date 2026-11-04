@@ -1035,10 +1035,15 @@ identifier paired with the work the whole-work split held out, carrying its own 
 `scripts/evaluate_*.py` runners and kept whole by `scripts/extract_report.py`. The authored minimal-pair probe names its
 cluster unit as the *phenomenon* instead, because no book lies behind a hand-written pair and a clustered reading of it
 is a statement about templates. The item-set digests are unchanged and pinned by test: `work` follows from the already
-hashed `document`, and three records cite digests written before the field existed. **What is left:** a work-clustered
-statistic for paired binary verdicts, which is the reason the listing exists.
+hashed `document`, and three records cite digests written before the field existed. **Both halves landed 2026-11-04.** The second is `chakaso.training.paired_verdicts`: the paired difference of two arms'
+verdicts with a sign-flip randomization p-value over the works (exact while the assignment count is enumerable,
+resampled beyond it, seed reported), a cluster bootstrap interval, a design effect, a leave-one-work-out table, and
+item-level exact McNemar beside it as the optimistic reading. It is the instrument E2633 built for loss ported to
+binary verdicts, so it changes what "separated" means rather than what was sampled — and on one work it reports
+p = 1.0 and no interval, which is the statement McNemar cannot make.
 
-**Status:** identity implemented 2026-11-04; the clustered statistic is the open half.
+**Status:** closed 2026-11-04. The measured reading of a committed record's rows under the new statistic is the next
+thing written, and it will cite this entry rather than restate it.
 
 ## Resolved
 
