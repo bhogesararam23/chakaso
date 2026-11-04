@@ -76,11 +76,11 @@ Thirteen `feat:` commits, each with tests that fail against the previous code:
 
 | Record | Outcome | The number |
 | --- | --- | --- |
-| [E2630](../../experiments/E2630/record.md) | **Y2-a** | Space-prefixed tokenizer at E2614's five same-host seeds: Δ(O1) **+0.026431**, 95 % Student-*t* **[+0.023212, +0.029650]**, every draw positive; treatment deviation **0.001595** against the control's 0.002240 |
-| [E2631](../../experiments/E2631/record.md) | **N-b** | Vector-decay exemption vs E2626 seed 7: Δ(O1) **−0.003499** (tie 0.0062), Δ(whole pack) **−0.003606** (tie 0.00933); paired interval [−0.014208, +0.001682], 13:12 sign test p = 0.50000. K-030 item 3 closed |
-| [E2632](../../experiments/E2632/record.md) | **R-a** | Four fitting samples × two rules, eight distinct vocabularies: within-sample ratios **1.405175 / 1.409317 / 1.409002 / 1.405079**, relative spread **0.30 %**; merge-list Jaccard 0.109 with rank agreement 0.741/0.810 |
-| [E2633](../../experiments/E2633/record.md) | **L-a** | First paired test on held-out loss: material pairs [−0.209, −0.037] and [−0.217, −0.039]; inside-band pair [−0.0149, +0.0026] includes zero; one book moves −0.108 to −0.072 |
-| [E2634](../../experiments/E2634/record.md) | **G-a**, qualified | 745 continuation items: `context_pmi_permuted` separates both material pairs (p = 0.013718, 0.003658) — and its untrained floor is **0.3812**; floor-passing readings' best p = 0.031539 against a 0.016667 step; `easy` saturated at 0.9879 vs 0.9758 |
+| [E2630](../../../experiments/E2630/record.md) | **Y2-a** | Space-prefixed tokenizer at E2614's five same-host seeds: Δ(O1) **+0.026431**, 95 % Student-*t* **[+0.023212, +0.029650]**, every draw positive; treatment deviation **0.001595** against the control's 0.002240 |
+| [E2631](../../../experiments/E2631/record.md) | **N-b** | Vector-decay exemption vs E2626 seed 7: Δ(O1) **−0.003499** (tie 0.0062), Δ(whole pack) **−0.003606** (tie 0.00933); paired interval [−0.014208, +0.001682], 13:12 sign test p = 0.50000. K-030 item 3 closed |
+| [E2632](../../../experiments/E2632/record.md) | **R-a** | Four fitting samples × two rules, eight distinct vocabularies: within-sample ratios **1.405175 / 1.409317 / 1.409002 / 1.405079**, relative spread **0.30 %**; merge-list Jaccard 0.109 with rank agreement 0.741/0.810 |
+| [E2633](../../../experiments/E2633/record.md) | **L-a** | First paired test on held-out loss: material pairs [−0.209, −0.037] and [−0.217, −0.039]; inside-band pair [−0.0149, +0.0026] includes zero; one book moves −0.108 to −0.072 |
+| [E2634](../../../experiments/E2634/record.md) | **G-a**, qualified | 745 continuation items: `context_pmi_permuted` separates both material pairs (p = 0.013718, 0.003658) — and its untrained floor is **0.3812**; floor-passing readings' best p = 0.031539 against a 0.016667 step; `easy` saturated at 0.9879 vs 0.9758 |
 
 Issues closed by measurement: **K-032** (evidence recomputes — all eight of E2629's instrument rows reproduced
 byte-identically from E2627's committed bytes), **K-033** (the sample is stated in the report; E2612 arm T's pack
@@ -106,6 +106,13 @@ checkable half of **K-013**.
 * **Two cost estimates were an order of magnitude off in the same direction.** E2632 budgeted 65–75 minutes from
   K-024's per-run figure and took 459 s for eight fits; E2634 budgeted 10–35 minutes and took 2 m 33 s. Records quoting
   K-024's fit costs should re-measure them inside one process.
+* **The report's own first commit failed CI, and the reason is worth keeping in the record.** Its five record links
+  pointed at `../../experiments/…` from `docs/internal/engineering/`, which is one directory short. Locally the gates
+  passed, because `test_markdown_relative_links_resolve` walks the *tracked* files and the report was still untracked
+  when they were run — so a new document is unchecked until it is staged. The fix is procedural: stage the file, then
+  run the gates. This paragraph is in the phase's own report rather than somewhere less visible because the failure mode
+  (a gate that silently does not see the thing you just wrote) is exactly the class of thing K-013 and the two census
+  gates were built against.
 * **The default move broke the rule registry** on its first attempt (both rules collapsed onto one key, the committed
   vocabulary refused to load). Eleven test fixtures that had been reading their identifier counts off an ambient default
   were rewritten to name the rule they mean; none was weakened, and the suite is why this was caught in minutes.
@@ -134,6 +141,8 @@ the model-path tier also running the strict typing configuration — and every c
 | `0082c1b`, `0a1b752` | 41761040465, 41763524817 | success |
 | `a004e70` | 41800134350 | success |
 | `d18c41f` | 41803174650 | success — core 3.13 2,102/35, train 3.13 2,191/25, model path 3.13 2,703/2 |
+| `00525e5` | 41805564655 | **failure** — all eight tiers, one cause: the closing report's five relative record links were one directory short (§5). Tests, lint, format and both typing configurations passed on every tier |
+| the commit that fixes it | read back after the push, and recorded in the commit that follows this table | — |
 
 The runner reports one more skip and one fewer pass than the same head does locally on the dependency-free tier, and the
 difference is the documented hygiene test that skips where the private documentation pack does not exist at all.
