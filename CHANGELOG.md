@@ -38,9 +38,10 @@ capability is implemented or still planned.
 
 Its first run failed the `Format` step — on every platform, because the defect was a Python fence in
 `docs/training.md` whose comments were aligned by hand rather than by `ruff format`, and `ruff format --check .`
-covers markdown fences. The Windows job caught it on the same day it was added. That is the mechanism working, not
-yet the Windows tier passing: **no claim that the nine-job matrix is green at this head is made here until the run
-has been read back**, per the rule AGENTS.md states about landed jobs and passed jobs.
+covers markdown fences. The Windows job caught it on the same day it was added, alongside Linux rather than instead
+of it. Fixed at `efe48a8`, whose run is **all nine jobs success**: windows model path 3.13 **2,889 passed / 2
+skipped**, with its named checkpoint-restoration step (54 tests) and seed-study-recovery step (155) green, on a
+Windows runner, for the first time in this repository.
 
 ### 2026-11-05 — the Windows audit: what was checked, what broke, and what did not
 

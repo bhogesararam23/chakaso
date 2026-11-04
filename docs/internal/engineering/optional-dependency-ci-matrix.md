@@ -1,9 +1,11 @@
 # The optional-dependency CI matrix, as shipped
 
-**Status: shipped, and read back green.** The three tiers this document used to describe as
+**Status: shipped, and read back green — nine jobs, four of them on the platform this project is developed on.**
+The three tiers this document used to describe as
 prepared-and-unappliable are now the content of
 [`.github/workflows/ci.yml`](../../../.github/workflows/ci.yml). Landing them took three runs, and each of the
-two failures was a defect the old single-tier CI had no way to see:
+two failures was a defect the old single-tier CI had no way to see. Adding the Windows runner took two more, and
+its first failure was the same kind of finding: see the last two rows.
 
 | Run | Result | What it showed |
 | --- | --- | --- |
@@ -13,6 +15,8 @@ two failures was a defect the old single-tier CI had no way to see:
 | [`39706259071`](https://github.com/bhogesararam23/chakaso/actions/runs/39706259071) | **all 8 jobs success** | the then-current head: core 3.13 1,644 / 24 in 17.39 s, model path 3.13 2,003 / 2 in 79.18 s, model-path jobs taking 1m58s–2m31s including the torch download. |
 | [`40119588460`](https://github.com/bhogesararam23/chakaso/actions/runs/40119588460) | **all 8 jobs success** | the head after the 2026-10-24 documentation audit (`ad7ccc6..733b628`, seven commits: three architecture rules given the tests their own document claimed, four measured numbers corrected against their records, every public document reconciled, and one false provenance claim removed from `metadata.display_name`): core 3.13 **1,655 passed / 25 skipped** in 18.23 s, train 3.13 **1,736 / 16** in 21.84 s, model path 3.13 **2,028 / 2** in 87.53 s. That the audit's own changes were checked by the tiers they depend on is the point of this row. |
 | [`40120242998`](https://github.com/bhogesararam23/chakaso/actions/runs/40120242998) | **all 8 jobs success** | the ledger-and-evidence commit on top of it (`733b628..4d6c2f0`), whose only difference from the previous run is documentation: the same counts — core 3.13 1,655 / 25, train 3.13 1,736 / 16, model path 3.13 2,028 / 2 — and a model-path wall clock of 48.48 s against 87.53 s an hour earlier. Recorded as an observation rather than a finding: two runs of identical test code disagreeing by nearly 2× on time is why no record in this repository presents a wall clock as a property of a model, and why the tier's *counts* are the thing worth citing. |
+| [`41917450236`](https://github.com/bhogesararam23/chakaso/actions/runs/41917450236) | **9 jobs, 4 failed** | the `windows` job's first run at all, at `0000a83`: `Format` failed on it *and* on all three `core` jobs, because a python fence in `docs/training.md` had its comments aligned by hand and `ruff format --check .` formats code inside markdown. The new job found a real defect in the commit that added it, on the same day, and found it alongside Linux rather than instead of it. |
+| [`41919662316`](https://github.com/bhogesararam23/chakaso/actions/runs/41919662316) | **all 9 jobs success** | the head after the fix (`efe48a8`). core 3.13 **2,256 / 36**, train 3.13 **2,345 / 26**, model path 3.13 **2,889 / 2** (types clean over 174), and **windows model path 3.13: 2,889 passed / 2 skipped in 189.74 s**, with its two named steps green — Checkpoint serialization and restoration **54 passed**, Seed-study recovery **155 passed**. The Windows runner reports one more skip than this head does on the Windows machine that developed it (2 against 1), which is the private-pack hygiene skip in reverse: the pack is absent on the runner and present in this working tree. |
 
 The runner reports one more skip than the same head does locally, and the difference is accounted for rather
 than smoothed: the hygiene test that checks the private documentation pack is untracked skips where that pack

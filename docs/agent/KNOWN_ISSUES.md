@@ -3,7 +3,14 @@
 Real problems with the current state, including the ones that are only
 inconvenient. An empty file here would mean nobody has looked.
 
-Last reviewed: 2026-11-05, latest (**K-036 and K-037 filed and closed by the training-recovery work** — a seed study now
+Last reviewed: 2026-11-05, latest (**K-039 filed** by the Windows audit — eleven shell scripts under git-ignored
+`data/` hold "the exact command that ran" for records that cite them, all eleven carrying a Git-Bash-only working path
+and two with no shebang, so a fresh clone does not contain the command a record points a reader at; **the Windows path
+audited and measured rather than assumed** — the four gates, all three test tiers and both type-check configurations
+run clean on this machine, the staged write and the checkpoint rewrite are tested against the `WinError 5` shape on
+both platforms, `process_memory.py`'s platform branches hold, non-ASCII CLI output survives a console code page, and
+CI gained a `windows` job running `model-path`'s extras; **K-036 and K-037 filed and closed by the training-recovery
+work** — a seed study now
 discovers the interrupted seed's own checkpoint by the path that seed would have written it to and continues it through
 the existing verifier, and the plan's `resume_from` path is excluded from `protocol_digest` so a recovered seed
 aggregates with the siblings that never stopped; **K-038 filed** — the ceiling a continued checkpoint declared is still

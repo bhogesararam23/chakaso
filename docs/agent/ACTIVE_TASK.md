@@ -21,19 +21,17 @@ three-tier design working, not a broken environment. The training loop had a res
 | W3 | Training-state equivalence across the boundary, through the file | W1 | a continued run bit-identical to an uninterrupted one in weights, moments, step, schedule position and selection | **done** | `a5a27c0`; nothing in the loop needed repairing |
 | W4 | The twelve interruption and recovery scenarios, and a declared rerun that means it | W1–W3 | each scenario held by a named test; repeated resumption equal, not merely plausible | **done** | `99a53c9`; `tests/test_training_recovery.py` maps all twelve |
 | W5 | Windows audited on the four things only it can fail | W0 | staged swap, checkpoint locking, console encoding and the torch wheel each measured, not asserted | **done** | `f18fc83`; K-039 filed |
-| W6 | A Windows CI job, with its document and its two binding tests | W5 | the job ships; the Linux matrix untouched; the run read back | **landed, first run read** | `0000a83`; run 41917450236 — the job's first act was to fail `Format` on a python fence in `docs/training.md`, the same defect the local gate found, fixed in the head this row is part of |
+| W6 | A Windows CI job, with its document and its two binding tests | W5 | the job ships; the Linux matrix untouched; the run read back | **done, read back** | `0000a83` added it; its first run 41917450236 failed `Format` on a python fence in `docs/training.md` — the same defect `ruff format --check .` found locally, and the reason the job is worth having. Fixed in `efe48a8`, whose run [41919662316](https://github.com/bhogesararam23/chakaso/actions/runs/41919662316) is **all nine jobs success**: windows model path 3.13 2,889 / 2 in 189.74 s, checkpoint restoration 54, seed-study recovery 155 |
 | W7 | Documentation and the ledger | W1–W6 | recovery, checkpoint inspection, recovery refusal and the PowerShell forms written where a reader already looks | **done** | `docs/training.md`, `docs/getting-started.md`, `CONTRIBUTING.md`, `docs/agent/CURRENT_STATE.md` |
 
 **What is next, in order.**
 
-1. **Read the nine-job matrix green at this head and record the run identifier here.** W6's job failing its first
-   `Format` step is the mechanism working; it is not yet evidence that the Windows tier passes, and no claim of that
-   kind is made anywhere in this repository until the run is read.
-2. **Run E2636's six arms in a separately approved compute session** — unchanged from the previous unit, and now the
-   first study this project would run at a scale where an interruption costs hours rather than a re-run.
-3. **K-038: re-baseline the protocol digest** so `budget_extended_from` reads as an observation rather than a
+1. **Run E2636's six arms in a separately approved compute session** — unchanged from the previous unit, and now the
+   first study this project would run at a scale where an interruption costs hours rather than a re-run. The nine-job
+   matrix has been read back green at `efe48a8`, so the item that was to do that is not here any more.
+2. **K-038: re-baseline the protocol digest** so `budget_extended_from` reads as an observation rather than a
    condition. Needs a decision record: four committed `results.json` files state a digest as a literal.
-4. **K-039: state each measured record's invocation in the record**, in the flags the CLI takes, with the portable
+3. **K-039: state each measured record's invocation in the record**, in the flags the CLI takes, with the portable
    form beside it. Eleven git-ignored bash scripts are currently what "how this was run" points at.
 
 ## Previous unit: measure the pinned corpus's drift, and preregister the first budget question (2026-11-04, from `1fd9f06`)
