@@ -140,6 +140,47 @@ caches under `.mypy_cache/`.
 The test suite is designed to run offline. If a test needs the network, it is
 marked and skipped by default.
 
+### Running the gates on Windows
+
+The development machine for this project is Windows 11, so every gate in this section is measured here as well as on
+the Linux runners, and a claim about Windows in the docs means a command that was run. Every gate is a `python -m …`
+invocation, which is interpreter syntax and therefore identical in PowerShell, `cmd` and Git Bash; what differs is how
+you activate an environment, how you quote an extra, and whether a multi-line command continues.
+
+| Task | PowerShell | Git Bash |
+| --- | --- | --- |
+| Activate | `.venv\Scripts\Activate.ps1` | `source .venv/Scripts/activate` |
+| Activate (cmd) | `.venv\Scripts\activate.bat` | — |
+| Install the model path | `python -m pip install -e ".[dev,train,nn]"` | same |
+| Run the four gates | `python -m pytest`, `python -m ruff check .`, `python -m ruff format --check .`, `python -m mypy src` | same |
+| Type-check every module | `python -m mypy --config-file configs/mypy-model-path.toml` | same |
+
+Three Windows-specific rules the examples in this repository do not always follow, because they were written as
+bash:
+
+- **`&&` chains on one line work in PowerShell 7 and not in Windows PowerShell 5.1.** Where a block shows
+  `python -m venv .venv && source .venv/bin/activate`, run it as two lines.
+- **A trailing `\` continues a line in bash and ends it in PowerShell**, which uses a backtick. The long
+  `chakaso corpus declare`, `chakaso experiment model` and `chakaso model export` examples in
+  [`docs/training.md`](training.md) and [`README.md`](../README.md) are bash-shaped; put them on one line or
+  use a backtick at each break.
+- **`".[dev,train,nn]"` is already correct for PowerShell** — the double quote is PowerShell's quoting
+  character. Single quotes, `'".[dev,train]"'`, are the form that breaks.
+
+`--extra-index-url https://download.pytorch.org/whl/cpu` is a **Linux** instruction. PyPI's default `torch`
+wheel for Windows is the CPU build, so a Windows install needs no index flag, and adding the Linux one would
+pull a wheel built for a different platform.
+
+Measured locally on this machine, 2026-11-05, Python 3.13: the dependency-free tier **2,256 passed / 35
+skipped**, the `[train]` tier **2,345 / 25**, the `[train,nn]` tier in progress at the time of writing, `mypy
+src` clean over 125 files and the model-path configuration clean over 174. `ruff format --check .` reports the
+whole tree formatted, so `eol=lf` in `.gitattributes` is doing its job on a machine that would otherwise write
+CRLF.
+
+What Windows cannot tell you: `docs/*.docx` is the private pack and stays untracked, and the run scripts that
+some measured records cite live under `data/`, which is git-ignored — see
+[K-039](agent/KNOWN_ISSUES.md).
+
 ### The three matrices
 
 | Extras installed | What runs | What skips |

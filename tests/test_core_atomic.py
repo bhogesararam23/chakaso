@@ -88,3 +88,32 @@ def test_a_staged_write_to_a_missing_directory_creates_it(tmp_path: Path) -> Non
         staged.write_text("x", encoding="utf-8")
 
     assert destination.is_file()
+
+
+def test_a_swap_the_operating_system_refuses_leaves_the_previous_artifact_readable(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """The Windows case, tested without branching on the platform.
+
+    On Windows `os.replace` onto a file another handle holds fails with `PermissionError [WinError 5]`, where
+    POSIX would have moved it: a checkpoint rewrite racing an open reader, an editor holding the file, or
+    Defender scanning bytes that were just written. The behaviour the artifact layer depends on is not the
+    error — it is that the error costs nothing, so the same assertion holds on either OS and a reader on
+    Linux is testing the branch that ships to Windows.
+    """
+    destination = tmp_path / "E2698-transformer-resumable.pt"
+    write_text_atomically("the resume point a run wrote", destination)
+    real_replace = Path.replace
+
+    def refuse(self: Path, target: Path) -> Path:
+        error = 5
+        raise PermissionError(error, "Access is denied", str(self), target, None)
+
+    monkeypatch.setattr(Path, "replace", refuse)
+
+    with pytest.raises(PermissionError, match="Access is denied"), staged_write(destination):
+        pass
+
+    monkeypatch.setattr(Path, "replace", real_replace)
+    assert destination.read_text(encoding="utf-8") == "the resume point a run wrote"
+    assert _staged_names(tmp_path) == []

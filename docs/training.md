@@ -333,7 +333,8 @@ result that is not reproducible is not a result.
 
 ## Running on interrupted, limited compute
 
-The plan assumes runs get interrupted:
+The plan assumes runs get interrupted, and since 2026-11-05 the training path is built for it rather than merely
+aware of it ([ADR-0053](decisions/ADR-0053-a-seed-study-recovers-its-own-interrupted-run-and-a-resume-point-attests-its-run.md)):
 
 - design for checkpoint resume rather than assuming a run completes,
 - keep datasets streamable and preprocessable in batches,
@@ -341,6 +342,121 @@ The plan assumes runs get interrupted:
 - prefer many small repeatable experiments over one long run,
 - separate data preparation from training so the expensive stage can resume,
 - never assume a single session will finish a run.
+
+### What a run leaves on disk
+
+Every training run writes two `.pt` files into its own work directory and never one into another's:
+
+| File | Kind | Carries | Can continue a run? |
+| --- | --- | --- | --- |
+| `<experiment>-<family>.pt` | usable | the validation-**selected** weights, the tokenizer inline, the architecture, the corpus fingerprint, the step it was selected at | **No** — no optimizer state, by design |
+| `<experiment>-<family>-resumable.pt` | resumable | the **current** weights, the Adam moments, the step, the experiment and the split it belongs to | Yes |
+| `<experiment>-step<n>-<family>.pt` | usable rung | the weights at one declared point on the curve | No |
+
+The separation is the point: continuing from the selected weights would put Adam's moments against parameters they
+were never computed for — a schedule that looks right and is not — so `resume_state_from` refuses a file with no
+moments rather than restarting them silently. The resumable file is rewritten at every evaluation, or at
+`--checkpoint-every n` if that is too often for the machine.
+
+### How a seed study recovers
+
+`chakaso experiment study` runs each declared seed into `--work-dir/<experiment>/seed-<seed>/`. On a second pass:
+
+- a seed with a `report.json` **reuses the report** and trains nothing. The report is what makes a run recorded, and
+  it wins over any checkpoint in the same directory;
+- a seed with no report and no checkpoint **starts clean**, exactly as it did before this existed;
+- a seed with no report but a resumable checkpoint partway to the ceiling **continues it**: the study discovers the
+  file at the path that seed would itself have written it to — this experiment, this architecture family, this seed's
+  own directory — and hands it to the same `verify_resume_compatibility` an explicit `--resume-from` goes through.
+  There is no flag to turn this on and no glob to make it guess.
+- a seed whose checkpoint is **already at the ceiling** starts clean. There is no step left to continue; what is
+  missing is the report, and with the seed, the split and the batch plan fixed the re-run reproduces the curve it
+  replaces instead of a different one.
+- a pass with `--no-reuse` (which also requires `--overwrite`) does **not** resume anywhere: that flag says "train
+  these again", and a quiet continuation would be a different run from the one asked for.
+
+So an interrupted study is recovered by running the same command again. Nothing has to be found, named or moved.
+Taken from [E2636](../experiments/E2636/record.md)'s own declared invocation — the arms are two experiment names
+because one name would send both budgets into one directory, and the experiment name is part of the path recovery
+looks for:
+
+```bash
+chakaso experiment study --work-dir data/experiments --experiment E2636-short --seeds 7 --split-seed 7 \
+  --expected-corpus-fingerprint 312571f9fa8351a8 \
+  --corpus-snapshot data/corpora/gutenberg-multiregister-v1/gutenberg-multiregister-v1-snapshot.json \
+  --protocol configs/experiments/E2636-adopted-budget-2400.toml \
+  --write-report data/experiments/E2636-short/study-7.json --verbose
+```
+
+`--verbose` prints `seed 13: no report, but this seed's own checkpoint is on disk — continuing it` for each seed it
+recovers, and every run records `resumed_from_step` in its own budget block, so a recovered seed's report says it was
+recovered. The aggregate is unaffected: whether a run continued from a file is a fact about how the invocation was
+executed, not a condition its numbers were measured under, so `protocol_digest` ignores it and a recovered seed still
+aggregates with the siblings that were never interrupted.
+
+### When recovery refuses, and why
+
+A resume is refused, loudly, rather than approximated. `verify_resume_compatibility` checks the checkpoint's own
+recorded identity against what this run declares and names every field that disagrees:
+
+- **corpus fingerprint** — a curve continued onto different bytes is a mixture of two runs;
+- **architecture** — the tensor shapes and the configuration class the loader would build;
+- **tokenizer fingerprint** — the identifier space the weights live in;
+- **experiment** — two arms on one corpus under one budget differ only in which record cites them;
+- **split fingerprint** — two runs on one corpus under different `split_seed`s hold out different documents, so the
+  continued run would select on a validation set it never saw;
+- **the training configuration** — learning rate, batch, schedule, warmup, gradient accumulation, seed. One exception:
+  a larger `max_steps` is allowed, because a run truncated at its ceiling is continued by raising the ceiling, which
+  is exactly what E2607 measured. It comes back as `budget_extended_from` so the record prints the fact; any other
+  differing setting is a refusal.
+- **optimizer state present** — a usable artifact or a rung is a model, not a resume point;
+- **checkpoint schema** — `chakaso-transformer-checkpoint/1` and `chakaso-decoder-checkpoint/1` name their own family
+  and a file with an unknown schema is refused rather than guessed at;
+- **content checksum** — a file whose stored digest does not match its bytes is `CorruptedCheckpointError`.
+
+A checkpoint that predates run-identity recording attests neither its experiment nor its split, so **automatic
+recovery refuses it**. That is deliberate: recovery is the case where nobody was there to know where the file came
+from. An operator who does know can still pass `--resume-from` explicitly on a single run.
+
+To inspect what a checkpoint claims before trusting it, load it and read the fields the verifier will compare:
+
+```python
+from chakaso.training.nn_checkpoint import load_artifact
+
+point = load_artifact("data/experiments/E2636/E2636-decoder-resumable.pt")
+print(point.step, point.corpus_fingerprint, point.checksum()[:12])
+print(point.run_metadata["experiment"], point.run_metadata["split_fingerprint"])
+print(point.run_metadata["training"])       # the settings the resume check compares
+print(point.optimizer_state is not None)    # False means "a model, not a resume point"
+```
+
+## PowerShell forms for the sequence above
+
+The reproduce-a-run sequence and every `chakaso` example in this file are written as bash, and bash uses a trailing
+`\` to continue a line where PowerShell uses a backtick. On Windows the same commands run with no other change —
+they are `python -m` and `chakaso` invocations, and the console script exists either way — but multi-line forms have
+to be joined or re-broken. The four blocks above, in PowerShell:
+
+```powershell
+.venv\Scripts\Activate.ps1
+python -m pip install -e ".[dev,train,nn]"     # no --extra-index-url: PyPI's Windows torch wheel is the CPU build
+
+chakaso corpus restore --manifest experiments/E2605/corpus-manifest.json --revision 9b8a478 `
+  --output data/experiments/E2605/chakaso-repo-text-v1-snapshot.json
+
+chakaso experiment study --work-dir data/experiments --experiment E2636-short --seeds 7 --split-seed 7 `
+  --expected-corpus-fingerprint 312571f9fa8351a8 `
+  --corpus-snapshot data/corpora/gutenberg-multiregister-v1/gutenberg-multiregister-v1-snapshot.json `
+  --protocol configs/experiments/E2636-adopted-budget-2400.toml `
+  --write-report data/experiments/E2636-short/study-7.json --verbose
+```
+
+`&&` chains work in PowerShell 7 and not in Windows PowerShell 5.1, so where a bash block chains, run the lines
+separately. The activation and quoting rules, and which gate commands are measured on Windows, are in
+[`getting-started.md`](getting-started.md).
+
+**What is not portable:** the shell scripts some records cite as "the exact command that ran" live under `data/`,
+which is git-ignored, and all of them contain a Git-Bash-only working path — [K-039](agent/KNOWN_ISSUES.md).
 
 ## Document boundaries and attention
 

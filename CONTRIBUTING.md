@@ -45,7 +45,7 @@ out of the minimal test environment.
 
 ## Development setup
 
-See [`docs/getting-started.md`](docs/getting-started.md). The short version:
+See [`docs/getting-started.md`](docs/getting-started.md). The short version, in bash:
 
 ```bash
 python -m venv .venv
@@ -53,7 +53,16 @@ source .venv/bin/activate        # or .venv\Scripts\Activate.ps1
 python -m pip install -e ".[dev]"
 ```
 
-Before opening a pull request, all of these must pass:
+On Windows the activation is a different file, not a different command:
+
+```powershell
+python -m venv .venv
+.venv\Scripts\Activate.ps1
+python -m pip install -e ".[dev]"
+```
+
+Before opening a pull request, all of these must pass. They are `python -m …` invocations, so they are the same
+four lines in PowerShell, `cmd` and Git Bash:
 
 ```bash
 python -m pytest
@@ -61,6 +70,10 @@ python -m ruff check .
 python -m ruff format --check .
 python -m mypy src
 ```
+
+The development machine for this project is Windows 11, so the four gates are measured on both platforms. See
+[`docs/getting-started.md`](docs/getting-started.md) ("Running the gates on Windows") for the activation paths, the
+quoting rules that differ, and which counts were measured where.
 
 CI runs the same commands, in its `checks` job. If you cannot run them locally, say so in the pull
 request rather than assuming.

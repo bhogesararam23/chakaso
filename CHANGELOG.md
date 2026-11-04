@@ -12,6 +12,52 @@ capability is implemented or still planned.
 
 ## Unreleased
 
+### 2026-11-05 — the Windows audit: what was checked, what broke, and what did not
+
+**Audited rather than assumed.** The development machine is Windows 11 and every CI job was Linux, which is the
+asymmetry AGENTS.md already warns about in the other direction — `mypy --platform linux` once found a
+`ctypes.WinDLL` that every Windows gate on the author's machine had passed. Path separators, `os.replace` onto a file
+another handle holds, non-ASCII output through a console code page, and the torch wheel PyPI hands a Windows
+interpreter are four things no Linux job can see fail.
+
+**Verified**
+
+- **The staged write does not lose an artifact when the operating system refuses the swap.** On Windows
+  `Path.replace` onto a file with an open handle, a read-only attribute, or a directory in its place fails with
+  `PermissionError [WinError 5]` where POSIX would have moved it. The invariant that matters is not whether the swap
+  succeeds but that a refusal costs nothing: the destination keeps the file it held and the staged file is removed.
+  Tested on both platforms by injecting the Windows error, so a Linux reader is testing the branch that ships to
+  Windows.
+- **Checkpoint rewriting does not need the reader to let go first.** A run overwrites its own resume point at every
+  evaluation while a model loaded from that path stays usable; a loader that leaked an OS handle would turn
+  `--checkpoint-every` into a crash on Windows. Five successive overwrites interleaved with loads pass, and an
+  artifact at a deeply nested `data/experiments/<id>/seed-<n>/` path round-trips with no separator assumption.
+- **The four gates, all three test tiers and both type-check configurations run clean on Windows.** Measured locally
+  on Python 3.13; the counts are in `docs/getting-started.md`. `ruff format --check .` reports the whole tree
+  formatted, which is `.gitattributes`' `eol=lf` doing its job on a machine that would otherwise write CRLF.
+- **Non-ASCII CLI output is not a defect.** The messages use em-dashes and ellipses; redirected to a file on this
+  machine they encode to the console code page without raising. Checked, not fixed.
+- **`core/process_memory.py` is correct on both platforms.** Its `ctypes.WinDLL` calls sit behind platform guards and
+  a system dispatch, the wrappers catch `AttributeError`, and the tests monkeypatch the platform so both branches
+  run on either OS. The historical leak stays fixed.
+
+**Added**
+
+- **PowerShell forms for the developer and training workflows.** The activation path, the quoting rules that
+  actually differ (`".[dev,train,nn]"` is already correct; `&&` is not, and a trailing `\` continues a line in bash
+  and ends one in PowerShell), and the reproduce-a-run and study-recovery sequences rewritten with backtick
+  continuations. `--extra-index-url https://download.pytorch.org/whl/cpu` is documented as the **Linux** instruction
+  it is — PyPI's default Windows `torch` wheel is already the CPU build, and adding the flag would ask for a wheel
+  built for a different platform.
+
+**Also filed**
+
+- **K-039** — eleven shell scripts under git-ignored `data/` hold "the exact command that ran" for records that cite
+  them, all eleven contain a Git-Bash-only working path and two have no shebang, so a fresh clone of the revision a
+  measured record names does not contain the command that record points a reader at. Not repaired here: the fix is
+  stating each record's invocation in the record itself, in flags the CLI takes, which is a documentation pass over
+  the affected records and not a code change.
+
 ### 2026-11-05 — an interrupted seed study now continues where it stopped
 
 **No new measured experiment was produced in this work, and no committed record's numbers moved.** What changed is

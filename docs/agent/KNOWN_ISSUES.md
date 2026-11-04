@@ -1174,6 +1174,30 @@ ceiling, so they all report the same `budget_extended_from` and agree.
 **Status:** open. Filed 2026-11-05 while fixing K-036; the mixed-recovery test in
 `tests/test_training_seed_study.py` is written at a single ceiling so it does not depend on this.
 
+### K-039 — The exact command that produced a measured run lives in a git-ignored bash script
+
+**Impact:** Medium, and it is a reproducibility claim rather than a convenience. [ADR-0036](../decisions/ADR-0036-corpus-snapshot-recovery-from-history.md)
+promises that a measured result stays re-trainable, and [E2626's record](../../experiments/E2626/record.md) states that
+"the exact command that ran is recorded in `data/run_e2626_analysis.sh`".
+
+Checked on 2026-11-05: `git ls-files data/` returns nothing, and `data/` holds eleven `.sh` files — `run_e2608.sh`,
+`run_e2608_arms.sh`, `run_e2626_analysis.sh`, `run_e2627_analysis.sh`, `run_e2634.sh` and the rest — so a
+fresh clone of the revision a record names does not contain the command that record cites. All eleven contain
+`cd /d/chakaso`, a Git-Bash path that resolves on no other machine, and two have no shebang at all, so they are
+Git-Bash-on-this-machine instructions rather than portable ones; on a Windows-only machine with no Git Bash they are
+not runnable even where they exist.
+
+**Why it was not fixed by copying the scripts into the repository:** [ADR-0020](../decisions/ADR-0020-experiment-artifacts.md)
+and the artifact policy put generated run material in `data/` deliberately, and these files interleave commands with
+machine-local paths and work directories that a reader would have to translate anyway. The honest repair is the one
+that makes the *command* reproducible rather than the *script*: state each record's invocation in its own record, in
+the flags the CLI takes, with the platform-neutral form beside it. `docs/training.md` now gives that form for the
+reproduce-a-run sequence, and the Windows gate commands are in
+[`docs/getting-started.md`](../getting-started.md).
+
+**Status:** open, filed 2026-11-05 by the Windows audit. Closing it is a documentation task over the affected records,
+not a code change, and it should not be done by editing a measured record's numbers or protocol.
+
 ## Resolved
 
 ### Retired — no package, no tests and no CI existed

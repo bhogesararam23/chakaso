@@ -802,3 +802,43 @@ def test_a_stored_pre_tokenizer_this_code_does_not_implement_is_refused(tmp_path
 
     with pytest.raises(IncompatibleCheckpointError, match="tokenizer_pre_tokenizer"):
         load_artifact(target)
+
+
+def test_an_artifact_can_be_rewritten_while_a_reader_still_holds_the_previous_one(
+    tmp_path: Path,
+) -> None:
+    """The rewrite cadence must not need the reader to let go first.
+
+    A training run overwrites its own resume point at every checkpoint interval, and a model loaded from that
+    same path stays usable in the meantime — so on a platform where an open handle blocks a rename onto its
+    file, a loader that leaks one turns `checkpoint_every` into a crash rather than a setting. The assertion is
+    platform-neutral on purpose: it is the same claim a Linux reader can check about a Windows machine.
+    """
+    path = tmp_path / "E2698-transformer-resumable.pt"
+    save_artifact(_artifact(step=2), path)
+
+    for step in range(4, 14, 2):
+        reader = load_artifact(path)
+        assert reader.step == step - 2
+        save_artifact(_artifact(step=step), path, allow_overwrite=True)
+
+    assert load_artifact(path).step == 12
+    assert reader.vocabulary.fingerprint == VOCABULARY.fingerprint
+
+
+def test_a_deeper_nested_artifact_path_round_trips_without_a_separator_assumption(
+    tmp_path: Path,
+) -> None:
+    """An experiment writes under `<work>/E2698/seed-7/`, and a seed study names each run's own directory.
+
+    Nothing in the format may treat "/" as the separator or a basename as a path, because the same record has
+    to load on the other platform.
+    """
+    path = tmp_path / "data" / "experiments" / "E2698" / "seed-7" / "E2698-transformer.pt"
+
+    save_artifact(_artifact(step=6), path)
+    loaded = load_artifact(path)
+
+    assert loaded.step == 6
+    assert path.parent.is_dir()
+    assert loaded.checksum() == _artifact(step=6).checksum()
