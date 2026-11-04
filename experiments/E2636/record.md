@@ -200,16 +200,32 @@ Nothing below has been executed. It is written now so that the later run cannot 
 cd /d/chakaso
 SNAP=data/corpora/gutenberg-multiregister-v1/gutenberg-multiregister-v1-snapshot.json
 
-# Six arms, in the declared order: seed 7's pair first, and the long arm's measured rate read before the rest launch.
-for SEED in 7 13 17; do
-  chakaso experiment study --work-dir data/experiments --experiment E2636 --seeds "$SEED" --split-seed 7 \
+# A run writes its artifacts at <work-dir>/<experiment>/seed-<seed>, so the two budgets take two experiment
+# names the way E2615's arms did; one name for both would send two arms into one directory. Seed 7's pair runs
+# first and its measured throughput is read (below) before the remaining seeds are launched.
+for EXP in E2636-short E2636-long; do
+  case $EXP in
+    E2636-short) PROTOCOL=configs/experiments/E2636-adopted-budget-2400.toml ;;
+    E2636-long)  PROTOCOL=configs/experiments/E2636-adopted-budget-7200.toml ;;
+  esac
+  chakaso experiment study --work-dir data/experiments --experiment "$EXP" --seeds 7 --split-seed 7 \
     --expected-corpus-fingerprint 312571f9fa8351a8 --corpus-snapshot "$SNAP" \
-    --protocol configs/experiments/E2636-adopted-budget-2400.toml \
-    --write-report data/experiments/E2636/short-$SEED/study-$SEED.json
-  chakaso experiment study --work-dir data/experiments --experiment E2636 --seeds "$SEED" --split-seed 7 \
+    --protocol "$PROTOCOL" --write-report "data/experiments/$EXP/study-7.json"
+done
+
+# Read seed 7's long arm from data/experiments/E2636-long/seed-7/report.json: transformer.budget.positions_per_second
+# and wall_clock_s. If the measured rate puts the remaining pairs outside the session's budget, stop, run the
+# reading over the one completed pair (the tool refuses below two, and the refusal is the reported finding), and
+# record the shortfall as a deviation with the arms that did not run named.
+
+for EXP in E2636-short E2636-long; do
+  case $EXP in
+    E2636-short) PROTOCOL=configs/experiments/E2636-adopted-budget-2400.toml ;;
+    E2636-long)  PROTOCOL=configs/experiments/E2636-adopted-budget-7200.toml ;;
+  esac
+  chakaso experiment study --work-dir data/experiments --experiment "$EXP" --seeds 13,17 --split-seed 7 \
     --expected-corpus-fingerprint 312571f9fa8351a8 --corpus-snapshot "$SNAP" \
-    --protocol configs/experiments/E2636-adopted-budget-7200.toml \
-    --write-report data/experiments/E2636/long-$SEED/study-$SEED.json
+    --protocol "$PROTOCOL" --write-report "data/experiments/$EXP/study-13-17.json"
 done
 
 # Each arm's compact report is committed beside this record (scripts/extract_report.py) before the reading runs.
