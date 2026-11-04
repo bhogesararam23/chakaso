@@ -77,7 +77,12 @@ from chakaso.training.nn_training import (
     train_transformer,
     verify_resume_compatibility,
 )
-from chakaso.training.packing import PackedBatch, pack_units, select_units_by_token_cap
+from chakaso.training.packing import (
+    PackedBatch,
+    pack_units,
+    sample_composition,
+    select_units_by_token_cap,
+)
 from chakaso.training.subword import (
     DEFAULT_PRE_TOKENIZER,
     SubwordVocabulary,
@@ -584,6 +589,10 @@ class PreparedCorpus:
     training_composition: ShareSelection | None = None
     #: The vocabulary that chose the held-out documents, when the plan named one; ``None`` otherwise.
     selection_vocabulary: SubwordVocabulary | None = None
+    #: What the packed test side the run scores its headline loss on is made of, counted from the pack itself.
+    #: ``max_test_tokens`` caps a seeded sample rather than a prefix, so the whole-pack figure and the register
+    #: table are measured over different text (K-033) and the sample has to travel beside the number.
+    evaluation_sample: dict[str, Any] | None = None
 
     @property
     def tokens(self) -> dict[str, int]:
@@ -1088,6 +1097,25 @@ def prepare_corpus(plan: ExperimentPlan) -> PreparedCorpus:
     sides = evaluation_sides(plan, split, vocabulary)
     validation_units, test_units = sides.validation_units, sides.test_units
     selection_vocabulary = sides.selection_vocabulary
+    # Both packing paths take a **prefix** of the shuffled side — `pack_units` stops at the cap,
+    # `select_units_by_token_cap` stops at the cap counted with another vocabulary — so a segment index reads
+    # against `test_units` whichever path ran.
+    evaluation_sample: dict[str, Any] = {
+        "cap_identifiers": plan.max_test_tokens,
+        "capped_with": (
+            selection_vocabulary.fingerprint
+            if selection_vocabulary is not None
+            else vocabulary.fingerprint
+        ),
+        "documents_available": len(test_units),
+        "sample_seed": plan.effective_split_seed,
+        "selected_by": (
+            "max_test_tokens"
+            if plan.max_test_tokens is not None
+            else "the whole test side, uncapped"
+        ),
+        **sample_composition(sides.test, test_units),
+    }
 
     # One window per character position of every side: on the repository's own 780 KB that is affordable,
     # on a 14.5M-character corpus it is not, and the machine running the experiment has the last word. A
@@ -1126,6 +1154,7 @@ def prepare_corpus(plan: ExperimentPlan) -> PreparedCorpus:
         tokenizer_reused=tokenizer_reused,
         training_composition=composition,
         selection_vocabulary=selection_vocabulary,
+        evaluation_sample=evaluation_sample,
     )
 
 
@@ -1876,6 +1905,10 @@ def run_experiment(plan: ExperimentPlan, *, verbose: bool = False) -> dict[str, 
         },
         "character_baseline": character,
         "model_family": plan.model_family,
+        # Not inside the corpus block, on purpose: that block is covered by `protocol_digest`, and this is a
+        # description of text the hashed fields already fix, not a condition of the run. A run that states its
+        # sample must stay comparable with the measured runs that did not (K-033, and the rule K-028 set).
+        "evaluation_sample": prepared.evaluation_sample,
         # The key is the name three measured records' reports already use and the shape :func:`summarise`
         # and the release builder read; the family a run trained is stated beside it, not by renaming it.
         "transformer": {

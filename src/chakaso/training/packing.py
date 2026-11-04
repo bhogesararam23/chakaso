@@ -22,6 +22,10 @@ The rules, and the reason each one is a rule:
   attention mask still sees the whole packed block; ``track_documents`` records the document index of every
   position so a training run can mask attention across the boundary. It is opt-in because it doubles the
   per-token bookkeeping and every measured protocol so far ran without it.
+* **A pack can say what it is made of.** A capped, seeded sample of a held-out side is not that side, and a loss
+  printed over it is a number whose denominator has to be legible: :func:`sample_composition` counts the
+  documents, works and registers the blocks actually scored, from the pack's own boundary identifiers rather
+  than from the plan that asked for them.
 
 Standard library only: token streams and integer tuples need no numerical framework, so this layer runs in
 the dependency-free CI matrix and its arithmetic can be checked by hand.
@@ -29,8 +33,10 @@ the dependency-free CI matrix and its arithmetic can be checked by hand.
 
 from __future__ import annotations
 
+from collections import Counter
 from collections.abc import Sequence
 from dataclasses import dataclass
+from typing import Any
 
 from chakaso.training.data import TextUnit
 from chakaso.training.errors import CorpusError
@@ -41,7 +47,9 @@ __all__ = [
     "PackedExample",
     "count_tokens",
     "pack_units",
+    "sample_composition",
     "select_units_by_token_cap",
+    "target_segments",
 ]
 
 
@@ -241,3 +249,101 @@ def pack_units(
         dropped_tail=len(stream) - blocks * width,
         document_count=used_units,
     )
+
+
+def target_segments(examples: Sequence[PackedExample]) -> list[int]:
+    """Which document each **scored target** of a tracked pack came from, one entry per position.
+
+    ``segment_ids`` covers the input positions, and a target is the prediction for the input one place later: the
+    first token of the next block when the target is a block's last. The final scored token lies one past the last
+    block's last input, so no segment covers it and it belongs to that block's final document — the stream was
+    still inside that document when the block ended. This is the shift
+    :func:`chakaso.training.nn_evaluation.document_losses` scores by, stated once, so a count of positions and a
+    sum of losses cannot drift apart.
+
+    Raises:
+        CorpusError: an example carries no segment identifiers, so there is no boundary to read; or the blocks are
+            not all the same width, in which case there is no single seam rule to apply.
+    """
+    tracked: list[tuple[int, ...]] = []
+    for example in examples:
+        if example.segment_ids is None:
+            message = (
+                "a pack's scored positions need document boundaries: pack it with track_documents=True, or "
+                "count the whole pack through PackedBatch.positions"
+            )
+            raise CorpusError(message)
+        tracked.append(example.segment_ids)
+    widths = {len(example.input_ids) for example in examples}
+    if len(widths) != 1:
+        message = f"a pack has one block width; found {sorted(widths)}"
+        raise CorpusError(message)
+    width = len(examples[0].input_ids)
+    segments: list[int] = []
+    for block, identifiers in enumerate(tracked):
+        for index in range(width):
+            if index + 1 < width:
+                segments.append(identifiers[index + 1])
+            elif block + 1 < len(tracked):
+                segments.append(tracked[block + 1][0])
+            else:
+                segments.append(identifiers[-1])
+    return segments
+
+
+def _register_of(group: str) -> str:
+    """The register a work group belongs to — the part before the first hyphen, which is what a partition prefix
+    selects on. A group with no hyphen is its own register; a document with no group is counted as ungrouped rather
+    than dropped, because a sample that silently omits its odd documents is a sample nobody can audit.
+    """
+    if not group:
+        return "(ungrouped)"
+    prefix, separator, _ = group.partition("-")
+    return prefix + "-" if separator else group
+
+
+def sample_composition(batch: PackedBatch, units: Sequence[TextUnit]) -> dict[str, Any]:
+    """What a packed side is made of, counted from the blocks that were packed.
+
+    The whole-pack loss a report prints is pooled over a capped, seeded sample of a side, while a register table
+    samples each side separately: E2633 read the pack behind E2612 arm T's published **2.0554 bits per character**
+    and found no medicine document in it, though the equal-weight mean of five partitions gives medicine a fifth of
+    its weight (K-033). Both figures are legitimate; neither is legible as its denominator unless the run says so.
+    This counts positions per register from the pack's own boundary identifiers, so the statement describes the text
+    that was scored rather than the intent behind the plan that selected it.
+
+    Raises:
+        CorpusError: the pack names a document the supplied unit list does not hold — a segment index is only
+            meaningful beside the list that was packed — or the pack was built without document tracking.
+    """
+    segments = target_segments(batch.examples)
+    if segments and max(segments) >= len(units):
+        message = (
+            f"the pack names document {max(segments)} but the caller supplied {len(units)} units; a segment "
+            "index is only meaningful beside the unit list that was packed"
+        )
+        raise CorpusError(message)
+    positions_by_segment = Counter(segments)
+    registers: dict[str, set[int]] = {}
+    groups: dict[str, set[str]] = {}
+    for segment in positions_by_segment:
+        register = _register_of(units[segment].group)
+        registers.setdefault(register, set()).add(segment)
+        groups.setdefault(register, set()).add(units[segment].group)
+    total = len(segments)
+    return {
+        "documents": len(positions_by_segment),
+        "positions_scored": total,
+        "registers": {
+            register: {
+                "documents": len(members),
+                "groups": len(groups[register]),
+                "positions": sum(positions_by_segment[segment] for segment in members),
+                "position_share": round(
+                    sum(positions_by_segment[segment] for segment in members) / total, 4
+                ),
+            }
+            for register, members in sorted(registers.items())
+        },
+        "works": len({units[segment].group for segment in positions_by_segment}),
+    }

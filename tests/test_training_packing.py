@@ -11,7 +11,13 @@ import pytest
 
 from chakaso.training.data import TextUnit
 from chakaso.training.errors import CorpusError
-from chakaso.training.packing import PackedExample, count_tokens, pack_units, token_stream
+from chakaso.training.packing import (
+    PackedBatch,
+    PackedExample,
+    count_tokens,
+    pack_units,
+    token_stream,
+)
 from chakaso.training.subword import DOCUMENT_END, train_subword_vocabulary
 
 _VOCABULARY = train_subword_vocabulary(
@@ -290,3 +296,130 @@ def test_a_cap_that_is_not_a_positive_integer_is_refused() -> None:
 
     with pytest.raises(CorpusError, match="max_tokens"):
         select_units_by_token_cap((TextUnit(identifier="u", text="a b"),), vocabulary, 0)
+
+
+# ------------------------------------------------------------------ what a pack is made of
+
+
+def _tracked_batch(*segment_blocks: tuple[int, ...]) -> PackedBatch:
+    """A pack built by hand: each block is three wide, so two blocks give six scored positions."""
+    examples = tuple(
+        PackedExample(input_ids=(1,) * 3, targets=(2,) * 3, segment_ids=block)
+        for block in segment_blocks
+    )
+    return PackedBatch(
+        examples=examples,
+        tokens_available=7,
+        dropped_tail=1,
+        document_count=len({value for block in segment_blocks for value in block}),
+    )
+
+
+def test_a_target_belongs_to_the_document_of_the_token_it_predicts() -> None:
+    from chakaso.training.packing import target_segments
+
+    # The seam rule by hand. Block one's inputs are (0, 0, 1), so its first two targets are the second and
+    # third input tokens — documents 0 and 1 — and its last target is the token *after* the block, which is
+    # block two's first input, document 1. Block two's last target lies past the end of the pack, so it is
+    # attributed to the document the stream was still inside: its own final segment.
+    batch = _tracked_batch((0, 0, 1), (1, 1, 1))
+
+    assert target_segments(batch.examples) == [0, 1, 1, 1, 1, 1]
+    assert len(target_segments(batch.examples)) == batch.positions
+
+
+def test_a_pack_without_document_identifiers_is_refused_by_name() -> None:
+    from chakaso.training.packing import target_segments
+
+    untracked = PackedBatch(
+        examples=(PackedExample(input_ids=(1, 2, 3), targets=(2, 3, 4)),),
+        tokens_available=4,
+        dropped_tail=1,
+        document_count=1,
+    )
+
+    with pytest.raises(CorpusError, match="track_documents"):
+        target_segments(untracked.examples)
+
+
+def test_blocks_of_mixed_width_have_no_seam_rule_and_are_refused() -> None:
+    from chakaso.training.packing import target_segments
+
+    mixed = (
+        PackedExample(input_ids=(1, 2), targets=(2, 3), segment_ids=(0, 1)),
+        PackedExample(input_ids=(1, 2, 3), targets=(2, 3, 4), segment_ids=(0, 1, 1)),
+    )
+
+    with pytest.raises(CorpusError, match="one block width"):
+        target_segments(mixed)
+
+
+def test_the_composition_counts_the_registers_the_scored_positions_came_from() -> None:
+    from chakaso.training.packing import sample_composition
+
+    units = (
+        TextUnit(identifier="a", text="first", group="prose-anauthor"),
+        TextUnit(identifier="b", text="second", group="mathematics-anauthor"),
+    )
+    composition = sample_composition(_tracked_batch((0, 0, 1), (1, 1, 1)), units)
+
+    assert composition["documents"] == 2
+    assert composition["works"] == 2
+    assert composition["positions_scored"] == 6
+    assert composition["registers"]["prose-"] == {
+        "documents": 1,
+        "groups": 1,
+        "positions": 1,
+        "position_share": 0.1667,
+    }
+    assert composition["registers"]["mathematics-"]["positions"] == 5
+    assert composition["registers"]["mathematics-"]["position_share"] == 0.8333
+    # The registers partition the pack: every scored position is counted once, in exactly one register.
+    assert (
+        sum(entry["positions"] for entry in composition["registers"].values())
+        == composition["positions_scored"]
+    )
+
+
+def test_a_composition_that_cannot_name_its_documents_is_refused() -> None:
+    from chakaso.training.packing import sample_composition
+
+    with pytest.raises(CorpusError, match="segment index is only meaningful"):
+        sample_composition(
+            _tracked_batch((0, 0, 2), (2, 2, 2)),
+            (TextUnit(identifier="a", text="x", group="prose-a"),),
+        )
+
+
+def test_a_packed_sample_names_the_documents_it_reached_and_not_the_side_it_came_from() -> None:
+    from chakaso.training.packing import sample_composition
+
+    units = tuple(
+        TextUnit(
+            identifier=f"doc-{index}",
+            text="the quick red fox ran over the dry sand again and again",
+            group=f"{'prose' if index % 2 else 'mathematics'}-work-{index}",
+        )
+        for index in range(8)
+    )
+    capped = pack_units(units, _VOCABULARY, context_length=8, track_documents=True, max_tokens=30)
+    composition = sample_composition(capped, units)
+
+    assert composition["positions_scored"] == capped.positions
+    assert composition["documents"] <= len(units)
+    # A cap that stops mid-side leaves documents unscored — which is the fact K-033 asks the report to state.
+    assert set(composition["registers"]) <= {"mathematics-", "prose-"}
+    assert (
+        sum(entry["documents"] for entry in composition["registers"].values())
+        == (composition["documents"])
+    )
+
+
+def test_an_ungrouped_document_is_counted_rather_than_dropped() -> None:
+    from chakaso.training.packing import sample_composition
+
+    units = (TextUnit(identifier="a", text="x", group=""),)
+
+    assert sample_composition(_tracked_batch((0, 0, 0), (0, 0, 0)), units)["registers"] == {
+        "(ungrouped)": {"documents": 1, "groups": 1, "positions": 6, "position_share": 1.0}
+    }
