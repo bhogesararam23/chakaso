@@ -275,6 +275,19 @@ Three rules make those commands mean something, and the code enforces them rathe
   cites one artifact instead of forty flags. Unknown fields, wrong types and a value declared in the file and on the
   command line with two values are refusals; `root`, `work_dir`, `corpus` and the overwrite permission cannot be set
   in the file.
+- **A protocol that learns a tokenizer must say how.** `tokenizer_pre_tokenizer` is required unless the file pins a
+  `tokenizer_file`: the pre-tokenizer is part of a vocabulary's identity ([ADR-0048](decisions/ADR-0048-the-pre-tokenizer-is-a-named-part-of-a-vocabulary-s-identity.md)),
+  so a rule the run inherits is a rule its re-run does not control
+  ([ADR-0051](decisions/ADR-0051-the-space-prefixed-pre-tokenizer-is-adopted-and-a-run-stops-inheriting-one.md)). The rule
+  a caller gets when it names none is the space-prefixed one; the rule an *artifact with no key* means is
+  `LEGACY_DEFAULT_PRE_TOKENIZER`, `word-run|whitespace-run|single-symbol`, and it does not move with the default.
+- **A report states the sample its headline number is pooled over.** The top-level `evaluation_sample` block counts the
+  held-out pack's documents, works and scored positions per register from the pack's own document identifiers, and lists
+  every register the *side* holds — with zeros for the ones the token cap never reached. `max_test_tokens` caps a seeded
+  sample, not a prefix, so E2612 arm T's whole-pack figure is measured over 34 documents from 25 works containing no
+  medicine at all, while the register table samples each register separately (K-033). The block sits outside
+  `protocol_digest`: it describes text the hashed conditions already fix, so stating it cannot make a future run
+  incomparable with the measured ones.
 - **A run that names a vocabulary trains with that vocabulary.** `--expected-tokenizer-fingerprint` is checked on a
   cached vocabulary and on a freshly fitted one, before the fitted one is cached and before the first step. A
   comparison that holds the tokenizer fixed should pass it: a cache miss otherwise fits a different vocabulary

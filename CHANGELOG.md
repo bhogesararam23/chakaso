@@ -14,6 +14,25 @@ capability is implemented or still planned.
 
 ### 2026-11-04 (this session) — the campaign continues: paired statistics, re-pairable evidence, a test on the loss itself
 
+**Changed (behavioural, and the reason it is not silent is [ADR-0051](docs/decisions/ADR-0051-the-space-prefixed-pre-tokenizer-is-adopted-and-a-run-stops-inheriting-one.md))**
+
+- **`DEFAULT_PRE_TOKENIZER` is now the space-prefixed rule.** A caller that fits a vocabulary without naming a rule gets
+  the measurably better one (E2630: Δ(O1) +0.026431, five paired seeds, interval [+0.023212, +0.029650]; E2632: the
+  advantage survives four independent refits with a 0.30 % spread). Nothing already released or measured changes: the
+  committed vocabularies carry their own rule, and `chakaso-base@0.1.0` is cited by fingerprint.
+- **An artifact that names no rule now means a date, not a default.** New constant
+  `LEGACY_DEFAULT_PRE_TOKENIZER = "word-run|whitespace-run|single-symbol"`, used by the checkpoint's write condition and
+  its read fallback and by the report's omission rule. Without this the flip would have silently re-tokenised every
+  released checkpoint, because a pre-ADR-0048 artifact omits the key precisely *because* the word-run rule was the
+  default when it was written. A test pins the constant literally.
+- **A protocol that fits its own vocabulary must name its rule.** `load_plan` refuses one that does not: a pre-tokenizer
+  a run inherits is a pre-tokenizer its re-run does not control — the same argument ADR-0049 makes one layer down, about
+  the optimizer. The 14 committed protocols already satisfy it (nine pin a vocabulary, five name the rule), and
+  `test_every_committed_protocol_still_loads_into_a_valid_plan` is the gate that keeps them that way.
+- Test fixtures that count identifiers by hand now name the rule their vocabulary was fitted with, because a fixture whose
+  numbers depend on an ambient default is a fixture that fails on a Tuesday. Eleven tests changed meaning in this
+  transition and each was rewritten to state which rule it is about; none was weakened.
+
 **Measured**
 
 - **E2633: the held-out loss difference, tested as a paired statistic over held-out works — outcome L-a.** Four

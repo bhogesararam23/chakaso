@@ -41,6 +41,12 @@ blocks below are dated and kept as the context each result was read in; this fir
   quantile from the regularised incomplete beta (verified against nine published values), a mean confidence interval,
   and an exact sign test on the rarer sign — the three that E2630's interval and E2631/E2633's readings needed and the
   repository did not have.
+* **The space-prefixed tokenizer is adopted, and nothing inherits a rule** ([ADR-0051](../decisions/ADR-0051-the-space-prefixed-pre-tokenizer-is-adopted-and-a-run-stops-inheriting-one.md)):
+  `DEFAULT_PRE_TOKENIZER` becomes the space-prefixed rule; `LEGACY_DEFAULT_PRE_TOKENIZER` is what an artifact that names
+  no rule means, pinned by a test to its literal value because the checkpoint format reads that constant when the key is
+  absent — without it, moving the default would silently re-tokenise every released artifact; and `load_plan` refuses a
+  protocol that fits a vocabulary without declaring `tokenizer_pre_tokenizer`. Eleven test fixtures that had been relying
+  on the ambient default now name the rule they mean.
 * **Two documentation gates** ([`tests/test_repository_hygiene.py`](../../tests/test_repository_hygiene.py)): a numeric
   census count in an owner document is checked against the directories and against the parser's own command list
   (K-013's mechanism), and a record whose `## Results` section exists while its status still says *preregistered*
@@ -271,7 +277,7 @@ A private planning note is never evidence that something is implemented.
 | Repository conventions | `.gitignore`, `.gitattributes`, `.editorconfig` | Private docx pack excluded by `.gitignore` and guarded by a test |
 | License | `LICENSE` | Apache-2.0; rationale in ADR-0004 |
 | Public documentation | `README.md`, `docs/*.md`, `docs/research/` | Specifications with mandatory status labels |
-| Decision records | `docs/decisions/` | ADR-0001 to ADR-0050 (0037: the reference model is sized by measured throughput, with a token-matched comparison arm; 0038: the local serving adapter is standard-library HTTP, bound to loopback, and serves only a trained model; 0039: a model release is gated at three levels — artifact contract, reproducible integration, useful behaviour — and the level is awarded on evidence in the model card, where Levels 1 and 2 are met for `chakaso-base@0.1.0` and Level 3 is withheld; 0040: document-boundary attention masking is opt-in and off by default; 0041: the next target is a general base with a technical mixture, and the next unit is data, not architecture; 0042: held out means held-out works; 0043: training stages are separated by what changes and entered by gates; 0044: a vocabulary a record cites is committed beside it; 0045: training composition is declared as a share of the token budget; 0046: a checkpoint records the tokenizer's frequency floor as an optional field; 0047: a pinned corpus declares the digest of the text it ingests; 0048: the pre-tokenizer is a named part of a vocabulary's identity; 0049: a run names its optimizer's betas, epsilon and decay policy instead of inheriting them from the library, and can exempt the one-dimensional parameters from decay (off by default; the arm that would decide it is unrun); 0050: a run can write a usable model at each declared evaluation point, so one training curve can be measured at several learning stages) |
+| Decision records | `docs/decisions/` | ADR-0001 to ADR-0051 (0037: the reference model is sized by measured throughput, with a token-matched comparison arm; 0038: the local serving adapter is standard-library HTTP, bound to loopback, and serves only a trained model; 0039: a model release is gated at three levels — artifact contract, reproducible integration, useful behaviour — and the level is awarded on evidence in the model card, where Levels 1 and 2 are met for `chakaso-base@0.1.0` and Level 3 is withheld; 0040: document-boundary attention masking is opt-in and off by default; 0041: the next target is a general base with a technical mixture, and the next unit is data, not architecture; 0042: held out means held-out works; 0043: training stages are separated by what changes and entered by gates; 0044: a vocabulary a record cites is committed beside it; 0045: training composition is declared as a share of the token budget; 0046: a checkpoint records the tokenizer's frequency floor as an optional field; 0047: a pinned corpus declares the digest of the text it ingests; 0048: the pre-tokenizer is a named part of a vocabulary's identity; 0049: a run names its optimizer's betas, epsilon and decay policy instead of inheriting them from the library, and can exempt the one-dimensional parameters from decay — off by default, and measured against its own control by E2631 (**N-b**: nothing measurable, Δ(O1) −0.003499 against a 0.0062 tie margin, so the exemption stays off on evidence rather than on the size of the group); 0050: a run can write a usable model at each declared evaluation point, so one training curve can be measured at several learning stages; 0051: the space-prefixed pre-tokenizer is adopted as the rule a new fit uses when its caller names none, the rule an artifact with no key means is pinned to a constant that does not move with the default, and a protocol that fits a vocabulary must name its rule) |
 | Contribution guide | `CONTRIBUTING.md` | |
 | Agent contract | `AGENTS.md`, `docs/agent/` | |
 | Python package | `src/chakaso/` | Installs; typed; `py.typed` ships |
@@ -899,12 +905,15 @@ So the next unit is set by what E2608 left open, updated by E2611:
 spread and E2630 repeated it for the space-prefixed tokenizer — and E2633 turned the held-out loss into a test rather
 than a threshold. What is next, in the order the campaign left it:
 
-1. **The H17 adoption decision.** E2630 (five paired same-host seeds, interval excluding zero) and E2632 (the
-   compression advantage is the rule's, not one merge history's) are the evidence; ADR-0048 explicitly declined to
-   decide. What stands between that and a default move is a decision record, and the fact that `DEFAULT_PRE_TOKENIZER`
-   is load-bearing in the checkpoint format — artifacts written under the old default *omit* the rule key and are read
-   back as the default — so the format has to name the rule unconditionally, and the reading fallback has to become a
-   named legacy value, before any default moves.
+1. **The H17 adoption decision — taken.** [ADR-0051](../decisions/ADR-0051-the-space-prefixed-pre-tokenizer-is-adopted-and-a-run-stops-inheriting-one.md)
+   adopts the space-prefixed rule as the one a new fit uses when its caller names none, on E2630's five paired seeds and
+   E2632's four refits. It landed with the two pieces of work that make the move non-silent: `LEGACY_DEFAULT_PRE_TOKENIZER`,
+   which is what an artifact naming no rule *means* (the checkpoint format reads that constant when the key is absent, so
+   a default moved without it would re-tokenise every released artifact — and writing the key unconditionally would have
+   broken the byte-for-byte re-save ADR-0046 guarantees), and the protocol gate that refuses a run which fits a vocabulary
+   without declaring its rule. What remains here is not tokenizer work: it is the first record that names the adopted rule
+   in its own protocol and quotes E2630's measured deviation (0.001595) instead of inheriting a band from the rule it
+   replaced.
 2. **A capability instrument that can rank two independently trained arms.** E2629's Z-d is the failure to address: the
    probes tied the arms and inverted the ordering at a 0.108-bit loss gap. The next unit is more items on the arm pair
    E2633 already scored, with the item-set digests declared before scoring, not a new architecture.
