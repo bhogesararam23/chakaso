@@ -46,6 +46,22 @@ what happens when a run is cut short.
   loop writes both fields only when its caller names them, so an artifact written by a run that was never told
   which experiment it was serialises — and keeps the checksum — exactly as before (ADR-0046's route again).
 
+**Verified**
+
+- **A resumed run is the uninterrupted one, and that is now measured rather than asserted.**
+  `tests/test_training_recovery.py` drives the whole chain a recovery actually uses — the loop writes its
+  resumable artifact, the checkpoint loader reads it back, `verify_resume_compatibility` judges it, and the run
+  continues from what the check returns — and finds the continued run bit-identical to the one that was never
+  interrupted: the same final parameters, the same validation-selected ones, the same Adam moments tensor for
+  tensor, the same `best_step`, the same stopping outcome. The curve it resumes onto starts where the
+  interruption stopped and records no step twice. The learning rate at every resumed point equals the declared
+  schedule's value at that step, warmup and cosine included. Writing a checkpoint turns out not to perturb the
+  run it is written from even at `checkpoint_every=1`, which is what makes interruption safety free. And the
+  moments are shown to *matter*: continuing with the weights alone — the caller's documented choice, not a
+  default — does not reproduce the run. Nothing in the training loop needed changing; this is the claim
+  `nn_training`'s docstrings already made, tested for the first time through the file rather than by handing
+  state over in memory.
+
 **Also filed**
 
 - **K-038** — the ceiling a continued checkpoint was written under is still hashed as a condition rather than as an
