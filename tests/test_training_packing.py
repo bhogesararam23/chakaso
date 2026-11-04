@@ -364,13 +364,17 @@ def test_the_composition_counts_the_registers_the_scored_positions_came_from() -
     composition = sample_composition(_tracked_batch((0, 0, 1), (1, 1, 1)), units)
 
     assert composition["documents"] == 2
+    assert composition["documents_available"] == 2
     assert composition["works"] == 2
+    assert composition["works_available"] == 2
     assert composition["positions_scored"] == 6
     assert composition["registers"]["prose-"] == {
         "documents": 1,
-        "groups": 1,
+        "documents_available": 1,
         "positions": 1,
         "position_share": 0.1667,
+        "works": 1,
+        "works_available": 1,
     }
     assert composition["registers"]["mathematics-"]["positions"] == 5
     assert composition["registers"]["mathematics-"]["position_share"] == 0.8333
@@ -379,6 +383,29 @@ def test_the_composition_counts_the_registers_the_scored_positions_came_from() -
         sum(entry["positions"] for entry in composition["registers"].values())
         == composition["positions_scored"]
     )
+
+
+def test_a_register_the_cap_never_reached_is_stated_as_an_absence() -> None:
+    """The fact K-033 found was that medicine is *not in the pack at all*, and a missing key is a poor way to say it."""
+    from chakaso.training.packing import sample_composition
+
+    units = (
+        TextUnit(identifier="a", text="first", group="prose-anauthor"),
+        TextUnit(identifier="b", text="second", group="medicine-anauthor"),
+    )
+    composition = sample_composition(_tracked_batch((0, 0, 0), (0, 0, 0)), units)
+
+    assert composition["registers"]["medicine-"] == {
+        "documents": 0,
+        "documents_available": 1,
+        "positions": 0,
+        "position_share": 0.0,
+        "works": 0,
+        "works_available": 1,
+    }
+    assert composition["documents"] == 1
+    assert composition["documents_available"] == 2
+    assert composition["registers"]["prose-"]["position_share"] == 1.0
 
 
 def test_a_composition_that_cannot_name_its_documents_is_refused() -> None:
@@ -406,12 +433,15 @@ def test_a_packed_sample_names_the_documents_it_reached_and_not_the_side_it_came
     composition = sample_composition(capped, units)
 
     assert composition["positions_scored"] == capped.positions
-    assert composition["documents"] <= len(units)
     # A cap that stops mid-side leaves documents unscored — which is the fact K-033 asks the report to state.
-    assert set(composition["registers"]) <= {"mathematics-", "prose-"}
+    assert composition["documents"] < composition["documents_available"] == len(units)
+    assert set(composition["registers"]) == {"mathematics-", "prose-"}
     assert (
         sum(entry["documents"] for entry in composition["registers"].values())
-        == (composition["documents"])
+        == composition["documents"]
+    )
+    assert (
+        sum(entry["works"] for entry in composition["registers"].values()) == (composition["works"])
     )
 
 
@@ -421,5 +451,12 @@ def test_an_ungrouped_document_is_counted_rather_than_dropped() -> None:
     units = (TextUnit(identifier="a", text="x", group=""),)
 
     assert sample_composition(_tracked_batch((0, 0, 0), (0, 0, 0)), units)["registers"] == {
-        "(ungrouped)": {"documents": 1, "groups": 1, "positions": 6, "position_share": 1.0}
+        "(ungrouped)": {
+            "documents": 1,
+            "documents_available": 1,
+            "positions": 6,
+            "position_share": 1.0,
+            "works": 1,
+            "works_available": 1,
+        }
     }

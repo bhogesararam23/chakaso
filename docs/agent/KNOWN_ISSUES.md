@@ -768,7 +768,7 @@ different catalogue shuffles a different population, so that agreement is strong
 but it is evidence, not a digest taken at selection time, and the record says so. The live file's 5,597,116 bytes
 date from a different measurement and are not this file.
 
-### K-030 — Six latent measurement-path observations from the 2026-11-01 audit are filed; items 1, 2, 5 and 6 closed, 3 partly, 4 reviewed
+### K-030 — Six latent measurement-path observations from the 2026-11-01 audit are filed; items 1, 2, 3, 5 and 6 closed, 4 reviewed
 
 **Impact:** Low today, each by its own account; together they are the list of places where a future change could
 move a measured number without a test noticing. They are filed so that the audit's ranked summary is not the only
@@ -806,6 +806,15 @@ as of that day.
    The exemption itself is now expressible — `weight_decay_excludes_vectors`, split by parameter *shape*, off by default,
    recorded in the same `decay_applied_to` string so no protocol digest moves — and **the arm that would decide it is
    still unrun**, which is the only half of this item that stays open.
+   *Closed 2026-11-04 by [E2631](../../experiments/E2631/record.md):* the arm ran 55 m 53 s against E2626 seed 7 — one
+   corpus, split, vocabulary, budget and set of denominators, differing in the exemption and nothing else — and the
+   reading is **N-b, nothing measurable**: Δ(O1) −0.003499 against a tie margin of 0.0062 and Δ(whole pack) −0.003606
+   against 0.00933, both point estimates on the control's side. The declared paired reading over the 25 held-out works
+   puts a 95 % interval of [−0.014208, +0.001682] around the same mean with a 13:12 sign test (p = 0.50000) and a
+   leave-one-out range that crosses zero when `mathematics-pg302` is dropped — the draw-not-arm signature E2633 named.
+   The option stays expressible and stays off by default, now on a measurement rather than on the 0.17 % size of the
+   exempt group. What the arm exposed on the way: `decay_applied_to` was in neither the matched nor the declarable list
+   in `compare_arms`, so a comparison of two arms differing in decay could only refuse or misreport — fixed in `d970e8b`.
 4. **No thread or determinism pinning.** Reproduction is by tolerance (0.0005 bits per character), which E2614's
    seed-7 repeat of E2612 arm T measured on this machine: the difference was exactly 0.0 on every metric, so the protocol was deterministic here. Thread count (14 in the reports) and kernel selection are still not pinned, so that says nothing about another machine.
    *Reviewed 2026-11-02 (second session):* the tolerance is documented where it is declared (`REPRODUCTION_TOLERANCES`: half the last
@@ -903,7 +912,7 @@ as the closing demonstration, and E2626, E2627 and E2629 each carry a dated adde
 **Status:** closed 2026-11-04. The rule now belongs to `docs/internal/experiments/README.md` and
 [`artifact-policy.md`](../internal/engineering/artifact-policy.md), not to an issue register.
 
-### K-033 — A record prints one whole-pack number and a five-register table beside it, and they are measured over different text
+### K-033 — Closed: a record's whole-pack number states the sample it is pooled over
 
 **Impact:** Medium for interpretation, and it touches every arm verdict in the series. Found while writing E2633, whose
 paired test had to know which text it was resampling.
@@ -929,12 +938,38 @@ estimate with deliberate equal weighting. Restating either would move published 
 (the pooled five-register mean) is a decision about which denominator a verdict is read on — the same dispute K-027
 settled by naming the weighting field, one level up.
 
-**What would close it:** a stated rule in `docs/internal/experiments/README.md` that a record names, for each loss
-figure, which pack it came from — whole pack or per-register sample — and a record that declares both prints them in
-separate tables rather than one; then, if the pooled figure is wanted, computed from the partition packs and labelled
-as such. E2633's deviation 4 is the first instance of the disclosure.
+**What closed it.** Not a restatement — the entry's own analysis says both figures are legitimate — but a *rule* and a
+*mechanism*. The rule is now in `docs/internal/experiments/README.md`: every loss figure names the pack it came from,
+and a record that declares both prints them in separate tables and says which one its verdict reads. The mechanism is
+that a run no longer leaves its reader to reconstruct the sample: `chakaso.training.packing.target_segments` states
+the seam rule once (a target belongs to the document of the token *after* its input, a block's last target to the next
+block's first document, the final position to the document the stream was inside), and `sample_composition` counts the
+packaged side's documents, works and scored positions per register from those identifiers. `prepare_corpus` records
+the result in the report's top-level `evaluation_sample` block — cap, seed, the fingerprint of the vocabulary that
+chose the documents, and one entry for every register the side holds, **including the ones the cap never reached**, so
+an absence is stated rather than deduced from a missing key. It is a sibling of the corpus block on purpose:
+`protocol_digest` hashes the corpus block, and thirty measured runs published one, so a description that moved the
+digest would have made every future run incomparable with them.
 
-**Status:** open, measured 2026-11-04 by E2633.
+**Measured, not asserted.** The pack behind E2612 arm T was recounted through the run's own code path
+(`pin_and_split` → `evaluation_sides` → `sample_composition`, the same route `work_losses` takes): 996 blocks,
+254,976 scored positions, 34 documents, **25 works against the side's 62**, and position shares of science 45.23 %,
+prose 41.93 %, mathematics 7.00 %, technology 5.84 % and **medicine 0.00 %** — the medicine row carrying
+`documents_available: 7` and `works_available: 1`, which is the whole of this issue in two numbers. The same run's
+character shares recomputed from the arm's per-work table (5.97, 41.46, 46.63, 5.93, 0) agree with the figures E2633
+published from its manual read (6.0, 41.5, 46.6, 5.9, 0), and its pooled loss came out 2.0554473945424596 against the
+report's 2.05544739454246. The recount also found the mislabel that caused E2633's deviation 2: `work_losses` printed
+the *side's* work count under the name `works`, so a record preregistered on 62 and resampled 25. `works` is now the
+count that reached the pack and `works_on_side` the side's, and the difference is a field rather than a footnote.
+
+**What is left standing.** Every report written before this field carries no `evaluation_sample` block — including all
+thirty measured runs and E2631's arm, whose checkpoint was trained 90 minutes before the field landed — so a reader of
+an old record either uses E2633's published read of that pack or re-scores it through `work_losses`. No published
+number changes either way: the two quantities answer different questions, which is what the entry said when it was
+filed.
+
+**Status:** closed 2026-11-04. The disclosure rule lives in `docs/internal/experiments/README.md`; the field lives in
+the report.
 
 ## Resolved
 

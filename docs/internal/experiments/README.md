@@ -168,5 +168,15 @@ The next experiment, or the decision this settles.
   shared item listing, with the digest of the array they replaced so a reader can prove the rebuild. A stub is a
   record of what was thrown away, not evidence: K-032 was filed when a committed extract made a published McNemar
   test unrecomputable, and a record whose verdict is a paired test is not finished until the pairs are in the tree.
+- **Every loss figure names the pack it was measured over.** A whole-pack number is pooled over a seeded, capped
+  *sample* of the held-out side, while a register table draws its own capped sample per register: different text,
+  different denominators, and E2612 arm T's whole-pack sample contains no medicine document at all even though O1 —
+  the equal-weight mean of the five partitions — gives medicine a fifth of its weight (K-033). A run states its sample
+  in the report's `evaluation_sample` block, counted from the pack's own document identifiers: documents, works and
+  scored positions per register, the counts the side held beside them, and an explicit zero row for every register the
+  cap never reached. A record that declares both figures prints them in separate tables and says which one its verdict
+  reads. A pooled figure over the partitions, if a record wants one, is computed from the partition packs and labelled
+  as such — never confused with the whole-pack number, and never weighted by population when the objective is
+  equal-weight (K-027).
 - If a hypothesis is not being tested, the experiment is exploration. That is
   allowed; it should say so in `Motivation`.

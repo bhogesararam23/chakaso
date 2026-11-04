@@ -1107,7 +1107,6 @@ def prepare_corpus(plan: ExperimentPlan) -> PreparedCorpus:
             if selection_vocabulary is not None
             else vocabulary.fingerprint
         ),
-        "documents_available": len(test_units),
         "sample_seed": plan.effective_split_seed,
         "selected_by": (
             "max_test_tokens"
@@ -1550,6 +1549,7 @@ def work_losses(plan: ExperimentPlan, artifacts: Mapping[str, Path]) -> dict[str
     # trained with, and refuse if it cannot find it.
     vocabulary, _reused = _fit_or_reuse_vocabulary(plan, plan.work_dir, manifest, split)
     sides = evaluation_sides(plan, split, vocabulary)
+    composition = sample_composition(sides.test, sides.test_units)
     arms: dict[str, dict[str, Any]] = {}
     for name, path in artifacts.items():
         artifact = load_artifact(path)
@@ -1614,7 +1614,12 @@ def work_losses(plan: ExperimentPlan, artifacts: Mapping[str, Path]) -> dict[str
             "blocks": len(sides.test.examples),
             "positions": sides.test.positions,
             "documents": sides.test.document_count,
-            "works": len({unit.group for unit in sides.test_units}),
+            # What those positions came from, counted from the pack's own document identifiers: E2633 preregistered
+            # on the side's 62 works and resampled 25, because the count of works on the side and the count of works
+            # that reached the cap shared one name (its deviation 2). `works` here is the second.
+            "composition": composition,
+            "works": composition["works"],
+            "works_on_side": len({unit.group for unit in sides.test_units}),
             "document_masking": plan.document_masking,
         },
         "arms": arms,

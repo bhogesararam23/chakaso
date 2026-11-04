@@ -309,8 +309,12 @@ def sample_composition(batch: PackedBatch, units: Sequence[TextUnit]) -> dict[st
     samples each side separately: E2633 read the pack behind E2612 arm T's published **2.0554 bits per character**
     and found no medicine document in it, though the equal-weight mean of five partitions gives medicine a fifth of
     its weight (K-033). Both figures are legitimate; neither is legible as its denominator unless the run says so.
-    This counts positions per register from the pack's own boundary identifiers, so the statement describes the text
-    that was scored rather than the intent behind the plan that selected it.
+    Positions per register come from the pack's own boundary identifiers, so the statement describes the text that
+    was scored rather than the intent behind the plan that selected it.
+
+    ``units`` is the side the sample was drawn from, and a register the cap did not reach is listed with zeros
+    beside the documents and works it does hold. The fact E2633 needed was an **absence**, and a key that is simply
+    missing makes a reader deduce it — the one inference this field exists to remove.
 
     Raises:
         CorpusError: the pack names a document the supplied unit list does not hold — a segment index is only
@@ -324,26 +328,36 @@ def sample_composition(batch: PackedBatch, units: Sequence[TextUnit]) -> dict[st
         )
         raise CorpusError(message)
     positions_by_segment = Counter(segments)
-    registers: dict[str, set[int]] = {}
-    groups: dict[str, set[str]] = {}
+    reached: dict[str, set[int]] = {}
+    reached_groups: dict[str, set[str]] = {}
+    available: dict[str, set[int]] = {}
+    available_groups: dict[str, set[str]] = {}
+    for index, unit in enumerate(units):
+        register = _register_of(unit.group)
+        available.setdefault(register, set()).add(index)
+        available_groups.setdefault(register, set()).add(unit.group)
     for segment in positions_by_segment:
         register = _register_of(units[segment].group)
-        registers.setdefault(register, set()).add(segment)
-        groups.setdefault(register, set()).add(units[segment].group)
+        reached.setdefault(register, set()).add(segment)
+        reached_groups.setdefault(register, set()).add(units[segment].group)
     total = len(segments)
     return {
         "documents": len(positions_by_segment),
+        "documents_available": len(units),
         "positions_scored": total,
         "registers": {
             register: {
                 "documents": len(members),
-                "groups": len(groups[register]),
+                "documents_available": len(available[register]),
                 "positions": sum(positions_by_segment[segment] for segment in members),
                 "position_share": round(
                     sum(positions_by_segment[segment] for segment in members) / total, 4
                 ),
+                "works": len(reached_groups.get(register, ())),
+                "works_available": len(available_groups[register]),
             }
-            for register, members in sorted(registers.items())
+            for register, members in ((r, reached.get(r, set())) for r in sorted(available))
         },
         "works": len({units[segment].group for segment in positions_by_segment}),
+        "works_available": len({unit.group for unit in units}),
     }

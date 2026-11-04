@@ -1881,6 +1881,59 @@ def test_work_losses_refuses_a_model_trained_on_another_corpus(tmp_path: Path) -
         work_losses(other, {"mine": artifact})
 
 
+def test_a_run_states_which_documents_its_held_out_sample_reached(tmp_path: Path) -> None:
+    """K-033's fix is a field a reader can check, so the field's own arithmetic is pinned here.
+
+    A capped sample reaches fewer documents than the side holds, and the registers it does reach have to add back up
+    to the pack's scored positions. A composition that quietly counted the whole side would state a denominator the
+    run did not use, which is the mistake this field exists to make impossible.
+    """
+    root = _grouped_root(tmp_path)
+    plan = _grouped_plan(
+        root,
+        tmp_path / "work-sample",
+        max_steps=4,
+        eval_every=4,
+        whole_work_splits=True,
+        max_test_tokens=120,
+    )
+    prepared = prepare_corpus(plan)
+    sample = prepared.evaluation_sample
+
+    assert sample is not None
+    assert sample["cap_identifiers"] == 120
+    assert sample["sample_seed"] == plan.effective_split_seed
+    assert sample["selected_by"] == "max_test_tokens"
+    assert sample["capped_with"] == prepared.vocabulary.fingerprint
+    assert sample["positions_scored"] == prepared.test.positions
+    assert list(sample["registers"]) == ["work-"]
+    # The cap stopped the pack short of the side: that is what the field is for.
+    assert sample["documents"] < sample["documents_available"]
+    assert (
+        sum(int(row["positions"]) for row in sample["registers"].values())
+        == (sample["positions_scored"])
+    )
+    shares = [float(row["position_share"]) for row in sample["registers"].values()]
+    assert sum(shares) == pytest.approx(1.0, abs=0.001)
+
+
+def test_the_stated_sample_does_not_move_the_protocol_digest(tmp_path: Path) -> None:
+    """The field describes text the hashed conditions already fix, so it cannot make a new run incomparable.
+
+    `protocol_digest` covers the corpus block, and thirty measured runs published one without a sample block. If
+    stating the sample changed the digest, every future comparison with those runs would refuse itself — which is
+    why the block is a sibling of `corpus` rather than a member of it.
+    """
+    from chakaso.training.subword_experiment import protocol_digest
+
+    plan = _plan(_root(tmp_path), tmp_path / "work-digest", max_steps=4, eval_every=4)
+    report = run_experiment(plan)
+    assert "evaluation_sample" in report
+
+    stripped = {key: value for key, value in report.items() if key != "evaluation_sample"}
+    assert protocol_digest(dict(stripped)) == protocol_digest(dict(report))
+
+
 def test_the_tokenizer_sample_takes_whole_documents_and_moves_with_the_seed() -> None:
     """E2632 draws several fitting samples through this one rule, so its shape is pinned here.
 
