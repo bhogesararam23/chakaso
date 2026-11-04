@@ -193,3 +193,36 @@ Mirrored in `docs/agent/ACTIVE_TASK.md`'s ledger:
 4. **K-034**: the probe analysis takes its outcome vocabulary from the record rather than embedding another record's.
 5. **K-001**: the budget question E2608 left — a run that converges, or an explicit statement that convergence is out
    of reach at this scale — which is the only item on this list that needs a training arm rather than an afternoon.
+
+---
+
+## 9. Addendum, later the same day — what the next session found in this phase's own wake
+
+Written after §8, so that §7 and §8 stay as they were filed. Three things happened that this report could not have
+known when it closed, and one of them is a failure of the kind §5 exists to record.
+
+1. **The phase's final head was red on the runner.** `1fd9f06` — §6's last row is the head *before* it — landed a
+   97-character `pytest.raises` line, and the `Format` step in each `core` job refuses it. §6 claims "Ruff check and
+   format clean" at the final head, and that claim was true of the **working tree** and false of the **commit**: the
+   wrap existed locally, uncommitted, so every local gate passed while CI failed on all three core tiers. `train` and
+   `model path` have no `Format` step, which is why five of eight jobs looked innocent. Fixed forward in `e62f8fe`,
+   read back green (run 41852523571, eight jobs). The lesson is the same one §5 drew about untracked documents, one
+   notch sharper: an uncommitted change does not merely escape a gate, it makes the gate report on a different object
+   than the one that gets pushed.
+2. **This report's §7 statement about K-031 was overtaken by uncommitted work.** It says the 430-URL re-scan "has not
+   been run" — correct when written. The tree also carried `scripts/rescan_pinned_sources.py`, its sixteen offline
+   tests and two measured artifacts that no document cited. They landed as `02c230b` and `7c8f992`: **20 of 430 URLs,
+   all serving their pinned digest**, and `science-pg3489` re-fetched by name still differing at the raw digest with
+   its ingested text identical. The bounded sample replaced the "430 fetches" framing §7 rejected; the host question
+   remains the owner's and is now written as five options with their costs.
+3. **§8's first item was taken up, and stopped at a preregistration.**
+   [E2635](../../../experiments/E2635/record.md) measured D-b before this (item 2 of §8, with K-035 landing first as
+   its own note required), its reading reproduced byte-for-byte from committed evidence in the following session.
+   Item 1 became [E2636](../../../experiments/E2636/record.md): three same-host pairs at 2,400 against 7,200 updates,
+   the adopted pre-tokenizer named in both protocol files, the verdict band derived from E2630's σ(O1) = 0.001595 by
+   E2614's own 1.96·√2·σ rule (0.005) with the inherited 0.02 kept beside it. **No arm ran, and no number in that
+   record is a result** — the cost arithmetic (9.8–11.4 hours single-process here) is why it waits for a separately
+   approved session. Item 4, K-034, closed with ADR-0052 the same day this report was written.
+
+Item 5 of §8 — K-001, the budget question that needs a training arm — is now E2636, which is the same question wearing
+a protocol. It is still the only item on that list that nothing in this repository can answer without compute.
