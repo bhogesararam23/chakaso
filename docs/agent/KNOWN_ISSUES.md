@@ -3,7 +3,14 @@
 Real problems with the current state, including the ones that are only
 inconvenient. An empty file here would mean nobody has looked.
 
-Last reviewed: 2026-11-05, latest (**K-039 filed** by the Windows audit — eleven shell scripts under git-ignored
+Last reviewed: 2026-11-05, latest (**K-040 filed** by the E2636 execution-readiness preflight — a resume point
+whose environment block names a different platform, a different thread count and even `device: cuda` is accepted
+by `verify_resume_compatibility`, which never compares it, so one arm of a pair can be trained part-way on one
+host and finished on another while its report states only the second; reproduced, not reasoned about. The same
+preflight resolved **K-038 against E2636 and it does not bite there**: an arm resuming under its own declared
+ceiling reports `budget_extended_from: None`, and the CLI refuses a `--max-steps` that disagrees with the
+protocol file, so the mixed state K-038 needs cannot arise without changing the preregistration); before that
+(**K-039 filed** by the Windows audit — eleven shell scripts under git-ignored
 `data/` hold "the exact command that ran" for records that cite them, all eleven carrying a Git-Bash-only working path
 and two with no shebang, so a fresh clone does not contain the command a record points a reader at; **the Windows path
 audited and measured rather than assumed** — the four gates, all three test tiers and both type-check configurations
@@ -1204,6 +1211,37 @@ reproduce-a-run sequence, and the Windows gate commands are in
 
 **Status:** open, filed 2026-11-05 by the Windows audit. Closing it is a documentation task over the affected records,
 not a code change, and it should not be done by editing a measured record's numbers or protocol.
+
+### K-040 — Recovery does not compare the host a checkpoint came from, so one arm can be finished on another machine and report only the second
+
+**Impact:** High for any run split across machines, and E2636's matched-pair claim depends on exactly that
+property: its record states the two arms of a pair are matched because they share "same host, same session".
+
+`verify_resume_compatibility` compares the corpus fingerprint, the architecture, the tokenizer, the recorded
+training configuration, the experiment and the split. It does **not** compare `ModelArtifact.environment` — the
+block `describe_environment()` writes with `platform`, `torch`, `numpy`, `python`, `device` and `torch_threads`,
+and which `nn_checkpoint`'s own docstring calls part of the numerical procedure: "a run on 8 threads and a run
+on 18 are not the same numerical procedure even when every declared number matches."
+
+Measured on 2026-11-05: a resume point written on `Windows-11-10.0.26200-SP0`, `torch 2.13.0+cpu`,
+`torch_threads 14`, `device cpu` was rewritten with the same tensor bytes and an environment of
+`Linux-6.6-x86_64`, `torch_threads 4`, `device cuda`, and `verify_resume_compatibility` **accepted it**. Nothing
+in the continuation is refused, and the run's own report then states only the environment of the process that
+finished it. The committed series already shows the variable moving — measured reports carry both
+`torch_threads: "14"` and `"4"` — so this is not a hypothetical host.
+
+This does not affect a run that starts and finishes on one machine, which is what E2636's record declares. It
+bites the moment an operator splits a long arm across a laptop and a cloud or notebook session to fit a wall
+clock, which is the first thing a 10–12 hour study invites.
+
+**Why it is not simply closed by comparing the block:** an environment disagreement is not always a protocol
+change. A reproduction on a newer torch that reproduces its metrics within tolerance is a result, not an error,
+and `REPRODUCTION_TOLERANCES` exists to say so. The honest shape is probably the one ADR-0049 took for the
+optimizer recipe — a *declared* comparison with a named refusal and an explicit operator override — rather than
+a silent equality test, and that is a decision record.
+
+**Status:** open, filed 2026-11-05 by the E2636 execution-readiness preflight. Until it is closed, a study whose
+arms must share a host and session has to guarantee that by how it is run, not by what recovery checks.
 
 ## Resolved
 
