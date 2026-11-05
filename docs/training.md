@@ -458,6 +458,19 @@ separately. The activation and quoting rules, and which gate commands are measur
 **What is not portable:** the shell scripts some records cite as "the exact command that ran" live under `data/`,
 which is git-ignored, and all of them contain a Git-Bash-only working path — [K-039](agent/KNOWN_ISSUES.md).
 
+### Is this host fast enough?
+
+[`experiments/benchmarks/kaggle_cpu_benchmark.ipynb`](../experiments/benchmarks/kaggle_cpu_benchmark.ipynb) answers
+that with a measurement instead of an estimate. It reads the budget the same
+[`load_plan`](../src/chakaso/training/protocol.py) an experiment uses reads it, keeps the architecture, the batch
+shape and the declared optimizer recipe, reduces only the step count, and runs
+[`train_transformer`](../src/chakaso/training/nn_training.py) for a dozen real updates — reporting median, mean and
+step-to-step spread of `positions_per_second`, held-out evaluation throughput, peak resident memory, artifact
+write/read cost, and the fingerprints of the tokenizer and corpus it actually loaded. It projects the arm counts
+from those figures, so a host can be compared with the record's measured rates before a session is committed. It is
+a benchmark, not an experiment: it writes no `record.md`, its outputs go to `/kaggle/working` (or git-ignored
+`data/benchmarks/`), and it launches no arm of any preregistered study.
+
 ## Document boundaries and attention
 
 Packing concatenates documents and terminates each with a separator, but the default attention is causal over

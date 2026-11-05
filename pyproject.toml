@@ -151,6 +151,10 @@ ignore = [
 "tests/*" = ["T20", "ARG002"]
 # Operator scripts report progress to a terminal; that is their interface.
 "scripts/*" = ["T20"]
+# A notebook's cells print because the cell output is the only place a reader sees the result. T20 is not
+# relaxed for the whole tree: this names one file, and ruff reads .ipynb cells as Python, so without it the
+# Format and Lint steps fail on the benchmark's own reporting.
+"experiments/benchmarks/kaggle_cpu_benchmark.ipynb" = ["T20"]
 
 [tool.ruff.lint.isort]
 known-first-party = ["chakaso"]
