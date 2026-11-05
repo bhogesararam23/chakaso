@@ -192,6 +192,31 @@ prints the long arm's measured `positions_per_second` before the remaining two p
 puts the whole record beyond the session's budget, the shortfall is reported as a deviation with the completed pairs
 named, and the rules above do not move.
 
+### Cost addendum, measured 2026-11-05 during the readiness preflight
+
+Two figures above are corrected from the committed reports, not re-estimated. Neither moves a rule, a budget, a seed
+list or a threshold, and the correction runs against this record's own interest — the session gets longer, not shorter.
+
+- **The long arm's arithmetic omitted its own evaluations.** `positions_per_second` is measured over gradient work only
+  (`nn_training`'s definition, so the number does not depend on how often the caller asks to evaluate), which is why
+  dividing 58,982,400 positions by it gives gradient time and not wall clock. A 2,400-step arm records **7** evaluations
+  and cost 136.5–165.8 s of non-gradient time on top of its gradient time; a 7,200-step arm records **19** at the same
+  `eval_every` 400. Allowing for the extra 12 at the measured per-evaluation cost, and subtracting the ~43 s snapshot
+  read that does not scale, the long arm is **≈ 9,050–10,520 s**, and the six arms
+  **≈ 36,300–42,200 s ≈ 10.1–11.7 h** rather than 9.8–11.4 h. Still arithmetic on measured rates, not a measurement:
+  no arm of this record has run, and the seed-7 gate below is what replaces it with a measurement.
+- **The checkpoint footprint is larger than stated, and still immaterial.** A *usable* decoder artifact measured
+  **17,906,053 bytes** (`data/experiments/E2608/decoder/E2608-decoder.pt`), which is the ~18 MB above. The *resumable*
+  artifact the same run writes — current weights plus both Adam moments — measures **45,254,464 bytes** for the same
+  3,413,760-parameter model, so six arms leave roughly **0.35 GB**, not 0.11 GB, in `data/`. Disk free on the intended
+  host is 152 GB, so nothing follows from the correction except that the number in the record should be the one that
+  was read off a file.
+- **K-040 applies to this record's scheduling, not to its protocol.** Recovery accepts a checkpoint whose environment
+  block names a different platform, thread count or device, and the finished run's report then states only the host
+  that completed it. The matched-pair row above rests on "same host, same session", so a pair must not be split across
+  a local machine and a cloud or notebook session to fit the wall clock — that has to be guaranteed by how the session
+  is run, because nothing in the code enforces it.
+
 ## Reproduction
 
 Nothing below has been executed. It is written now so that the later run cannot be adjusted to fit its own result.
@@ -247,6 +272,93 @@ ceiling, and refuses a report whose `best_step` disagrees with the validation ar
 is [E2630's committed aggregate](../E2630/results.json), so the band is read from the record that measured it instead of
 being typed into a protocol. Running `--statistics-only` instead prints the numbers with no letter, which is what a
 record that has not declared its outcomes gets (ADR-0052).
+
+### The same sequence in PowerShell
+
+The block above is bash: a trailing `\` continues a line in bash and ends one in Windows PowerShell, which uses a
+backtick. This is the development host's own shell — Windows PowerShell 5.1, where `&&` is not a chain operator either,
+so nothing below chains. Every line was run on 2026-11-05 with `--collect-only` in place of the training call and with
+`--out` redirected to a temporary directory; it built both studies, reported `0/3 seeds, nothing measured yet,
+missing [7, 13, 17]` for each, exited 0, and created no directory under `data/experiments`. The commands are unchanged
+except in line-breaking; `--collect-only` is not part of the run.
+
+```powershell
+Set-Location D:\chakaso
+. .venv-nn\Scripts\Activate.ps1        # the env with numpy and torch; .venv has neither
+$Snap = 'data/corpora/gutenberg-multiregister-v1/gutenberg-multiregister-v1-snapshot.json'
+$Protocols = [ordered]@{
+    'E2636-short' = 'configs/experiments/E2636-adopted-budget-2400.toml'
+    'E2636-long'  = 'configs/experiments/E2636-adopted-budget-7200.toml'
+}
+
+# Seed 7's pair first, both arms, one host, one session. The two budgets are two experiment names because a run
+# writes to <work-dir>/<experiment>/seed-<seed>, and one name would send both arms into the same directory.
+foreach ($exp in $Protocols.Keys) {
+    chakaso experiment study `
+        --work-dir data/experiments `
+        --experiment $exp `
+        --seeds 7 `
+        --split-seed 7 `
+        --expected-corpus-fingerprint 312571f9fa8351a8 `
+        --corpus-snapshot $Snap `
+        --protocol $Protocols[$exp] `
+        --write-report "data/experiments/$exp/study-7.json"
+    if ($LASTEXITCODE -ne 0) { throw "$exp seed 7 failed with $LASTEXITCODE" }
+}
+
+# Read the long arm's measured rate before committing the remaining four arms to a session.
+$budget = (Get-Content 'data/experiments/E2636-long/seed-7/report.json' -Raw |
+    ConvertFrom-Json).transformer.budget
+"long arm: {0} positions/s, {1} s wall clock, completion {2}, resumed from {3}" -f `
+    $budget.positions_per_second, $budget.wall_clock_s, $budget.completion, $budget.resumed_from_step
+# If that rate puts seeds 13 and 17 outside the session, stop here: run the reading over the one completed pair
+# (the tool refuses below two pairs, and the refusal is the reported finding) and record the shortfall as a
+# deviation naming the arms that did not run. The rules above do not move.
+
+foreach ($exp in $Protocols.Keys) {
+    chakaso experiment study `
+        --work-dir data/experiments `
+        --experiment $exp `
+        --seeds 13,17 `
+        --split-seed 7 `
+        --expected-corpus-fingerprint 312571f9fa8351a8 `
+        --corpus-snapshot $Snap `
+        --protocol $Protocols[$exp] `
+        --write-report "data/experiments/$exp/study-13-17.json"
+    if ($LASTEXITCODE -ne 0) { throw "$exp seeds 13,17 failed with $LASTEXITCODE" }
+}
+
+# Each arm's compact extract is committed beside this record before the reading runs. The bash block above leaves
+# this step to a comment; it is a command, and the reader's required fields come from these files.
+foreach ($exp in $Protocols.Keys) {
+    foreach ($seed in 7, 13, 17) {
+        python scripts/extract_report.py `
+            --report "data/experiments/$exp/seed-$seed/report.json" `
+            --out "experiments/E2636/$exp-$seed-report.json"
+        if ($LASTEXITCODE -ne 0) { throw "extract $exp seed $seed failed" }
+    }
+}
+
+python scripts/read_budget_extension.py `
+    --short 7=experiments/E2636/E2636-short-7-report.json `
+    --short 13=experiments/E2636/E2636-short-13-report.json `
+    --short 17=experiments/E2636/E2636-short-17-report.json `
+    --long 7=experiments/E2636/E2636-long-7-report.json `
+    --long 13=experiments/E2636/E2636-long-13-report.json `
+    --long 17=experiments/E2636/E2636-long-17-report.json `
+    --bands experiments/E2630/results.json `
+    --expected-ratio 3 --expected-pairs 3 `
+    --outcomes configs/analyses/budget-extension-e2636-v1.json `
+    --out experiments/E2636/results.json
+```
+
+Two properties the bash form does not state and this one does. A second pass of either study reuses every seed that
+already has a `report.json` and continues, from its own checkpoint, any seed that was interrupted before writing one —
+the behaviour [ADR-0053](../../docs/decisions/ADR-0053-a-seed-study-recovers-its-own-interrupted-run-and-a-resume-point-attests-its-run.md)
+decides — so an interruption costs the remaining steps and not the elapsed hours, and nothing has to be found by hand.
+And the run's own report records `resumed_from_step`; if it is ever non-`null` for an arm of this pair, that arm was
+finished by a recovery pass and the record must say so, because the pair's matched claim is one host and one session.
+
 
 ## What the run will report
 
