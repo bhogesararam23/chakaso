@@ -471,6 +471,14 @@ from those figures, so a host can be compared with the record's measured rates b
 a benchmark, not an experiment: it writes no `record.md`, its outputs go to `/kaggle/working` (or git-ignored
 `data/benchmarks/`), and it launches no arm of any preregistered study.
 
+[`kaggle_cpu_thread_scaling.ipynb`](../experiments/benchmarks/kaggle_cpu_thread_scaling.ipynb) is its companion, and
+answers the narrower question a 4-CPU host raises: how much of the throughput is parallel at all. It walks
+`torch.set_num_threads` over 1, 2 and 4, twice, the second pass reversed, on the same packed blocks and the same
+seeded fresh model, reusing the first notebook's data and configuration cells verbatim. Two things it settles: a
+thread count is not free of numerical consequence — the arms produce different artifact checksums, which is why
+`describe_environment()` records the thread count — and the ordering bias in a single-process ladder is large enough
+that the reversed pass changes the answer, so the two passes are reported rather than averaged away.
+
 ## Document boundaries and attention
 
 Packing concatenates documents and terminates each with a separator, but the default attention is causal over
